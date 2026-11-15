@@ -6,8 +6,9 @@
  * Constructed oracle.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/cerqual/';
+const APP_URL = ALM_BASE_URL + '/cerqual/';
 
 test.describe('cerqual', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

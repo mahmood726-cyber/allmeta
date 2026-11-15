@@ -5,12 +5,13 @@
  * adds the total between-study heterogeneity). Descriptive when J<10 (footer caveat).
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('multilevel-ma PI present, brackets μ, wider than HKSJ CI', async ({ page }) => {
   const errs = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
-  await page.goto('http://localhost:8088/multilevel-ma/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/multilevel-ma/index.html', { waitUntil: 'load' });
   await page.waitForFunction(() => typeof window._almLastMlma === 'function' && window._almLastMlma(), { timeout: 10000 });
   const o = await page.evaluate(() => window._almLastMlma());
   expect(o.pi_lb, 'PI present').not.toBeNull();

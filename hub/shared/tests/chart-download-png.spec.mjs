@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(join(__dirname, '..', 'chart-download.js'), 'utf-8');
@@ -26,8 +27,8 @@ test.describe('chart-download PNG', () => {
   });
 
   test('PNG button produces a valid PNG (magic bytes)', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => !!document.querySelector('#dl-mount button[data-fmt="png"]'));
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 10_000 }),

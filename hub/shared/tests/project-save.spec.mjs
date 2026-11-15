@@ -6,7 +6,8 @@
  * Also asserts the schema guard rejects foreign JSON and that the install() widget mounts.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/project/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/project/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('project snapshot → mutate → restore is a faithful round-trip', async ({ page }) => {

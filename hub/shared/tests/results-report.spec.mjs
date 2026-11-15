@@ -5,12 +5,13 @@
  * computed results beneath it.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const APPS = ['forest-plot', 'heterogeneity', 'pubbias-tests'];
 
 for (const app of APPS) {
   test(`methods+results report downloads with both sections — ${app}`, async ({ page }) => {
-    await page.goto('http://localhost:8088/' + app + '/index.html', { waitUntil: 'load' });
+    await page.goto(ALM_BASE_URL + '/' + app + '/index.html', { waitUntil: 'load' });
     for (const sel of ['#btn-run', '#btn-example']) { const b = await page.$(sel); if (b) await b.click().catch(() => {}); }
     await page.waitForTimeout(1200);
     const [dl] = await Promise.all([

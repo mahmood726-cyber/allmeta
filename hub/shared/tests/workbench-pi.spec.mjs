@@ -8,10 +8,11 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const O = JSON.parse(readFileSync(new URL('../../../workbench/tests/fixtures/workbench-oracle.json', import.meta.url), 'utf-8'));
 
 test('workbench PI uses t_{k-1} (Cochrane v6.5), matches R', async ({ page }) => {
-  await page.goto('http://localhost:8088/workbench/', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/workbench/', { waitUntil: 'load' });
   await page.waitForFunction(() => typeof window.__almWorkbench === 'function', { timeout: 10000 });
   const r = await page.evaluate((s) => window.__almWorkbench(s), O.studies);
   // qt(.975,4)=2.776445105; sePred=sqrt(0.0091399884+0.0698962701^2)=sqrt(0.014025518)=0.118429...

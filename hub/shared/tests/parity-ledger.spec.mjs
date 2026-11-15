@@ -9,8 +9,9 @@ import { test, expect } from '@playwright/test';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/parity/index.html';
+const URL = ALM_BASE_URL + '/parity/index.html';
 // favicon.ico 404 / "Failed to load resource" is fetched only by a full browser
 // (not the CI headless shell) and is unrelated to the dashboard.
 const BENIGN = /frame-ancestors|ERR_CONNECTION|favicon|Failed to load resource/;

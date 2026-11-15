@@ -6,8 +6,9 @@
  * chase is built from; normalize() feeds the results table + CSV.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/citation-chaser/';
+const APP_URL = ALM_BASE_URL + '/citation-chaser/';
 
 test.describe('citation-chaser', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

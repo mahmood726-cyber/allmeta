@@ -4,8 +4,9 @@
  * A positive tau2 override must never turn method:'FE' into random effects.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/workbench/index.html';
+const URL = ALM_BASE_URL + '/workbench/index.html';
 
 test('FE ignores a caller-supplied positive heterogeneity override', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'load' });

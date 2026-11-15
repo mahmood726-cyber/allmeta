@@ -14,7 +14,8 @@
  * code previously duplicated inline in heterogeneity + forest-plot).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/workbench/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/workbench/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>|ERR_CONNECTION_REFUSED/;
 
 const STUDIES = [

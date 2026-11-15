@@ -18,6 +18,7 @@ import { test, expect } from '@playwright/test';
 import { readdirSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..', '..');           // allmeta repo root
@@ -56,7 +57,7 @@ test.describe('app smoke (uncovered apps)', () => {
         });
         page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
 
-        await page.goto(`http://localhost:8088/${app}/index.html`,
+        await page.goto(`${ALM_BASE_URL}/${app}/index.html`,
           { waitUntil: 'load', timeout: 20_000 });
         // Settle async init / redirects.
         await page.waitForTimeout(900);

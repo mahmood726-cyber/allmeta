@@ -5,7 +5,8 @@
  * cohort and clamps totEvents to [0, N0].
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/km-reconstructor/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/km-reconstructor/index.html';
 
 test('total-events constraint never inflates the cohort', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'load' });

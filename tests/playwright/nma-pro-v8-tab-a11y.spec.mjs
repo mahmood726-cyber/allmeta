@@ -3,8 +3,9 @@
  * roving tabindex, and Arrow/Home/End keyboard navigation.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
 
-const URL = 'http://127.0.0.1:8080/nma-pro-v2/nma-pro-v8.0.html';
+const URL = ALM_BASE_URL + '/nma-pro-v2/nma-pro-v8.0.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('tab nav is an ARIA tablist with roving tabindex + arrow-key nav', async ({ page }) => {

@@ -2,8 +2,9 @@ import { test, expect } from './validation-fixture.mjs';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const ROOT=fileURLToPath(new globalThis.URL('../../../',import.meta.url));
-const URL = (process.env.ALM_TEST_BASE_URL || 'http://localhost:8088') + '/heterogeneity/index.html';
+const URL = (process.env.ALM_TEST_BASE_URL || ALM_BASE_URL) + '/heterogeneity/index.html';
 function watch(page) {
   const outside=[];
   page.on('request',r=>{if(new globalThis.URL(r.url()).origin!==new globalThis.URL(URL).origin)outside.push(r.url());});

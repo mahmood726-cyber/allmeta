@@ -23,8 +23,9 @@
  *   - waitForAlm includes all 7 modules
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const PUBBIAS_URL = 'http://localhost:8088/pubbias-tests/';
+const PUBBIAS_URL = ALM_BASE_URL + '/pubbias-tests/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm.

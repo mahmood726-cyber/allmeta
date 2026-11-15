@@ -4,8 +4,9 @@
  * echoed the bare abbreviation; now each should show its definition.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
 
-const URL = 'http://127.0.0.1:8080/dta-sroc/index.html';
+const URL = ALM_BASE_URL + '/dta-sroc/index.html';
 
 test('DTA glossary abbreviations resolve to definitions, not bare echoes', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'load' });

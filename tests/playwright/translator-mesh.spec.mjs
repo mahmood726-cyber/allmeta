@@ -6,7 +6,8 @@
  *     now a residual-tag warning fires.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/search-translator/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/search-translator/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('search-translator: NoExp not inverted to explode; untranslated tags warned', async ({ page }) => {

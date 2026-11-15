@@ -9,7 +9,8 @@
  * Pure-JS mvmeta: μ by GLS, unstructured G by Cholesky-parameterised Nelder-Mead REML.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/multivariate-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/multivariate-ma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 // Berkey rows per trial: PD then AL. v1=variance of that outcome; cov is on the PD row.

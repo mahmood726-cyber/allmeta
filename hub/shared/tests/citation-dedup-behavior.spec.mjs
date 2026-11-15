@@ -10,8 +10,9 @@
  * behaviour.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/citation-dedup/';
+const APP_URL = ALM_BASE_URL + '/citation-dedup/';
 const rec = (id, title, opts = {}) => ({
   id, title, authors: opts.authors || '', year: opts.year || '',
   journal: '', doi: opts.doi || '',

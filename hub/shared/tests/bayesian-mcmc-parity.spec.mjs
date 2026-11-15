@@ -16,8 +16,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/bayesian-mcmc/';
+const APP_URL = ALM_BASE_URL + '/bayesian-mcmc/';
 const O = JSON.parse(readFileSync(
   new URL('../../../bayesian-mcmc/tests/fixtures/mcmc-oracle.json', import.meta.url), 'utf-8'));
 const OPTS = { iter: 15000, burn: 3000, tauPrior: O.tauPrior, seed: 12345, chains: 2 };

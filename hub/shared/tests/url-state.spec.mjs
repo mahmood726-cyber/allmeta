@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(
@@ -27,8 +28,8 @@ test.describe('url-state', () => {
   });
 
   test('roundtrip small state', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.writeState === 'function');
     await page.evaluate(() => window.writeState({ foo: 'bar', n: 42 }));
     const got = await page.evaluate(() => window.readState());
@@ -36,8 +37,8 @@ test.describe('url-state', () => {
   });
 
   test('version mismatch returns null', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.readState === 'function');
     await page.evaluate(() => {
       const blob = btoa(JSON.stringify({ v: 99, foo: 'x' }));
@@ -48,8 +49,8 @@ test.describe('url-state', () => {
   });
 
   test('over-size emits warning', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.writeState === 'function');
     const warnings = [];
     page.on('console', msg => { if (msg.type() === 'warning') warnings.push(msg.text()); });

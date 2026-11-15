@@ -19,8 +19,9 @@
  *   - T5 checks pcurve-results-v1 schema with fisher_chisq / fisher_p keys
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const PCURVE_URL = 'http://localhost:8088/p-curve/';
+const PCURVE_URL = ALM_BASE_URL + '/p-curve/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

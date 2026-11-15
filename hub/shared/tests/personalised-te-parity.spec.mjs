@@ -16,7 +16,8 @@
  * unsourced mixture variance labelled "Morris 1983" (young 0.105).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/personalised-te/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/personalised-te/index.html';
 
 const RAW = [
   ['S1', 'young', -0.30, 0.020], ['S2', 'young', -0.25, 0.025], ['S3', 'young', -0.40, 0.018], ['S4', 'young', -0.28, 0.022],

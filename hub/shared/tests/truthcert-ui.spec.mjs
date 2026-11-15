@@ -11,8 +11,9 @@
  *   npx playwright test truthcert-ui.spec.mjs --reporter=list
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/workbench/';
+const URL = ALM_BASE_URL + '/workbench/';
 const KEY = 'unit-test-signing-key-32bytes-min!!';
 const INPUT = 'Trial A, -0.22, 0.11\nTrial B, -0.31, 0.14';
 
@@ -112,7 +113,7 @@ const POOLERS = [
 for (const app of POOLERS) {
   test.describe(`TruthCert receipt — ${app.name}`, () => {
     test('downloads an app-named, schema-valid signed receipt of the current studies', async ({ page }) => {
-      await page.goto(`http://localhost:8088/${app.name}/`);
+      await page.goto(`${ALM_BASE_URL}/${app.name}/`);
       await page.waitForFunction(
         () => window.TruthCertUI && window.MaStudies && document.getElementById('btn-truthcert'),
         { timeout: 10_000 }

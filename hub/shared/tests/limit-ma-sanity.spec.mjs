@@ -22,8 +22,9 @@
  *   - Export key: limit_est (the Rücker limit estimate)
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const LIMIT_URL = 'http://localhost:8088/limit-ma/';
+const LIMIT_URL = ALM_BASE_URL + '/limit-ma/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm.

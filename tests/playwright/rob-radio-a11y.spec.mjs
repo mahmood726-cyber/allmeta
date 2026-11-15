@@ -5,7 +5,8 @@
  * (position:absolute; opacity:0) so the radios stay focusable.
  */
 import { test, expect } from '@playwright/test';
-const B = 'http://127.0.0.1:8080';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const B = ALM_BASE_URL;
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 for (const app of ['robins-i', 'robins-e', 'quadas-2']) {

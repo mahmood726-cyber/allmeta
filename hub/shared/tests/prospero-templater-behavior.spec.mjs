@@ -9,8 +9,9 @@
  * Run from hub/shared/tests/:  npx playwright test prospero-templater-behavior.spec.mjs
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/prospero-templater/';
+const URL = ALM_BASE_URL + '/prospero-templater/';
 const N_FIELDS = 39;
 
 // Benign console noise: the frame-ancestors-via-meta CSP warning, dev-server

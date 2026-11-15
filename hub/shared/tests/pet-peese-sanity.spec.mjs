@@ -20,8 +20,9 @@
  *   - waitForAlm includes alm.tooltips
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const PETPEESE_URL = 'http://localhost:8088/pet-peese/';
+const PETPEESE_URL = ALM_BASE_URL + '/pet-peese/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

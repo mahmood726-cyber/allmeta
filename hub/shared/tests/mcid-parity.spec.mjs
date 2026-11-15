@@ -9,8 +9,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/mcid/';
+const APP_URL = ALM_BASE_URL + '/mcid/';
 const O = JSON.parse(readFileSync(
   new URL('../../../mcid/tests/fixtures/mcid-oracle.json', import.meta.url), 'utf-8'));
 // Tolerant of the benign ~2-ULP rounding of the hardcoded Z975 literal.

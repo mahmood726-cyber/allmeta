@@ -5,7 +5,8 @@
  * are covered by the cross-app scans; this guards basic runtime health.
  */
 import { test, expect } from '@playwright/test';
-const BASE = 'http://127.0.0.1:8080';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const BASE = ALM_BASE_URL;
 const BENIGN = [
   /frame-ancestors' is ignored when delivered via a <meta>/,
   /favicon\.ico/i,

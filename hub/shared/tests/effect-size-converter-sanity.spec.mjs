@@ -16,8 +16,9 @@
  * Skipped (N/A): chart-download — inline SVG forest plot, no download button.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const ESC_URL = 'http://localhost:8088/effect-size-converter/';
+const ESC_URL = ALM_BASE_URL + '/effect-size-converter/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

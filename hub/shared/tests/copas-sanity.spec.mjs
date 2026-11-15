@@ -22,8 +22,9 @@
  *   - R-parity: direction + attenuation + slope verified vs metasens::copas
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const COPAS_URL = 'http://localhost:8088/copas/';
+const COPAS_URL = ALM_BASE_URL + '/copas/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm.
