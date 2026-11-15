@@ -527,6 +527,14 @@ const zeroStudy=new Set();{const by=new Map();studies.forEach(s=>{const id=s&&s.
 // A value is a number only if it is a finite number or a non-blank numeric string: '' / null / undefined are MISSING,
 // not 0 (Number('') === 0, so a blank TE with an SE entered as TE = 0; lane nmapro6, 2026-11-15).
 const num=v=>{if(typeof v==='number')return Number.isFinite(v)?v:NaN;if(typeof v!=='string'||v.trim()==='')return NaN;const x=Number(v.trim());return Number.isFinite(x)?x:NaN};
+// SMD of a multi-arm study (one study name, >= 3 arms over its rows) from arm data: every contrast is standardised by
+// ONE SD pooled over ALL the study's arms, as meta::pairwise(sm = "SMD") does for > 2 arms, and gets one J at that SD's
+// df m = N - k, so the contrasts are consistent (TE(A-C) = TE(A-B) + TE(B-C)). Until 2026-11-15 each contrast used the
+// SD of its own two arms, and Franchini2012 Guttman 1997 (SDs 4.4 / 4.3 / 4.3) was refused as inconsistent. An arm
+// given with different n / mean / SD in two rows of the study keeps the per-pair SMD (the multi-arm check then judges it).
+const smdStudy=new Map();if(effectMeasure==='SMD'){const by=new Map();studies.forEach(s=>{const id=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():null;if(id===null)return;if(Number.isFinite(num(s?.yi))&&(num(s?.vi)>0||num(s?.se)>0))return;if(!by.has(id))by.set(id,[]);by.get(id).push(s)});by.forEach((rows,id)=>{const arms=new Map();let ok=true;rows.forEach(r=>{[[r.treatment1,r.n1,r.mean1,r.sd1],[r.treatment2,r.n2,r.mean2,r.sd2]].forEach(([t,n,m,sd])=>{const a={n:num(n),m:num(m),sd:num(sd)};if(!(a.n>0&&Number.isFinite(a.m)&&a.sd>0)){ok=false;return}const key=String(t);const b=arms.get(key);if(b&&(b.n!==a.n||b.m!==a.m||b.sd!==a.sd))ok=false;else arms.set(key,a)})});if(!ok||arms.size<3)return;let ss=0,N=0;arms.forEach(a=>{ss+=(a.n-1)*a.sd**2;N+=a.n});const m=N-arms.size;if(m>1)smdStudy.set(id,{sd:Math.sqrt(ss/m),m})})}
+// Hedges' exact small-sample correction J(m) = Gamma(m/2) / (sqrt(m/2) Gamma((m-1)/2)) (metafor .cmicalc; meta::metacont).
+const hedgesJ=m=>m>1?Math.exp(Stats.lgamma(m/2)-0.5*Math.log(m/2)-Stats.lgamma((m-1)/2)):NaN;
 return studies.map(s=>{let yi,vi,why=null;const directYi=num(s?.yi);const directVi=num(s?.vi);const directSe=num(s?.se);if(Number.isFinite(directYi)&&((Number.isFinite(directVi)&&directVi>0)||(Number.isFinite(directSe)&&directSe>0))){yi=directYi;vi=Number.isFinite(directVi)&&directVi>0?directVi:directSe**2}else if(['OR','RR','HR'].includes(effectMeasure)){const e1=s.events1||0,e2=s.events2||0,n1=s.n1,n2=s.n2;const hasZero=e1===0||e2===0||(n1-e1)===0||(n2-e2)===0||(s&&s.name!=null&&zeroStudy.has(String(s.name).trim()));const isDoubleZero=(e1===0&&e2===0)||((n1-e1)===0&&(n2-e2)===0);
 // Skip double-zero studies if using exclusion method
 if(isDoubleZero&&zeroCellCorrection==='exclude'){return{...s,yi:null,vi:null,se:null,excluded:true,reason:'Double-zero'}}
@@ -547,9 +555,13 @@ vi=rdVariance(s.events1||0,s.n1,s.events2||0,s.n2,!!(s&&s.name!=null&&zeroStudy.
 // No usable SMD (a mean, SD or n missing, an SD <= 0, or n1 + n2 <= 2): not computable, so analyze() leaves the row
 // out and lists it (netmeta / pairwise give such a comparison TE = NA and drop it). Until 2026-11-15 it entered the
 // network as yi = 0, vi = 1, and a missing mean as 0.
-if(!(Number.isFinite(m1)&&Number.isFinite(m2)&&sd1>0&&sd2>0&&n1>0&&n2>0&&n1+n2>2)){yi=NaN;vi=NaN;why='SMD needs mean, SD > 0 and n in both arms'}else{const pooledSD=Math.sqrt(((n1-1)*sd1**2+(n2-1)*sd2**2)/(n1+n2-2)),d=(m1-m2)/pooledSD,j=1-3/(4*(n1+n2-2)-1);yi=d*j;
-// Hedges exact variance formula
-const df=n1+n2-2;const c4=1-3/(4*df-1);const exactVar=(n1+n2)/(n1*n2)+(yi*yi)/(2*df)*(1-c4*c4);vi=exactVar}}else if(effectMeasure==='MD'){
+if(!(Number.isFinite(m1)&&Number.isFinite(m2)&&sd1>0&&sd2>0&&n1>0&&n2>0&&n1+n2>3)){yi=NaN;vi=NaN;why='SMD needs mean, SD > 0 and n in both arms (n1 + n2 > 3)'}else{
+// Hedges' g = J(m) (mean1 - mean2) / S with the exact J, and the unbiased estimate of its exact variance
+// 1/n1 + 1/n2 + (1 - (m - 2) / (m J^2)) g^2, as meta::metacont(sm = "SMD") (8.5-0) = metafor escalc("SMD", vtype = "UB").
+// S and m: the two arms' pooled SD with m = n1 + n2 - 2, or the multi-arm study's SD over all arms (smdStudy).
+// Until 2026-11-15 J was 1 - 3/(4m - 1) and the variance (n1+n2)/(n1 n2) + g^2/(2m) (1 - J^2), labelled "exact" but
+// ~1/n1 + 1/n2 (dat.normand1999 Orpington-Severe: 0.1134, R 0.1664).
+const ms=s&&s.name!=null?smdStudy.get(String(s.name).trim()):undefined;const m=ms?ms.m:n1+n2-2;const S=ms?ms.sd:Math.sqrt(((n1-1)*sd1**2+(n2-1)*sd2**2)/m);const J=hedgesJ(m);yi=J*(m1-m2)/S;vi=1/n1+1/n2+(1-(m-2)/(m*J*J))*yi*yi}}else if(effectMeasure==='MD'){
 // MD from arm data as meta::metacont / netmeta pairwise(sm = "MD"): TE = mean1 - mean2, var = sd1^2/n1 + sd2^2/n2.
 // No direct TE / SE and incomplete arm data: not computable (dropped and listed). Until 2026-11-15 every MD row
 // without a direct effect, complete or not, entered the network as yi = 0, vi = 1.
