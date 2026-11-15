@@ -16,11 +16,14 @@ const sink = new Proxy(function () {}, {
 });
 
 function element(id) {
+  const listeners = {};
   const store = {
     id, value: '', innerHTML: '', textContent: '', checked: false, disabled: false,
     style: {}, dataset: {}, children: [], options: [],
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {}, removeEventListener() {}, setAttribute() {}, getAttribute() { return null; },
+    addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, removeEventListener() {},
+    __fire(type) { (listeners[type] || []).forEach(fn => fn({ type, target: store, preventDefault() {} })); },
+    setAttribute() {}, getAttribute() { return null; },
     removeAttribute() {}, appendChild(c) { return c; }, insertBefore(c) { return c; }, remove() {},
     querySelector() { return null; }, querySelectorAll() { return []; }, closest() { return null; },
     focus() {}, click() {}, dispatchEvent() { return true; },
@@ -68,7 +71,8 @@ export function loadPage(page, { shared = [], pick = () => true, storage = {} } 
   const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(pick);
   if (!scripts.length) throw Error('no inline script selected in ' + page);
   for (const s of scripts) vm.runInContext(s, c, { filename: page });
-  return { ctx: c, el: byId, html };
+  // fire(id, type): run the listeners the page attached to that element (e.g. a button click).
+  return { ctx: c, el: byId, html, fire: (id, type = 'click') => byId(id).__fire(type) };
 }
 
 // innerHTML -> visible text (tags stripped, entities for the few the pages use decoded).
