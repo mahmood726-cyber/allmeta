@@ -23,8 +23,9 @@ pytestmark = pytest.mark.skipif(NODE is None, reason='node not installed')
 
 def _source():
     html = PAGE.read_text(encoding='utf-8')
-    m = re.search(r'async function _autoRunSilent\(fnName\)\{.*?\n\}\n(?=async function runAutoExtras)', html, re.S)
-    assert m, '_autoRunSilent not found'
+    # everything from the block's leading comment up to runAutoExtras, so module-level state it uses comes too
+    m = re.search(r'// Silenced auto-run:.*?(?=async function runAutoExtras)', html, re.S)
+    assert m and 'async function _autoRunSilent(' in m.group(0), '_autoRunSilent not found'
     return m.group(0)
 
 
@@ -75,3 +76,54 @@ def test_thrown_exception_reaches_the_user():
 
 def test_missing_runner_is_reported():
     assert any('noSuchRunner' in m and l == 'error' for m, l in R['shown']), R['shown']
+
+
+# ---- agy review of #604 -------------------------------------------------------------------------------------
+# (a) Held toasts were replayed as realToast(...h), i.e. with `this` unbound. A Toast whose show() uses `this`
+#     then threw on every replay and the held warning ended in console.error, never on screen.
+# (b) Overlapping calls: the second call saved the first call's no-ops as the "real" functions. If the first
+#     finished first it restored the real ones, and the second then put the no-ops back for good: switchTab,
+#     showLoading, hideLoading and Toast.show stayed dead for the rest of the session.
+def _run_node(body):
+    script = """
+const window = globalThis;
+const shown = [], switched = [];
+window.Toast = { _items: shown, show(m, l) { this._items.push([String(m), l || 'info']); } };
+window.switchTab = (t) => switched.push(t);
+window.showLoading = () => {}; window.hideLoading = () => {};
+const real = { toast: window.Toast.show, sw: window.switchTab, sl: window.showLoading, hl: window.hideLoading };
+const restored = () => window.Toast.show === real.toast && window.switchTab === real.sw
+  && window.showLoading === real.sl && window.hideLoading === real.hl;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+""" + _source() + body
+    out = subprocess.run([NODE, '-e', script], capture_output=True, text=True, timeout=60, encoding='utf-8')
+    assert out.returncode == 0, out.stderr[-2000:]
+    return json.loads(out.stdout.strip().splitlines()[-1])
+
+
+def test_held_toast_replayed_with_toast_as_this():
+    r = _run_node("""
+window.refuses = async () => { window.Toast.show('Need \\u22653 studies', 'warn'); };
+(async () => { await _autoRunSilent('refuses'); console.log(JSON.stringify({ shown, restored: restored() })); })();
+""")
+    assert r['restored'] is True
+    assert ['Need ≥3 studies', 'warn'] in r['shown'], r['shown']
+
+
+@pytest.mark.parametrize('order', ['first_finishes_first', 'second_finishes_first'])
+def test_overlapping_calls_restore_the_real_functions(order):
+    a, b = (10, 40) if order == 'first_finishes_first' else (40, 10)
+    r = _run_node("""
+window.slowA = async () => { await wait(%d); window.Toast.show('A refused', 'warn'); };
+window.slowB = async () => { await wait(%d); window.Toast.show('B refused', 'warn'); };
+(async () => {
+  const pA = _autoRunSilent('slowA'); const pB = _autoRunSilent('slowB');
+  await Promise.all([pA, pB]);
+  window.switchTab('after');
+  console.log(JSON.stringify({ shown, switched, restored: restored() }));
+})();
+""" % (a, b))
+    assert r['restored'] is True, 'a no-op was left installed after both calls finished'
+    assert r['switched'] == ['after']
+    msgs = [m for m, _ in r['shown']]
+    assert 'A refused' in msgs and 'B refused' in msgs, r['shown']

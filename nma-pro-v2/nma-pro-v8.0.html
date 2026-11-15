@@ -7112,18 +7112,34 @@ if(b)b.addEventListener('click',()=>{try{const f=window[c.fn];if(typeof f==='fun
 // Toast.show(msg,'warn'|'error'), so those toasts (and any exception, or a missing runner) are HELD and
 // shown once the swap is undone; until lane aitems (2026-11-15) they were dropped and the user got an
 // empty tab with no reason (tests/test_autorun_silent.py). Info/success toasts stay silent.
+// Re-entrancy: the real functions are saved only by the outermost call (depth 0) and put back, and the held
+// toasts shown, only when the last overlapping call ends. Each call used to save whatever was installed, so a
+// second call that overlapped the first saved the first's no-ops as "real" and, if it ended last, left them
+// installed for the rest of the session. Held toasts are replayed as a method call on window.Toast (agy, #604).
+const _autoSilent={depth:0,saved:null,held:[]};
 async function _autoRunSilent(fnName){
-const held=[];const fn=window[fnName];
-const realSwitch=window.switchTab,realToast=window.Toast?.show,realShow=window.showLoading,realHide=window.hideLoading;
-if(typeof fn!=='function'){console.error('auto '+fnName+': runner not defined');held.push(['Automatic '+fnName+' could not run: runner not defined','error']);}
-else{
-window.switchTab=()=>{};
-if(window.Toast)window.Toast.show=(msg,level,dur)=>{if(level==='warn'||level==='error')held.push([msg,level,dur]);};
-window.showLoading=()=>{};window.hideLoading=()=>{};
-try{await fn();}catch(e){console.error('auto '+fnName+':',e);held.push(['Automatic '+fnName+' failed: '+(e?.message||e),'error']);}
-finally{window.switchTab=realSwitch;if(window.Toast)window.Toast.show=realToast;window.showLoading=realShow;window.hideLoading=realHide;}
+const fn=window[fnName];
+if(typeof fn!=='function'){
+console.error('auto '+fnName+': runner not defined');
+const msg=['Automatic '+fnName+' could not run: runner not defined','error'];
+if(_autoSilent.depth>0)_autoSilent.held.push(msg);else if(window.Toast&&typeof window.Toast.show==='function'){try{window.Toast.show.apply(window.Toast,msg);}catch(e){console.error('toast:',e);}}
+return;
 }
-if(typeof realToast==='function')for(const h of held){try{realToast(...h);}catch(e){console.error('toast:',e);}}
+if(_autoSilent.depth++===0){
+_autoSilent.saved={switchTab:window.switchTab,toast:window.Toast?.show,showLoading:window.showLoading,hideLoading:window.hideLoading};
+_autoSilent.held=[];
+window.switchTab=()=>{};
+if(window.Toast)window.Toast.show=(msg,level,dur)=>{if(level==='warn'||level==='error')_autoSilent.held.push([msg,level,dur]);};
+window.showLoading=()=>{};window.hideLoading=()=>{};
+}
+try{await fn();}catch(e){console.error('auto '+fnName+':',e);_autoSilent.held.push(['Automatic '+fnName+' failed: '+(e?.message||e),'error']);}
+finally{
+if(--_autoSilent.depth===0){
+const sv=_autoSilent.saved,held=_autoSilent.held;_autoSilent.saved=null;_autoSilent.held=[];
+window.switchTab=sv.switchTab;if(window.Toast)window.Toast.show=sv.toast;window.showLoading=sv.showLoading;window.hideLoading=sv.hideLoading;
+if(window.Toast&&typeof window.Toast.show==='function')for(const h of held){try{window.Toast.show.apply(window.Toast,h);}catch(e){console.error('toast:',e);}}
+}
+}
 }
 async function runAutoExtras(){
 // Cheap, no-config analyses worth running automatically so the user sees
