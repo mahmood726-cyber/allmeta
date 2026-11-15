@@ -344,9 +344,20 @@
     function upstreamOf(id) { return STAGES.filter(function (s) { return s.feeds.indexOf(id) >= 0; }).map(function (s) { return s.id; }); }
 
     var KEY = "review-project-v1";
-    var state = load() || { title: "", outputs: {}, activeTab: "overview" };
-    if (!state.activeTab) state.activeTab = "overview";
-    if (!state.story || typeof state.story !== "object") state.story = { on: false, case: "cortico" };
+    var state = normalizeState(load());
+    // Fill every field the page reads without dropping anything that was saved: a legacy
+    // or hand-edited state with no `outputs` used to reach state.outputs[id] and throw.
+    function normalizeState(s) {
+      if (!s || typeof s !== "object" || Array.isArray(s)) s = {};
+      if (s.title == null) s.title = "";
+      if (!s.outputs || typeof s.outputs !== "object" || Array.isArray(s.outputs)) {
+        if (s.outputs != null) s._unreadableOutputs = s.outputs; // kept, not discarded
+        s.outputs = {};
+      }
+      if (!s.activeTab) s.activeTab = "overview";
+      if (!s.story || typeof s.story !== "object") s.story = { on: false, case: "cortico" };
+      return s;
+    }
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
     var synthOpts = { method: "REML", knha: false }; // JASP-style live synthesis controls (not persisted; exploratory)
     var gwamLambda = 0.64; // GWAM integrity ratio λ (published share of evidence); ~0.64 ≈ trial-to-publication linkage rate
