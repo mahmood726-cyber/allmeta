@@ -1,0 +1,237 @@
+{
+  "versions": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "netmeta": "3.7.0",
+    "meta": "8.5.0"
+  },
+  "rd": {
+    "row25": {
+      "A:B": {
+        "TE": -0.0333333333333333,
+        "seTE": 0.0620689366884965
+      },
+      "A:C": {
+        "TE": 0.1,
+        "seTE": 0.0466941535004599
+      },
+      "B:C": {
+        "TE": 0.133333333333333,
+        "seTE": 0.0475377559970885
+      }
+    },
+    "tau2": 0.0094261573273892,
+    "Q": 401.387129750164,
+    "df": 25,
+    "TE": {
+      "A": 0,
+      "B": 0.0547831637421868,
+      "C": 0.082986344806469,
+      "D": 0.127387837334451
+    },
+    "se": {
+      "A": 0,
+      "B": 0.0416170048476776,
+      "C": 0.0247484485613361,
+      "D": 0.0483490576354718
+    }
+  },
+  "loo": {
+    "designOf": {
+      "DeFronzo1995": "metf:plac",
+      "Lewin2007": "metf:plac",
+      "Willms1999": "acar:metf:plac",
+      "Davidson2007": "plac:rosi",
+      "Wolffenbuttel1999": "plac:rosi",
+      "Kipnes2001": "piog:plac",
+      "Kerenyi2004": "plac:rosi",
+      "Hanefeld2004": "metf:piog",
+      "Derosa2004": "piog:rosi",
+      "Baksi2004": "plac:rosi",
+      "Rosenstock2008": "plac:rosi",
+      "Zhu2003": "plac:rosi",
+      "Yang2003": "metf:rosi",
+      "Vongthavaravat2002": "rosi:sulf",
+      "Oyama2008": "acar:sulf",
+      "Costa1997": "acar:plac",
+      "Hermansen2007": "plac:sita",
+      "Garber2008": "plac:vild",
+      "Alex1998": "metf:sulf",
+      "Johnston1994": "migl:plac",
+      "Johnston1998a": "migl:plac",
+      "Kim2007": "metf:rosi",
+      "Johnston1998b": "migl:plac",
+      "Gonzalez-Ortiz2004": "metf:plac",
+      "Stucci1996": "benf:plac",
+      "Moulin2006": "benf:plac"
+    },
+    "DL": {
+      "study": {
+        "Willms1999": {
+          "tau2": 0.114415930283461,
+          "Q": 96.8397093865713,
+          "df": 16,
+          "TE": {
+            "acar": -0.800557313630675,
+            "benf": -0.727701786417415,
+            "metf": -1.12351254422368,
+            "migl": -0.949609405106705,
+            "piog": -1.12743438346775,
+            "plac": 0,
+            "rosi": -1.2311884194256,
+            "sita": -0.569999999999997,
+            "sulf": -0.401129033950464,
+            "vild": -0.699999999999997
+          }
+        },
+        "DeFronzo1995": {
+          "tau2": 0.0631493112311904,
+          "Q": 59.4182430604951,
+          "df": 17,
+          "TE": {
+            "acar": -0.773719997684929,
+            "benf": -0.769348533815003,
+            "metf": -0.953893709514215,
+            "migl": -0.950574913251688,
+            "piog": -1.0474695478948,
+            "plac": 0,
+            "rosi": -1.18775470729201,
+            "sita": -0.57,
+            "sulf": -0.3219257713555,
+            "vild": -0.7
+          }
+        },
+        "Oyama2008": {
+          "tau2": 0.11749638502192,
+          "Q": 96.9724219715368,
+          "df": 17,
+          "TE": {
+            "acar": -0.85750206439963,
+            "benf": -0.725926916171435,
+            "metf": -1.12335031370505,
+            "migl": -0.949546736892722,
+            "piog": -1.12748066695541,
+            "plac": 0,
+            "rosi": -1.23119545172604,
+            "sita": -0.57,
+            "sulf": -0.401114470753749,
+            "vild": -0.699999999999998
+          }
+        },
+        "Moulin2006": {
+          "tau2": 0.106167454216761,
+          "Q": 92.6041758744788,
+          "df": 17,
+          "TE": {
+            "acar": -0.841671113713213,
+            "benf": -0.229999999999973,
+            "metf": -1.12724379417821,
+            "migl": -0.94977901319136,
+            "piog": -1.12919006732059,
+            "plac": 0,
+            "rosi": -1.23354000140089,
+            "sita": -0.570000000000004,
+            "sulf": -0.416837179472903,
+            "vild": -0.700000000000002
+          }
+        }
+      },
+      "design": {
+        "acar:metf:plac": {
+          "tau2": 0.114415930283461,
+          "nStudies": 25
+        },
+        "plac:rosi": {
+          "tau2": 0.14913293736957,
+          "nStudies": 20
+        },
+        "metf:plac": {
+          "tau2": 0.0676436343920331,
+          "nStudies": 23
+        }
+      },
+      "nStudies": 26,
+      "nDesigns": 15
+    },
+    "REML": {
+      "study": {
+        "Willms1999": {
+          "tau2": 0.109533570970784,
+          "Q": 96.8397093865713,
+          "df": 16,
+          "TE": {
+            "acar": -0.800960890466281,
+            "benf": -0.730640027736279,
+            "metf": -1.12458487319808,
+            "migl": -0.949709549749063,
+            "piog": -1.12772171700928,
+            "plac": 0,
+            "rosi": -1.23142767678957,
+            "sita": -0.570000000000006,
+            "sulf": -0.401947552770561,
+            "vild": -0.700000000000003
+          }
+        }
+      },
+      "design": {
+        "acar:metf:plac": {
+          "tau2": 0.109533570970784,
+          "nStudies": 25
+        }
+      },
+      "nStudies": 26,
+      "nDesigns": 15
+    }
+  },
+  "bridge": {
+    "full_tau2": 0,
+    "without_b4": "Network consists of 2 separate sub-networks.\n  Use R function 'netconnection' to identify sub-networks.",
+    "without_b7_tau2": 0
+  },
+  "dis": "Network consists of 2 separate sub-networks.\n  Use R function 'netconnection' to identify sub-networks.",
+  "scale": {
+    "DL_1": {
+      "sc": 1,
+      "tau2": 0.108716923142419,
+      "Q": 96.9855530052601,
+      "TE": -0.841784938227976,
+      "se": 0.24582030571449
+    },
+    "REML_1": {
+      "sc": 1,
+      "tau2": 0.101050077436476,
+      "Q": 96.9855530052601,
+      "TE": -0.841433187686293,
+      "se": 0.239403150462121
+    },
+    "DL_1e-06": {
+      "sc": 1e-06,
+      "tau2": 1.09260490237015e-13,
+      "Q": 97.3772329387627,
+      "TE": -8.41866298956822e-07,
+      "se": 2.46348464747748e-07
+    },
+    "DL_1e-07": {
+      "sc": 1e-07,
+      "error": "system is computationally singular: reciprocal condition number = 6.483e-18"
+    },
+    "REML_1e-07": {
+      "sc": 1e-07,
+      "error": "system is computationally singular: reciprocal condition number = 6.483e-18"
+    }
+  },
+  "tacc": "Non-numeric value for argument 'incr'.",
+  "na": {
+    "pairwise_studlab": ["S2", "S3", "S4", "S5"],
+    "k": 4,
+    "m": 4,
+    "studlab": ["S2", "S3", "S4", "S5"],
+    "warning": "1 table with NAs omitted.",
+    "tau2": 0,
+    "Q": 0.04494871023345,
+    "TE": {
+      "A": 0,
+      "B": 0.219040242473436,
+      "C": 0.432379955024504
+    }
+  }
+}

@@ -64,7 +64,12 @@ def test_inverse_is_bit_identical_to_column_solves(pg):
         for (let rep = 0; rep < 200; rep++) { const n = 1 + rep % 15, A = Array.from({ length: n }, () => Array.from({ length: n }, rnd));
           if (rep % 2) for (let i = 0; i < n; i++) { for (let j = 0; j < i; j++) A[i][j] = A[j][i]; A[i][i] += n; }   // SPD-ish half
           if (rep % 7 === 3 && n > 2) A[1] = A[0].slice();                                                        // singular case
-          const a = oldInv(A), b = Matrix.inverse(A);
+          // lane nmapro5: Matrix.lu raises on a singular pivot (it used to skip it and return garbage), so on the singular
+          // case both paths must REFUSE; every non-singular matrix must still be bit-identical.
+          let a, b, ea = null, eb = null;
+          try { a = oldInv(A); } catch (e) { ea = e.name; }
+          try { b = Matrix.inverse(A); } catch (e) { eb = e.name; }
+          if (ea || eb) { if (ea !== 'SingularMatrix' || eb !== 'SingularMatrix' || !(rep % 7 === 3 && n > 2)) out.push([rep, n, 'refusal', ea, eb]); continue; }
           for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (!Object.is(a[i][j], b[i][j])) out.push([rep, n, i, j, a[i][j], b[i][j]]); }
         return out.slice(0, 5).concat([out.length]); }""", OLD_INVERSE)
     assert bad == [0], f"inverse differs from the column-solve reference: {bad}"
