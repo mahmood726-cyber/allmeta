@@ -1,0 +1,100 @@
+{
+ "SGLT2_ACM": {
+  "name": "SGLT2i - All-Cause Mortality (5 trials)",
+  "source": "Pooled SGLT2 trials",
+  "category": "sig_uncertain",
+  "teaching_point": "HR 0.92 (0.86-0.99), p=0.03 is significant but only 5% P(HR<0.85)",
+  "studies": [
+   {
+    "name": "DAPA-HF 2019",
+    "events_t": 276,
+    "n_t": 2373,
+    "events_c": 329,
+    "n_c": 2371
+   },
+   {
+    "name": "EMPEROR-Reduced 2020",
+    "events_t": 249,
+    "n_t": 1863,
+    "events_c": 266,
+    "n_c": 1867
+   },
+   {
+    "name": "DELIVER 2022",
+    "events_t": 497,
+    "n_t": 3131,
+    "events_c": 526,
+    "n_c": 3132
+   },
+   {
+    "name": "EMPEROR-Preserved 2021",
+    "events_t": 422,
+    "n_t": 2997,
+    "events_c": 463,
+    "n_c": 2991
+   },
+   {
+    "name": "SOLOIST-WHF 2021",
+    "events_t": 51,
+    "n_t": 608,
+    "events_c": 58,
+    "n_c": 614
+   }
+  ]
+ },
+ "BP_REDUCTION": {
+  "name": "Blood Pressure Reduction (Continuous)",
+  "source": "Simulated RCT data",
+  "category": "continuous",
+  "dataType": "continuous",
+  "measure": "MD",
+  "teaching_point": "Mean difference in systolic BP reduction",
+  "studies": [
+   {
+    "name": "Trial A 2018",
+    "mean_t": -12.5,
+    "sd_t": 8.2,
+    "n_t": 150,
+    "mean_c": -4.2,
+    "sd_c": 7.8,
+    "n_c": 148
+   },
+   {
+    "name": "Trial B 2019",
+    "mean_t": -10.8,
+    "sd_t": 9.1,
+    "n_t": 200,
+    "mean_c": -3.5,
+    "sd_c": 8.5,
+    "n_c": 205
+   },
+   {
+    "name": "Trial C 2020",
+    "mean_t": -14.2,
+    "sd_t": 7.5,
+    "n_t": 180,
+    "mean_c": -5.1,
+    "sd_c": 8,
+    "n_c": 175
+   },
+   {
+    "name": "Trial D 2021",
+    "mean_t": -11.3,
+    "sd_t": 8.8,
+    "n_t": 120,
+    "mean_c": -4.8,
+    "sd_c": 7.2,
+    "n_c": 118
+   },
+   {
+    "name": "Trial E 2022",
+    "mean_t": -9.5,
+    "sd_t": 10.2,
+    "n_t": 95,
+    "mean_c": -2.8,
+    "sd_c": 9.8,
+    "n_c": 100
+   }
+  ]
+ }
+}
