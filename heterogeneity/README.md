@@ -17,7 +17,7 @@ R-parity test (`tests/test_against_metafor.py`) validates Q, I², τ², and HKSJ
 
 - **Category:** Pairwise MA
 - **Data shape:** pairwise effect sizes — one row per study with `{label, est, se}` (or CI).
-- **Purpose:** IÂ², Ï„Â², Q, prediction interval.
+- **Purpose:** I², τ², Q, prediction interval.
 
 ## Cite as
 
