@@ -45,7 +45,9 @@ def _load_data() -> dict:
         .replace("__CT__", json.dumps(str(ROOT / "shared" / "citation.js")))
         .replace("__HR__", json.dumps(str(ROOT / "shared" / "hero-examples.js")))
     )
-    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, check=True)
+    # encoding is explicit: node writes UTF-8, and text=True alone decodes with the locale encoding
+    # (cp1252 on Windows), which wrote "Ã—" for "×" into the READMEs this script created.
+    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, encoding="utf-8", check=True)
     return json.loads(r.stdout.strip())
 
 
