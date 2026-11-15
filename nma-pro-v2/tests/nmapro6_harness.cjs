@@ -208,7 +208,9 @@ if (out.webr.available) {
     if (c % 5 === 0) cases.push(A.map(row => row.map(v => -v))); // negative definite: pivots < 0
   }
   let luSame = 0, invSame = 0, ldetSame = 0, exactUsed = 0;
-  const ldetSrc = (main[1].match(/const ldetDense=M=>\{[\s\S]*?return s\};\nconst ldet=M=>\{[\s\S]*?return s\};/) || [])[0];
+  // \r?\n: on a CRLF working copy (Windows, core.autocrlf=true) a bare \n never matched, LD stayed null and
+  // test_4_sparse_lu failed on ldetFound in every run there, whatever the load or the test order.
+  const ldetSrc = (main[1].match(/const ldetDense=M=>\{[\s\S]*?return s\};\r?\nconst ldet=M=>\{[\s\S]*?return s\};/) || [])[0];
   const LD = ldetSrc ? vm.runInContext('(()=>{' + ldetSrc + ';return {ldet, ldetDense};})()', ctx) : null;
   for (const A of cases) {
     const a = safe(() => M._lu(A, false)), b = safe(() => M.lu(A));
