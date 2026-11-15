@@ -36,20 +36,31 @@ test.describe('mcid', () => {
       await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almMcid === 'function',
         { timeout: 10_000 });
-      const r = await page.evaluate((i) => window.__almMcid(i), O.input);
-
       const near = (g, e, n) =>
         expect(Math.abs(g - e), `${n}: js=${g} R=${e}`).toBeLessThan(TOL);
 
-      near(r.z975, O.z975, 'Z975 == R qnorm(0.975)');
-      // Guard against regressing back to the 1.96 literal (Cycle-7.1).
-      expect(Math.abs(r.z975 - 1.96),
-        `Z975 must be exact qnorm, not 1.96`).toBeGreaterThan(1e-5);
-      near(r.halfSD, O.halfSD, '0.5·SD (Norman)');
-      near(r.threeSD, O.threeSD, '0.3·SD');
-      near(r.oneSEM, O.oneSEM, '1·SEM');
-      near(r.sdc, O.sdc, '1.96·SEM (SDC)');
-      near(r.anchor, O.anchor, 'anchor (Juniper)');
-      near(r.niMargin, O.niMargin, 'NI margin');
+      // At f = 0.5 the margin (1 − f)·M1 equals the wrong f·M1, so the oracle
+      // must contain a case that separates them.
+      expect(O.cases.some(c => Math.abs(c.input.frac - 0.5) > 1e-9),
+        'oracle needs a case with preserved fraction f != 0.5').toBe(true);
+
+      for (const c of O.cases) {
+        const r = await page.evaluate((i) => window.__almMcid(i), c.input);
+        const at = ` [${JSON.stringify(c.input)}]`;
+        near(r.z975, O.z975, 'Z975 == R qnorm(0.975)');
+        // Guard against regressing back to the 1.96 literal (Cycle-7.1).
+        expect(Math.abs(r.z975 - 1.96),
+          `Z975 must be exact qnorm, not 1.96`).toBeGreaterThan(1e-5);
+        near(r.halfSD, c.halfSD, '0.5·SD (Norman)' + at);
+        near(r.threeSD, c.threeSD, '0.3·SD' + at);
+        near(r.oneSEM, c.oneSEM, '1·SEM' + at);
+        near(r.semBand95, c.semBand95,
+          'qnorm(.975)·SEM: 95% band around ONE measurement (not the SDC)' + at);
+        near(r.sdc, c.sdc,
+          'SDC must be qnorm(.975)·√2·SEM — change score, two occasions (de Vet 2006)' + at);
+        near(r.anchor, c.anchor, 'anchor (Juniper)' + at);
+        near(r.niMargin, c.niMargin,
+          'NI margin must be M2 = (1 − preserved fraction)·M1 (ICH E10 / FDA 2016)' + at);
+      }
     });
 });

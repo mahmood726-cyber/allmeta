@@ -162,6 +162,7 @@
     .sof-moderate { background:#13322f; color:#5eead4; border:1px solid #5eead4; }
     .sof-low { background:#3a2c12; color:#fbbf24; border:1px solid #fbbf24; }
     .sof-verylow { background:#3a1d1d; color:#f87171; border:1px solid #f87171; }
+    .sof-notassessed { background:transparent; color:var(--muted); border:1px dashed var(--muted); font-weight:500; font-style:italic; }
     .mini-forest text { fill:var(--muted); }
     /* JASP-style live synthesis controls */
     .synth-opts { display:flex; flex-wrap:wrap; gap:.5rem .9rem; align-items:center; margin:.1rem 0 .6rem; font-size:.78rem; }
@@ -577,9 +578,9 @@
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
-        var CL = { high: "High", moderate: "Moderate", low: "Low", verylow: "Very low" };
+        var CL = { high: "High", moderate: "Moderate", low: "Low", verylow: "Very low", notassessed: "Not assessed" };
         var body2 = outs.slice(0, 6).filter(function (o) { return o && (o.outcome || o.certainty); }).map(function (o) {
-          var c = o.certainty || "moderate";
+          var c = CL[o.certainty] ? o.certainty : "notassessed"; // unrated is not "Moderate" (GRADE is a judgement)
           return "<tr><td>" + esc(o.outcome || "(unnamed)") + "</td><td><span class='sof-pill sof-" + c + "'>" + (CL[c] || esc(c)) + "</span></td></tr>";
         }).join("");
         return body2 ? wrapPrev("GRADE certainty", "<table class='ptable'><thead><tr><th>Outcome</th><th>Certainty</th></tr></thead><tbody>" + body2 + "</tbody></table>") : "";
