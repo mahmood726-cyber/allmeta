@@ -3307,7 +3307,7 @@ window.runLeaveOneOutCorrected = function() {
     if (container) {
       let html = `
         <p style="margin-bottom: var(--space-2);"><strong>Full model:</strong> ${fullTheta.toFixed(4)} (SE: ${fullSE.toFixed(4)})</p>
-        <p style="margin-bottom: var(--space-2);"><strong>Most influential:</strong> ${mostInfluential?.omitted || 'None'} (change: ${maxChange.toFixed(4)})</p>
+        <p style="margin-bottom: var(--space-2);"><strong>Most influential:</strong> ${sanitizeHTML(mostInfluential?.omitted || 'None')} (change: ${maxChange.toFixed(4)})</p>
         <table style="width: 100%; font-size: var(--text-xs); border-collapse: collapse;">
           <thead>
             <tr style="border-bottom: 2px solid var(--border-default);">
@@ -3323,7 +3323,7 @@ window.runLeaveOneOutCorrected = function() {
         const highlight = Math.abs(r.change) === maxChange ? 'background: var(--color-warning-100);' : '';
         html += `
           <tr style="${highlight} border-bottom: 1px solid var(--border-subtle);">
-            <td style="padding: 4px;">${r.omitted}</td>
+            <td style="padding: 4px;">${sanitizeHTML(r.omitted)}</td>
             <td style="text-align: right; padding: 4px;">${r.theta.toFixed(4)}</td>
             <td style="text-align: right; padding: 4px;">[${r.ci_lower.toFixed(3)}, ${r.ci_upper.toFixed(3)}]</td>
             <td style="text-align: right; padding: 4px;">${r.change >= 0 ? '+' : ''}${r.change.toFixed(4)}</td>
@@ -3620,18 +3620,18 @@ function renderSearchStrategy(strategy, containerId) {
   }
   container.innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
-      <h4 style="margin-bottom: var(--space-2);">Search Strategies for: ${strategy.topic}</h4>
+      <h4 style="margin-bottom: var(--space-2);">Search Strategies for: ${sanitizeHTML(strategy.topic)}</h4>
       <div style="margin-bottom: var(--space-2);">
         <strong>PubMed:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.pubmed}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.pubmed)}</pre>
       </div>
       <div style="margin-bottom: var(--space-2);">
         <strong>Cochrane:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.cochrane}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.cochrane)}</pre>
       </div>
       <div>
         <strong>Embase:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.embase}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.embase)}</pre>
       </div>
     </div>
   `;
