@@ -15,16 +15,16 @@
   // ---- A clearly-labelled DEMO synthesis (only used when no bus data is present) ----
   var DEMO = {
     demo: true, scale: "ratio", measure: "RR",
-    title: "Statins for the primary prevention of cardiovascular mortality",
+    title: "Demonstration synthesis (illustrative data)",
     deck: "A demonstration synthesis — replace it by running a review in allmeta and returning here.",
     studies: [
-      { label: "Downs 1998", est: Math.log(0.79), se: 0.13 },
-      { label: "Shepherd 1995", est: Math.log(0.72), se: 0.11 },
-      { label: "Sever 2003", est: Math.log(0.83), se: 0.10 },
-      { label: "Nakamura 2006", est: Math.log(0.67), se: 0.18 },
-      { label: "Ridker 2008", est: Math.log(0.80), se: 0.07 },
-      { label: "Yusuf 2016", est: Math.log(0.76), se: 0.09 },
-      { label: "Mortensen 2019", est: Math.log(0.88), se: 0.12 }
+      { label: "Study A", est: Math.log(0.79), se: 0.13 },
+      { label: "Study B", est: Math.log(0.72), se: 0.11 },
+      { label: "Study C", est: Math.log(0.83), se: 0.10 },
+      { label: "Study D", est: Math.log(0.67), se: 0.18 },
+      { label: "Study E", est: Math.log(0.80), se: 0.07 },
+      { label: "Study F", est: Math.log(0.76), se: 0.09 },
+      { label: "Study G", est: Math.log(0.88), se: 0.12 }
     ],
     pooled: null
   };
@@ -211,7 +211,7 @@
     var dir = p.natural < (ratio ? 1 : 0) ? "lower" : "higher";
     var sig = (p.naturalLo > (ratio ? 1 : 0)) || (p.naturalHi < (ratio ? 1 : 0));
     var poolWord = p.model === "random" ? "random-effects model" : p.model === "fixed" ? "fixed-effect model"
-      : (p.computed ? "random-effects (REML, computed here)" : "as reported by the review");
+      : (p.computed ? "random-effects (REML, Hartung–Knapp CI with variance floor, computed here)" : "as reported by the review");
 
     var banner = document.getElementById("demoBanner");
     if (d.demo) { banner.hidden = false; banner.textContent = "DEMO — no live synthesis is on the bus. Run a review in allmeta, then return and press “Refresh from review”."; }
