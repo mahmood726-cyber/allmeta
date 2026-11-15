@@ -1,7 +1,11 @@
 """nma-pro-v8.0 SMD from arm data against R (lane nmasmd, 2026-11-15).
 
 Reference: nma-pro-v2/tests/fixtures/smd-oracle.R -> smd-oracle.json (R 4.6.0, metafor 5.0.1, meta 8.5-0,
-netmeta 3.7-0); the R script header says exactly how every number is formed.
+netmeta 3.7-0); the R script header says exactly how every number is formed. Two-arm g / variance are R PACKAGE results
+(meta::metacont = metafor escalc vtype "UB"). The multi-arm contrasts are NOT: no R package computes Hedges' J at
+df = N - k on an SD pooled over all arms (meta::pairwise pools the SD but hard-codes method.smd = "Cohen"), so the
+3-arm "franchini" values are an explicit R implementation of the page's own convention, written independently of the
+page's JavaScript; netmeta is then a real package result on those contrasts.
 
 Defects this pins (both in FrequentistNMA.calcEffects, the SMD branch):
 1. Variance. The page labelled its variance "Hedges exact" but computed
@@ -82,7 +86,9 @@ def test_two_arm_md_matches_metacont(pg):
         assert close(yi, r["md"], 1e-12) and close(vi, r["vi_md"], 1e-12), r["study"]
 
 
-def test_multi_arm_contrasts_share_one_sd_and_match_r(pg):
+def test_multi_arm_contrasts_share_one_sd_and_match_explicit_r_implementation_of_page_convention(pg):
+    # Not a package result: smd-oracle.R writes the page's multi-arm rule (one SD over all arms, one J at df N - k, UB
+    # variance at that df) in R; two-arm rows in this dataset are meta::metacont results.
     got = calc(pg, franchini_rows(), "SMD")
     for (yi, vi), r in zip(got, ORACLE["franchini"]):
         assert close(yi, r["g"], 1e-10), f"{r['study']} {r['t1']}-{r['t2']}: g {yi} vs R {r['g']}"
@@ -190,5 +196,88 @@ def test_zero_sd_arm_drops_its_contrasts_in_page_and_script(pg, tmp_path):
     kept = {(r[0], r[1], r[2]) for r in page["rows"]}
     assert ("Lieberman 1997", "Placebo", "Pramipexole") not in kept
     assert [k for k in kept if k[0] == "Guttman 1997"] == [("Guttman 1997", "Placebo", "Pramipexole")]
+    for t, te in out["TE_common"].items():
+        assert abs(page["eff"][t][0] - te) < 1e-10 and abs(page["eff"][t][1] - out["se_common"][t]) < 1e-10, t
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# A study with >= 4 arms and one arm of SD 0 (lane lowfix601, 2026-11-15). Rule (documented in calcEffects and the
+# exported script): an arm with SD <= 0 (or a missing n / mean / SD) is an arm with NO usable SD, treated exactly as
+# meta::pairwise treats an arm with a MISSING SD -- its contrasts are dropped and the common SD is pooled over the
+# study's usable arms (if >= 3 remain; with 2 left, their own pooled SD, which is the same thing). So SD = 0 and
+# SD = missing give the same network, and a 3-arm and a 4-arm study follow the same rule.
+# meta::pairwise 8.5-0 itself is not consistent here: its arm count (> 2 arms with SD > 0) treats SD 0 as unusable,
+# but its pooled.sd() then folds the 0 in ((n - 1) * 0^2 and n - 1 df), so with 4 arms it keeps all 6 contrasts on a
+# deflated SD, with 3 arms it drops the SD-0 arm's contrasts (source: deparse(meta::pairwise), the "sm == SMD &
+# narms > 2" block). Until this change the page fell back to each pair's own SD whenever ANY arm was incomplete, so the
+# 3 kept contrasts of such a 4-arm study were on different SDs and not consistent.
+FOUR = dict(t=["A", "B", "C", "D"], n=[20, 22, 25, 18], m=[10.0, 12.0, 14.0, 11.0], s=[3.0, 3.5, 2.5, 0.0])
+
+
+def four_arm_rows(sdD):
+    s = FOUR["s"][:3] + [sdD]
+    rows = []
+    for a in range(4):
+        for b in range(a + 1, 4):
+            rows.append(dict(name="Four", treatment1=FOUR["t"][a], treatment2=FOUR["t"][b], n1=FOUR["n"][a],
+                             mean1=FOUR["m"][a], sd1=s[a], n2=FOUR["n"][b], mean2=FOUR["m"][b], sd2=s[b]))
+    # a second, two-arm study so the network has something to anchor; its arms are complete
+    rows.append(dict(name="Two", treatment1="A", treatment2="B", n1=30, mean1=10.5, sd1=3.1, n2=30, mean2=12.2, sd2=3.3))
+    return rows
+
+
+def explicit_rule():
+    """The documented rule written out: SD pooled over the 3 usable arms A, B, C; J at df m = N_usable - 3."""
+    import math
+    n, m, s = FOUR["n"][:3], FOUR["m"][:3], FOUR["s"][:3]
+    dfm = sum(n) - 3
+    S = math.sqrt(sum((ni - 1) * si ** 2 for ni, si in zip(n, s)) / dfm)
+    J = math.exp(math.lgamma(dfm / 2) - 0.5 * math.log(dfm / 2) - math.lgamma((dfm - 1) / 2))
+    out = {}
+    for a, b in ((0, 1), (0, 2), (1, 2)):
+        g = J * (m[a] - m[b]) / S
+        out[(FOUR["t"][a], FOUR["t"][b])] = (g, 1 / n[a] + 1 / n[b] + (1 - (dfm - 2) / (dfm * J * J)) * g * g)
+    return out, S, J
+
+
+@pytest.mark.parametrize("sdD", [0, None])
+def test_four_arm_study_with_unusable_sd_arm_pools_over_usable_arms(pg, sdD):
+    got = pg.evaluate("rows => FrequentistNMA.calcEffects(rows, 'SMD').map(r => [r.name, r.treatment1, r.treatment2, r.yi, r.vi])",
+                      four_arm_rows(sdD))
+    kept = {(a, b): (y, v) for name, a, b, y, v in got if name == "Four" and y is not None and y == y}
+    want, _, _ = explicit_rule()
+    assert set(kept) == set(want), sorted(kept)
+    for k, (g, v) in want.items():
+        assert close(kept[k][0], g, 1e-12), f"{k}: g {kept[k][0]} vs rule {g}"
+        assert close(kept[k][1], v, 1e-12), f"{k}: var {kept[k][1]} vs rule {v}"
+    resid = kept[("A", "C")][0] - kept[("A", "B")][0] - kept[("B", "C")][0]
+    assert abs(resid) < 1e-12, f"contrasts of the 4-arm study not consistent: residual {resid}"
+
+
+def test_four_arm_rule_equals_meta_pairwise_with_missing_sd(tmp_path):
+    # meta::pairwise with D's SD MISSING pools over A, B, C and drops D: its Cohen d * J(m) must equal the rule.
+    if not Path(RSCRIPT).exists():
+        pytest.skip("Rscript not found")
+    (tmp_path / "p.R").write_text("""suppressPackageStartupMessages({library(meta); library(jsonlite)})
+d <- data.frame(study="Four", t1="A", t2="B", t3="C", t4="D", n1=20, n2=22, n3=25, n4=18, m1=10, m2=12, m3=14, m4=11,
+                s1=3, s2=3.5, s3=2.5, s4=NA)
+p <- pairwise(list(t1,t2,t3,t4), n=list(n1,n2,n3,n4), mean=list(m1,m2,m3,m4), sd=list(s1,s2,s3,s4), data=d, studlab=study, sm="SMD")
+write_json(list(t1=p$treat1, t2=p$treat2, TE=p$TE, sd=p$sd1), "p.json", digits=NA, na="null")
+""", encoding="utf-8")
+    r = subprocess.run([RSCRIPT, "p.R"], cwd=tmp_path, capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, r.stderr[-2000:]
+    out = json.loads((tmp_path / "p.json").read_text(encoding="utf-8"))
+    want, S, J = explicit_rule()
+    kept = {(a, b): te for a, b, te in zip(out["t1"], out["t2"], out["TE"]) if te is not None}
+    assert set(kept) == set(want)
+    assert all(close(sd, S, 1e-12) for sd in out["sd"])
+    for k, (g, _) in want.items():
+        assert close(kept[k] * J, g, 1e-12), f"{k}: meta d*J {kept[k] * J} vs rule {g}"
+
+
+@pytest.mark.parametrize("sdD", [0, None])
+def test_four_arm_unusable_sd_arm_page_and_exported_script_agree(pg, tmp_path, sdD):
+    out, page = run_script(pg, tmp_path, four_arm_rows(sdD), "FE", "A")
+    assert check_contrasts(out, page) < 1e-10
     for t, te in out["TE_common"].items():
         assert abs(page["eff"][t][0] - te) < 1e-10 and abs(page["eff"][t][1] - out["se_common"][t]) < 1e-10, t

@@ -10,9 +10,12 @@
 # franchini: netmeta Franchini2012 (Parkinson, 7 studies; Guttman 1997 has 3 arms). Every pairwise contrast of every
 #   study from the ORIGINAL arm data.
 #   * two-arm studies: metacont(sm = "SMD") Hedges g and variance, as above.
-#   * the 3-arm study: SD pooled over ALL its arms (as meta::pairwise does for sm = "SMD" with > 2 arms), d from
-#     metacont(method.smd = "Cohen") on that common SD, one J for the study at the pooled SD's df m = N - k (R lgamma),
-#     g = J d, var = 1/n_a + 1/n_b + (1 - (m - 2) / (m J^2)) g^2 (the UB formula at df m).
+#   * the 3-arm study: an EXPLICIT R IMPLEMENTATION OF THE PAGE'S CONVENTION, not an R package result (no package
+#     computes J at df N - k on an all-arm pooled SD; meta::pairwise pools the SD over the arms but hard-codes
+#     method.smd = "Cohen", i.e. no J). SD pooled over ALL its arms (the pooling step meta::pairwise uses for
+#     sm = "SMD" with > 2 arms), d from metacont(method.smd = "Cohen") on that common SD, one J for the study at the
+#     pooled SD's df m = N - k (R lgamma), g = J d, var = 1/n_a + 1/n_b + (1 - (m - 2) / (m J^2)) g^2 (the UB
+#     formula at df m). It checks the page's arithmetic of that rule, not the rule itself.
 #   * per_pair_hedges_netmeta: netmeta's verdict on per-pair metacont Hedges g from each pair's own SDs.
 #   * netmeta on those contrasts (TE / seTE), common and random (REML).
 #   * pairwise_netmeta: the netmeta pipeline pairwise(sm = "SMD") -> netmeta (Cohen d), for reference only.
