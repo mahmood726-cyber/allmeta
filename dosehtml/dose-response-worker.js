@@ -482,6 +482,46 @@ function invertMatrix(V, n) {
 }
 
 /**
+ * log|V + tau2 I| for block-diagonal V: the sum over study blocks of the log-determinant of the FULL block
+ * (Cholesky; LU with partial pivoting if a block is not positive definite). Previously only the diagonal
+ * entries were used (sum of log(V_ii + tau2)), which ignores the within-study covariances of the
+ * Greenland-Longnecker blocks, so logLik / AIC / BIC were not the Gaussian log-likelihood of the fitted model.
+ */
+function logDetBlocks(V_blocks, tau2) {
+  let total = 0;
+  for (const block of V_blocks) {
+    const n = block.n;
+    const S = new Array(n * n);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) S[i * n + j] = block.V[i * n + j] + (i === j ? tau2 : 0);
+    const L = new Array(n * n).fill(0);
+    let ld = 0, pd = true;
+    for (let i = 0; i < n && pd; i++) {
+      for (let j = 0; j <= i; j++) {
+        let v = S[i * n + j];
+        for (let k = 0; k < j; k++) v -= L[i * n + k] * L[j * n + k];
+        if (i === j) { if (!(v > 0)) { pd = false; break; } L[i * n + i] = Math.sqrt(v); ld += 2 * Math.log(L[i * n + i]); }
+        else L[i * n + j] = v / L[j * n + j];
+      }
+    }
+    if (!pd) {
+      const M = S.slice();
+      ld = 0;
+      for (let c = 0; c < n; c++) {
+        let piv = c;
+        for (let r = c + 1; r < n; r++) if (Math.abs(M[r * n + c]) > Math.abs(M[piv * n + c])) piv = r;
+        const d = M[piv * n + c];
+        if (!(Math.abs(d) > 0)) return NaN;
+        if (piv !== c) for (let j = 0; j < n; j++) { const t = M[c * n + j]; M[c * n + j] = M[piv * n + j]; M[piv * n + j] = t; }
+        ld += Math.log(Math.abs(d));
+        for (let r = c + 1; r < n; r++) { const f = M[r * n + c] / d; if (f !== 0) for (let j = c; j < n; j++) M[r * n + j] -= f * M[c * n + j]; }
+      }
+    }
+    total += ld;
+  }
+  return total;
+}
+
+/**
  * Solve GLS with tau2 using PROPER block-diagonal matrix inversion
  * This CORRECTLY accounts for within-study correlation
  * Reference: Greenland & Longnecker (1992); Orsini et al. (2006)
@@ -587,13 +627,7 @@ function solveGLSWithTau2(X, y, V_blocks, tau2) {
   }
 
   // Compute log determinant of V
-  let detV = 0;
-  for (const block of V_blocks) {
-    const blockSize = block.n;
-    for (let i = 0; i < blockSize; i++) {
-      detV += Math.log(Math.max(block.V[i * blockSize + i] + tau2, NUMERICAL_TOLERANCE));
-    }
-  }
+  const detV = logDetBlocks(V_blocks, tau2);
 
   return { beta, se, WRSS, detV, varMatrix };
 }
@@ -713,6 +747,7 @@ function solveGLS(points, tau2Override = null) {
     Qp,
     nStudies,
     nPoints,
+    logLik,
     AIC,
     BIC,
     covarianceSummary
