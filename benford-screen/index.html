@@ -95,11 +95,22 @@
     var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
+    // Tokens are split on whitespace / ; / |. Inside a token a comma is a thousands separator
+    // only when the token is shaped like one (1,234 or 12,345,678.9) AND the input has more than
+    // one token; otherwise commas separate values ("120,340,560" is three values, not 120340560).
     function parse(text) {
-      return (String(text || "").match(/-?\d[\d.,eE+\-]*/g) || [])
-        .map(function (s) { return parseFloat(s.replace(/,(?=\d{3}\b)/g, "")); })
-        .filter(function (x) { return isFinite(x); });
+      var toks = String(text || "").split(/[\s;|]+/).filter(Boolean), out = [];
+      var single = toks.length === 1;
+      toks.forEach(function (t) {
+        var bare = t.replace(/^[^\d\-]+|[^\d]+$/g, "");
+        var parts = (!single && /^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(bare)) ? [bare.replace(/,/g, "")] : t.split(",");
+        parts.forEach(function (q) {
+          (q.match(/-?\d[\d.eE+\-]*/g) || []).forEach(function (m) { var x = parseFloat(m); if (isFinite(x)) out.push(x); });
+        });
+      });
+      return out;
     }
+    function fmtP(p) { return p < 1e-4 ? p.toExponential(1) : p.toFixed(4); }
     function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
 
     function run() {
@@ -114,7 +125,7 @@
         + '<div class="stats">'
         + stat("N", r.n) + stat("First-digit MAD", r.mad.toFixed(4))
         + stat("Nigrini class", r.madClass) + stat("χ²(8)", r.chi2.toFixed(1))
-        + stat("p", r.chi2p < 1e-4 ? r.chi2p.toExponential(1) : r.chi2p.toFixed(4))
+        + stat("p", fmtP(r.chi2p))
         + "</div>";
       drawBars(r);
     }
