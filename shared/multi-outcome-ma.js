@@ -74,14 +74,32 @@
     return out;
   }
   // Gauss-Jordan inverse + determinant (returns null if singular).
+  //
+  // Singularity is judged on the EQUILIBRATED matrix D A D with D = diag(1/sqrt|A_ii|), so
+  // the decision is invariant to rescaling any row/column pair (i.e. to the units of each
+  // outcome). An absolute threshold (1e-14, until 2026-11-15) called a well-conditioned
+  // covariance singular once effects were in small units; a threshold relative to the
+  // largest entry still rejected diag(1e10, 1e-6) when outcomes are in very different units.
   function inverseAndDet(A) {
+    var n = A.length;
+    var dsc = new Array(n);
+    for (var q = 0; q < n; q++) {
+      var aq = Math.abs(A[q][q]);
+      if (!(aq > 0) || !isFinite(aq)) return _inverseAndDetRaw(A);
+      dsc[q] = 1 / Math.sqrt(aq);
+    }
+    var As = A.map(function (row, a) { return row.map(function (v, b) { return v * dsc[a] * dsc[b]; }); });
+    var r = _inverseAndDetRaw(As);
+    if (!r.inv) return r;
+    var det = r.det;
+    for (var q2 = 0; q2 < n; q2++) det /= dsc[q2] * dsc[q2];
+    return { inv: r.inv.map(function (row, a) { return row.map(function (v, b) { return v * dsc[a] * dsc[b]; }); }), det: det };
+  }
+  function _inverseAndDetRaw(A) {
     var n = A.length;
     var M = new Array(n);
     for (var i = 0; i < n; i++) M[i] = A[i].slice().concat(identity(n)[i]);
     var det = 1;
-    // Singularity threshold RELATIVE to the matrix's largest entry: an absolute 1e-14
-    // declared a perfectly conditioned covariance singular once effects were expressed
-    // in small enough units (variances ~1e-14 at SE ~1e-7), breaking scale equivariance.
     var maxAbs = 0;
     for (var i0 = 0; i0 < n; i0++) for (var j0 = 0; j0 < n; j0++) maxAbs = Math.max(maxAbs, Math.abs(A[i0][j0]));
     if (!(maxAbs > 0) || !isFinite(maxAbs)) return { inv: null, det: 0 };
@@ -134,8 +152,8 @@
     for (var i2 = 0; i2 < K; i2++) for (var j2 = i2 + 1; j2 < K; j2++) {
       var rho = params[corrIdx++];
       // clamp for numerical safety
-      if (rho > 0.999) rho = 0.999;
-      if (rho < -0.999) rho = -0.999;
+      if (rho > 1) rho = 1;
+      if (rho < -1) rho = -1;
       Sigma[i2][j2] = rho * params[i2] * params[j2];
       Sigma[j2][i2] = Sigma[i2][j2];
     }
@@ -319,7 +337,8 @@
       return _replLogLik(rows, Sg, m0);
     }
 
-    var bestU = [seedTau[0] / sc[0], seedTau[1] / sc[1], seedRho];
+    // seedTau was computed on the standardized rows, so it is already in SE units.
+    var bestU = [seedTau[0], seedTau[1], seedRho];
     var bestNll = isFinite(bestU[0]) && isFinite(bestU[1]) ? objective(bestU) : Infinity;
     if (!isFinite(bestNll)) { bestU = [0, 0, 0]; bestNll = objective(bestU); }
 
@@ -345,7 +364,10 @@
           var u2 = bestU.slice();
           u2[d] += sgn * step * dimScale[d];
           if (d < 2 && u2[d] < 0) u2[d] = 0;
-          if (d === 2 && (u2[d] < -0.99 || u2[d] > 0.99)) continue;
+          // rho_between may reach the +/-1 boundary (metafor's REML optimum can sit there;
+          // Sigma_RE is then singular but V_i + Sigma_RE stays positive definite). Clamp,
+          // like tau at 0, rather than skip the move (was: skip beyond +/-0.99).
+          if (d === 2) u2[d] = Math.max(-1, Math.min(1, u2[d]));
           if (u2[d] === bestU[d]) continue;
           var nll2 = objective(u2);
           if (nll2 < bestNll) { bestNll = nll2; bestU = u2; improved = true; }
@@ -354,6 +376,22 @@
       if (!improved) step *= 0.5;
     }
     // Back to the caller's units.
+    // Snap a between-study SD that the step-limited search left within 1e-6 SE of the
+    // tau = 0 boundary onto it, when that raises -2logL_R by at most 1e-12 (REML optimum on the
+    // boundary). Relative (SE units), so it is unit-free.
+    for (var dz = 0; dz < 2; dz++) {
+      if (bestU[dz] > 0 && bestU[dz] < 1e-6) {
+        var uz = bestU.slice(); uz[dz] = 0;
+        var fz = objective(uz);
+        if (fz <= bestNll + 1e-12) { bestU = uz; bestNll = fz; }
+      }
+    }
+
+    // rho_between is not identified when either between-study SD is 0 (Sigma_RE has no
+    // off-diagonal to estimate; every rho gives the same likelihood). Report it as null,
+    // by rule, rather than whichever grid/seed value happened to be visited first.
+    var rhoIdentified = bestU[0] > 0 && bestU[1] > 0;
+    if (!rhoIdentified) bestU = [bestU[0], bestU[1], 0];
     var bestParams = [bestU[0] * sc[0], bestU[1] * sc[1], bestU[2]];
     var fitStd = _muGivenSigma(rows, packSigma(bestU), K);
     var fit = { mu: fitStd.mu.map(function (m, k) { return m * sc[k]; }), cov: _scaleCov(fitStd.cov, sc) };
@@ -371,7 +409,8 @@
               fit.mu[1] + Z975 * Math.sqrt(fit.cov[1][1])],
       Sigma_RE: Sigma_RE,
       tau: [bestParams[0], bestParams[1]],
-      rho_between: bestParams[2],
+      rho_between: rhoIdentified ? bestParams[2] : null,
+      rho_between_identified: rhoIdentified,
       neg2LogLikR: bestNll,
       k_studies: rows.length,
       k_complete: rows.filter(function (r) { return _observedIndices(r.y).length === 2; }).length,
@@ -380,29 +419,29 @@
 
   // ---- K-variate REML (K ≥ 3) -----------------------------------------
   //
-  // Parameterise Σ_RE via:
-  //   - K log-scales      ℓ_k = log(τ_k)              → τ_k = exp(ℓ_k)
-  //   - K(K-1)/2 partial correlations ψ_ij ∈ ℝ        → ρ_ij = tanh(ψ_ij)
-  // Σ_ij = ρ_ij · τ_i · τ_j   (i ≠ j),   Σ_ii = τ_i²
-  // This is the simplest PSD-preserving parametrisation that's smooth in
-  // the unconstrained ℝ^{K(K+1)/2} space — Newton-Raphson on the profiled
-  // REML log-likelihood converges in <20 iterations for K up to 8.
+  // Parameterise Σ_RE by its Cholesky factor, Σ_RE = L L', with
+  //   - theta[0..K-1]          = log L_kk          (diagonal, kept > 0)
+  //   - theta[K..]             = L_ij, i > j       (row-wise, unconstrained)
+  // which is positive semi-definite for EVERY theta. (Until 2026-11-15 each correlation
+  // was mapped separately through tanh; that keeps |rho_ij| < 1 but not the K x K
+  // correlation matrix PSD for K >= 3, and the optimiser went outside the parameter space:
+  // rho = (-0.68, 1.00, -0.28) with -2logL_R 4.0 BELOW metafor's admissible optimum.)
   //
-  // For K=2 the bivariate path is faster and well-tested; for K≥3 use this.
+  // For K=2 the bivariate path (fitBivariate) is the one the app uses.
 
   function _unpackParams(K, theta) {
-    var taus = new Array(K);
-    for (var k = 0; k < K; k++) taus[k] = Math.exp(theta[k]);
-    var Sigma = zeros(K, K);
-    for (var i = 0; i < K; i++) Sigma[i][i] = taus[i] * taus[i];
+    var L = zeros(K, K);
+    for (var k = 0; k < K; k++) L[k][k] = Math.exp(theta[k]);
     var idx = K;
-    for (var i2 = 0; i2 < K; i2++) {
-      for (var j2 = i2 + 1; j2 < K; j2++) {
-        var rho = Math.tanh(theta[idx++]);
-        Sigma[i2][j2] = rho * taus[i2] * taus[j2];
-        Sigma[j2][i2] = Sigma[i2][j2];
-      }
+    for (var i2 = 1; i2 < K; i2++) for (var j2 = 0; j2 < i2; j2++) L[i2][j2] = theta[idx++];
+    var Sigma = zeros(K, K);
+    for (var a = 0; a < K; a++) for (var b = 0; b < K; b++) {
+      var sv = 0;
+      for (var t = 0; t < K; t++) sv += L[a][t] * L[b][t];
+      Sigma[a][b] = sv;
     }
+    var taus = new Array(K);
+    for (var k2 = 0; k2 < K; k2++) taus[k2] = Math.sqrt(Sigma[k2][k2]);
     return { Sigma: Sigma, taus: taus };
   }
 
@@ -448,7 +487,7 @@
 
   function fitKvariate(studies, K, opts) {
     opts = opts || {};
-    var maxIter = opts.maxIter || 60;
+    var maxIter = opts.maxIter || 200;
     var nParams = K + K * (K - 1) / 2;
 
     // Seed from per-outcome DL τ (log-scale) and zero partial corrs.
@@ -469,36 +508,42 @@
 
     var f = function (t) { return _replObjective(studies, K, t); };
 
-    // Damped Newton-Raphson with backtracking line search.
+    // Levenberg-Marquardt-damped Newton with backtracking line search. A step is taken
+    // only if it LOWERS -2logL_R. When the Hessian is indefinite (e.g. at the zero-
+    // correlation start, a saddle for K >= 3) the damping is raised until the direction
+    // is a descent direction (large damping -> scaled steepest descent). Until 2026-11-15
+    // an ascent direction was accepted whenever the line search failed, so the iteration
+    // walked uphill and stopped at a non-optimum (K = 3: -2logL_R 18.5 above metafor's).
     var fCur = f(theta);
     var damp = 1e-3;
     for (var iter = 0; iter < maxIter; iter++) {
       var g = _grad(f, theta);
       var H = _hessian(f, theta);
-      // Add Levenberg-Marquardt damping.
-      for (var d = 0; d < nParams; d++) H[d][d] += damp;
-      var step;
-      try {
-        var Hinv = inverse(H);
-        step = matVec(Hinv, g).map(function (x) { return -x; });
-      } catch (e) {
-        // gradient descent fallback
-        var gNorm = Math.sqrt(g.reduce(function (a, b) { return a + b * b; }, 0));
-        if (gNorm < 1e-8) break;
-        step = g.map(function (gi) { return -gi / Math.max(gNorm, 1e-3); });
+      var accepted = false, thetaNew = theta, fNew = fCur, stepMax = 0;
+      while (damp < 1e12) {
+        var Hd = H.map(function (row, a) { return row.map(function (v, b) { return a === b ? v + damp : v; }); });
+        var step = null;
+        try { step = matVec(inverse(Hd), g).map(function (x) { return -x; }); } catch (e) { step = null; }
+        var gd = 0;
+        if (step) for (var q = 0; q < nParams; q++) gd += g[q] * step[q];
+        if (!step || !(gd < 0)) { damp *= 10; continue; }
+        var alpha = 1;
+        for (var ls = 0; ls < 40; ls++, alpha *= 0.5) {
+          var cand = theta.map(function (t, i) { return t + alpha * step[i]; });
+          var fc = f(cand);
+          if (fc < fCur) { thetaNew = cand; fNew = fc; accepted = true; break; }
+        }
+        if (accepted) {
+          for (var q2 = 0; q2 < nParams; q2++) stepMax = Math.max(stepMax, Math.abs(alpha * step[q2]));
+          break;
+        }
+        damp *= 10;
       }
-      // Backtracking line search
-      var alpha = 1;
-      var thetaNew = theta.map(function (t, i) { return t + alpha * step[i]; });
-      var fNew = f(thetaNew);
-      while (fNew > fCur - 1e-9 && alpha > 1e-6) {
-        alpha *= 0.5;
-        thetaNew = theta.map(function (t, i) { return t + alpha * step[i]; });
-        fNew = f(thetaNew);
-      }
-      if (Math.abs(fCur - fNew) < 1e-8) { theta = thetaNew; fCur = fNew; break; }
+      if (!accepted) break;                       // no descent possible: stationary point
+      var dF = fCur - fNew;
       theta = thetaNew; fCur = fNew;
-      damp = Math.max(damp * 0.7, 1e-6);
+      damp = Math.max(damp * 0.3, 1e-8);
+      if (dF < 1e-12 && stepMax < 1e-8) break;
     }
 
     var unpackedStd = _unpackParams(K, theta);
