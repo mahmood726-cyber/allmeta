@@ -42,9 +42,12 @@ async function run(page, demo, mcid) {
   await page.evaluate(m => {
     const el = document.getElementById('mcidInput');
     if (el) el.value = m;
-    window.__prev = AppState.results; runAnalysis();
+    window.__prev = AppState.results; window.__prevTc = AppState.truthcert; runAnalysis();
   }, mcid);
+  // a NEW verdict: the same data under another MCID has the same pooled estimate, so matching theta alone would
+  // accept the previous run's verdict if TruthCert did not run (agy review of #573)
   await page.waitForFunction(() => AppState.results && AppState.results !== window.__prev && AppState.truthcert
+    && AppState.truthcert !== window.__prevTc
     && AppState.truthcert.results && AppState.truthcert.results.theta === AppState.results.pooled.theta, null, { timeout: 30000 });
   return page.evaluate(() => {
     computeGRADE();   // the Analysis-tab GRADE (the "Full" analyses compute it the same way)

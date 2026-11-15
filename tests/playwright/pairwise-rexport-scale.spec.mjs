@@ -55,6 +55,15 @@ test('the R export back-transforms on the scale of each measure', async ({ page 
       }
     }
     expect(g.main).toContain(`--- On the ${measure} scale`);
+    // bt() is applied to every reported / plotted estimate, not only defined (agy review of #573)
+    for (const use of ['round(bt(coef(res)), 4)', 'round(bt(res$ci.lb), 4)', 'round(bt(res$ci.ub), 4)', 'round(bt(pred$pi.lb), 4)',
+      'round(bt(pred$pi.ub), 4)', 'Estimate = round(bt(loo$estimate), 4)', 'CI_Lower = round(bt(loo$ci.lb), 4)', 'yi_bt = bt(yi)',
+      'ci_lower = bt(yi - 1.96 * sei)', 'estimate = bt(coef(res))', 'pi_lower = bt(pred$pi.lb)'])
+      expect(g.main, `${demo}: ${use}`).toContain(use);
+    // the five forest() calls and the regplot() example the script prints
+    expect(g.main.split('atransf = bt').length - 1, `${demo}: every forest plot back-transforms`).toBe(6);
+    for (const use of ['Effect = paste0(round(bt(yi), 2)', 'est = c(bt(yi), bt(coef(res)))', 'estimate = c(bt(yi), bt(coef(res)))', 'xmin = bt(pred$pi.lb)'])
+      expect(g.forest, `${demo} forest options: ${use}`).toContain(use);
     if (def !== 'bt <- exp') expect(g.main).not.toContain('exponentiated');
     if (def === 'bt <- identity') expect(g.main).toContain('geom_vline(xintercept = 0');
     if (def === 'bt <- transf.ilogit') expect(g.main).not.toContain('geom_vline(xintercept');
