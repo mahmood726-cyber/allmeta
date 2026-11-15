@@ -573,7 +573,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + fragilityCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result — live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + fragilityCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -592,7 +592,7 @@
     // canonical ma-pooled-v1 result (kept as a one-line cross-reference). ----
     function methodLabel(m, knha) {
       var base = m === "FE" ? "fixed-effect" : "RE-" + m;
-      return base + (knha ? " + Knapp–Hartung" : "");
+      return base + (knha ? " + Knapp–Hartung (variance factor floored at 1)" : "");
     }
     function synthControls() {
       var methods = [["FE", "Fixed effect"], ["DL", "RE · DerSimonian–Laird"], ["PM", "RE · Paule–Mandel"], ["REML", "RE · REML"]];
@@ -694,7 +694,7 @@
       var grid = [["FE", false], ["DL", false], ["DL", true], ["PM", false], ["PM", true], ["REML", false], ["REML", true]];
       var Z = 1.959963984540054, specs = [];
       grid.forEach(function (g) {
-        try { var r = AlmMaCore.pool(yi, vi, { method: g[0], knha: g[1], knhaFloor: true }); specs.push({ theta: r.mu, "var": r.se * r.se, k: r.k, label: g[0] + (g[1] ? "+HK" : "") }); } catch (e) {}
+        try { var r = AlmMaCore.pool(yi, vi, { method: g[0], knha: g[1], knhaFloor: true }); specs.push({ theta: r.mu, "var": r.se * r.se, ciLo: r.ciLo, ciHi: r.ciHi, k: r.k, label: g[0] + (g[1] ? "+HK" : "") }); } catch (e) {}
       });
       if (specs.length < 2) return "";
       var sc = ExperimentalMA.specCollapse(specs);
@@ -703,8 +703,8 @@
       var sinv = 0, swt = 0; specs.forEach(function (s) { var w = 1 / s["var"]; sinv += w; swt += w * s.theta; });
       var nMu = swt / sinv, nSe = Math.sqrt(1 / sinv);
       var rows = specs.map(function (s) {
-        var sd = Math.sqrt(s["var"]);
-        return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(tx(s.theta)) + "</td><td>" + fnum(tx(s.theta - Z * sd)) + " to " + fnum(tx(s.theta + Z * sd)) + "</td></tr>";
+        // each spec's OWN interval (t_{k-1} for the +HK specs), not theta +/- 1.96*SE
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(tx(s.theta)) + "</td><td>" + fnum(tx(s.ciLo)) + " to " + fnum(tx(s.ciHi)) + "</td></tr>";
       }).join("");
       return "<details class='exp-methods'><summary>&#128300; Multiverse — spec-collapse <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
         + "<div class='exp-row'>Across " + specs.length + " estimator specifications, the honest combined estimate is <b>" + fnum(tx(sc.theta))
