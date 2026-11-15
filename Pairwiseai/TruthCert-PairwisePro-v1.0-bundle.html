@@ -14594,7 +14594,10 @@ function truthCertMCID(measure) {
 
 // A changed MCID re-assesses the verdict of the result on the page (no new Run needed).
 document.addEventListener("change", ev => {
-  ev.target && "mcidInput" === ev.target.id && AppState.results && AppState.results.pooled && "function" == typeof runTruthCertAnalysis && runTruthCertAnalysis()
+  ev.target && "mcidInput" === ev.target.id && AppState.results && AppState.results.pooled && "function" == typeof runTruthCertAnalysis && (runTruthCertAnalysis(),
+    // lane pwrest4: and the Analysis-tab GRADE, which was left as it was
+    AppState.results.grade && "function" == typeof assessGRADE && (AppState.results.grade = assessGRADE({ ...AppState.results, studies: AppState.studies || AppState.results.studies || [] },
+      truthCertConfigForRun(AppState.results.measure)), safeRender(renderAnalysisPanel, "panel-analysis", AppState.results)))
 });
 
 function truthCertConfigForRun(measure) {
@@ -15178,7 +15181,7 @@ function assessGRADE(e, t, n = {}) {
     reason: `OIS not met (${e.ois.totalN} of ${e.ois.oisRequired} participants for MCID delta ${+c.toFixed(4)})`,
     downgrade: 1
   };
-  else {
+  else (e => {   // lane pwrest4: the Analysis-tab GRADE passes the results object, whose CI is in e.pooled
     if (void 0 !== e.ci_upper && void 0 !== e.ci_lower) {
       const t = e.ci_upper - e.ci_lower,
         n = e.ci_lower > 0 || e.ci_upper < 0,
@@ -15194,8 +15197,8 @@ function assessGRADE(e, t, n = {}) {
         downgrade: 1
       })
     }
-    e.ois && e.ois.metOIS || (a.imprecision.reason = (a.imprecision.reason ? a.imprecision.reason + "; " : "") + "OIS not computed (needs both arm sizes of every study)")
-  }
+    e.ois && e.ois.metOIS || (a.imprecision.reason = (a.imprecision.reason ? a.imprecision.reason + "; " : "") + (e.ois ? "OIS not computed (needs both arm sizes of every study)" : "OIS: see the TruthCert verdict"))
+  })(void 0 !== e.ci_lower && void 0 !== e.ci_upper ? e : { ...e, ci_lower: e.pooled?.ci_lower, ci_upper: e.pooled?.ci_upper, theta: void 0 !== e.theta ? e.theta : e.pooled?.theta });
   e.publicationBias?.detected && (a.publicationBias = {
     rating: "Serious",
     reason: "Asymmetry detected",
@@ -18705,7 +18708,7 @@ function runTruthCertAnalysis() {
     }, AppState.verdict = AppState.truthcert.verdict, AppState.threatLedger = E, AppState.grade = R, renderVerdictPanel();
     const I = document.getElementById("htaPrerequisites"),
       T = document.getElementById("htaConfigSection");
-    "UNCERTAIN" !== A.verdict && "NOT ASSESSED" !== A.verdict && (I && (I.style.display = "none"), T && (T.style.display = "block"), populateHTADropdowns()), logDecision("check", `TruthCert analysis complete: ${A.verdict}`), AnalysisEvents.emit("verdictComplete", AppState.truthcert)
+    ("UNCERTAIN" !== A.verdict && "NOT ASSESSED" !== A.verdict ? (I && (I.style.display = "none"), T && (T.style.display = "block"), populateHTADropdowns()) : "NOT ASSESSED" === A.verdict && (I && (I.style.display = ""), T && (T.style.display = "none"))), logDecision("check", `TruthCert analysis complete: ${A.verdict}`), AnalysisEvents.emit("verdictComplete", AppState.truthcert)
   } catch (e) {
     console.error("TruthCert analysis failed:", e), logDecision("error", "TruthCert analysis failed: " + e.message)
   }

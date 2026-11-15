@@ -116,5 +116,7 @@ test('Peters\' test is given sample sizes when the data have them, and skipped o
   expect(g.code).toMatch(/ni = ni/);
   g = await rcode(page, 'GENERIC_EFFECTS');
   expect(g.code).not.toMatch(/predictor = "ni"\)/);
-  expect(g.code).toMatch(/Peters' test needs the studies' sample sizes/);
+  // lane pwrest4: Peters' test needs the binary counts (Peters' weights), not only sample sizes; the skip says so
+  expect(g.code).toMatch(/Peters' test needs every study's binary counts/);
+  expect(g.code).toContain('peters <- NULL');
 });

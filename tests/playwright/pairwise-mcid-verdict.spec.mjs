@@ -138,4 +138,33 @@ for (const [NAME, PATH] of Object.entries(PAGES)) {
     expect(await page.evaluate(() => AppState.truthcert.verdict.mcid.delta)).toBe(5);
     expect(errors).toEqual([]);
   });
+
+  // Review findings (lane pwrest4, independent Codex review): the Analysis-tab GRADE read ci_lower / ci_upper at
+  // the top of the results object, where they are not (they are in results.pooled), so with an MCID it skipped the
+  // CI checks and said "None"; a changed MCID re-ran only the TruthCert verdict, leaving the Analysis-tab GRADE as
+  // it was; and a verdict that became NOT ASSESSED left the HTA section shown from the previous verdict.
+  test(NAME + ': ' + 'the Analysis-tab GRADE judges the pooled CI, follows a changed MCID, and HTA hides when the verdict is not assessed', async ({ page }) => {
+    test.setTimeout(90000);
+    const errors = await open(page, PATH);
+    // SGLT2_ACM, MCID OR 0.99 (delta 0.01005): the CI is far wider than 6 x delta
+    let g = await run(page, 'SGLT2_ACM', '0.99');
+    expect(g.mainGrade.domains.imprecision.rating, g.mainGrade.domains.imprecision.reason).toBe('Serious');
+    expect(g.mainGrade.domains.imprecision.reason).toContain('MCID');
+    // blank MCID, then enter one: both GRADEs follow without another Run
+    g = await run(page, 'SGLT2_ACM', '');
+    expect(g.mainGrade.domains.imprecision.rating).toBe('Not assessed');
+    await page.evaluate(() => { const el = document.getElementById('mcidInput'); el.value = '0.99'; el.dispatchEvent(new Event('change', { bubbles: true })); });
+    await page.waitForFunction(() => AppState.truthcert && AppState.truthcert.verdict.verdict !== 'NOT ASSESSED', null, { timeout: 10000 });
+    expect(await page.evaluate(() => AppState.results.grade.domains.imprecision.rating)).toBe('Serious');
+    // an assessed verdict shows HTA; clearing the MCID hides it again
+    g = await run(page, 'BP_REDUCTION', '5');
+    expect(g.htaShown, `verdict ${g.verdict.verdict}`).toBe(true);
+    await page.evaluate(() => { const el = document.getElementById('mcidInput'); el.value = ''; el.dispatchEvent(new Event('change', { bubbles: true })); });
+    await page.waitForFunction(() => AppState.truthcert && AppState.truthcert.verdict.verdict === 'NOT ASSESSED', null, { timeout: 10000 });
+    const after = await page.evaluate(() => ({ cfg: document.getElementById('htaConfigSection').style.display,
+      main: AppState.results.grade.domains.imprecision.rating }));
+    expect(after.cfg).not.toBe('block');
+    expect(after.main).toBe('Not assessed');
+    expect(errors).toEqual([]);
+  });
 }
