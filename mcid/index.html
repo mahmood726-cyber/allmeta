@@ -181,9 +181,11 @@
         halfSD: 0.5 * i.sd,
         threeSD: 0.3 * i.sd,
         oneSEM: i.sem,
-        sdc: Z975 * i.sem,
+        // Same names as the table: 1.96·SEM is the band around ONE measurement; the SDC of a
+        // change score is 1.96·√2·SEM (de Vet 2006). No field named sdc carries 1.96·SEM.
+        semBand95: Z975 * i.sem,
+        sdc: Z975 * Math.SQRT2 * i.sem,
         anchor: i.somewhat - i.none,
-        sdcChange: Z975 * Math.SQRT2 * i.sem,   // de Vet 2006 SDC (two occasions)
         niMargin: (1 - i.frac) * i.hist,       // M2 = (1 − preserved fraction) × M1
       };
     };
