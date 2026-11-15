@@ -27,9 +27,9 @@
  * majority case.
  *
  * Reference: Achana FA, Cooper NJ, Bujkiewicz S, Hubbard SJ, Kendrick D,
- * Jones DR, Sutton AJ. "A general method for incorporating multiple
- * correlated outcomes in network meta-analysis", Res Synth Methods
- * 2014;5:35-49.
+ * Jones DR, Sutton AJ. "Network meta-analysis of multiple outcome measures
+ * accounting for borrowing of information across outcomes",
+ * BMC Med Res Methodol 2014;14:92. doi:10.1186/1471-2288-14-92.
  */
 (function (global) {
   "use strict";
@@ -107,13 +107,16 @@
   // the denominator is tr(W) − tr((X'WX)⁻¹ X'W²X). On a zero-heterogeneity
   // star network this returns τ²≈0 (a plain grand-mean pool inflates it).
 
-  function _tau2_DL_perOutcome(rowsPerOutcome, nBasic) {
+  function _tau2_DL_perOutcome(rowsPerOutcome, nBasic, dhatOut) {
     // rowsPerOutcome = [ [{yi, vi, iA, iB}, ...], ... ] (length K)
     // iA/iB = treatment indices (0 = reference); design column = idx−1.
+    // dhatOut (optional array): receives each outcome's FE network effects d̂
+    // (null when not estimable) so callers can form residuals y − X d̂.
     var taus = [];
     for (var k = 0; k < rowsPerOutcome.length; k++) {
       var rows = rowsPerOutcome[k];
       var df = rows.length - nBasic;
+      if (dhatOut) dhatOut[k] = null;
       if (rows.length < 2 || df < 1) { taus.push(0); continue; }
       // Per-outcome NMA design (n_rows × nBasic) and FE weights W = diag(1/vi).
       var Xk = zeros(rows.length, nBasic);
@@ -144,6 +147,7 @@
       var dhat = new Array(nBasic).fill(0);
       for (var a2 = 0; a2 < nBasic; a2++)
         for (var b2 = 0; b2 < nBasic; b2++) dhat[a2] += XtWXinv[a2][b2] * XtWy[b2];
+      if (dhatOut) dhatOut[k] = dhat;
       // Q about the fitted network effects.
       var Q = 0;
       for (var i3 = 0; i3 < rows.length; i3++) {
@@ -224,7 +228,17 @@
                  iA: trtIndex[r.trtA], iB: trtIndex[r.trtB] };
       }));
     }
-    var seedTaus = _tau2_DL_perOutcome(perOutcomeRows, nBasic);
+    var feDhat = [];
+    var seedTaus = _tau2_DL_perOutcome(perOutcomeRows, nBasic, feDhat);
+    // residual of a row about outcome k's FE network fit (y − X d̂); the RAW y
+    // also carries the between-contrast mean differences (A-B vs A-C), which
+    // are not between-study correlation (lane audit6: raw 0.285 vs residual
+    // −0.926 = R cor(resid about netmeta common fit)).
+    function resid(r, k) {
+      var d = feDhat[k], iA = trtIndex[r.trtA], iB = trtIndex[r.trtB], f = 0;
+      if (d) { if (iA > 0) f -= d[iA - 1]; if (iB > 0) f += d[iB - 1]; }
+      return r.outcomes[k].yi - f;
+    }
 
     // Seed Σ_RE^outcomes as diag(τ²_k) + off-diag from sample correlation
     // of per-row residuals (rough but good enough for non-iterative).
@@ -232,7 +246,8 @@
     for (var k2 = 0; k2 < K; k2++) SigmaOut[k2][k2] = seedTaus[k2] * seedTaus[k2];
     for (var k3 = 0; k3 < K; k3++) {
       for (var k4 = k3 + 1; k4 < K; k4++) {
-        // Pearson r of per-row yi pairs where both outcomes observed.
+        // Pearson r of per-row RESIDUAL pairs (about each outcome's FE network
+        // fit) where both outcomes observed.
         var paired = rows.filter(function (r) {
           return r.outcomes[k3] && r.outcomes[k4]
                  && isFinite(r.outcomes[k3].yi) && isFinite(r.outcomes[k4].yi);
@@ -240,13 +255,13 @@
         if (paired.length < 3) { SigmaOut[k3][k4] = 0; SigmaOut[k4][k3] = 0; continue; }
         var sx = 0, sy = 0;
         for (var p = 0; p < paired.length; p++) {
-          sx += paired[p].outcomes[k3].yi; sy += paired[p].outcomes[k4].yi;
+          sx += resid(paired[p], k3); sy += resid(paired[p], k4);
         }
         sx /= paired.length; sy /= paired.length;
         var num = 0, dx = 0, dy = 0;
         for (var p2 = 0; p2 < paired.length; p2++) {
-          var rx = paired[p2].outcomes[k3].yi - sx;
-          var ry = paired[p2].outcomes[k4].yi - sy;
+          var rx = resid(paired[p2], k3) - sx;
+          var ry = resid(paired[p2], k4) - sy;
           num += rx * ry; dx += rx * rx; dy += ry * ry;
         }
         var rho = (dx > 0 && dy > 0) ? num / Math.sqrt(dx * dy) : 0;

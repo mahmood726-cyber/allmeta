@@ -54,7 +54,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Multi-outcome NMA (Achana 2014)</h1>
-    <p>Joint network meta-analysis across multiple correlated outcomes, with the multi-arm τ²/2 off-diagonal correction layered on the K-outcome between-study covariance Σ_RE^outcomes. Implements Achana et al. 2014 §3.2 (Res Synth Methods 5:35-49). When outcomes are correlated, joint pooling borrows strength across them — studies that report only a subset of outcomes still contribute to the joint network estimates via ρ_between.</p>
+    <p>Joint network meta-analysis across multiple correlated outcomes, with the multi-arm τ²/2 off-diagonal correction layered on the K-outcome between-study covariance Σ_RE^outcomes. After Achana et al. (BMC Med Res Methodol 2014;14:92), here as a frequentist GLS approximation. When outcomes are correlated, joint pooling borrows strength across them — studies that report only a subset of outcomes still contribute to the joint network estimates via ρ_between.</p>
   </header>
   <main>
     <section class="panel">
@@ -76,7 +76,7 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit multi-outcome NMA</button>
       <div class="note">
-        Multi-arm trials with 3+ arms: contribute 2 contrast rows per outcome (the multi-arm correction is automatic — same studyId across rows triggers τ²/2 off-diagonals). The Σ_RE^outcomes estimate uses DL τ² per outcome + sample-correlation of per-row residuals — fast and good for typical clinical data. Use the K-variate REML in <code>multi-outcome-ma/</code> for slow-but-exact estimation on small networks.
+        Multi-arm trials with 3+ arms: contribute 2 contrast rows per outcome (same studyId across rows triggers the τ²/2 between-study off-diagonals; rows must share the first-listed arm). Only contrast SEs are entered, so the WITHIN-study covariance of a multi-arm trial's contrasts (the shared arm's variance) is not modelled and its SEs are optimistic — e.g. a 3-arm A/B/C trial gives B vs A −0.476 (SE 0.240) here vs netmeta −0.460 (SE 0.246). The Σ_RE^outcomes estimate uses DL τ² per outcome + sample-correlation of per-row residuals — fast and good for typical clinical data. Use the K-variate REML in <code>multi-outcome-ma/</code> for slow-but-exact estimation on small networks.
       </div>
     </section>
     <section class="panel">
@@ -97,7 +97,7 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
 <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
-    Engine: <code>shared/multi-outcome-nma.js</code>. Achana et al. 2014 §3.2 Res Synth Methods 5:35-49. Σ_per_study = Σ_RE^outcomes ⊗ G_arm where G_arm has 1 on diag and 0.5 off (the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ + within-study sampling cov.
+    Engine: <code>shared/multi-outcome-nma.js</code>. Achana et al., BMC Med Res Methodol 2014;14:92 (doi:10.1186/1471-2288-14-92). Σ_per_study = Σ_RE^outcomes ⊗ G_arm where G_arm has 1 on diag and 0.5 off (the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ + within-study sampling cov.
   </footer>
   <script>
   (function () {
