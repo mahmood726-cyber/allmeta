@@ -353,6 +353,7 @@
         '</div>',
         '<div class="row-3">',
         '  <label><span class="lbl">Effect type</span><select data-field="effectType" aria-label="Effect type">',
+        '    <option value=""' + (o.effectType===""?' selected':'') + '>— not specified —</option>',
         '    <option value="RR"' + (o.effectType==="RR"?' selected':'') + '>RR</option>',
         '    <option value="OR"' + (o.effectType==="OR"?' selected':'') + '>OR</option>',
         '    <option value="HR"' + (o.effectType==="HR"?' selected':'') + '>HR</option>',
@@ -605,7 +606,7 @@
       if (!o.effect) return "—";
       const low = o.ciLo || "?";
       const high = o.ciHi || "?";
-      return escapeHtml(o.effectType) + " " + escapeHtml(o.effect) + " (95% CI " + escapeHtml(low) + " to " + escapeHtml(high) + ")";
+      return (o.effectType ? escapeHtml(o.effectType) : "Effect (measure not specified)") + " " + escapeHtml(o.effect) + " (95% CI " + escapeHtml(low) + " to " + escapeHtml(high) + ")";
     }
 
     function renderPreview() {
@@ -776,7 +777,15 @@
       o.ciLo = fmt(r.ciLo);
       o.ciHi = fmt(r.ciHi);
       const KNOWN = { RR: 1, OR: 1, HR: 1, MD: 1, SMD: 1, RD: 1 };
-      o.effectType = (r.measure && KNOWN[r.measure]) ? r.measure : (r.scale === "ratio" ? "RR" : "MD");
+      // Never guess the measure: a linear-scale pool may be a log OR / log RR / SMD / MD and a
+      // ratio-scale one an OR / HR / RR. Unnamed -> "" (not specified) plus a visible note.
+      if (r.measure && KNOWN[r.measure]) {
+        o.effectType = r.measure;
+      } else {
+        o.effectType = "";
+        o.comments = "Effect measure not supplied by the producing tool (pooled on its " +
+          (r.scale === "ratio" ? "ratio" : "analysis (e.g. log)") + " scale) — set the effect type.";
+      }
       if (r.k != null) o.studies = String(r.k);
       if (r.nTotal != null) o.participants = String(r.nTotal);
       if (r.label) o.outcome = r.label;
@@ -805,7 +814,8 @@
         if (idx >= 0) {
           const ex = state.outcomes[idx];
           ex.effect = o.effect; ex.ciLo = o.ciLo; ex.ciHi = o.ciHi;
-          ex.effectType = o.effectType; ex.studies = o.studies;
+          if (o.effectType) ex.effectType = o.effectType;  // an unnamed measure keeps the user's choice
+          ex.studies = o.studies;
           if (o.participants) ex.participants = o.participants;
         } else {
           state.outcomes.push(o);
