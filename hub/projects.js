@@ -9,8 +9,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Risk of Bias",
-    summary: "Automated Risk-of-Bias assessment for RoB 2 (randomized trials) and ROBINS-I (non-randomized). Paste each study's abstract/methods (or pull from Extract via the sr-extract-v1 / ma-studies-v1 bus); a free in-browser phrase engine reads Cochrane signalling cues and SUGGESTS a per-domain low/some/high judgment with the supporting sentence it keyed on. Every suggestion is reviewer-confirmed or overridden — never auto-final (Screen pattern). Outputs a RoB table + traffic-light figure, feeding the synthesis/MA apps and PRISMA. Optional AI via agent-handoff / BYO-key. Honestly benchmarked: 62.6 vs RobotReviewer 56.7 Macro-F1 on the RoBBR gold subset [measured].",
-    note: "Completes the Design → Search → Screen → Extract → RoB → synthesis pipeline. Beats RobotReviewer on the RoBBR head-to-head (3 of 4 domains); below frontier LLMs. Reproduce: node benchmark/run_rob_benchmark.mjs.",
+    summary: "Automated Risk-of-Bias assessment for RoB 2 (randomized trials) and ROBINS-I (non-randomized). Paste each study's abstract/methods (or pull from Extract via the sr-extract-v1 / ma-studies-v1 bus); a free in-browser phrase engine reads Cochrane signalling cues and SUGGESTS a per-domain low/some/high judgment with the supporting sentence it keyed on. Every suggestion is reviewer-confirmed or overridden — never auto-final (Screen pattern). Outputs a RoB table + traffic-light figure, feeding the synthesis/MA apps and PRISMA. Optional AI via agent-handoff / BYO-key. Benchmarked: 62.6 vs RobotReviewer 56.7 Macro-F1 on the RoBBR RobotReviewer subset (n=99) [measured]; each lies inside the other's 95% interval, so no superiority is claimed.",
+    note: "Completes the Design → Search → Screen → Extract → RoB → synthesis pipeline. On the RoBBR head-to-head, 62.6 vs RobotReviewer 56.7 Macro-F1 with each inside the other's 95% interval (no superiority claimed); below frontier LLMs. Reproduce: node benchmark/run_rob_benchmark.mjs.",
     tags: ["risk-of-bias", "rob2", "robins-i", "automated", "signalling-questions", "robotreviewer", "traffic-light", "pipeline"]
   },
   {
@@ -670,7 +670,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Quantify primary-study overlap across the reviews in an umbrella review (review of reviews) via the Corrected Covered Area (CCA = (N−r)/(r·c−r); Pieper 2014), with Pieper's grooves (slight/moderate/high/very high), a pairwise shared-study matrix, and the most-shared studies — so a pool across overlapping reviews doesn't double-count evidence.",
+    summary: "Quantify primary-study overlap across the reviews in an umbrella review (review of reviews) via the Corrected Covered Area (CCA = (N−r)/(r·c−r); Pieper 2014), with an overlap band (slight/moderate/high/very high; the page's own cut-points), a pairwise shared-study matrix, and the most-shared studies — so a pool across overlapping reviews doesn't double-count evidence.",
     note: "Needs the full cited-study list per review (matched on a consistent id). CCA is whole-umbrella; per-outcome overlap can differ. Method integrated from the UmbrellaEngine project.",
     tags: ["umbrella-review", "overlap", "cca", "corrected-covered-area", "pieper", "non-independence", "review-of-reviews"]
   },
