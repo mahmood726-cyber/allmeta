@@ -15,7 +15,11 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-HAND_EDITED = ['component-nma', 'cross-design', 'multi-outcome-ma', 'nma-inconsistency', 'rve-meta']
+# cross-design and multi-outcome-ma were hand-edited only by a wrong DOI (sim.3445 = Moore 2008,
+# kxl018 = Ghosh 2006; Crossref). Corrected to citation.js's sim.3377 / kxm023, both READMEs
+# equal the generator output, so a full run reports them as unchanged, not preserved.
+HAND_EDITED = ['component-nma', 'nma-inconsistency', 'rve-meta']
+NOW_GENERATED = ['cross-design', 'multi-outcome-ma']
 
 
 def _gen():
@@ -121,4 +125,6 @@ def test_full_run_on_repo_readmes_changes_nothing(tmp_path):
     assert len(statuses) >= 35, statuses
     for app in HAND_EDITED:
         assert statuses[app] == 'PRESERVED (hand-edited)', (app, statuses[app])
+    for app in NOW_GENERATED:
+        assert statuses[app] == 'SKIP (no change)', (app, statuses[app])
     assert 'WROTE' not in statuses.values(), statuses
