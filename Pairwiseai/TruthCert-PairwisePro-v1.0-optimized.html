@@ -11765,8 +11765,8 @@ plt.show()
       const studies = data.names || data.yi.map((_, i) => `Study_${i + 1}`);
       
       const data_lines = studies.map((s, i) => 
-        `"${s}" ${data.yi[i].toFixed(4)} ${Math.sqrt(data.vi[i]).toFixed(4)}`
-      ).join('\\n');
+        `"${String(s).replace(/"/g,"'")}" ${data.yi[i].toFixed(4)} ${Math.sqrt(data.vi[i]).toFixed(4)}`
+      ).join('\n');
       
       return `
 * =============================================
