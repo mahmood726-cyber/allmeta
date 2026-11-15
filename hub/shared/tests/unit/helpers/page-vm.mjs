@@ -32,11 +32,12 @@ function element(id) {
 }
 
 // Load `page` (path from the repo root), run each listed shared script (repo-root
-// paths) and then every inline script for which `pick(src)` is true.
-export function loadPage(page, { shared = [], pick = () => true } = {}) {
+// paths) and then every inline script for which `pick(src)` is true. `storage` seeds
+// localStorage before any script runs.
+export function loadPage(page, { shared = [], pick = () => true, storage = {} } = {}) {
   const els = new Map();
   const byId = id => { if (!els.has(id)) els.set(id, element(id)); return els.get(id); };
-  const store = new Map();
+  const store = new Map(Object.entries(storage));
   const c = {
     console: { log() {}, warn() {}, error() {}, info() {}, debug() {} },
     setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
