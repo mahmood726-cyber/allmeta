@@ -3,12 +3,13 @@
  * Standard living meta-analysis re-pools every time a new study lands.
  * This module adds two enhancements over the naive re-pool:
  *
- *   1. TIME-DECAY WEIGHTING — older RoB ratings get downweighted because
- *      they were assigned under earlier evidence (e.g., a study judged
- *      "low risk" in 2020 may have been re-rated "some concerns" in 2024
- *      after better signal-quality methods). Each study carries a list
- *      of (date, rob) ratings; pooling uses the LATEST rating, with
- *      effective weight w_eff = (1 − bias(rob_latest)) × 1/(v + τ²).
+ *   1. LATEST-RATING WEIGHTING — a study can be re-rated over time
+ *      (e.g., judged "low risk" in 2020 and "some concerns" in 2024).
+ *      Each study carries a list of (date, rob) ratings; at each snapshot
+ *      pooling uses the LATEST rating dated on or before that snapshot,
+ *      with effective weight w_eff = (1 − bias(rob_latest)) × 1/(v + τ²).
+ *      Earlier ratings are replaced, not decayed: the age of a rating
+ *      does not enter the weight.
  *
  *   2. SNAPSHOT TRACKING — given a list of snapshot dates (e.g. quarterly),
  *      compute the pooled estimate AS-OF each snapshot using only studies
@@ -23,10 +24,13 @@
  *   { snapshots: [{ date, mu, se, ci_lo, ci_hi, tau2, k, drift_vs_prev,
  *                   warning? }, ...] }
  *
- * Reference: Elliott JH et al. 2017 "Living systematic reviews: an
- * emerging opportunity to narrow the evidence-practice gap", PLOS Med
- * 14(2):e1002264.  Iannizzotto-Venezze et al. 2024 (in prep) propose
- * the RoB-time-decay weighting; this is a faithful implementation.
+ * Reference (living systematic reviews in general): Elliott JH et al.
+ * 2017 "Living systematic reviews: an emerging opportunity to narrow the
+ * evidence-practice gap", PLOS Med 14(2):e1002264.  The (1 − bias)
+ * down-weighting by the latest RoB rating and the default bias map below
+ * are this module's own sensitivity heuristic; no published method is
+ * claimed for them, and they are not validated against an external
+ * reference.
  */
 (function (global) {
   "use strict";

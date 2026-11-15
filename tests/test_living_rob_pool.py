@@ -155,3 +155,39 @@ def test_rob_history_update_changes_pool_at_later_snapshots():
     assert out["rob_b"] == "high"
     # Pool shifts toward the lighter-weighted (-0.10) study after re-rating.
     assert out["mu_post_re_rating"] > out["mu_pre_re_rating"]
+
+
+# ---- provenance of the weighting (lane aitems, 2026-11-15) -------------------------------------
+# The module header used to say an "in prep" paper (Iannizzotto-Venezze et al. 2024) "propose[s]
+# the RoB-time-decay weighting; this is a faithful implementation". An unpublished source cannot be
+# evidence for a method, and the code applies no time decay at all (the latest rating replaces older
+# ones; see the behavioural test below). The header must not present an unpublished source as support.
+UNPUBLISHED = ("in prep", "in preparation", "submitted", "under review", "unpublished", "forthcoming")
+
+
+def _header(text: str) -> str:
+    return text.split("(function (global)", 1)[0].lower()
+
+
+def test_header_cites_no_unpublished_source_as_support():
+    header = _header(MODULE.read_text(encoding="utf-8"))
+    hits = [w for w in UNPUBLISHED if w in header]
+    assert not hits, f"module header cites an unpublished source as support: {hits}"
+    assert "faithful implementation" not in header
+
+
+def test_rating_age_does_not_enter_the_weight():
+    # Same latest rating, rated 4 years apart: if the weight decayed with rating age the two
+    # snapshots would differ. They must be identical (latest rating replaces, never decays).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const mk = (d) => [
+          {{ yi: -0.3, vi: 0.01, published_date: "2019-01-01", rob_history: [{{ date: d, rob: "some" }}] }},
+          {{ yi: -0.1, vi: 0.02, published_date: "2019-01-01", rob_history: [{{ date: "2019-01-01", rob: "low" }}] }},
+        ];
+        const a = M._poolSnapshot(mk("2020-01-01"), "2025-01-01");
+        const b = M._poolSnapshot(mk("2024-12-01"), "2025-01-01");
+        console.log(JSON.stringify({{ a: a.mu, b: b.mu, ba: a.detail[0].bias, bb: b.detail[0].bias }}));
+    """)
+    assert out["ba"] == out["bb"] == 0.25
+    assert out["a"] == out["b"]

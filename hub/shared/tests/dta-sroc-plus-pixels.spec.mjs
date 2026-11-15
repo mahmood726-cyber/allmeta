@@ -1,5 +1,6 @@
 import {test,expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
+import {loadComplete} from './load-complete.mjs';
 const corpus=JSON.parse(readFileSync(new URL('../../../dta-sroc/validate/corpus/plus-reference.json',import.meta.url),'utf8'));
 // Windows Edge, fixed viewport/DPR and explicit pixel thresholds. Baselines are reviewed artefacts.
 const options={threshold:0.2,maxDiffPixelRatio:0.0001,animations:'disabled',caret:'hide'};
@@ -18,7 +19,9 @@ const configs=[
 const targets={table:'#plus-results table',cards:'#plus-results dl',plot:'#plus-results svg'};
 async function render(page,config){
  await page.setViewportSize(config.mobile?{width:390,height:844}:{width:1280,height:900});
- await page.goto('/dta-sroc/index.html',{waitUntil:'load'});
+ // A request the local server did not deliver is reloaded, named in the log (load-complete.mjs); the 28-option
+ // assertion below is unchanged.
+ await loadComplete(page,'/dta-sroc/index.html',async()=>await page.locator('#plus-example option').count()===28);
  await expect(page.locator('#plus-example option')).toHaveCount(28);
  const c=corpus.cases.find(c=>c.id===config.id);expect(c?.ok).toBe(true);
  const ok=await page.evaluate(({c,config})=>!!AlmDTAPlusUI.set({rows:c.rows,method:c.method,correction:c.correction,at:config.at,prevalence:config.prevalence}),{c,config});
