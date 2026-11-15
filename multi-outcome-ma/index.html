@@ -175,7 +175,19 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
       sgrid += '<div class="card"><span class="k">μ̂₂ (joint)</span><span class="v">' + fmt(biv.mu[1], 4) + '</span></div>';
       sgrid += '<div class="card"><span class="k">τ₁</span><span class="v">' + fmt(biv.tau[0], 3) + '</span></div>';
       sgrid += '<div class="card"><span class="k">τ₂</span><span class="v">' + fmt(biv.tau[1], 3) + '</span></div>';
-      sgrid += '<div class="card"><span class="k">ρ_between</span><span class="v">' + fmt(biv.rho_between, 3) + '</span></div>';
+      // With a between-study SD at 0 Sigma_RE = 0 whatever rho is, so the likelihood is flat in rho
+      // and the engine returns the first grid value it tried (-0.9); metafor::rma.mv returns an
+      // equally arbitrary value there. Say so instead of printing it. "At 0" is relative to the
+      // outcome's median within-study SE (tau < 0.001 x SE), so the rule does not depend on units.
+      function medianSE(k) {
+        var se = studies.map(function (s) { return s.se[k]; }).filter(function (x) { return isFinite(x) && x > 0; }).sort(function (a, b) { return a - b; });
+        var n = se.length; return n ? (n % 2 ? se[(n - 1) / 2] : (se[n / 2 - 1] + se[n / 2]) / 2) : NaN;
+      }
+      var rhoIdentified = [0, 1].every(function (k) { var m = medianSE(k); return isFinite(m) && biv.tau[k] >= 1e-3 * m; });
+      sgrid += '<div class="card"><span class="k">ρ_between</span><span class="v">' +
+        (rhoIdentified ? fmt(biv.rho_between, 3)
+          : '<span style="font-size:0.8em" title="A between-study SD is 0, so the between-study correlation has no effect on the fit and cannot be estimated.">not identified (τ = 0)</span>') +
+        '</span></div>';
       sgrid += '<div class="card"><span class="k">k (complete)</span><span class="v">' + biv.k_complete + ' / ' + biv.k_studies + '</span></div>';
       document.getElementById("bivariate-summary").innerHTML = sgrid;
 
@@ -206,7 +218,10 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
       }
       document.querySelector("#compare-table tbody").innerHTML = rowsHtml;
 
-      window.__almLastMultiOutcome = function () { return { studies: studies, bivariate: biv, univariate: uni }; };
+      // The exported report carries what the page shows: no rho_between when it is not identified.
+      var bivOut = rhoIdentified ? biv : Object.assign({}, biv,
+        { rho_between: null, rho_between_note: "not identified: a between-study SD is 0" });
+      window.__almLastMultiOutcome = function () { return { studies: studies, bivariate: bivOut, univariate: uni }; };
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
