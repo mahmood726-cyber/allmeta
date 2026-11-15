@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/gosh-metareg/
 
 - **Category:** Pairwise MA
 - **Data shape:** pairwise effect sizes — one row per study with `{label, est, se}` (or CI).
-- **Purpose:** Î² coefficient stability across subsets.
+- **Purpose:** β coefficient stability across subsets.
 
 ## Cite as
 

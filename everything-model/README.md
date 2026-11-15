@@ -1,6 +1,6 @@
 # Everything model
 
-Joint outcome Ã— time Ã— RoB hierarchy.
+Joint outcome × time × RoB hierarchy.
 
 Part of the [allmeta](https://github.com/mahmood726-cyber/allmeta) collection.
 
@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/everything-model/
 
 - **Category:** Living Evidence
 - **Data shape:** pairwise effect sizes — one row per study with `{label, est, se}` (or CI).
-- **Purpose:** Joint outcome Ã— time Ã— RoB hierarchy.
+- **Purpose:** Joint outcome × time × RoB hierarchy.
 
 ## Method papers
 
