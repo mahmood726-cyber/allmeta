@@ -21,6 +21,9 @@
  *        θ̂_s = ŵ_s · ŷ_s + (1 - ŵ_s) · μ̂
  *      where ŵ_s = σ²_between / (σ²_between + se²(ŷ_s)).
  *
+ * The reported SE / 95% interval of θ̂_s is metafor::blup's: w·se² + (1−w)²·Var(μ̂),
+ * conditional on the estimated σ²_between (it does not add σ² uncertainty).
+ *
  * Personalised prediction: for a new patient with subgroup label s,
  * return θ̂_s with its posterior SE. For unobserved subgroups (no
  * studies report them), return μ̂ alone.
@@ -85,6 +88,13 @@
   // typically have k=1–3, where the DL estimator is severely biased. Reuses
   // ma-core.tau2PM (validated vs metafor); falls back to DL only if ma-core is
   // unreachable in scope.
+  // Which estimator _tau2_PM actually used ("PM", or "DL" when ma-core is not loaded);
+  // fit() reports it so a silent fallback is visible.
+  function _tau2Method() {
+    var mc = _maCore();
+    return (mc && typeof mc.tau2PM === "function") ? "PM" : "DL";
+  }
+
   function _tau2_PM(rows) {
     if (rows.length < 2) return 0;
     var mc = _maCore();
@@ -146,9 +156,11 @@
         ? sigma2_between / (sigma2_between + seSq)
         : 0;
       var thetaShrunk = w * pool.yi_pooled + (1 - w) * overall.mu;
-      // Posterior variance: shrinkage formula (Morris 1983).
-      var v_post = w * seSq + (1 - w) * overall.se * overall.se
-                 + w * (1 - w) * (pool.yi_pooled - overall.mu) * (pool.yi_pooled - overall.mu);
+      // Variance of the BLUP given the estimated σ²_between (= metafor::blup se):
+      //   Var = w·se² + (1−w)²·Var(μ̂). It treats σ²_between as known. (The former term
+      //   w·se² + (1−w)·Var(μ̂) + w(1−w)(ŷ−μ̂)², labelled "Morris 1983", is the variance of a
+      //   two-component mixture, not Morris's EB variance; it has no published source.)
+      var v_post = w * seSq + (1 - w) * (1 - w) * overall.se * overall.se;
       var seShrunk = Math.sqrt(Math.max(1e-12, v_post));
       subgroupResults[name] = {
         yi_pooled: pool.yi_pooled, se_pooled: pool.se_pooled,
@@ -169,6 +181,7 @@
       },
       subgroups: subgroupResults,
       sigma2_between: sigma2_between,
+      tau2_method: _tau2Method(),
       n_subgroups: groupOrder.length,
       n_rows: rows.length,
     };

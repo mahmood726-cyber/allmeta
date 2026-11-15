@@ -78,8 +78,8 @@
     var verdict = (n < 30)
       ? "Only " + n + " values — too few for a reliable Benford screen (≥100 recommended; ≥30 minimum). Treat the result as indicative only."
       : anomalous
-        ? "First-digit MAD " + mad.toFixed(4) + " (" + cls + "), χ²(8)=" + chi2.toFixed(1) + ", p=" + chi2p.toFixed(4) + " — the leading-digit distribution DEVIATES from Benford (largest at digit " + maxDigit + "). Investigate: is this a fabrication signal, or simply a quantity that shouldn't follow Benford (bounded/narrow-range)?"
-        : "First-digit MAD " + mad.toFixed(4) + " (" + cls + "), χ²(8)=" + chi2.toFixed(1) + ", p=" + chi2p.toFixed(4) + " — the leading digits are consistent with Benford. No digit anomaly (this is a screen, not a clean bill of health).";
+        ? "First-digit MAD " + mad.toFixed(4) + " (" + cls + "), χ²(8)=" + chi2.toFixed(1) + ", p=" + (chi2p < 1e-4 ? chi2p.toExponential(1) : chi2p.toFixed(4)) + " — the leading-digit distribution DEVIATES from Benford (largest at digit " + maxDigit + "). Investigate: is this a fabrication signal, or simply a quantity that shouldn't follow Benford (bounded/narrow-range)?"
+        : "First-digit MAD " + mad.toFixed(4) + " (" + cls + "), χ²(8)=" + chi2.toFixed(1) + ", p=" + (chi2p < 1e-4 ? chi2p.toExponential(1) : chi2p.toFixed(4)) + " — the leading digits are consistent with Benford. No digit anomaly (this is a screen, not a clean bill of health).";
 
     return {
       ok: true, n: n, counts: counts, observed: obs, expected: E1.slice(),

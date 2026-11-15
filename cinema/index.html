@@ -105,7 +105,7 @@
     </section>
   </main>
   <footer>
-    Rating rule used (allmeta heuristic — NOT the official CINeMA algorithm): each Major-concerns domain downgrades one confidence level; three or more Some-concerns domains add one further downgrade; downgrades are capped at 3. 0 downgrades → High; 1 → Moderate; 2 → Low; 3 → Very low. The canonical CINeMA workflow (Nikolakopoulou 2020) is GRADE-style — qualitative judgment per domain with major concerns typically downgrading by 1-2 levels — not an additive integer score. For canonical ratings use the official CINeMA web app at cinema.ispm.unibe.ch; this tool is an aid only.
+    Rating rule: the default summary in Nikolakopoulou et al. 2020 (PLOS Med 17:e1003082) — start at High and drop one level for each domain with Some concerns and two levels for each domain with Major concerns (High → Moderate → Low → Very low). The paper asks reviewers to avoid downgrading twice for related concerns (e.g. imprecision and heterogeneity driven by the same wide interval); adjust by hand where that applies. "Unclear" is not a CINeMA level: it marks a domain still to be resolved and does not downgrade. Domain judgements themselves are entered by you; the official CINeMA web app (cinema.ispm.unibe.ch) derives them from the network.
   </footer>
   <script>
     const DOMAINS = ["within", "reporting", "indirect", "imprecision", "hetero", "incoherence"];
@@ -121,9 +121,9 @@
       ["none", "No concerns", 0],
       ["some", "Some concerns", 1],
       ["major", "Major concerns", 2],
-      // Unclear is weighted 0 per Nikolakopoulou 2020 — it should prompt the reviewer
-      // to resolve missing information rather than automatically downgrade confidence.
-      ["unclear", "Unclear", 0],
+      // "Unclear" is NOT a CINeMA level (CINeMA uses no / some / major concerns). It is kept
+      // so an unresolved domain can be marked, and it does not downgrade until resolved.
+      ["unclear", "Unclear (unresolved)", 0],
     ];
 
     function esc(s) {
@@ -140,24 +140,15 @@
     ];
     let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
 
-    // V11 F-04 — replace pure-additive score with a GRADE-style downgrade rule
-    // closer to Nikolakopoulou 2020:
-    //  • Each "major concerns" domain downgrades 1 level (start at High → Moderate
-    //    → Low → Very low, max 3 downgrades).
-    //  • "Some concerns" do NOT downgrade individually; ≥3 of them downgrade by 1.
-    // Reviewers retain final judgment.
+    // Nikolakopoulou et al. 2020 (PLOS Med 17:e1003082), "Summarising judgments across the
+    // 6 domains": start at High and drop 1 level for each domain with some concerns and 2
+    // levels for each domain with major concerns; floor at Very low. The paper lets reviewers
+    // avoid downgrading twice for related concerns - that judgement stays with the reviewer.
     function downgradeScore(row) {
-      let major = 0, some = 0;
-      for (const d of DOMAINS) {
-        const v = row[d];
-        if (v === "major") major++;
-        else if (v === "some") some++;
-      }
-      // Cumulative downgrade count (capped at 3 = High → Very low).
-      const downgrades = Math.min(3, major + (some >= 3 ? 1 : 0));
-      return downgrades;
+      let d = 0;
+      for (const k of DOMAINS) d += LEVELS.find(l => l[0] === row[k])?.[2] ?? 0;
+      return Math.min(3, d);
     }
-
     function confidenceFrom(downgrades) {
       if (downgrades === 0) return ["high", "High"];
       if (downgrades === 1) return ["mod", "Moderate"];

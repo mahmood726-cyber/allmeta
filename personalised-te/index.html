@@ -37,6 +37,7 @@
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/personalised-te.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -87,7 +88,7 @@ S2, biomarker+, -0.70, 0.028</textarea>
 </section>
   </main>
   <footer>
-    Engine: <code>shared/personalised-te.js</code> — DL τ² within each subgroup + James-Stein / EB shrinkage across subgroups (Morris 1983 posterior variance). The shrunk point estimates reproduce <code>metafor::blup</code> exactly (verified — <code>hub/shared/tests/personalised-te-parity.spec.mjs</code>); the reported SE is intentionally wider than metafor's plug-in <code>blup</code> SE because it adds the Morris-1983 τ²-uncertainty term. References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).
+    Engine: <code>shared/personalised-te.js</code> — Paule-Mandel τ² (<code>shared/ma-core.js</code>) within each subgroup and across subgroup pools, then empirical-Bayes (BLUP) shrinkage. Shrunk estimates, SEs and 95% intervals equal <code>metafor::blup</code> of <code>rma(method="PM")</code> fitted to the subgroup pools (lane audit7, R 4.6.0 / metafor 5.2.1). The interval treats σ²_between as known, so with few subgroups it is optimistic. References: Kent et al. 2020 PATH Statement (Ann Intern Med 172:35-45); Brand &amp; Kragh Andersen 1992 (Stat Med 11:1879-1894).
   </footer>
   <script>
   (function () {
