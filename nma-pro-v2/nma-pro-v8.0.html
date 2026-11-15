@@ -368,7 +368,10 @@ const XtX=Matrix.zeros(p,p);K.forEach(i=>{for(let a=0;a<p;a++)for(let c=0;c<p;c+
 const ll=t=>{const g=FrequentistNMA.fitGLS(matrices,t);const base=ldet(g.SigmaRed||g.Sigma)+g.Q;return restricted?-0.5*((k-p)*Math.log(2*Math.PI)+base+ldet(g.XtSiX))+0.5*ldXtX:-0.5*(k*Math.log(2*Math.PI)+base)};
 let tau2=tau2Given;if(!(Number.isFinite(tau2)&&tau2>=0&&(estimator===lik)))tau2=FrequentistNMA.estimateTau2(matrices,lik).tau2;
 const nObs=restricted?k-p:k;
-const fs=(logL,par)=>({logL,deviance:-2*logL,AIC:-2*logL+2*par,BIC:-2*logL+par*Math.log(nObs),AICc:-2*logL+2*par*Math.max(nObs,par+2)/(Math.max(nObs,par+2)-par-1),nParams:par});
+// deviance as metafor: REML -2 logLik; ML -2 (logLik - logLik of the saturated model), the saturated logLik being
+// -1/2 (k log(2 pi) + log|V|) on the kept rows. BIC / AICc are undefined (null) when nObs <= 0 (a saturated tree under REML).
+const llSat=restricted?0:-0.5*(k*Math.log(2*Math.PI)+ldet(K.map(a=>K.map(b=>matrices.V[a][b]))));
+const fs=(logL,par)=>({logL,deviance:restricted?-2*logL:-2*(logL-llSat),AIC:-2*logL+2*par,BIC:nObs>0?-2*logL+par*Math.log(nObs):null,AICc:nObs>0?-2*logL+2*par*Math.max(nObs,par+2)/(Math.max(nObs,par+2)-par-1):null,nParams:par});
 const re=fs(ll(tau2),p+1),fe=fs(ll(0),p);
 const lrt=Math.max(0,2*(re.logL-fe.logL));const pLRT=lrt>0?0.5*Stats.pchisqU(lrt,1):1;
 return{randomEffects:{...re,tau2},fixedEffect:fe,likelihood:lik+(estimator===lik?'':` (RE model at its ${lik} tau2; the analysis uses ${estimator})`),nObs:k,
@@ -413,7 +416,7 @@ const Matrix={zeros:(m,n)=>Array(m).fill(null).map(()=>Array(n).fill(0)),identit
 // rescaled). A singular pivot THROWS (err.name 'SingularMatrix'). Until 2026-11-15 the test was an absolute
 // |pivot| < 1e-14 and a singular pivot was skipped: an unidentified parameter (a treatment cut off from the reference)
 // came back as estimate 0 with SE 1, and a well-posed fit on a small scale (variances ~1e-14) was silently wrong.
-lu(A){const n=A.length,L=Matrix.zeros(n,n),U=A.map(r=>[...r]),P=Matrix.identity(n);let amax=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const a=Math.abs(U[i][j]);if(a>amax)amax=a}if(!Number.isFinite(amax))throw Object.assign(new Error('Matrix has a non-finite entry'),{name:'SingularMatrix'});const tol=Math.max(1,n)*64*Number.EPSILON*amax;for(let k=0;k<n;k++){let maxV=Math.abs(U[k][k]),maxR=k;for(let i=k+1;i<n;i++)if(Math.abs(U[i][k])>maxV){maxV=Math.abs(U[i][k]);maxR=i}if(maxR!==k){[U[k],U[maxR]]=[U[maxR],U[k]];[L[k],L[maxR]]=[L[maxR],L[k]];[P[k],P[maxR]]=[P[maxR],P[k]]}L[k][k]=1;if(!(maxV>tol)){const err=new Error('Matrix is singular (pivot '+k+' of '+n+' is zero relative to the matrix scale)');err.name='SingularMatrix';err.pivot=k;throw err}for(let i=k+1;i<n;i++){L[i][k]=U[i][k]/U[k][k];for(let j=k;j<n;j++)U[i][j]-=L[i][k]*U[k][j]}}return{L,U,P}},
+lu(A){const n=A.length,L=Matrix.zeros(n,n),U=A.map(r=>[...r]),P=Matrix.identity(n);let amax=0,finite=true;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const a=Math.abs(U[i][j]);if(!Number.isFinite(a))finite=false;else if(a>amax)amax=a}if(!finite)throw Object.assign(new Error('Matrix has a non-finite entry'),{name:'SingularMatrix'});const tol=Math.max(1,n)*64*Number.EPSILON*amax;for(let k=0;k<n;k++){let maxV=Math.abs(U[k][k]),maxR=k;for(let i=k+1;i<n;i++)if(Math.abs(U[i][k])>maxV){maxV=Math.abs(U[i][k]);maxR=i}if(maxR!==k){[U[k],U[maxR]]=[U[maxR],U[k]];[L[k],L[maxR]]=[L[maxR],L[k]];[P[k],P[maxR]]=[P[maxR],P[k]]}L[k][k]=1;if(!(maxV>tol)){const err=new Error('Matrix is singular (pivot '+k+' of '+n+' is zero relative to the matrix scale)');err.name='SingularMatrix';err.pivot=k;throw err}for(let i=k+1;i<n;i++){L[i][k]=U[i][k]/U[k][k];for(let j=k;j<n;j++)U[i][j]-=L[i][k]*U[k][j]}}return{L,U,P}},
 multiply(A,B){const m=A.length,n=B[0].length,p=B.length,C=Matrix.zeros(m,n);for(let i=0;i<m;i++)for(let j=0;j<n;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C},
 solve(A,b){const n=A.length,{L,U,P}=Matrix.lu(A),pb=Matrix.multiply(P,b.map(x=>[x])).map(r=>r[0]),y=Array(n).fill(0);for(let i=0;i<n;i++){y[i]=pb[i];for(let j=0;j<i;j++)y[i]-=L[i][j]*y[j]}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=y[i];for(let j=i+1;j<n;j++)x[i]-=U[i][j]*x[j];x[i]/=U[i][i]}return x},
 // One LU, then Matrix.solve's own substitution per column. This used to call Matrix.solve per column, i.e. a
@@ -1614,6 +1617,9 @@ if(!Array.isArray(baseMatrices?.treatments)||baseMatrices.treatments.length<3)re
 const pTreat=baseMatrices.p;
 const baseline=processed.map(s=>this.resolveBaselineLogit(s));
 const meanBaseline=Stats.mean(baseline);
+// without control-arm counts (yi/se input) every baseline is the same default, and identical control rates give a
+// constant column: the design is singular -- say so (Matrix.lu raises on a singular pivot since 2026-11-15)
+{const spread=Math.max(...baseline.map(b=>Math.abs(b-meanBaseline)));if(!(spread>1e-8*Math.max(1,Math.abs(meanBaseline))))return{applicable:false,message:'Baseline-model NMA needs control-arm event counts that vary across studies: the baseline-risk covariate is constant here (direct TE/SE input, or identical control rates), so its slope is not identifiable'}}
 const X=baseMatrices.X.map((row,i)=>[...row,(baseline[i]??0)-meanBaseline]);
 // The baseline-risk column makes the design p + 1 columns and df.Q one smaller; tau2 is the CHOSEN estimator of the core
 // engine (FrequentistNMA.estimateTau2: DL / PM / REML / ML on the GLS with the multi-arm covariance) on that design, and
@@ -1622,9 +1628,8 @@ const X=baseMatrices.X.map((row,i)=>[...row,(baseline[i]??0)-meanBaseline]);
 // was chosen, and HKSJ used the normal quantile.
 const matrices={...baseMatrices,X,p:pTreat+1,dfQ:(baseMatrices.dfQ??(baseMatrices.n-pTreat))-1};
 if(!(matrices.dfQ>=0))return{applicable:false,message:'Baseline-model NMA needs df.Q >= 1 for the main model (one more parameter)'};
-let tau2=0;
-if(estimator!=='FE')tau2=Math.max(0,Number(FrequentistNMA.estimateTau2(matrices,estimator)?.tau2)||0);
-const fit=FrequentistNMA.fitGLS(matrices,tau2);
+let tau2=0,fit;
+try{if(estimator!=='FE')tau2=Math.max(0,Number(FrequentistNMA.estimateTau2(matrices,estimator)?.tau2)||0);fit=FrequentistNMA.fitGLS(matrices,tau2)}catch(e){if(e&&e.name==='SingularMatrix')return{applicable:false,message:'Baseline-model NMA not estimable: the baseline-risk covariate is collinear with the treatment contrasts (singular design)'};throw e}
 const dfB=matrices.dfQ;
 let correctionFactor=1,tDf=null;
 if(smallStudyCorrection==='hksj'&&dfB>0){correctionFactor=Math.max(1,fit.Q/dfB);tDf=dfB}
@@ -2683,9 +2688,11 @@ return results;
 //  * HKSJ / mKH / SJ / KR intervals: netmeta 3.7.0 has no variance-scaled interval (method.random.ci is "classic" or
 //    "t-dist"); the script reproduces tau2, Q, the estimates and SEs before the correction, and says so.
 const RScriptBuilder={
-num(v){const x=Number(v);return Number.isFinite(x)?String(x):'NA'},
+// a value is a number only if it is a finite number or a non-blank numeric string ('' / null / true are NOT 0)
+isNum(v){if(typeof v==='number')return Number.isFinite(v);if(typeof v!=='string'||v.trim()==='')return false;return Number.isFinite(Number(v.trim()))},
+num(v){return this.isNum(v)?String(Number(v)):'NA'},
 str(v){return Security.toRString(v)},
-dataKind(studies){const direct=studies.some(s=>Number.isFinite(Number(s?.yi))&&((Number.isFinite(Number(s?.se))&&Number(s.se)>0)||(Number.isFinite(Number(s?.vi))&&Number(s.vi)>0)));if(direct)return'direct';const cont=studies.some(s=>Number.isFinite(Number(s?.mean1))&&Number.isFinite(Number(s?.sd1)));return cont?'continuous':'counts'},
+dataKind(studies){const N=v=>this.isNum(v),direct=studies.some(s=>N(s?.yi)&&((N(s?.se)&&Number(s.se)>0)||(N(s?.vi)&&Number(s.vi)>0)));if(direct)return'direct';const cont=studies.some(s=>N(s?.mean1)&&N(s?.sd1)&&N(s?.mean2)&&N(s?.sd2));return cont?'continuous':'counts'},
 arms(studies,fields){const by=new Map(),notes=[];studies.forEach((s,i)=>{const id=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():`row${i+1}`;if(!by.has(id))by.set(id,new Map());const m=by.get(id);[[s.treatment1,1],[s.treatment2,2]].forEach(([t,k])=>{const key=String(t);const val=fields.map(f=>s[f+k]);if(m.has(key)){const old=m.get(key);if(old.some((x,j)=>Number(x)!==Number(val[j])))notes.push(`study ${id} arm ${key}: rows disagree (${old.join('/')} vs ${val.join('/')}); the first is used`)}else m.set(key,val)})});const rows=[];by.forEach((m,id)=>m.forEach((val,t)=>rows.push({id,t,val})));return{rows,notes}},
 build(studies,options={}){
 studies=Array.isArray(studies)?studies:[];
@@ -2694,7 +2701,7 @@ const kind=this.dataKind(studies),notes=[];let reproducible=true;
 let code='';const smR=(kind==='counts'&&em==='HR')?'OR':em;
 if(kind==='counts'&&em==='HR')notes.push('the page computes "HR" from event counts as a log odds ratio; the script uses sm = "OR"');
 if(kind==='direct'){
-code+=`studies <- data.frame(\n  studlab = c(${studies.map((s,i)=>this.str(s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():`row${i+1}`)).join(', ')}),\n  treat1 = c(${studies.map(s=>this.str(s.treatment1)).join(', ')}),\n  treat2 = c(${studies.map(s=>this.str(s.treatment2)).join(', ')}),\n  TE = c(${studies.map(s=>this.num(s.yi)).join(', ')}),\n  seTE = c(${studies.map(s=>{const se=Number(s?.se),vi=Number(s?.vi);return this.num(Number.isFinite(se)&&se>0?se:Math.sqrt(vi))}).join(', ')})\n)\n`;
+code+=`studies <- data.frame(\n  studlab = c(${studies.map((s,i)=>this.str(s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():`row${i+1}`)).join(', ')}),\n  treat1 = c(${studies.map(s=>this.str(s.treatment1)).join(', ')}),\n  treat2 = c(${studies.map(s=>this.str(s.treatment2)).join(', ')}),\n  TE = c(${studies.map(s=>this.num(s.yi)).join(', ')}),\n  seTE = c(${studies.map(s=>{const se=this.isNum(s?.se)?Number(s.se):NaN,vi=this.isNum(s?.vi)?Number(s.vi):NaN;return this.num(Number.isFinite(se)&&se>0?se:Math.sqrt(vi))}).join(', ')})\n)\n`;
 code+='p1 <- studies\n';
 }else{
 const fields=kind==='counts'?['events','n']:['mean','sd','n'];const A=this.arms(studies,fields);A.notes.forEach(n=>notes.push(n));
@@ -8479,16 +8486,16 @@ function updateHeterogeneityPanel(het,tau2CI,correctionMethod,modelSelection){do
 // Model Selection Panel
 const msContainer=document.getElementById('modelSelectionPanel');
 if(msContainer&&modelSelection){
-const re=modelSelection.randomEffects,fe=modelSelection.fixedEffect,lrt=modelSelection.LRT;
+const re=modelSelection.randomEffects,fe=modelSelection.fixedEffect,lrt=modelSelection.LRT;const f1=v=>Number.isFinite(v)?v.toFixed(1):'n/a';
 const preferredCls=modelSelection.preferred==='Random Effects'?'text-success':'text-warning';
 msContainer.innerHTML=`
 <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-primary)" title="Compare fixed and random effects models using information criteria">Model Selection (AIC/BIC)</h4>
 <table class="data-table" style="font-size:12px">
 <thead><tr><th>Model</th><th title="Akaike Information Criterion - lower is better. Balances fit and complexity">AIC</th><th title="Bayesian Information Criterion - lower is better. Penalizes complexity more than AIC">BIC</th><th title="Small-sample corrected AIC">AICc</th><th title="Log-likelihood - higher is better fit">Log-L</th></tr></thead>
 <tbody>
-<tr class="${modelSelection.preferred==='Random Effects'?'font-semibold':''}"><td>Random Effects</td><td class="font-mono">${re.AIC.toFixed(1)}</td><td class="font-mono">${re.BIC.toFixed(1)}</td><td class="font-mono">${re.AICc.toFixed(1)}</td><td class="font-mono">${re.logL.toFixed(1)}</td></tr>
-<tr class="${modelSelection.preferred==='Fixed Effect'?'font-semibold':''}"><td>Fixed Effect</td><td class="font-mono">${fe.AIC.toFixed(1)}</td><td class="font-mono">${fe.BIC.toFixed(1)}</td><td class="font-mono">${fe.AICc.toFixed(1)}</td><td class="font-mono">${fe.logL.toFixed(1)}</td></tr>
-<tr style="background:var(--surface-raised)"><td>?AIC</td><td class="font-mono ${modelSelection.deltaAIC>2?'text-success':''}">${(re.AIC-fe.AIC).toFixed(1)}</td><td class="font-mono">${(re.BIC-fe.BIC).toFixed(1)}</td><td class="font-mono">${(re.AICc-fe.AICc).toFixed(1)}</td><td>—</td></tr>
+<tr class="${modelSelection.preferred==='Random Effects'?'font-semibold':''}"><td>Random Effects</td><td class="font-mono">${re.AIC.toFixed(1)}</td><td class="font-mono">${f1(re.BIC)}</td><td class="font-mono">${f1(re.AICc)}</td><td class="font-mono">${re.logL.toFixed(1)}</td></tr>
+<tr class="${modelSelection.preferred==='Fixed Effect'?'font-semibold':''}"><td>Fixed Effect</td><td class="font-mono">${fe.AIC.toFixed(1)}</td><td class="font-mono">${f1(fe.BIC)}</td><td class="font-mono">${f1(fe.AICc)}</td><td class="font-mono">${fe.logL.toFixed(1)}</td></tr>
+<tr style="background:var(--surface-raised)"><td>?AIC</td><td class="font-mono ${modelSelection.deltaAIC>2?'text-success':''}">${(re.AIC-fe.AIC).toFixed(1)}</td><td class="font-mono">${f1(re.BIC-fe.BIC)}</td><td class="font-mono">${f1(re.AICc-fe.AICc)}</td><td>—</td></tr>
 </tbody></table>
 <div class="stat-grid mt-3" style="grid-template-columns:repeat(3,1fr)">
 <div class="stat-card" title="Preferred model based on AIC"><div class="stat-card__value ${preferredCls}" style="font-size:13px">${modelSelection.preferred}</div><div class="stat-card__label">Preferred</div></div>
@@ -9575,6 +9582,7 @@ const idxN1=keyIdx('n1');
 const idxT2=keyIdx('treatment2','arm2','treat2');
 const idxE2=keyIdx('events2','event2','e2');
 const idxN2=keyIdx('n2');
+const idxM1=keyIdx('mean1'),idxSD1=keyIdx('sd1'),idxD1=keyIdx('dose1'),idxM2=keyIdx('mean2'),idxSD2=keyIdx('sd2'),idxD2=keyIdx('dose2');
 const idxYear=keyIdx('year','publicationyear');
 const idxROB=keyIdx('rob','riskofbias');
 const idxYi=keyIdx('yi','te','effect','logeffect');
@@ -9591,9 +9599,9 @@ const parts=parseLine(line);
 if(parts.every(p=>String(p).trim()===''))continue;
 let row={};
 if(hasNamedSchema){
-row={name:parts[idxStudy]??'',treatment1:parts[idxT1]??'',events1:idxE1>=0?parts[idxE1]:'',n1:idxN1>=0?parts[idxN1]:'',treatment2:parts[idxT2]??'',events2:idxE2>=0?parts[idxE2]:'',n2:idxN2>=0?parts[idxN2]:'',yi:idxYi>=0?parts[idxYi]:'',se:idxSe>=0?parts[idxSe]:'',vi:idxVi>=0?parts[idxVi]:'',year:idxYear>=0?parts[idxYear]:'',rob:idxROB>=0?parts[idxROB]:''}
+row={name:parts[idxStudy]??'',treatment1:parts[idxT1]??'',events1:idxE1>=0?parts[idxE1]:'',n1:idxN1>=0?parts[idxN1]:'',treatment2:parts[idxT2]??'',events2:idxE2>=0?parts[idxE2]:'',n2:idxN2>=0?parts[idxN2]:'',yi:idxYi>=0?parts[idxYi]:'',se:idxSe>=0?parts[idxSe]:'',vi:idxVi>=0?parts[idxVi]:'',year:idxYear>=0?parts[idxYear]:'',rob:idxROB>=0?parts[idxROB]:'',mean1:idxM1>=0?parts[idxM1]:'',sd1:idxSD1>=0?parts[idxSD1]:'',dose1:idxD1>=0?parts[idxD1]:'',mean2:idxM2>=0?parts[idxM2]:'',sd2:idxSD2>=0?parts[idxSD2]:'',dose2:idxD2>=0?parts[idxD2]:''}
 }else if(parts.length>=15){
-row={name:parts[0]??'',treatment1:parts[1]??'',events1:parts[2]??'',n1:parts[3]??'',treatment2:parts[7]??'',events2:parts[8]??'',n2:parts[9]??'',year:parts[13]??'',rob:parts[14]??'',yi:parts[15]??'',se:parts[16]??'',vi:parts[17]??''}
+row={name:parts[0]??'',treatment1:parts[1]??'',events1:parts[2]??'',n1:parts[3]??'',treatment2:parts[7]??'',events2:parts[8]??'',n2:parts[9]??'',year:parts[13]??'',rob:parts[14]??'',yi:parts[15]??'',se:parts[16]??'',vi:parts[17]??'',mean1:parts[4]??'',sd1:parts[5]??'',dose1:parts[6]??'',mean2:parts[10]??'',sd2:parts[11]??'',dose2:parts[12]??''}
 }else if(parts.length>=7){
 row={name:parts[0]??'',treatment1:parts[1]??'',events1:parts[2]??'',n1:parts[3]??'',treatment2:parts[4]??'',events2:parts[5]??'',n2:parts[6]??'',year:parts[7]??'',rob:parts[8]??'',yi:parts[9]??'',se:parts[10]??'',vi:parts[11]??''}
 }else{
@@ -9608,13 +9616,16 @@ const hasDirectInput=Number.isFinite(yi)&&((Number.isFinite(se)&&se>0)||(Number.
 // as 0 later (events1 || 0), and NA n as 100. Such a row is dropped here and listed in `dropped` / warnings.
 const isNum=v=>v!==''&&v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(String(v).trim()));
 const countCols=[idxE1,idxN1,idxE2,idxN2];const schemaHasCounts=hasNamedSchema?countCols.some(ix=>ix>=0):true;
-if(!hasDirectInput&&schemaHasCounts){const miss=[['events1',row.events1],['n1',row.n1],['events2',row.events2],['n2',row.n2]].filter(([,v])=>!isNum(v)).map(([k,v])=>`${k}=${String(v??'').trim()===''?'blank':String(v).trim()}`);if(miss.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: missing ${miss.join(', ')} (as netmeta, a comparison with missing data is left out)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:miss,message:msg});warnings.push(msg);continue}}
+// a continuous-outcome row (mean, sd and n in both arms; exportCSV leaves its Events columns blank) is not a count row
+const hasContinuous=['mean1','sd1','n1','mean2','sd2','n2'].every(k=>isNum(row[k]))&&Number(row.sd1)>0&&Number(row.sd2)>0;
+if(!hasDirectInput&&!hasContinuous&&schemaHasCounts){const miss=[['events1',row.events1],['n1',row.n1],['events2',row.events2],['n2',row.n2]].filter(([,v])=>!isNum(v)).map(([k,v])=>`${k}=${String(v??'').trim()===''?'blank':String(v).trim()}`);if(miss.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: missing ${miss.join(', ')} (as netmeta, a comparison with missing data is left out)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:miss,message:msg});warnings.push(msg);continue}}
 const n1=(row.n1!==''&&row.n1!==null&&row.n1!==undefined)?Security.sanitizeInteger(row.n1,100,1,1000000):'';
 const n2=(row.n2!==''&&row.n2!==null&&row.n2!==undefined)?Security.sanitizeInteger(row.n2,100,1,1000000):'';
 const events1=(row.events1!==''&&row.events1!==null&&row.events1!==undefined&&n1!=='')?Security.sanitizeInteger(row.events1,0,0,n1):'';
 const events2=(row.events2!==''&&row.events2!==null&&row.events2!==undefined&&n2!=='')?Security.sanitizeInteger(row.events2,0,0,n2):'';
 const year=(row.year!==''&&row.year!==null&&row.year!==undefined)?Security.sanitizeInteger(row.year,null,1900,2100):null;
-const study={name:String(row.name||`Study ${studies.length+1}`).trim(),treatment1:t1,events1,n1,treatment2:t2,events2,n2,yi:hasDirectInput?yi:'',se:Number.isFinite(se)&&se>0?se:'',vi:Number.isFinite(vi)&&vi>0?vi:'',year,rob:String(row.rob||'').trim()};
+const optNum=v=>isNum(v)?Number(String(v).trim()):'';
+const study={name:String(row.name||`Study ${studies.length+1}`).trim(),treatment1:t1,events1,n1,treatment2:t2,events2,n2,yi:hasDirectInput?yi:'',se:Number.isFinite(se)&&se>0?se:'',vi:Number.isFinite(vi)&&vi>0?vi:'',year,rob:String(row.rob||'').trim(),mean1:optNum(row.mean1),sd1:optNum(row.sd1),dose1:optNum(row.dose1),mean2:optNum(row.mean2),sd2:optNum(row.sd2),dose2:optNum(row.dose2)};
 const check=Validation.isValidStudy(study);
 if(!check.valid){check.errors.forEach(msg=>errors.push(`Row ${rowNum}: ${msg}`));continue}
 if(events1===0||events2===0)warnings.push(`Row ${rowNum}: Zero events detected`);

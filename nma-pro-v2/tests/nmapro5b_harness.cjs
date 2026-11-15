@@ -47,7 +47,7 @@ for (const m of html.slice(0, main.index).matchAll(/<script src="\.\.\/shared\/(
   vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 }
 vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, RobustTailedNMA, CBMBaselineDualNMA, ModelSelection, ExternalBenchmark,' +
-  ' RScriptBuilder: typeof RScriptBuilder !== "undefined" ? RScriptBuilder : null, Stats,' +
+  ' RScriptBuilder: typeof RScriptBuilder !== "undefined" ? RScriptBuilder : null, Stats, Matrix, importCSV,' +
   ' WORKER_CODE: typeof WORKER_CODE !== "undefined" ? WORKER_CODE : null};', ctx, { filename: 'nma-pro-v8.0.html' });
 const X = vm.runInContext('__X', ctx);
 
@@ -149,6 +149,26 @@ for (const [nm, st] of [['senn2', senn2], ['senn', senn]]) for (const est of ['R
   const m = r.modelSelection;
   return { re: m.randomEffects, fe: m.fixedEffect, lrt: m.LRT, likelihood: m.likelihood ?? null, tau2: r.tau2 };
 });
+
+// ---------------------------------------------------------------- agy review of #576
+out.agy = {};
+{ const csv = ['Study,Treatment1,Events1,N1,Mean1,SD1,Dose1,Treatment2,Events2,N2,Mean2,SD2,Dose2,Year,ROB,yi,se,vi',
+    'C1,A,,50,10.2,2.1,,B,,52,9.1,2.3,,2020,low,,,', 'C2,A,,40,11,2,,C,,41,9.5,2.2,,2019,low,,,', 'C3,B,,30,9.4,2.4,,C,,33,9.9,2.1,,2018,,,,',
+    'K1,A,12,100,,,,B,15,100,,,,2021,,,,', 'K2,A,NA,100,,,,C,9,100,,,,2021,,,,'].join('\n');
+  out.agy.csv = safe(() => { const r = X.importCSV(csv); return { kept: r.studies.map(s => [s.name, s.mean1, s.sd1, s.n1, s.mean2, s.sd2, s.n2, s.events1, s.events2]),
+    dropped: (r.dropped || []).map(d => d.name) }; });
+  const two = smoke.filter(s => smoke.filter(x => x.name === s.name).length === 1);
+  const same = two.map(s => ({ ...s, events2: 10, n2: 100 }));                       // identical control rates
+  for (const [nm, st, em] of [['cbm_direct', senn, 'MD'], ['cbm_sameControl', same, 'OR']]) out.agy[nm] = safe(() => {
+    const b = X.CBMBaselineDualNMA.fitBaselineModel(st, { reference: em === 'MD' ? 'plac' : 'A', effectMeasure: em, estimator: 'REML', smallStudyCorrection: 'none' });
+    return { applicable: b.applicable, message: b.message || null }; });
+  const blank = smoke.map(s => ({ ...s, mean1: '', sd1: '', mean2: null, sd2: null, yi: '', se: null, vi: '' }));
+  out.agy.rs = safe(() => { const b = X.RScriptBuilder.build(blank, { reference: 'A', effectMeasure: 'OR', estimator: 'DL' });
+    return { kind: b.kind, code: b.code, num: ['', null, '  ', true, undefined, '1.5', 0, 2].map(v => X.RScriptBuilder.num(v)) }; });
+  out.agy.nan = [[[1, NaN], [0, 1]], [[NaN, 0], [1, 1]], [[1, Infinity], [0, 1]]].map(A => safe(() => ({ ran: true, x: X.Matrix.solve(A, [1, 1]) })));
+  const tree = [['T1', 'B', 'A', -0.3, 0.2], ['T2', 'C', 'A', 0.4, 0.25]].map(([n, t1, t2, y, se]) => ({ name: n, treatment1: t1, treatment2: t2, yi: y, se, vi: se * se }));
+  out.agy.tree = safe(() => { const r = X.FrequentistNMA.analyze(tree, { reference: 'A', effectMeasure: 'MD', estimator: 'REML', smallStudyCorrection: 'none' });
+    const m = r.modelSelection; return { BIC: m.randomEffects.BIC, AICc: m.randomEffects.AICc, feBIC: m.fixedEffect.BIC }; }); }
 
 out.worker = { WORKER_CODE: X.WORKER_CODE !== null, initWorker: /\binitWorker\(/.test(main[1]), workerCall: /\bworkerCall\(/.test(main[1]) };
 process.stdout.write(JSON.stringify(out));

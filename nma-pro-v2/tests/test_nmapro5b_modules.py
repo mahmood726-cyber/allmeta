@@ -186,9 +186,40 @@ def test_f14_model_selection_equals_metafor_fitstats_and_mixture_lrt():
     for k, r in R['ms'].items():
         p = V['ms'][k]
         for m in ('re', 'fe'):
-            for f in ('logL', 'AIC', 'BIC', 'AICc'):
+            for f in ('logL', 'deviance', 'AIC', 'BIC', 'AICc'):  # deviance: ML relative to the saturated model (agy #576)
                 if not _close(p[m][f], r[m][f], 1e-6, 1e-9):
                     bad.append('%s %s %s page %r R %r' % (k, m, f, p[m][f], r[m][f]))
         if not _close(p['lrt']['statistic'], r['lrt'], 1e-6, 1e-9) or not _close(p['lrt']['pValue'], r['p'], 1e-5, 1e-300):
             bad.append('%s LRT page %r R %r' % (k, (p['lrt']['statistic'], p['lrt']['pValue']), (r['lrt'], r['p'])))
     assert bad == []
+
+
+# ---------------------------------------------------------------- agy review of #576
+def test_agy1_continuous_rows_survive_the_export_csv_round_trip():
+    a = V['agy']['csv']
+    assert 'error' not in a, a
+    kept = {k[0]: k for k in a['kept']}
+    assert set(kept) == {'C1', 'C2', 'C3', 'K1'} and a['dropped'] == ['K2'], a  # K2: NA events, a count row
+    assert kept['C1'][1:7] == [10.2, 2.1, 50, 9.1, 2.3, 52] and kept['C1'][7:] == ['', '']
+
+
+def test_agy2_baseline_model_refuses_a_constant_baseline_covariate():
+    for nm in ('cbm_direct', 'cbm_sameControl'):
+        r = V['agy'][nm]
+        assert r.get('applicable') is False and 'constant' in r['message'], (nm, r)
+
+
+def test_agy3_r_script_treats_blank_and_null_fields_as_missing():
+    r = V['agy']['rs']
+    assert r['kind'] == 'counts' and 'mean = wide' not in r['code'] and 'event = wide("event")' in r['code'], r['kind']
+    assert r['num'] == ['NA', 'NA', 'NA', 'NA', 'NA', '1.5', '0', '2']
+
+
+def test_agy4_matrix_with_a_non_finite_entry_is_refused_as_such():
+    for x in V['agy']['nan']:
+        assert x.get('name') == 'SingularMatrix' and 'non-finite' in x['error'], x
+
+
+def test_agy5_bic_aicc_undefined_when_reml_has_no_residual_df():
+    t = V['agy']['tree']
+    assert 'error' not in t and t['BIC'] is None and t['AICc'] is None and t['feBIC'] is None, t
