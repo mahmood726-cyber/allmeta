@@ -141,7 +141,7 @@ def rref(page):
         rf = Path(tmp) / 'check.R'
         rf.write_text(R_CHECK, encoding='utf-8')
         r = subprocess.run([rs, '--no-environ', str(rf), str(jf), tmp], capture_output=True, text=True, timeout=900,
-                           encoding='utf-8', errors='replace')
+                           encoding='utf-8', errors='replace', cwd=tmp)   # REML scripts draw a forest plot (Rplots.pdf)
         assert r.returncode == 0, r.stderr[-3000:]
         return json.loads(r.stdout)
 
