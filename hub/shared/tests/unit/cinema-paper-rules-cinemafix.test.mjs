@@ -82,7 +82,10 @@ test('4 wording: a suggested summary under the paper\'s optional rule, not a der
   assert.match(footer, /not downgrade, or downgrade by 1 or 2 levels/);
   assert.doesNotMatch(footer, /derives them from the network/);
   const hub = readFileSync(new URL('../../../projects.js', import.meta.url), 'utf8');
-  const entry = hub.slice(hub.indexOf('name: "CINeMA (NMA confidence)"'), hub.indexOf('name: "CINeMA (NMA confidence)"') + 700);
+  const at = hub.indexOf('name: "CINeMA (NMA confidence)"');
+  assert.ok(at >= 0, 'hub entry for CINeMA not found');
+  const entry = hub.slice(at, at + 700);
+  assert.match(entry, /suggested/);
   assert.doesNotMatch(entry, /derives High/);
 });
 
@@ -90,4 +93,45 @@ test('5 audit7 test states the requirement, not a "published default"', () => {
   const src = readFileSync(new URL('./cinema-rule-audit7.test.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /published default/i);
   assert.match(src, /optional/i);
+});
+
+// ---- PR #606 review (agy) follow-ups ----
+test('6 export carries no stale override reason when no reviewer override is active', () => {
+  const p = page();
+  const ex = { comparison: 'X', ...base, imprecision: 'some' };
+  run(p, 'ROWS = ' + JSON.stringify([
+    { ...ex, override: '', overrideReason: 'stale reason A' },                     // override cleared
+    { ...ex, within: 'unclear', override: 'low', overrideReason: 'stale reason B' }, // incomplete
+    { ...ex, override: 'high', overrideReason: 'kept reason C' },                  // active override
+  ]));
+  const csv = run(p, 'exportCsv()');
+  assert.doesNotMatch(csv, /stale reason/);
+  assert.match(csv, /,High,reviewer,kept reason C\r\n$/);
+  assert.equal(fin(p, { ...ex, override: '', overrideReason: 'stale' }).reason, '');
+});
+
+test('7 legacy reporting values are migrated on read: none->undetected, some->suspected; major is invalid', () => {
+  const p = page();
+  assert.equal(sugg(p, { ...base, reporting: 'none' }), 'High');
+  assert.equal(sugg(p, { ...base, reporting: 'some' }), 'Moderate');
+  // 'major' (old -2 level) has no counterpart in the paper's two descriptions: not guessed.
+  const s = run(p, 'suggestedRating(' + JSON.stringify({ ...base, reporting: 'major' }) + ')');
+  assert.equal(s.label, 'Not fully assessed');
+  assert.match(s.unresolved.join(' '), /Reporting bias \(invalid level "major"\)/);
+  run(p, 'ROWS = ' + JSON.stringify([{ comparison: 'old', ...base, reporting: 'some' }]));
+  assert.match(run(p, 'exportCsv()'), /\r\nold,No concerns,Suspected,/);
+  // The page has no persistence (no localStorage / import), so legacy values only arrive programmatically.
+  assert.doesNotMatch(p.html, /localStorage|FileReader/);
+});
+
+test('8 csvCell formula guard: = + @ \t \r prefixed, "-1" left numeric', () => {
+  const p = page();
+  const c = v => run(p, 'csvCell(' + JSON.stringify(v) + ')');
+  assert.equal(c('=1+1'), "'=1+1");
+  assert.equal(c('+1'), "'+1");
+  assert.equal(c('@SUM(A1)'), "'@SUM(A1)");
+  assert.equal(c('\tx'), "'\tx");
+  assert.equal(c('\rx'), "\"'\rx\"");
+  assert.equal(c('-1'), '-1');
+  assert.equal(c('a,"b"'), '"a,""b"""');
 });

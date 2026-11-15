@@ -144,13 +144,26 @@
       ["unclear", "Unclear (unresolved)", null],
     ];
     function levelsFor(domain) { return domain === "reporting" ? REPORTING_LEVELS : LEVELS; }
+    // Legacy reporting values (pre-2-level page) migrated on read: none -> undetected,
+    // some -> suspected. The old "major" (-2) has no counterpart in the paper's two
+    // descriptions, so it is NOT guessed: it stays invalid and the comparison is Not fully
+    // assessed, with the invalid level named. (The page has no persistence, so legacy values
+    // can only arrive programmatically.)
+    const LEGACY_REPORTING = { none: "undetected", some: "suspected" };
+    function levelOf(domain, value) {
+      const v = domain === "reporting" && Object.prototype.hasOwnProperty.call(LEGACY_REPORTING, value) ? LEGACY_REPORTING[value] : value;
+      return levelsFor(domain).find(x => x[0] === v) || null;
+    }
     // Levels dropped for one domain; null if unresolved or not a valid level for that domain
     // (never silently scored 0).
     function domainDowngrade(domain, value) {
-      const l = levelsFor(domain).find(x => x[0] === value);
+      const l = levelOf(domain, value);
       return l ? l[2] : null;
     }
     function unresolvedDomains(row) { return DOMAINS.filter(k => domainDowngrade(k, row[k]) === null); }
+    function unresolvedLabel(row, k) {
+      return levelOf(k, row[k]) ? DOMAIN_LABELS[k] : DOMAIN_LABELS[k] + ' (invalid level "' + String(row[k]) + '")';
+    }
     const RATINGS = [["high", "High"], ["mod", "Moderate"], ["low", "Low"], ["vlow", "Very low"]];
 
     function esc(s) {
@@ -185,19 +198,20 @@
     }
     function suggestedRating(row) {
       const open = unresolvedDomains(row);
-      if (open.length) return { cls: "unclear", label: "Not fully assessed", complete: false, unresolved: open.map(k => DOMAIN_LABELS[k]) };
+      if (open.length) return { cls: "unclear", label: "Not fully assessed", complete: false, unresolved: open.map(k => unresolvedLabel(row, k)) };
       const [cls, label] = confidenceFrom(downgradeScore(row));
       return { cls, label, complete: true, unresolved: [] };
     }
     function finalRating(row) {
       const s = suggestedRating(row);
       const reason = String(row.overrideReason == null ? "" : row.overrideReason).trim();
-      const base = { suggested: s.label, reason };
+      // reason is carried only while a reviewer override is actually applied (no stale reason)
+      const base = { suggested: s.label, reason: "" };
       if (!s.complete) return { ...base, cls: "unclear", label: "Not fully assessed", source: "incomplete" };
       const o = RATINGS.find(r => r[0] === row.override);
       if (!o) return { ...base, cls: s.cls, label: s.label, source: "suggested" };
       if (!reason) return { ...base, cls: "unclear", label: "Reason required", source: "reason-required" };
-      return { ...base, cls: o[0], label: o[1], source: "reviewer" };
+      return { ...base, reason, cls: o[0], label: o[1], source: "reviewer" };
     }
     function csvCell(v) {
       let t = String(v == null ? "" : v);
@@ -209,10 +223,16 @@
       const lines = [head.map(csvCell).join(",")];
       for (const r of ROWS) {
         const f = finalRating(r);
-        const lv = d => (levelsFor(d).find(l => l[0] === r[d]) || [null, "Invalid: " + r[d]])[1];
+        const lv = d => (levelOf(d, r[d]) || [null, "Invalid: " + r[d]])[1];
         lines.push([r.comparison, ...DOMAINS.map(lv), f.suggested, f.label, f.source, f.reason].map(csvCell).join(","));
       }
       return lines.join("\r\n") + "\r\n";
+    }
+
+    function finalStatusHtml(f) {
+      return `<span class="chip ${f.cls}">${esc(f.label)}</span>${f.source === "reviewer" ? ` <span class="note">(reviewer; suggested ${esc(f.suggested)})</span>` : ""}
+            ${f.source === "reviewer" ? `<div class="note reason">Reason: ${esc(f.reason)}</div>` : ""}
+            ${f.source === "reason-required" ? `<div class="note warn">Override not applied: enter a reason.</div>` : ""}`;
     }
 
     function renderTable() {
@@ -226,20 +246,18 @@
           <td><input type="text" data-idx="${idx}" data-key="comparison" value="${esc(r.comparison)}" aria-label="Comparison ${idx + 1} label"></td>
           ${DOMAINS.map(d => `<td>
             <select data-idx="${idx}" data-key="${d}" aria-label="${DOMAIN_LABELS[d]} for comparison ${idx + 1}">
-              ${domainDowngrade(d, r[d]) === null && r[d] !== "unclear" ? `<option value="${esc(r[d])}" selected>Invalid: ${esc(r[d])}</option>` : ""}
-              ${levelsFor(d).map(l => `<option value="${l[0]}"${r[d] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
+              ${levelOf(d, r[d]) ? "" : `<option value="${esc(r[d])}" selected>Invalid: ${esc(r[d])}</option>`}
+              ${levelsFor(d).map(l => `<option value="${l[0]}"${levelOf(d, r[d]) === l ? " selected" : ""}>${l[1]}</option>`).join("")}
             </select>
           </td>`).join("")}
           <td class="sugg"><span class="chip ${sg.cls}">${sg.label}</span>${sg.complete ? "" : `<div class="note">Unresolved: ${esc(sg.unresolved.join(", "))}</div>`}</td>
           <td class="final">
-            <span class="chip ${f.cls}">${f.label}</span>${f.source === "reviewer" ? ` <span class="note">(reviewer; suggested ${f.suggested})</span>` : ""}
+            <div class="final-status">${finalStatusHtml(f)}</div>
             <div><select data-idx="${idx}" data-key="override" aria-label="Reviewer's final rating for comparison ${idx + 1}">
               <option value=""${!r.override ? " selected" : ""}>Use suggested</option>
               ${RATINGS.map(o => `<option value="${o[0]}"${r.override === o[0] ? " selected" : ""}>${o[1]}</option>`).join("")}
             </select></div>
             ${r.override ? `<input type="text" data-idx="${idx}" data-key="overrideReason" value="${esc(r.overrideReason || "")}" placeholder="Reason (required)" aria-label="Reason for overriding the suggested rating, comparison ${idx + 1}">` : ""}
-            ${f.source === "reviewer" ? `<div class="note reason">Reason: ${esc(f.reason)}</div>` : ""}
-            ${f.source === "reason-required" ? `<div class="note warn">Override not applied: enter a reason.</div>` : ""}
           </td>
           <td><button type="button" class="secondary" data-del="${idx}" aria-label="Remove comparison ${idx + 1}">×</button></td>`;
         tb.appendChild(tr);
@@ -259,7 +277,11 @@
       const key = e.target.dataset.key;
       if (idx === undefined || (key !== "comparison" && key !== "overrideReason")) return;
       ROWS[idx][key] = e.target.value;
-      // Don't rerender on every keystroke to preserve focus; just redraw heatmap labels lazily.
+      // Don't rerender the table on every keystroke (keeps focus); update this row's final-rating
+      // status and the heatmap live instead.
+      const st = e.target.closest("tr")?.querySelector(".final-status");
+      if (st) st.innerHTML = finalStatusHtml(finalRating(ROWS[idx]));
+      drawHeat();
     });
     document.getElementById("body").addEventListener("click", e => {
       if (e.target.dataset.del !== undefined) {

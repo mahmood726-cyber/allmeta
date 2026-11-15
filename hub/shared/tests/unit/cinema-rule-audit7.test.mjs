@@ -30,8 +30,8 @@ test('cinema: single-domain rules', () => {
   assert.equal(rate(p, { ...base, imprecision: 'some' }), 'Moderate');
   assert.equal(rate(p, { ...base, imprecision: 'major' }), 'Low');
   assert.equal(rate(p, { ...base, imprecision: 'major', hetero: 'some' }), 'Very low');
-  assert.equal(rate(p, { ...base, within: 'unclear' }), 'High');        // tally of RESOLVED domains only;
-  // the page shows such a comparison as 'Not fully assessed' (cinema-paper-rules-cinemafix test 3)
+  // requirement: an unresolved (Unclear) domain means the comparison is not rated at all
+  assert.equal(vm.runInContext('suggestedRating(' + JSON.stringify({ ...base, within: 'unclear' }) + ').label', p.ctx), 'Not fully assessed');
 });
 
 test('cinema: no false attribution of the Unclear level to Nikolakopoulou 2020', () => {
