@@ -7108,14 +7108,22 @@ if(b)b.addEventListener('click',()=>{try{const f=window[c.fn];if(typeof f==='fun
 }
 // Silenced auto-run: wraps a runner so showLoading/Toast/switchTab side-effects
 // don't steal focus from the Results tab during the post-analysis sweep.
+// Only focus side-effects are silenced. The runners report failures and refusals solely through
+// Toast.show(msg,'warn'|'error'), so those toasts (and any exception, or a missing runner) are HELD and
+// shown once the swap is undone; until lane aitems (2026-11-15) they were dropped and the user got an
+// empty tab with no reason (tests/test_autorun_silent.py). Info/success toasts stay silent.
 async function _autoRunSilent(fnName){
-const fn=window[fnName];if(typeof fn!=='function')return;
+const held=[];const fn=window[fnName];
 const realSwitch=window.switchTab,realToast=window.Toast?.show,realShow=window.showLoading,realHide=window.hideLoading;
+if(typeof fn!=='function'){console.error('auto '+fnName+': runner not defined');held.push(['Automatic '+fnName+' could not run: runner not defined','error']);}
+else{
 window.switchTab=()=>{};
-if(window.Toast)window.Toast.show=()=>{};
+if(window.Toast)window.Toast.show=(msg,level,dur)=>{if(level==='warn'||level==='error')held.push([msg,level,dur]);};
 window.showLoading=()=>{};window.hideLoading=()=>{};
-try{await fn();}catch(e){console.warn('auto '+fnName+':',e?.message||e);}
+try{await fn();}catch(e){console.error('auto '+fnName+':',e);held.push(['Automatic '+fnName+' failed: '+(e?.message||e),'error']);}
 finally{window.switchTab=realSwitch;if(window.Toast)window.Toast.show=realToast;window.showLoading=realShow;window.hideLoading=realHide;}
+}
+if(typeof realToast==='function')for(const h of held){try{realToast(...h);}catch(e){console.error('toast:',e);}}
 }
 async function runAutoExtras(){
 // Cheap, no-config analyses worth running automatically so the user sees
@@ -9837,7 +9845,7 @@ renderClassEffects(AppState.classEffectsResult);}}catch(e){console.warn('Class e
 if(AppState.cvI2Results.applicable!==false){const overfitRisk=String(AppState.cvI2Results.overfitRisk??'Unknown');document.getElementById('cvI2Results').innerHTML=`<div class="alert alert--${overfitRisk==='Low'?'success':overfitRisk==='Moderate'?'warning':'danger'}"><span class="alert__icon"></span><div class="alert__text"><strong>CV-I²:</strong> ${AppState.cvI2Results.cvI2.mean.toFixed(1)}% (Apparent: ${AppState.cvI2Results.apparentI2.mean.toFixed(1)}%)<br>Optimism: ${AppState.cvI2Results.optimism.toFixed(1)}% | Overfit risk: ${Security.escapeHtml(overfitRisk)}</div></div>`}
 if(AppState.conformalResults.applicable!==false){const isRatio=['OR','RR','HR'].includes(AppState.effectMeasure);const est=isRatio?Math.exp(AppState.conformalResults.pooledEstimate):AppState.conformalResults.pooledEstimate;const cL=isRatio?Math.exp(AppState.conformalResults.conformalCI[0]):AppState.conformalResults.conformalCI[0];const cU=isRatio?Math.exp(AppState.conformalResults.conformalCI[1]):AppState.conformalResults.conformalCI[1];document.getElementById('conformalResults').innerHTML=`<div class="stat-grid"><div class="stat-card"><div class="stat-card__value">${est.toFixed(3)}</div><div class="stat-card__label">Estimate</div></div><div class="stat-card"><div class="stat-card__value">${cL.toFixed(3)}</div><div class="stat-card__label">Conformal Lower</div></div><div class="stat-card"><div class="stat-card__value">${cU.toFixed(3)}</div><div class="stat-card__label">Conformal Upper</div></div></div><p class="text-xs text-secondary mt-3">${Security.escapeHtml(AppState.conformalResults.interpretation)}</p>`}
 showLoading('Auto robustness suite...',88);await new Promise(r=>setTimeout(r,40));await runAutoRobustnessSuite(true);try{installPostAnalysisCtas();}catch(e){console.warn('installPostAnalysisCtas:',e);}try{installSeedBadge();}catch(e){console.warn('installSeedBadge:',e);}// The auto extras (pub bias, cumulative) are AWAITED here, under the overlay. _autoRunSilent swaps the global showLoading /
-// hideLoading / switchTab / Toast.show for no-ops while each runs; started without await (until 2026-11-15) an extra still
+// hideLoading / switchTab for no-ops (and holds Toast warnings/errors until it ends) while each runs; started without await (until 2026-11-15) an extra still
 // running 300 ms after 'Complete!' made the hideLoading() below a no-op, so the overlay never went away (the
 // nma-pro-session-plots flake), and a tab click in that window was swallowed. Awaited, the swap ends before the overlay
 // is hidden and before the user can click (lane nmapro6).
