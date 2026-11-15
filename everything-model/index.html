@@ -94,7 +94,7 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
-    Engine: <code>shared/everything-model.js</code> — variational EM with closed-form analytic posterior at fixed variance components. Reference: Higgins, Whitehead 1996 (Stat Med 15:2733-2749) on hierarchical Bayesian MA; this is the unifying frame.
+    Engine: <code>shared/everything-model.js</code> — EM for the maximum-likelihood fit, polished by a profile-likelihood search over τ²; SEs from the GLS covariance (X′V⁻¹X)⁻¹. μ̂<sub>o</sub> is the outcome mean in the reference period. Estimates, SEs, τ² and log-likelihood equal <code>metafor::rma.mv(yi, vi, mods = ~ 0 + outcome + factor(time), random = ~ 1 | study, method = "ML")</code> (lane audit7, R 4.6.0 / metafor 5.2.1); CIs use the normal quantile, as rma.mv does by default. Reference: Higgins, Whitehead 1996 (Stat Med 15:2733-2749) on hierarchical Bayesian MA; this is the unifying frame.
   </footer>
   <script>
   (function () {
@@ -133,8 +133,8 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
         '<div class="card"><span class="k">Studies</span><span class="v">' + r.studies.length + '</span></div>' +
         '<div class="card"><span class="k">Time periods</span><span class="v">' + r.times.length + '</span></div>' +
         '<div class="card"><span class="k">Outcomes</span><span class="v">' + r.outcomes.length + '</span></div>' +
-        '<div class="card"><span class="k">Iterations</span><span class="v">' + r.n_iter + ' (' + (r.converged ? "converged" : "max-iter") + ')</span></div>' +
-        '<div class="card"><span class="k">log-lik</span><span class="v">' + fmt(r.log_likelihood, 2) + '</span></div>';
+        '<div class="card"><span class="k">Iterations</span><span class="v">' + r.n_iter + ' EM (' + (r.converged ? "converged" : "max-iter") + ')' + (r.polished ? ' + profile-ML polish' : '') + '</span></div>' +
+        '<div class="card"><span class="k">log-lik (ML)</span><span class="v">' + fmt(r.log_likelihood, 2) + '</span></div>';
 
       var muHtml = "";
       for (var o in r.mu) {

@@ -56,6 +56,65 @@
     return b * (isFinite(biasScale) ? biasScale : 1);
   }
 
+  // ---- Marginal (ML) likelihood and GLS covariance ----------------------
+  // Integrating delta_i out, study s has y_s ~ N(X_s beta, V_s), V_s = diag(v) + tau2 * J
+  // (rows of one study share delta_i). V_s^-1 by Sherman-Morrison. Returns the ML
+  // log-likelihood (= metafor::rma.mv(method = "ML") logLik at the same parameters) and,
+  // when wanted, (X' V^-1 X)^-1 for beta = (mu_1..mu_O, gamma_t for t != ref).
+  function _marginal(rows, rowBias, bySt, col, nPar, beta, tau2, wantCov) {
+    var ll = 0, A = null, B = null, i, j, a, b;
+    if (wantCov) { A = []; B = new Array(nPar).fill(0); for (a = 0; a < nPar; a++) { A.push(new Array(nPar).fill(0)); } }
+    for (var s = 0; s < bySt.length; s++) {
+      var idx = bySt[s], sInv = 0, logDet = 0;
+      for (i = 0; i < idx.length; i++) { sInv += 1 / rows[idx[i]].vi; logDet += Math.log(rows[idx[i]].vi); }
+      var c = tau2 / (1 + tau2 * sInv);
+      logDet += Math.log(1 + tau2 * sInv);
+      var q = 0, se = 0;
+      for (i = 0; i < idx.length; i++) {
+        var r = rows[idx[i]], e = r.yi - rowBias[idx[i]];
+        for (b = 0; b < col[idx[i]].length; b++) e -= beta[col[idx[i]][b]];
+        q += e * e / r.vi; se += e / r.vi;
+      }
+      q -= c * se * se;
+      ll += -0.5 * (idx.length * Math.log(2 * Math.PI) + logDet + q);
+      if (wantCov) {
+        // X' V^-1 X = X' D^-1 X - c (X' D^-1 1)(X' D^-1 1)'
+        var u = new Array(nPar).fill(0), sy = 0;
+        for (i = 0; i < idx.length; i++) {
+          var ci = col[idx[i]], wi = 1 / rows[idx[i]].vi, y0 = rows[idx[i]].yi - rowBias[idx[i]];
+          sy += wi * y0;
+          for (a = 0; a < ci.length; a++) { u[ci[a]] += wi; B[ci[a]] += wi * y0; for (b = 0; b < ci.length; b++) A[ci[a]][ci[b]] += wi; }
+        }
+        for (a = 0; a < nPar; a++) { B[a] -= c * u[a] * sy; for (b = 0; b < nPar; b++) A[a][b] -= c * u[a] * u[b]; }
+      }
+    }
+    var cov = wantCov ? _inv(A) : null, gls = null;
+    if (cov) { gls = cov.map(function (r) { var t = 0; for (var q2 = 0; q2 < nPar; q2++) t += r[q2] * B[q2]; return t; }); }
+    return { ll: ll, cov: cov, gls: gls };
+  }
+
+  // Profile ML: at fixed tau2 the ML beta is the GLS estimate; returns { ll, beta, cov }.
+  function _profile(rows, rowBias, bySt, col, nPar, tau2) {
+    var m = _marginal(rows, rowBias, bySt, col, nPar, new Array(nPar).fill(0), tau2, true);
+    if (!m.gls) return null;
+    return { ll: _marginal(rows, rowBias, bySt, col, nPar, m.gls, tau2, false).ll, beta: m.gls, cov: m.cov, tau2: tau2 };
+  }
+
+  // Gauss-Jordan inverse with partial pivoting; null if singular.
+  function _inv(M) {
+    var n = M.length, A = M.map(function (r, i) { var e = new Array(n).fill(0); e[i] = 1; return r.slice().concat(e); });
+    for (var c = 0; c < n; c++) {
+      var piv = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+      if (!(Math.abs(A[piv][c]) > 1e-300)) return null;
+      var t = A[c]; A[c] = A[piv]; A[piv] = t;
+      var d = A[c][c];
+      for (var k = 0; k < 2 * n; k++) A[c][k] /= d;
+      for (r = 0; r < n; r++) if (r !== c && A[r][c] !== 0) { var f = A[r][c]; for (k = 0; k < 2 * n; k++) A[r][k] -= f * A[c][k]; }
+    }
+    return A.map(function (r) { return r.slice(n); });
+  }
+
   // ---- The variational EM loop ------------------------------------------
 
   function fit(rowsIn, opts) {
@@ -84,6 +143,23 @@
 
     // Pre-compute the RoB bias shift per row.
     var rowBias = rows.map(function (r) { return _biasShift(r.rob, biasMap, biasScale); });
+
+    // Design for the marginal likelihood / GLS covariance: columns 0..O-1 = mu_o,
+    // then one column per non-reference time.
+    var refIdx0 = tIdx[refTime], gCol = [], nPar = outcomes.length;
+    for (var tq = 0; tq < times.length; tq++) gCol.push(tq === refIdx0 ? -1 : nPar++);
+    var col = rows.map(function (r) {
+      var c = [oIdx[r.outcome]], g = gCol[tIdx[r.time]];
+      if (g >= 0) c.push(g);
+      return c;
+    });
+    var bySt = studies.map(function () { return []; });
+    rows.forEach(function (r, i) { bySt[sIdx[r.study]].push(i); });
+    function betaVec() {
+      var bv = mu.slice();
+      for (var tb = 0; tb < times.length; tb++) if (gCol[tb] >= 0) bv[gCol[tb]] = gamma[tb];
+      return bv;
+    }
 
     // Initial estimates: τ²_δ small, γ_t = 0, μ_o = naive per-outcome mean.
     var tau2 = 0.05;
@@ -156,17 +232,9 @@
         mu[o] = swO > 0 ? swyO / swO : 0;
       }
 
-      // Compute log-likelihood for convergence check.
-      var ll = 0;
-      for (var i5 = 0; i5 < rows.length; i5++) {
-        var r5 = rows[i5];
-        var fit_ = mu[oIdx[r5.outcome]] + gamma[tIdx[r5.time]] + delta[sIdx[r5.study]] + rowBias[i5];
-        ll += -0.5 * Math.log(2 * Math.PI * r5.vi) - 0.5 * (r5.yi - fit_) * (r5.yi - fit_) / r5.vi;
-      }
-      // Plus τ² prior contribution (zero-mean normal on δ).
-      for (var s3 = 0; s3 < studies.length; s3++) {
-        ll += -0.5 * Math.log(2 * Math.PI * tau2) - 0.5 * delta[s3] * delta[s3] / tau2;
-      }
+      // Convergence on the marginal (ML) log-likelihood. (The joint density of y and the
+      // delta posterior means used before diverges as tau2 -> 0 and never settled.)
+      var ll = _marginal(rows, rowBias, bySt, col, nPar, betaVec(), tau2, false).ll;
       if (iter > 0 && Math.abs(ll - prevLL) < tol) {
         converged = true;
         prevLL = ll;
@@ -176,17 +244,47 @@
       prevLL = ll;
     }
 
-    // Posterior SE for μ_o: sqrt(1 / Σ_{i in o} 1/(v_i + τ²)) — the random-effects
-    // inverse-variance precision sum (weights w_i = 1/(v_i+τ²)). NB: the inner
-    // term is 1/(v_i+τ²), NOT (1/v_i + 1/τ²); do not "simplify" it.
+    // SEs from the GLS covariance (X' V^-1 X)^-1 at the ML tau2 - equal to
+    // metafor::rma.mv(method = "ML") SEs. (The former sqrt(1 / sum 1/(v+tau2)) per outcome
+    // ignored gamma_t estimation and the delta_i shared by a study's outcomes.)
+    // The EM moves tau2 very slowly when the ML optimum is at (or near) tau2 = 0 (default
+    // example: tau2 still 3e-5 after 200 iterations). Polish with a golden-section search of
+    // the profile ML log-likelihood over [0, U] and take the parameters there; the EM result
+    // is kept if it is better (it never is by more than rounding).
     var Z975 = 1.959963984540054;
+    var best = _profile(rows, rowBias, bySt, col, nPar, tau2);
+    var U = Math.max(10 * tau2, 1e-3), gr = (Math.sqrt(5) - 1) / 2, lo = 0, hi = U;
+    var x1 = hi - gr * (hi - lo), x2 = lo + gr * (hi - lo);
+    var f1 = _profile(rows, rowBias, bySt, col, nPar, x1), f2 = _profile(rows, rowBias, bySt, col, nPar, x2);
+    for (var gi = 0; gi < 200 && f1 && f2 && hi - lo > 1e-12 * (1 + U); gi++) {
+      if (f1.ll >= f2.ll) { hi = x2; x2 = x1; f2 = f1; x1 = hi - gr * (hi - lo); f1 = _profile(rows, rowBias, bySt, col, nPar, x1); }
+      else { lo = x1; x1 = x2; f1 = f2; x2 = lo + gr * (hi - lo); f2 = _profile(rows, rowBias, bySt, col, nPar, x2); }
+    }
+    [f1, f2, _profile(rows, rowBias, bySt, col, nPar, 0)].forEach(function (f) { if (f && (!best || f.ll > best.ll)) best = f; });
+    var polished = false;
+    if (best) {
+      polished = true;
+      tau2 = best.tau2;
+      for (var ob = 0; ob < outcomes.length; ob++) mu[ob] = best.beta[ob];
+      for (var tb2 = 0; tb2 < times.length; tb2++) gamma[tb2] = gCol[tb2] >= 0 ? best.beta[gCol[tb2]] : 0;
+      // delta_i = BLUP at the final parameters
+      for (var sb = 0; sb < studies.length; sb++) {
+        var sInvB = 0, seB = 0;
+        bySt[sb].forEach(function (ri) {
+          var rr0 = rows[ri];
+          sInvB += 1 / rr0.vi;
+          seB += (rr0.yi - rowBias[ri] - mu[oIdx[rr0.outcome]] - gamma[tIdx[rr0.time]]) / rr0.vi;
+        });
+        delta[sb] = tau2 * seB / (1 + tau2 * sInvB);
+      }
+    }
+    var fin = best || _marginal(rows, rowBias, bySt, col, nPar, betaVec(), tau2, true);
+    prevLL = fin.ll;
+    var covB = fin.cov;
+    function seOf(c) { return covB && covB[c][c] > 0 ? Math.sqrt(covB[c][c]) : NaN; }
     var muSummary = Object.create(null);
     for (var oo = 0; oo < outcomes.length; oo++) {
-      var sumW = 0;
-      for (var i6 = 0; i6 < rows.length; i6++) {
-        if (oIdx[rows[i6].outcome] === oo) sumW += 1 / (rows[i6].vi + tau2);
-      }
-      var se = sumW > 0 ? Math.sqrt(1 / sumW) : NaN;
+      var se = seOf(oo);
       muSummary[outcomes[oo]] = {
         estimate: mu[oo], se: se,
         ci_lo: mu[oo] - Z975 * se, ci_hi: mu[oo] + Z975 * se,
@@ -194,7 +292,7 @@
     }
     var gammaSummary = Object.create(null);
     for (var tt = 0; tt < times.length; tt++) {
-      gammaSummary[times[tt]] = { estimate: gamma[tt], is_reference: (tt === tIdx[refTime]) };
+      gammaSummary[times[tt]] = { estimate: gamma[tt], se: gCol[tt] >= 0 ? seOf(gCol[tt]) : 0, is_reference: (tt === tIdx[refTime]) };
     }
     var deltaSummary = Object.create(null);
     for (var ss = 0; ss < studies.length; ss++) {
@@ -204,7 +302,7 @@
     return {
       ok: true,
       mu: muSummary, gamma: gammaSummary, delta: deltaSummary,
-      tau2_delta: tau2, n_iter: iter, converged: converged,
+      tau2_delta: tau2, n_iter: iter, converged: converged, polished: polished,
       log_likelihood: prevLL,
       studies: studies, times: times, outcomes: outcomes,
       ref_time: refTime,
