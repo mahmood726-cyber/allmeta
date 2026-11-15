@@ -90,10 +90,16 @@
     return x;
   }
 
-  // Symmetric complete-pivot elimination of X'X, with relative tolerance.
+  // Symmetric complete-pivot elimination of X'X, with relative tolerance, on the column-equilibrated matrix
+  // D^-1/2 X'X D^-1/2 (unit diagonal). Without equilibration the 1e-10 test compared the interaction columns
+  // with the treatment columns, whose units differ by the covariate's: a covariate x 1e-6 or x 1e6 made an
+  // identifiable interaction (or effect) "not identifiable". Test: hub/shared/tests/unit/nma-meta-regression-scale.test.mjs.
   function checkRank(x, treatments) {
-    var a = cross(x, x), d = a.length, order = [], maxDiag = 0;
+    var a = cross(x, x), d = a.length, order = [], maxDiag = 0, s = [];
     var i, j, k, pivot, tmp;
+    for (i = 0; i < d; i++) s[i] = a[i][i] > 0 ? Math.sqrt(a[i][i]) : 0;
+    for (i = 0; i < d; i++)
+      for (j = 0; j < d; j++) a[i][j] = s[i] > 0 && s[j] > 0 ? a[i][j] / (s[i] * s[j]) : 0;
     for (i = 0; i < d; i++) {
       order[i] = i;
       maxDiag = Math.max(maxDiag, a[i][i]);
@@ -330,7 +336,10 @@
     if (best.tau2 === 0) best = initial;
     var converged = false;
     for (iterations = 1; iterations <= 200; iterations++) {
-      var tolerance = 1e-14 * Math.max(1, best.tau2);
+      // Stop rule relative to the data's own variance scale (mean sampling variance), not to 1: with effects
+      // in units of 1e-6 the old floor 1e-14 * max(1, tau2) exceeded tau2 itself (~1e-14), so scoring stopped
+      // at the coarse grid and reported converged with tau2 70% off.
+      var tolerance = 1e-14 * Math.max(scale, best.tau2);
       // Fisher scoring first, then observed-Newton polishing.
       var curvature = iterations > 8 && best.hessian < 0 ? -best.hessian : best.information;
       if (!(curvature > 0)) break;
