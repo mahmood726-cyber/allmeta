@@ -6485,6 +6485,19 @@
       return OUTCOME_METADATA[outcomeKey] || { type: 'ratio', direction: 'lower' };
     }
     
+    // Whole-word test for the 3-4 character synonyms of OUTCOME_DICTIONARY / BASELINE_COVARIATE_MAP: no letter
+    // immediately before the synonym and no letter immediately after it, except one plural / participle "s" or "d"
+    // ("arbs", "males", "aged"), so "men" no longer matches inside "treatment", "age" inside "percentage", "ami" inside
+    // "amiodarone". 2-character synonyms keep their \b rule; 5+ character synonyms still match as substrings.
+    function synonymWordMatch(t, s) {
+      const L = e => /[a-z]/.test(e || "");
+      for (let i = t.indexOf(s); i >= 0; i = t.indexOf(s, i + 1)) {
+        const j = i + s.length;
+        if (!L(t[i - 1]) && (!L(t[j]) || /[sd]/.test(t[j]) && !L(t[j + 1]))) return !0
+      }
+      return !1
+    }
+
     /**
      * Map outcome name to standard key
      * @param {string} rawOutcome - Raw outcome name from paper
@@ -6508,7 +6521,7 @@
         };
       const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
       for (const [n, s] of byLength)
-        if (s.length >= 3 && t.includes(s)) return {
+        if (s.length > 4 ? t.includes(s) : s.length >= 3 && synonymWordMatch(t, s)) return {
           key: n,
           confidence: .9,
           original: e
@@ -6614,7 +6627,7 @@
       
       // Renal
       'egfr': ['egfr', 'gfr', 'eGFR ml/min', 'eGFR (ml/min/1.73m2)', 'estimated gfr'],
-      'egfr_lt_60': ['egfr <60', 'egfr < 60', 'ckd stage 3+', 'ckd'],
+      'egfr_lt_60': ['egfr <60', 'egfr < 60', 'ckd stage 3+'],
       'creatinine': ['creatinine', 'serum creatinine', 'cr'],
       
       // Cardiac biomarkers
@@ -6674,7 +6687,7 @@
       }));
       for (const [e, s] of Object.entries(a)) {
         const a = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
-          i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 2 ? a.includes(e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
+          i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 4 ? a.includes(e[1]) : e[1].length > 2 ? synonymWordMatch(a, e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
         if (i) {
           let n = s;
           if ("string" == typeof n) {
@@ -6894,9 +6907,15 @@
         covariate,
         outcome,
         regression: result,
-        interpretation: result.slope < 0 
-          ? `Effect increases (more benefit) with higher ${covariate}`
-          : `Effect decreases (less benefit) with higher ${covariate}`,
+        interpretation: result.available === false
+          ? (data.length < 5
+            ? `Meta-regression not run (k<5): only ${data.length} trials have both ${outcome} and ${covariate}`
+            : `Meta-regression not run: ${result.warning}`)
+          : !isFinite(result.slope)
+            ? `Meta-regression slope not estimable for ${covariate}`
+            : result.slope < 0
+              ? `Effect increases (more benefit) with higher ${covariate}`
+              : `Effect decreases (less benefit) with higher ${covariate}`,
         data
       };
     }
@@ -20891,10 +20910,8 @@ Full report available: STATISTICAL_VALIDATION_REPORT.txt
 
     function exportTierDAuditLog() {
       const log = getTierDAuditLog();
-      const csv = 'timestamp,verdict,tier,userConfirmed,sessionId
-' +
-        log.map(r => [r.timestamp, r.verdict, r.tier, r.userConfirmed, r.sessionId].join(',')).join('
-');
+      const csv = 'timestamp,verdict,tier,userConfirmed,sessionId\n' +
+        log.map(r => [r.timestamp, r.verdict, r.tier, r.userConfirmed, r.sessionId].join(',')).join('\n');
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

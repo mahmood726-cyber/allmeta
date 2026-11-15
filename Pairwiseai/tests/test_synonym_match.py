@@ -107,3 +107,73 @@ def test_no_table_entry_is_dead(build):
     dead_o = {s: got['outcomes'][s]['key'] for s in so if got['outcomes'][s]['key'] != owner(t['o'], s)}
     dead_b = {s: got['baseline'][s] for s in sb if got['baseline'][s] != owner(t['b'], s)}
     assert (dead_o, dead_b) == ({}, {})
+
+
+# ---- lane pwsyn2 -------------------------------------------------------------------------------------------------
+# 1. 'ckd' was listed under egfr_lt_60 AND ckd_pct; the first entry won, so a bare 'CKD' prevalence was stored as
+#    egfr_lt_60. By meaning 'ckd' is chronic kidney disease prevalence (ckd_pct, next to 'chronic kidney disease');
+#    egfr_lt_60 keeps the definitional 'egfr <60' / 'ckd stage 3+'.
+# 2. Synonyms of 3-4 characters matched anywhere inside the name ('men' in 'treatment', 'age' in 'percentage' /
+#    'stage' / 'agents', 'ami' in 'amiodarone', 'mace' in 'pharmaceutical'). Rule now: 2 characters -> \b whole word
+#    (unchanged); 3-4 characters -> whole word, i.e. no letter immediately before it and no letter immediately after
+#    it except one plural / participle 's' or 'd' ('ARBs', 'males', 'aged'); 5+ characters -> substring (unchanged).
+CKD = {'ckd': 'ckd_pct', 'CKD (%)': 'ckd_pct', 'ckd stage 4': 'ckd_pct', 'ckd stage 3+': 'egfr_lt_60',
+       'eGFR <60': 'egfr_lt_60', 'chronic kidney disease': 'ckd_pct'}
+
+IN_WORD_BASELINE = {
+    'treatment arm': None, 'percentage on treatment': None, 'Antiplatelet agents': None, 'menopausal': None,
+    'average dose': None, 'decade of diagnosis': None, 'carbon monoxide': None, 'dosage': None,
+}
+WHOLE_WORD_BASELINE = {
+    'males (%)': 'male_pct', 'Men': 'male_pct', 'ARBs': 'acei_arb_pct', 'MRAs': 'mra_pct', 'Age, years': 'age',
+    'aged 70 or older': 'age', 'Mean age (SD)': 'age', 'eGFR, mL/min/1.73 m2': 'egfr', 'BMI, kg/m2': 'bmi',
+    'LVEF, %': 'lvef', 'History of HTN (%)': 'hypertension_pct', 'Prior CAD': 'cad_pct',
+    'NT-proBNP, pg/mL': 'ntprobnp', 'BNP (pg/mL)': 'bnp', 'Afib': 'af_pct', 'T2DM (%)': 'diabetes_pct',
+    'SBP, mmHg': 'sbp', 'women (%)': 'female_pct', 'female, n (%)': 'female_pct', 'IHD': 'cad_pct',
+}
+IN_WORD_OUTCOME = {'amiodarone discontinuation': 'custom_amiodarone_discontinuation',
+                   'vitamin d level': 'custom_vitamin_d_level', 'pharmaceutical cost': 'custom_pharmaceutical_cost'}
+WHOLE_WORD_OUTCOME = {'AMI': 'mi', 'MACE (3-point)': 'mace', 'CVA or TIA': 'stroke', 'KCCQ-12 score': 'kccq',
+                      '6MWD change': '6mwd', 'HFH events': 'hf_hospitalization', 'ACM, n (%)': 'all_cause_death',
+                      'SCD': 'sudden_cardiac_death', 'ESRDs': 'esrd'}
+
+
+@pytest.mark.parametrize('build', BUILDS)
+def test_ckd_means_ckd_prevalence(build):
+    got = _run(build, [], CKD)['baseline']
+    assert {k: v for k, v in got.items() if v != CKD[k]} == {}
+
+
+@pytest.mark.parametrize('build', BUILDS)
+def test_short_synonyms_do_not_match_inside_words(build):
+    got = _run(build, IN_WORD_OUTCOME, {**IN_WORD_BASELINE, **WHOLE_WORD_BASELINE})
+    bad_b = {k: v for k, v in got['baseline'].items() if v != {**IN_WORD_BASELINE, **WHOLE_WORD_BASELINE}[k]}
+    bad_o = {k: v['key'] for k, v in got['outcomes'].items() if v['key'] != IN_WORD_OUTCOME[k]}
+    assert (bad_b, bad_o) == ({}, {})
+
+
+@pytest.mark.parametrize('build', BUILDS)
+def test_short_synonyms_still_match_as_words(build):
+    got = _run(build, WHOLE_WORD_OUTCOME, [])['outcomes']
+    assert {k: v['key'] for k, v in got.items() if v['key'] != WHOLE_WORD_OUTCOME[k]} == {}
+
+
+@pytest.mark.parametrize('build', BUILDS)
+def test_every_short_synonym_survives_common_label_shapes(build):
+    """Each 3-4 character synonym, written the way trial tables write it, still maps to its own entry."""
+    t = _tables()
+    shapes = ['{}', '{} (%)', '{}, n (%)', 'mean {}', '% {}', 'history of {}', '{}s', '{} at baseline', '{}-related']
+
+    def owners(table, std_keys):
+        own = {}
+        for k, v in table.items():
+            for s in list(v) + ([k, k.replace('_', ' ')] if std_keys else []):
+                own.setdefault(s.lower(), k)
+        return {s: k for s, k in own.items() if 3 <= len(s) <= 4}
+    oo, ob = owners(t['o'], True), owners(t['b'], False)
+    co = {sh.format(s): k for s, k in oo.items() for sh in shapes}
+    cb = {sh.format(s): k for s, k in ob.items() for sh in shapes}
+    got = _run(build, co, cb)
+    bad_o = {n: got['outcomes'][n]['key'] for n in co if got['outcomes'][n]['key'] != co[n]}
+    bad_b = {n: got['baseline'][n] for n in cb if got['baseline'][n] != cb[n]}
+    assert (bad_o, bad_b) == ({}, {})
