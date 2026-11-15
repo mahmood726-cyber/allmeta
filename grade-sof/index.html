@@ -77,6 +77,7 @@
     .grade-moderate { background:#fff4d5; color:#7a5a0d; }
     .grade-low { background:#fde1d3; color:#a34a12; }
     .grade-verylow { background:#fbd2d2; color:#912121; }
+    .grade-notassessed { background:#eceff3; color:#4a525e; font-weight:500; font-style:italic; }
     /* GRADE 5-domain wizard */
     .grade-cert-row { display:flex; gap:0.5rem; align-items:flex-end; }
     .grade-cert-row label { flex:1; }
@@ -208,11 +209,14 @@
       "high": "⊕⊕⊕⊕ High",
       "moderate": "⊕⊕⊕○ Moderate",
       "low": "⊕⊕○○ Low",
-      "verylow": "⊕○○○ Very low"
+      "verylow": "⊕○○○ Very low",
+      // GRADE certainty is a reviewer judgement, never a default: a row nobody has rated
+      // (a loaded pooled result, a new outcome) is "Not assessed" until a level is chosen.
+      "notassessed": "Not assessed"
     };
     const CERT_CLASS = {
       "high": "grade-high", "moderate": "grade-moderate",
-      "low": "grade-low", "verylow": "grade-verylow"
+      "low": "grade-low", "verylow": "grade-verylow", "notassessed": "grade-notassessed"
     };
 
     const EXAMPLE_STATE = {
@@ -273,7 +277,7 @@
     let state = null;
 
     function emptyOutcome() {
-      return { outcome:"", followup:"", assumed:"", corresponding:"", effectType:"RR", effect:"", ciLo:"", ciHi:"", participants:"", studies:"", certainty:"moderate", comments:"",
+      return { outcome:"", followup:"", assumed:"", corresponding:"", effectType:"RR", effect:"", ciLo:"", ciHi:"", participants:"", studies:"", certainty:"notassessed", comments:"",
         grade: { design:"rct", rob:0, inc:0, ind:0, imp:0, pub:0, large:0, dose:false, conf:false } };
     }
     // GRADE 5-domain compute. Returns { level, label, rationale }.
@@ -320,7 +324,7 @@
       const rows = outcomesWrap.querySelectorAll(".outcome-row");
       const out = [];
       rows.forEach((row, i) => {
-        const r = { effectType: "RR", certainty: "moderate" };
+        const r = { effectType: "RR", certainty: "notassessed" };
         row.querySelectorAll("[data-field]").forEach((el) => {
           r[el.dataset.field] = el.value || "";
         });
@@ -371,6 +375,7 @@
         '</div>',
         '<div class="grade-cert-row">',
         '  <label><span class="lbl">Certainty</span><select data-field="certainty" aria-label="Certainty">',
+        '    <option value="notassessed"' + (!CERT_LABEL[o.certainty] || o.certainty==="notassessed"?' selected':'') + '>Not assessed</option>',
         '    <option value="high"' + (o.certainty==="high"?' selected':'') + '>High</option>',
         '    <option value="moderate"' + (o.certainty==="moderate"?' selected':'') + '>Moderate</option>',
         '    <option value="low"' + (o.certainty==="low"?' selected':'') + '>Low</option>',
@@ -618,8 +623,8 @@
       }
 
       const rows = state.outcomes.map((o) => {
-        const certClass = CERT_CLASS[o.certainty] || "grade-moderate";
-        const certLabel = CERT_LABEL[o.certainty] || CERT_LABEL.moderate;
+        const certClass = CERT_CLASS[o.certainty] || "grade-notassessed";
+        const certLabel = CERT_LABEL[o.certainty] || CERT_LABEL.notassessed;
         const nStudies = o.studies ? " (" + escapeHtml(o.studies) + ")" : "";
         return [
           '<tr class="outcome-row">',
@@ -664,7 +669,7 @@
         '</tbody>',
         '</table>',
         '<p class="sof-legend">* The risk with ' + escapeHtml(h.intervention || "intervention") + ' (and its 95% confidence interval) is based on the assumed risk in the comparison group and the <strong>relative effect</strong> of the intervention (and its 95% CI).</p>',
-        '<p class="sof-legend"><strong>GRADE certainty:</strong> <strong>High</strong> — we are very confident; <strong>Moderate</strong> — moderately confident; <strong>Low</strong> — confidence is limited; <strong>Very low</strong> — we have very little confidence.</p>',
+        '<p class="sof-legend"><strong>GRADE certainty:</strong> <strong>High</strong> — we are very confident; <strong>Moderate</strong> — moderately confident; <strong>Low</strong> — confidence is limited; <strong>Very low</strong> — we have very little confidence.' + (state.outcomes.some(o => !CERT_LABEL[o.certainty] || o.certainty === "notassessed") ? ' <strong>Not assessed</strong> — no GRADE rating has been made for this outcome yet.' : '') + '</p>',
         '</div>'
       ].join("");
       host.innerHTML = html;
@@ -725,6 +730,7 @@
         '.grade-moderate { background:#fff4d5; color:#7a5a0d; }',
         '.grade-low { background:#fde1d3; color:#a34a12; }',
         '.grade-verylow { background:#fbd2d2; color:#912121; }',
+        '.grade-notassessed { background:#eceff3; color:#4a525e; font-weight:500; font-style:italic; }',
         '.sof-legend { margin-top:0.75rem; font-size:0.75rem; color:#5c6470; line-height:1.5; }',
         '</style></head><body>',
         html,

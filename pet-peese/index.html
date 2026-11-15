@@ -75,7 +75,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>PET-PEESE + Trim-and-Fill</h1>
-    <p>Publication-bias adjustments. <abbr data-gloss="PET">PET</abbr> regresses the effect on <abbr data-gloss="SE">SE</abbr>; <abbr data-gloss="PEESE">PEESE</abbr> regresses on SE². The Stanley–Doucouliagos conditional procedure uses PET first and switches to PEESE if PET rejects H₀. Duval–Tweedie trim-and-fill imputes missing studies symmetric around the median.</p>
+    <p>Publication-bias adjustments. <abbr data-gloss="PET">PET</abbr> regresses the effect on <abbr data-gloss="SE">SE</abbr>; <abbr data-gloss="PEESE">PEESE</abbr> regresses on SE². The Stanley–Doucouliagos conditional procedure uses PET first and switches to PEESE if PET rejects H₀. Duval–Tweedie trim-and-fill imputes the missing studies as mirror images about the trimmed pooled mean.</p>
   </header>
   <main>
     <section class="panel">
@@ -101,7 +101,7 @@
       <label>
         <span>PET significance threshold</span>
         <input id="alpha" type="number" step="0.01" min="0.01" max="0.5" value="0.10" aria-label="PET significance threshold">
-        <span class="hint">Stanley &amp; Doucouliagos recommend 0.10 for the conditional switch.</span>
+        <span class="hint">Stanley &amp; Doucouliagos (2014): use PEESE when PET rejects H₀: β₀ = 0; the paper fixes no level or tailedness. The one-sided t(k−2) test in the direction of the pooled effect, at this level (default 0.10), is this page's choice.</span>
       </label>
       <label>
         <span>Trim-and-fill estimator</span>
@@ -158,25 +158,30 @@
     }
 
     // --- weighted linear regression of y on x with weights w ---
+    // Lane low605: centred form (was the normal equations sw*swxx - swx^2, which cancels to
+    // noise when the x are nearly equal: relative spread 1e-6 gave PET -114052.6 vs lm
+    // -113999.764). The slope is NOT IDENTIFIED - as lm(y ~ x, weights = w) drops it (NA) -
+    // when the weighted x has (almost) no variation left after the intercept: lm's
+    // dqrdc2 rule, residual norm < 1e-7 * column norm. All SEs equal is the usual case;
+    // then every coefficient here is NaN and `identified` is false (callers label it).
     function wls(xs, ys, ws) {
-      let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-      for (let i = 0; i < xs.length; i++) {
-        sw += ws[i]; swx += ws[i] * xs[i]; swy += ws[i] * ys[i];
-        swxx += ws[i] * xs[i] * xs[i]; swxy += ws[i] * xs[i] * ys[i];
+      const n = xs.length;
+      let sw = 0, swx = 0, swy = 0, swxx = 0;
+      for (let i = 0; i < n; i++) { sw += ws[i]; swx += ws[i] * xs[i]; swy += ws[i] * ys[i]; swxx += ws[i] * xs[i] * xs[i]; }
+      const xb = swx / sw, yb = swy / sw;
+      let sxx = 0, sxy = 0;
+      for (let i = 0; i < n; i++) { const dx = xs[i] - xb; sxx += ws[i] * dx * dx; sxy += ws[i] * dx * (ys[i] - yb); }
+      if (!(Math.sqrt(sxx) >= 1e-7 * Math.sqrt(swxx))) {
+        return { b0: NaN, b1: NaN, seB0: NaN, seB1: NaN, n, identified: false };
       }
-      const det = sw * swxx - swx * swx;
-      const b0 = (swxx * swy - swx * swxy) / det;  // intercept
-      const b1 = (sw * swxy - swx * swy) / det;   // slope
-      // residuals and SE on intercept
+      const b1 = sxy / sxx;            // slope
+      const b0 = yb - b1 * xb;          // intercept
       let rss = 0;
-      for (let i = 0; i < xs.length; i++) {
-        const res = ys[i] - (b0 + b1 * xs[i]);
-        rss += ws[i] * res * res;
-      }
-      const sigma2 = rss / (xs.length - 2);
-      const varB0 = sigma2 * swxx / det;
-      const varB1 = sigma2 * sw / det;
-      return { b0, b1, seB0: Math.sqrt(Math.max(varB0, 0)), seB1: Math.sqrt(Math.max(varB1, 0)), n: xs.length };
+      for (let i = 0; i < n; i++) { const res = ys[i] - (b0 + b1 * xs[i]); rss += ws[i] * res * res; }
+      const sigma2 = rss / (n - 2);
+      const varB0 = sigma2 * (1 / sw + xb * xb / sxx);
+      const varB1 = sigma2 / sxx;
+      return { b0, b1, seB0: Math.sqrt(Math.max(varB0, 0)), seB1: Math.sqrt(Math.max(varB1, 0)), n, identified: true };
     }
 
     // Cycle 7.6: PET/PEESE p-values should use a t-distribution with
@@ -230,6 +235,16 @@
     function pnorm(x) { return AlmTail.pnormUpper(-x); }
     function pFromZ(z) { return AlmTail.p2norm(z); }
 
+    // qt(0.975, df) by bisection on R's pt upper tail (shared/upper-tail.js).
+    function qt975(df) {
+      let lo = 0, hi = 1e4;
+      for (let i = 0; i < 200; i++) {
+        const mid = (lo + hi) / 2;
+        if (AlmTail.ptUpper(mid, df) > 0.025) lo = mid; else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+
     function petPeese(rows) {
       const xs = rows.map(r => r.se);
       const ys = rows.map(r => r.te);
@@ -240,63 +255,58 @@
       return { pet, peese };
     }
 
-    // --- trim-and-fill (Duval-Tweedie L₀) ---
+    // --- trim-and-fill (Duval & Tweedie 2000), metafor::trimfill rule on the FE model ---
+    // Lane audit8: matches metafor::trimfill(rma(yi, vi, method = "FE"), estimator = ...)
+    // (R 4.6.0 / metafor 5.2.1; hub/shared/tests/unit/pet-peese-r-audit8.test.mjs).
+    //  - side: sign of the slope of yi on sqrt(vi) (weights 1/vi): slope < 0 -> "right",
+    //    else "left" (missing studies imputed on that side). Was: sign of a rank sum.
+    //  - work in z = s*yi sorted ascending (s = +1 left, -1 right); iterate: FE-pool the
+    //    k - k0 smallest z; centred ranks rank(|z - beta|) (ties: first);
+    //    L0 = (4*Sr - k(k+1)) / (2k - 1), Sr = sum of ranks with z - beta > 0;
+    //    R0 = k - (largest rank with z - beta < 0) - 1 (was: the run of NEGATIVE ranks);
+    //    k0 = max(0, round(.)) until it repeats.
+    //  - impute 2*beta - z for the k0 largest z (SE carried over), back on the yi scale.
     function trimAndFill(rows, est = "L0") {
-      let mu = fePool(rows).mean;
-      let k0 = 0;
-      let direction = 1;
-      {
-        const initial = rows.map(r => ({ ...r, r: r.te - mu }))
-          .sort((a, b) => Math.abs(a.r) - Math.abs(b.r))
-          .map((rr, i) => ({ ...rr, rank: i + 1 }));
-        const Tn0 = initial.filter(rr => rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
-        const n0 = initial.length;
-        const expected = n0 * (n0 + 1) / 4;
-        direction = (Tn0 - expected) >= 0 ? 1 : -1;
+      const k = rows.length;
+      const reg = wls(rows.map(r => r.se), rows.map(r => r.te), rows.map(r => 1 / (r.se * r.se)));
+      // Lane low605: no slope (all SEs equal) -> no side. metafor::trimfill stops here
+      // ("missing value where TRUE/FALSE needed"); the page refuses instead of defaulting
+      // to "left" with k0 = 0.
+      if (!reg.identified) {
+        return { refused: true, reason: "funnel side cannot be determined (all standard errors equal)", k0: null, side: null, mu: NaN, adjusted: null, imputed: [], direction: 0 };
       }
-      for (let iter = 0; iter < 30; iter++) {
-        const residuals = rows.map(r => ({ ...r, r: r.te - mu }));
-        residuals.sort((a, b) => Math.abs(a.r) - Math.abs(b.r));
-        residuals.forEach((rr, i) => rr.rank = i + 1);
-        const Tn = residuals.filter(rr => direction * rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
-        const signs = residuals.map(rr => (direction * rr.r) >= 0 ? 1 : -1);
-        let k0_new = 0;
-        if (est === "L0") {
-          const n = residuals.length;
-          const Lnum = 4 * Tn - n * (n + 1);
-          const Lden = 2 * n - 1;
-          k0_new = Math.max(0, Math.round(Math.max(0, Lnum / Lden)));
+      const side = reg.b1 < 0 ? "right" : "left";
+      const s = side === "left" ? 1 : -1;
+      const z = rows.map(r => ({ z: s * r.te, se: r.se })).sort((a, b) => a.z - b.z);
+      let k0 = 0, k0sav = -1, iter = 0, beta = fePool(rows.map(r => ({ te: s * r.te, se: r.se }))).mean;
+      while (k0 !== k0sav && iter < 100) {
+        k0sav = k0; iter++;
+        beta = fePool(z.slice(0, k - k0).map(r => ({ te: r.z, se: r.se }))).mean;
+        const c = z.map(r => r.z - beta);
+        const order = c.map((_, i) => i).sort((i, j) => Math.abs(c[i]) - Math.abs(c[j]) || i - j);
+        const rank = new Array(k);
+        order.forEach((i, j) => { rank[i] = j + 1; });
+        let k0new;
+        if (est === "R0") {
+          let maxNeg = 0;
+          for (let i = 0; i < k; i++) if (c[i] < 0 && rank[i] > maxNeg) maxNeg = rank[i];
+          k0new = (k - maxNeg) - 1;
         } else {
-          let gamma = 0;
-          for (let i = signs.length - 1; i >= 0; i--) {
-            if (signs[i] > 0) break;
-            gamma++;
-          }
-          k0_new = Math.max(0, gamma - 1);
+          let Sr = 0;
+          for (let i = 0; i < k; i++) if (c[i] > 0) Sr += rank[i];
+          k0new = (4 * Sr - k * (k + 1)) / (2 * k - 1);
         }
-        if (k0_new === k0 && iter > 0) break;
-        k0 = k0_new;
-        if (k0 <= 0) break;
-        const sorted = [...rows].sort((a, b) => Math.abs(b.te - mu) - Math.abs(a.te - mu));
-        const trimmedIdx = new Set();
-        for (const r of sorted) {
-          if (direction * (r.te - mu) > 0 && trimmedIdx.size < k0) trimmedIdx.add(r);
-        }
-        const remaining = rows.filter(r => !trimmedIdx.has(r));
-        if (remaining.length < 2) break;
-        mu = fePool(remaining).mean;
+        // L0's denominator is odd, so it is never exactly x.5: Math.round == R's round here.
+        k0 = Math.min(k - 1, Math.max(0, Math.round(k0new)));
       }
-      const heavySide = rows
-        .filter(r => direction * (r.te - mu) > 0)
-        .sort((a, b) => direction * ((b.te - mu) - (a.te - mu)))
-        .slice(0, k0);
-      const imputed = heavySide.map(r => ({ te: 2 * mu - r.te, se: r.se, imputed: true }));
-      const combined = [...rows, ...imputed];
-      const adjusted = fePool(combined);
-      return { k0, mu, adjusted, imputed, direction };
+      const imputed = z.slice(k - k0).map(r => ({ te: s * (2 * beta - r.z), se: r.se, imputed: true }));
+      const adjusted = fePool([...rows, ...imputed]);
+      return { k0, side, mu: s * beta, adjusted, imputed, direction: s };
     }
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    // p-values: three decimals, "<0.001" below that (a p is never "0.000"; funnel-plot convention).
+    function fmtP(p) { return !Number.isFinite(p) ? "—" : (p < 0.001 ? "&lt;0.001" : p.toFixed(3)); }
 
     // Last-computed result cache — populated by run(), read by __almResults().
     var _lastPET = null;
@@ -343,21 +353,33 @@
       // normal (pnorm was anti-conservative by ~2x at small k, and disagreed with the
       // export which already used t). One-sided p = two-sided pt2/2 in the effect direction.
       const petIntP = (direction * petZ > 0) ? (pt2(petZ, pet.n - 2) / 2) : 0.5;
-      const conditional = petIntP < alpha
+      const NOT_ID = "not identified: all standard errors equal";
+      const conditional = !pet.identified
+        ? `not available (PET ${NOT_ID}: the SE regressor is constant, so the slope cannot be estimated - lm drops it)`
+        : petIntP < alpha
         ? `PEESE (PET intercept one-sided p < ${alpha})`
         : `PET (PET intercept one-sided p ≥ ${alpha})`;
       const tf = trimAndFill(rows, tfEst);
+      // PET/PEESE intercept CI on the same t(k-2) as its p-value (= confint(lm)); was z.
+      const tq = qt975(pet.n - 2);
 
       const resRows = [
         { name: "FE meta-analysis", est: fe.mean, se: fe.se, ci: fe.ci, p: fe.p },
-        { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - Z975 * pet.seB0, pet.b0 + Z975 * pet.seB0], p: pt2(petZ, pet.n - 2) },
-        { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - Z975 * peese.seB0, peese.b0 + Z975 * peese.seB0], p: pt2(peeseZ, peese.n - 2) },
-        { name: `Trim-and-fill (k₀=${tf.k0}, sensitivity only)`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
+        pet.identified
+          ? { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - tq * pet.seB0, pet.b0 + tq * pet.seB0], p: pt2(petZ, pet.n - 2) }
+          : { name: "PET intercept", refused: NOT_ID },
+        peese.identified
+          ? { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - tq * peese.seB0, peese.b0 + tq * peese.seB0], p: pt2(peeseZ, peese.n - 2) }
+          : { name: "PEESE intercept", refused: NOT_ID },
+        tf.refused
+          ? { name: "Trim-and-fill", refused: `not computed: ${tf.reason}` }
+          : { name: `Trim-and-fill (k₀=${tf.k0}, sensitivity only)`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
       ];
       const body = document.getElementById("res-body");
       const __bodyParts = [""];
       for (const r of resRows) {
-        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmt(r.p)}</td></tr>`);
+        if (r.refused) { __bodyParts.push(`<tr><td><code>${r.name}</code></td><td colspan="4">${r.refused}</td></tr>`); continue; }
+        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmtP(r.p)}</td></tr>`);
       }
       warnSlot.innerHTML += `<div class="note" role="note"><strong>Conditional estimator:</strong> ${conditional}.</div>`;
       drawFunnel(rows, pet, peese, tf);
@@ -486,6 +508,8 @@
         out.fe_ci_ub = fe.ci[1];
         out.fe_p     = fe.p;
       }
+      if (pet) out.pet_identified = pet.identified !== false;
+      if (peese) out.peese_identified = peese.identified !== false;
       if (pet) {
         // Cycle 7.6: PET regression is a WLS with k - 2 df, so p uses a
         // t-distribution (was incorrectly using pnorm — anti-conservative

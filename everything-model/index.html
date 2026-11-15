@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="The 'everything model': joint outcome × time × RoB Bayesian hierarchical meta-analysis with variational EM.">
+  <meta name="description" content="The 'everything model': joint outcome × time × RoB hierarchical meta-analysis, fitted by maximum likelihood (EM + profile-likelihood polish), matching metafor rma.mv(method='ML').">
   <meta name="color-scheme" content="light dark">
   <title>Everything model (outcome × time × RoB)</title>
   <style>
@@ -52,7 +52,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Everything model (outcome × time × RoB)</h1>
-    <p>Joint hierarchical model that decomposes each effect estimate y<sub>i,t,o</sub> into outcome mean μ<sub>o</sub>, study random effect δ<sub>i</sub> ~ N(0, τ²), time-period γ<sub>t</sub>, and an optional RoB-driven shift. Variational EM converges in 50-200 iterations — browser-tractable, no MCMC needed. Returns per-outcome μ̂<sub>o</sub>, per-period γ̂<sub>t</sub>, per-study δ̂<sub>i</sub> (shrinkage), and the converged τ².</p>
+    <p>Joint hierarchical model that decomposes each effect estimate y<sub>i,t,o</sub> into outcome mean μ<sub>o</sub>, study random effect δ<sub>i</sub> ~ N(0, τ²), time-period γ<sub>t</sub>, and an optional RoB-driven shift. Fitted by maximum likelihood: EM, polished by a profile-likelihood search over τ² — browser-tractable, no MCMC needed. Returns per-outcome μ̂<sub>o</sub>, per-period γ̂<sub>t</sub>, per-study δ̂<sub>i</sub> (shrinkage), and the converged τ².</p>
   </header>
   <main>
     <section class="panel">

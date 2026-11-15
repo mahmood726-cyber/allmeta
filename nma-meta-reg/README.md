@@ -1,6 +1,6 @@
 # NMA meta-regression
 
-Treatment Ã— covariate interaction model.
+Treatment × covariate interaction model.
 
 Part of the [allmeta](https://github.com/mahmood726-cyber/allmeta) collection.
 
@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/nma-meta-reg/
 
 - **Category:** Network MA
 - **Data shape:** multi-arm trials in NMA shape — multiple rows per study, one per arm.
-- **Purpose:** Treatment Ã— covariate interaction model.
+- **Purpose:** Treatment × covariate interaction model.
 
 ## Method papers
 

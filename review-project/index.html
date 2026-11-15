@@ -162,6 +162,7 @@
     .sof-moderate { background:#13322f; color:#5eead4; border:1px solid #5eead4; }
     .sof-low { background:#3a2c12; color:#fbbf24; border:1px solid #fbbf24; }
     .sof-verylow { background:#3a1d1d; color:#f87171; border:1px solid #f87171; }
+    .sof-notassessed { background:transparent; color:var(--muted); border:1px dashed var(--muted); font-weight:500; font-style:italic; }
     .mini-forest text { fill:var(--muted); }
     /* JASP-style live synthesis controls */
     .synth-opts { display:flex; flex-wrap:wrap; gap:.5rem .9rem; align-items:center; margin:.1rem 0 .6rem; font-size:.78rem; }
@@ -343,9 +344,20 @@
     function upstreamOf(id) { return STAGES.filter(function (s) { return s.feeds.indexOf(id) >= 0; }).map(function (s) { return s.id; }); }
 
     var KEY = "review-project-v1";
-    var state = load() || { title: "", outputs: {}, activeTab: "overview" };
-    if (!state.activeTab) state.activeTab = "overview";
-    if (!state.story || typeof state.story !== "object") state.story = { on: false, case: "cortico" };
+    var state = normalizeState(load());
+    // Fill every field the page reads without dropping anything that was saved: a legacy
+    // or hand-edited state with no `outputs` used to reach state.outputs[id] and throw.
+    function normalizeState(s) {
+      if (!s || typeof s !== "object" || Array.isArray(s)) s = {};
+      if (s.title == null) s.title = "";
+      if (!s.outputs || typeof s.outputs !== "object" || Array.isArray(s.outputs)) {
+        if (s.outputs != null) s._unreadableOutputs = s.outputs; // kept, not discarded
+        s.outputs = {};
+      }
+      if (!s.activeTab) s.activeTab = "overview";
+      if (!s.story || typeof s.story !== "object") s.story = { on: false, case: "cortico" };
+      return s;
+    }
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
     var synthOpts = { method: "REML", knha: false }; // JASP-style live synthesis controls (not persisted; exploratory)
     var gwamLambda = 0.64; // GWAM integrity ratio λ (published share of evidence); ~0.64 ≈ trial-to-publication linkage rate
@@ -573,13 +585,13 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + fragilityCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result — live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + fragilityCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
-        var CL = { high: "High", moderate: "Moderate", low: "Low", verylow: "Very low" };
+        var CL = { high: "High", moderate: "Moderate", low: "Low", verylow: "Very low", notassessed: "Not assessed" };
         var body2 = outs.slice(0, 6).filter(function (o) { return o && (o.outcome || o.certainty); }).map(function (o) {
-          var c = o.certainty || "moderate";
+          var c = CL[o.certainty] ? o.certainty : "notassessed"; // unrated is not "Moderate" (GRADE is a judgement)
           return "<tr><td>" + esc(o.outcome || "(unnamed)") + "</td><td><span class='sof-pill sof-" + c + "'>" + (CL[c] || esc(c)) + "</span></td></tr>";
         }).join("");
         return body2 ? wrapPrev("GRADE certainty", "<table class='ptable'><thead><tr><th>Outcome</th><th>Certainty</th></tr></thead><tbody>" + body2 + "</tbody></table>") : "";
@@ -592,7 +604,7 @@
     // canonical ma-pooled-v1 result (kept as a one-line cross-reference). ----
     function methodLabel(m, knha) {
       var base = m === "FE" ? "fixed-effect" : "RE-" + m;
-      return base + (knha ? " + Knapp–Hartung" : "");
+      return base + (knha ? " + Knapp–Hartung (variance factor floored at 1)" : "");
     }
     function synthControls() {
       var methods = [["FE", "Fixed effect"], ["DL", "RE · DerSimonian–Laird"], ["PM", "RE · Paule–Mandel"], ["REML", "RE · REML"]];
@@ -694,7 +706,7 @@
       var grid = [["FE", false], ["DL", false], ["DL", true], ["PM", false], ["PM", true], ["REML", false], ["REML", true]];
       var Z = 1.959963984540054, specs = [];
       grid.forEach(function (g) {
-        try { var r = AlmMaCore.pool(yi, vi, { method: g[0], knha: g[1], knhaFloor: true }); specs.push({ theta: r.mu, "var": r.se * r.se, k: r.k, label: g[0] + (g[1] ? "+HK" : "") }); } catch (e) {}
+        try { var r = AlmMaCore.pool(yi, vi, { method: g[0], knha: g[1], knhaFloor: true }); specs.push({ theta: r.mu, "var": r.se * r.se, ciLo: r.ciLo, ciHi: r.ciHi, k: r.k, label: g[0] + (g[1] ? "+HK" : "") }); } catch (e) {}
       });
       if (specs.length < 2) return "";
       var sc = ExperimentalMA.specCollapse(specs);
@@ -703,8 +715,8 @@
       var sinv = 0, swt = 0; specs.forEach(function (s) { var w = 1 / s["var"]; sinv += w; swt += w * s.theta; });
       var nMu = swt / sinv, nSe = Math.sqrt(1 / sinv);
       var rows = specs.map(function (s) {
-        var sd = Math.sqrt(s["var"]);
-        return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(tx(s.theta)) + "</td><td>" + fnum(tx(s.theta - Z * sd)) + " to " + fnum(tx(s.theta + Z * sd)) + "</td></tr>";
+        // each spec's OWN interval (t_{k-1} for the +HK specs), not theta +/- 1.96*SE
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(tx(s.theta)) + "</td><td>" + fnum(tx(s.ciLo)) + " to " + fnum(tx(s.ciHi)) + "</td></tr>";
       }).join("");
       return "<details class='exp-methods'><summary>&#128300; Multiverse — spec-collapse <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
         + "<div class='exp-row'>Across " + specs.length + " estimator specifications, the honest combined estimate is <b>" + fnum(tx(sc.theta))

@@ -119,8 +119,10 @@ def test_bivariate_runs_with_positive_within_correlation():
         }}));
     """)
     assert out["mu_finite"] is True
-    # ρ_between is bounded but otherwise data-dependent — just confirm it's in [-1, 1].
-    assert -1 < out["rho_between"] < 1
+    # ρ_between is bounded but otherwise data-dependent. For THIS dataset REML puts both τ at 0,
+    # where ρ_between is not identified and the engine reports null (since 2026-11-15; it
+    # used to return whichever grid value was visited first). Requirement: null, or in [-1, 1].
+    assert out["rho_between"] is None or -1 <= out["rho_between"] <= 1
     # SE not catastrophically inflated.
     assert out["ratio"] <= 1.25
 

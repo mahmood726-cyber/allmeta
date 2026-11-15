@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/limit-ma/
 
 - **Category:** Pairwise MA
 - **Data shape:** pairwise effect sizes — one row per study with `{label, est, se}` (or CI).
-- **Purpose:** RÃ¼cker shrinkage toward zero-variance limit.
+- **Purpose:** Rücker shrinkage toward zero-variance limit.
 
 ## Cite as
 
