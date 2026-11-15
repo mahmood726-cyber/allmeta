@@ -38,7 +38,9 @@ competitor — allmeta is checked *against* it).
 **Honest uncovered disclosure (6 apps, no packaged R oracle — disclosed in the ledger,
 enforced by `test_parity_coverage.py`):** `everything-model`, `cross-network`, `cross-design`,
 `sequential-ma`, `bma-tau-priors`, `nma-dose-response-app`. These are bespoke or
-research-grade estimators with no standard R equivalent; each is formula- or
+research-grade estimators with no packaged R oracle in the ledger (everything-model and
+cross-network have since been checked against `metafor::rma.mv` / `rma` in unit tests by lanes
+audit7 / audit6, but not through the parity ledger); each is formula- or
 analytically-checked and the ledger states the reason. The coverage test fails closed if any
 of these silently acquires a parity test without being removed from the uncovered list.
 
