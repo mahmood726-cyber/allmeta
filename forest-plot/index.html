@@ -249,6 +249,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     // as the data are replaced, so pasted studies are never sent to GRADE under the example's measure.
     // A measure the user picks themselves stays.
     let _measureFor = null;
+    let _heroTitle = null;
     function setAutoMeasure(m) {
       document.getElementById("f-measure").value = m;
       _measureFor = m ? document.getElementById("f-data").value : null;
@@ -267,12 +268,17 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       setAutoMeasure(known);
       const ti = document.getElementById("f-title");
       const cur = (ti.value || "").trim();
-      if (!cur || cur === EXAMPLE_TITLE) {
+      // Replace an empty title, the example's, or one a previous hero load wrote; keep a typed one.
+      if (!cur || cur === EXAMPLE_TITLE || (_heroTitle !== null && cur === _heroTitle)) {
         ti.value = (ds.name || "Benchmark dataset") + (known ? " (" + (RATIO_MEASURES[known] ? "log " : "") + known + ")" : "");
+        _heroTitle = ti.value;
       }
       render();
     }
     window.__almForestHeroLoaded = onHeroLoaded;
+    // A restored snapshot (autosave / undo) carries the user's own measure: it must not be cleared
+    // as the example's or a hero's when the restore dispatches 'input' on #f-data.
+    window.__almForestMeasureIsUsers = function () { _measureFor = null; };
 
     const EXAMPLE = "# Example: logOR for all-cause mortality\nTrial A 2018, -0.22, 0.11\nTrial B 2019, -0.31, 0.14\nTrial C 2020, 0.04, 0.19\nTrial D 2021, -0.18, 0.09\nTrial E 2022, -0.42, 0.17\nTrial F 2023, -0.09, 0.13";
 
@@ -1171,6 +1177,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (ef)  ef.value  = isEmpty ? 'Effect (log scale)' : (snap.effect != null ? snap.effect : 'Effect (log scale)');
       var me = document.getElementById('f-measure');
       if (me)  me.value  = isEmpty ? '' : (snap.measure != null ? snap.measure : '');
+      if (window.__almForestMeasureIsUsers) window.__almForestMeasureIsUsers();
       // Dispatch input on f-data to trigger the engine's render() listener.
       if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     };

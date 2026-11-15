@@ -115,3 +115,34 @@ test('forest-plot: pasting your own studies clears the example measure; a measur
   assert.equal(r.measure, 'SMD');
   assert.equal(r.scale, 'linear');
 });
+
+// Review of #591 (agy): restoring a saved snapshot (autosave / undo) after the example or a hero
+// load must keep the snapshot's measure; the restore's own 'input' dispatch cleared it.
+test('forest-plot: restoring a snapshot keeps its measure (after the example and after a hero load)', () => {
+  for (const hero of [null, 'bcg']) {
+    const p = forest();
+    if (hero) pickHero(p, hero);
+    p.ctx.__almRestore({ data: 'S1, -0.5, 0.2\nS2, -0.3, 0.25\nS3, -0.6, 0.3', scale: 'linear', nullVal: '0',
+      title: 'Saved review', effect: 'Effect (log scale)', measure: 'RR' });
+    assert.equal(p.el('f-measure').value, 'RR', `after ${hero || 'example'}`);
+    const r = pushed(p);
+    assert.equal(r.measure, 'RR');
+    assert.equal(r.scale, 'ratio');
+    // and the restored measure is the user's: replacing the data later does not clear it
+    paste(p, 'S1, -0.5, 0.2\nS2, -0.2, 0.25\nS3, -0.6, 0.3');
+    assert.equal(p.el('f-measure').value, 'RR');
+  }
+});
+
+test('forest-plot: switching hero datasets replaces the auto title; a typed title is still kept', () => {
+  const p = forest();
+  pickHero(p, 'bcg');
+  const ds = p.ctx.AlmDatasets.get('smoking');                  // log OR (Hasselblad 1998)
+  p.ctx.__almForestHeroLoaded(ds);
+  assert.equal(p.el('f-measure').value, 'OR');
+  assert.doesNotMatch(p.el('f-title').value, /BCG|log RR/, p.el('f-title').value);
+  assert.match(p.el('f-title').value, /log OR/);
+  p.el('f-title').value = 'Mine';
+  pickHero(p, 'bcg');
+  assert.equal(p.el('f-title').value, 'Mine');
+});

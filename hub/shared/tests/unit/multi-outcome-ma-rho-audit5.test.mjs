@@ -42,3 +42,24 @@ test('multi-outcome-ma: an identified rho_between is still shown (matches metafo
   assert.match(out, /ρ_between 0\.036/, out);
   assert.ok(Math.abs(fit.last.bivariate.rho_between - 0.03593475) < 1e-3, String(fit.last.bivariate.rho_between));
 });
+
+// Review of #591 (agy): identifiability must not use an absolute tau cut-off. REML is
+// scale-equivariant, so the identified case above in units 1000x larger (y, se x 1e-3) has the same
+// rho (metafor: 0.03593475) and tau x 1e-3 (0.000347, 0.000268), below the old absolute 5e-4.
+// shared/multi-outcome-ma.js itself does not reach that optimum at this scale (its grid and step are
+// absolute: it returns tau 0.00078, rho -0.953 -- reported separately), so the page's display rule is
+// tested here on the R fit, rescaled, in place of the engine's.
+test('multi-outcome-ma: rho_between identifiability is relative to the within-study SEs', () => {
+  const rows = [[-0.8, 0.12, -0.3, 0.15], [-0.1, 0.10, -0.6, 0.12], [-0.45, 0.18, -0.55, 0.20], [0.1, 0.09, 0.05, 0.11],
+    [-0.9, 0.20, -0.4, 0.14], [-0.25, 0.11, -0.9, 0.13], [-0.6, 0.15, -0.3, 0.17]];
+  const src = rows.map((r, i) => 'S' + (i + 1) + ', ' + r.map(x => (x * 1e-3).toPrecision(6)).join(', ')).join('\n') + '\nS8, NA, NA, -0.0002, 0.00016';
+  const p = loadPage('multi-outcome-ma/index.html', { shared: ['shared/ma-core.js', 'shared/multi-outcome-ma.js'] });
+  const real = p.ctx.AlmMultiOutcome.fitBivariate;
+  p.ctx.AlmMultiOutcome.fitBivariate = (studies, opts) => Object.assign(real(studies, opts), {
+    tau: [0.3470537e-3, 0.2681204e-3], rho_between: 0.03593475 });       // rma.mv(struct = "UN") x 1e-3
+  p.el('src').value = src; p.el('f-rho-within').value = '0.5';
+  p.fire('btn-run');
+  const out = text(p.el('bivariate-summary').innerHTML);
+  assert.doesNotMatch(out, /not identified/, out);
+  assert.match(out, /ρ_between 0\.036/, out);
+});
