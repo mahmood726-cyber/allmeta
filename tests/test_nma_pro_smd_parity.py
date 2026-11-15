@@ -148,6 +148,7 @@ def check_contrasts(out, page):
     p1 = {(s, a, b): (te, se) for s, a, b, te, se in zip(out["p1"]["studlab"] if isinstance(out["p1"], dict) else
           [r["studlab"] for r in out["p1"]], *(([r[c] for r in out["p1"]] for c in ("treat1", "treat2", "TE", "seTE"))))}
     worst = 0.0
+    page["rows"] = [r for r in page["rows"] if r[3] is not None and r[3] == r[3]]  # computable rows only (NaN -> null)
     for name, a, b, yi, vi in page["rows"]:
         if (name, a, b) in p1:
             te, se = p1[(name, a, b)]
@@ -170,5 +171,24 @@ def test_exported_r_script_reproduces_page_smd_normand(pg, tmp_path):
 def test_exported_r_script_reproduces_page_smd_franchini_multi_arm(pg, tmp_path):
     out, page = run_script(pg, tmp_path, franchini_rows(), "FE", "Placebo")
     assert check_contrasts(out, page) < 1e-10
+    for t, te in out["TE_common"].items():
+        assert abs(page["eff"][t][0] - te) < 1e-10 and abs(page["eff"][t][1] - out["se_common"][t]) < 1e-10, t
+
+
+def test_zero_sd_arm_drops_its_contrasts_in_page_and_script(pg, tmp_path):
+    # meta::metacont / pairwise(sm = "SMD") give TE = NA for a contrast with an arm of SD 0 (R 4.6.0, meta 8.5-0: metacont(20, 5, 0,
+    # 20, 3, 2) -> NA; a 3-arm study with one SD-0 arm keeps only the contrast of the other two, on their own SDs). The page
+    # does the same; the exported script used escalc, which pools the other arm's SD and kept such a contrast (agy, PR #601).
+    rows = franchini_rows()
+    for r in rows:
+        if r["name"] == "Lieberman 1997":
+            r["sd1"] = 0
+        if r["name"] == "Guttman 1997" and r["treatment2"] == "Bromocriptine":
+            r["sd2"] = 0
+    out, page = run_script(pg, tmp_path, rows, "FE", "Placebo")
+    assert check_contrasts(out, page) < 1e-10
+    kept = {(r[0], r[1], r[2]) for r in page["rows"]}
+    assert ("Lieberman 1997", "Placebo", "Pramipexole") not in kept
+    assert [k for k in kept if k[0] == "Guttman 1997"] == [("Guttman 1997", "Placebo", "Pramipexole")]
     for t, te in out["TE_common"].items():
         assert abs(page["eff"][t][0] - te) < 1e-10 and abs(page["eff"][t][1] - out["se_common"][t]) < 1e-10, t
