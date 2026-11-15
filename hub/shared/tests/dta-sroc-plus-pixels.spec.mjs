@@ -21,8 +21,16 @@ async function render(page,config){
  await page.setViewportSize(config.mobile?{width:390,height:844}:{width:1280,height:900});
  // A request the local server did not deliver is reloaded, named in the log (load-complete.mjs); the 28-option
  // assertion below is unchanged.
+ // The 28 options prove only the Plus section loaded. The page's main script can still have died part-way (run
+ // 43738827436, attempt 1: plot-export.js undelivered -> 'window.alm.plotExport is not a function' -> no glossary
+ // language switch -> 104 px on dta-sroc-8-plot.png, reported as a pixel flake). Name any uncaught error of the
+ // accepted load instead; errors of a load that load-complete.mjs discarded are cleared on navigation.
+ const errors=[];
+ page.on('framenavigated',f=>{if(f===page.mainFrame())errors.length=0;});
+ page.on('pageerror',e=>errors.push(e.message));
  await loadComplete(page,'/dta-sroc/index.html',async()=>await page.locator('#plus-example option').count()===28);
  await expect(page.locator('#plus-example option')).toHaveCount(28);
+ expect(errors,'uncaught page errors while loading /dta-sroc/index.html').toEqual([]);
  const c=corpus.cases.find(c=>c.id===config.id);expect(c?.ok).toBe(true);
  const ok=await page.evaluate(({c,config})=>!!AlmDTAPlusUI.set({rows:c.rows,method:c.method,correction:c.correction,at:config.at,prevalence:config.prevalence}),{c,config});
  expect(ok).toBe(true);
