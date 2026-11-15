@@ -30,9 +30,10 @@
  * Do-no-harm checks (T3–T6): each verifies a pre-retrofit present-good feature.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
 
-const INDEX_URL    = 'http://127.0.0.1:8080/nma-pro-v2/';
-const MONOLITH_URL = 'http://127.0.0.1:8080/nma-pro-v2/nma-pro-v8.0.html';
+const INDEX_URL    = ALM_BASE_URL + '/nma-pro-v2/';
+const MONOLITH_URL = ALM_BASE_URL + '/nma-pro-v2/nma-pro-v8.0.html';
 
 /** Wait until the app has initialised (Run Analysis button present & enabled) */
 async function waitForApp(page) {

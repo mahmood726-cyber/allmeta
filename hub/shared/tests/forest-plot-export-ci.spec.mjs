@@ -8,9 +8,10 @@
  * that match the RE HKSJ interval and bracket the pooled estimate.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 test('forest-plot exported pool CI bounds are populated (not undefined)', async ({ page }) => {
-  await page.goto('http://localhost:8088/forest-plot/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/forest-plot/index.html', { waitUntil: 'load' });
   await page.waitForTimeout(1000); // example renders on load
   const p = await page.evaluate(() => {
     const s = window._almForestState();

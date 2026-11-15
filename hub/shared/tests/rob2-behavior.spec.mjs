@@ -9,8 +9,9 @@
  * takes precedence over High in the overall.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/rob2/';
+const APP_URL = ALM_BASE_URL + '/rob2/';
 
 // Per-domain answer presets hitting each judge() branch.
 const L1 = { '1.1': 'Y', '1.2': 'Y', '1.3': 'N' };

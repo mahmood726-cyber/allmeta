@@ -10,7 +10,8 @@
  * The old t_{k-2} would have given the too-wide [-1.036, 1.495].
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/forest-plot/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/forest-plot/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('forest-plot 95% PI matches metafor::predict (t_{k-1})', async ({ page }) => {

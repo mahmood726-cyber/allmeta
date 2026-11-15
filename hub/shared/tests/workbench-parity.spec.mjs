@@ -10,8 +10,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/workbench/';
+const APP_URL = ALM_BASE_URL + '/workbench/';
 const O = JSON.parse(readFileSync(
   new URL('../../../workbench/tests/fixtures/workbench-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-6;

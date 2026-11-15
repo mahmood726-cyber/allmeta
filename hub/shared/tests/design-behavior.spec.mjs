@@ -10,8 +10,9 @@
  *    read by Screen).
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/design/';
+const APP_URL = ALM_BASE_URL + '/design/';
 
 const PICO = {
   framework: 'PICO', pop: 'adults with heart failure',

@@ -9,7 +9,8 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-const APP = 'http://localhost:8088/multilevel-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const APP = ALM_BASE_URL + '/multilevel-ma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const KON = JSON.parse(readFileSync(new URL('./_kon_data.json', import.meta.url), 'utf-8'));
 const ROWS = KON.map(r => ({ cluster: r.district, y: r.yi, v: r.vi }));

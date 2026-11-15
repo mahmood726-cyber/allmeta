@@ -12,8 +12,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const COPAS_URL = 'http://localhost:8088/copas/';
+const COPAS_URL = ALM_BASE_URL + '/copas/';
 const ORACLE = JSON.parse(readFileSync(
   new URL('../../../copas/tests/fixtures/copas-oracle.json', import.meta.url), 'utf-8'));
 

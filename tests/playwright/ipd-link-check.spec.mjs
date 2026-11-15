@@ -4,7 +4,8 @@
  * points at the canonical ipd-meta-pro.html whose relative paths resolve.
  */
 import { test, expect } from '@playwright/test';
-const BASE = 'http://127.0.0.1:8080/IPD-Meta-Pro';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const BASE = ALM_BASE_URL + '/IPD-Meta-Pro';
 
 test('landing links to canonical app, which loads shared/hub assets without 404', async ({ page }) => {
   // 1. Landing page now points at the sibling canonical app, not the e156 copy.

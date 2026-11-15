@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+// One origin for the page server: set ALM_BASE_URL to serve and test this checkout on your own port.
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const ALM_PORT = new URL(ALM_BASE_URL).port || '80';
 
 export default defineConfig({
   testDir: ".",
@@ -17,7 +20,7 @@ export default defineConfig({
     ["json", { outputFile: "artifacts/report.json" }],
   ],
   use: {
-    baseURL: "http://127.0.0.1:8080",
+    baseURL: ALM_BASE_URL,
     trace: "retain-on-failure",
     screenshot: "on",
     video: "off",
@@ -26,9 +29,9 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: "npx http-server ../.. -p 8080 -c-1 --silent",
-    url: "http://127.0.0.1:8080/index.html",
-    reuseExistingServer: true,
+    command: `npx http-server ../.. -p ${ALM_PORT} -c-1 --silent`,
+    url: ALM_BASE_URL + "/index.html",
+    reuseExistingServer: process.env.ALM_REUSE_SERVER === '1',
     timeout: 30_000,
   },
 });

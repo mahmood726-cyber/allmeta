@@ -13,8 +13,9 @@
  *  - Transparent relevance score: +1 per include-term hit, -2 per exclude-term hit.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/screen/';
+const APP_URL = ALM_BASE_URL + '/screen/';
 const TOL = 1e-9;
 
 test.describe('screen', () => {

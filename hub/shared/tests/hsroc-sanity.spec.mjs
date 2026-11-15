@@ -22,8 +22,9 @@
  *   - Parameterisation: logit(FPR) — matches mada::reitsma
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const HSROC_URL = 'http://localhost:8088/hsroc/';
+const HSROC_URL = ALM_BASE_URL + '/hsroc/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm.

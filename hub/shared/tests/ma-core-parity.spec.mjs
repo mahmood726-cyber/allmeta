@@ -14,7 +14,8 @@
  * accurate. Loaded in-browser via workbench (the first consumer of the shared core).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/workbench/index.html'; // any page that loads ma-core
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/workbench/index.html'; // any page that loads ma-core
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 const YI = [0.10, 0.30, 0.50, 0.20, 0.90, 0.40, 1.10, 0.05];

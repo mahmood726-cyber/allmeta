@@ -5,12 +5,13 @@
  * the CI, and within [0,1].
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const BENIGN = /frame-ancestors|ERR_CONNECTION|Schwarzer/;
 
 test('proportion-ma pooled PI present, brackets pooled p, wider than CI, in [0,1]', async ({ page }) => {
   const errs = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
-  await page.goto('http://localhost:8088/proportion-ma/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/proportion-ma/index.html', { waitUntil: 'load' });
   await page.waitForFunction(() => typeof window._almLastPropMA === 'function' && window._almLastPropMA(), { timeout: 10000 });
   const o = await page.evaluate(() => window._almLastPropMA());
   expect(o, 'results available').toBeTruthy();

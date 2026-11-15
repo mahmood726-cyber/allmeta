@@ -8,8 +8,9 @@
  * spec checks the math via the module loaded on the influence page, plus the UI accessors.
  */
 import { test, expect } from '@playwright/test';
-const INFLUENCE = 'http://localhost:8088/influence/index.html';
-const MHPETO = 'http://localhost:8088/mh-peto/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const INFLUENCE = ALM_BASE_URL + '/influence/index.html';
+const MHPETO = ALM_BASE_URL + '/mh-peto/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 const tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886];

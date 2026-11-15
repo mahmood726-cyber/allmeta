@@ -5,7 +5,8 @@
  * Also checks the (now right-skewed) default demo shows evidential value.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/p-curve/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/p-curve/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('p-curve: p-uniform delta is sensible (>0) and default shows evidential value', async ({ page }) => {

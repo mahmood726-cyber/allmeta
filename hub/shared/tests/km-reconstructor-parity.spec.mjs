@@ -14,8 +14,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/km-reconstructor/';
+const APP_URL = ALM_BASE_URL + '/km-reconstructor/';
 const O = JSON.parse(readFileSync(
   new URL('../../../km-reconstructor/tests/fixtures/km-oracle.json', import.meta.url), 'utf-8'));
 

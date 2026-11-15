@@ -6,7 +6,8 @@
  * while true duplicates and missing-title DOI matches still merge.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/citation-dedup/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/citation-dedup/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('citation-dedup: DOI matches need a title floor (no false-merge); true dups still merge', async ({ page }) => {

@@ -4,7 +4,8 @@
  * OR<1 (p=0.00115): FI = 13 event modifications, FQ = 0.0125. Surfaced in mh-peto.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/mh-peto/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/mh-peto/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const STUDIES = [
   { e1: 12, n1: 100, e0: 20, n0: 100 }, { e1: 8, n1: 90, e0: 15, n0: 92 },

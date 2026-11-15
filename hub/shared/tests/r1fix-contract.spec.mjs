@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const cases=[['pubbias-tests','AlmPubbiasValidationAdapter'],['multilevel-ma','AlmMultilevelValidationAdapter'],['proportion-ma','AlmProportionValidationAdapter'],['mh-peto','AlmMhPetoValidationAdapter'],['limit-ma','AlmLimitValidationAdapter'],['gosh','AlmGoshValidationAdapter'],['dose-response-ma','AlmDoseValidate'],['dta-sroc','AlmDTAValidateAdapter'],['nma','AlmNmaValidateAdapter'],['heterogeneity','AlmHetValidationAdapter'],['influence','AlmInfluenceValidationAdapter'],['screen','ScreenValidationAdapter']];
 // Local review proof against the pre-fix commit 14e042c. Shallow CI checkouts lack that commit, so the proof is
@@ -18,7 +19,7 @@ for(const [app,adapter] of cases) test(`baseline/current replay ${app}`,async({b
    const body=execFileSync('git',['show','14e042c:'+file],{cwd:root,encoding:'utf8',maxBuffer:10000000});
    await page.route('**/'+file,route=>route.fulfill({body,contentType:file.endsWith('.html')?'text/html':'application/javascript'}));
   }
-  await page.goto('http://localhost:8088/'+app+'/index.html');
+  await page.goto(ALM_BASE_URL + '/'+app+'/index.html');
   const r=await page.evaluate(async({adapter,app})=>{
    const a=window[adapter];if(a.ready)await a.ready;
    if(app==='screen')a.corpus.mode='full';

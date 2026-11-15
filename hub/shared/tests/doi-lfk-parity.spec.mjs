@@ -4,7 +4,8 @@
  * set → 0.63617512 ("no asymmetry"). Surfaced in funnel-plot (stat + Doi plot SVG).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/funnel-plot/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/funnel-plot/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('LFK index matches metasens::lfkindex', async ({ page }) => {

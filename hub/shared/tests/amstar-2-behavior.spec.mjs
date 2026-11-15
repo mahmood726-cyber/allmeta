@@ -9,8 +9,9 @@
  * (0 critical) → Moderate; else High. Constructed oracle.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/amstar-2/';
+const APP_URL = ALM_BASE_URL + '/amstar-2/';
 
 test.describe('amstar-2', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

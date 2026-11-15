@@ -23,8 +23,9 @@
  *   - tooltips uses src: '../hub/shared/glossary.json' (not glossaryUrl)
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const DTA_URL = 'http://localhost:8088/dta-sroc/';
+const DTA_URL = ALM_BASE_URL + '/dta-sroc/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

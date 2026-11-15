@@ -11,8 +11,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/nma/';
+const APP_URL = ALM_BASE_URL + '/nma/';
 const O = JSON.parse(readFileSync(
   new URL('../../../nma/tests/fixtures/nma-oracle.json', import.meta.url), 'utf-8'));
 const FIXTURE = [

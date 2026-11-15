@@ -5,7 +5,8 @@
  *   pooled=1.08304945 se=0.17573202 ci=[0.73862102,1.42747788] tau2=6.11e-6.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/rmst-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/rmst-ma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('RMST pooling matches metafor::rma(REML)', async ({ page }) => {

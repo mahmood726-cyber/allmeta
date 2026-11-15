@@ -5,8 +5,9 @@
  * then worst of crit > ser > mod > low (matches the documented footer).
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/robins-i/';
+const APP_URL = ALM_BASE_URL + '/robins-i/';
 
 // Per-domain "low" presets (form the all-low baseline study).
 const L = {

@@ -18,8 +18,9 @@
  *   - waitForAlm includes alm.tooltips
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const HET_URL = 'http://localhost:8088/heterogeneity/';
+const HET_URL = ALM_BASE_URL + '/heterogeneity/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

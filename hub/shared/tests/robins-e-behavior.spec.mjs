@@ -5,8 +5,9 @@
  * auto-derive Critical); overall = ni-precedence then ser>mod>low.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/robins-e/';
+const APP_URL = ALM_BASE_URL + '/robins-e/';
 
 const L = {
   D1: { '1.1': 'Y', '1.2': 'Y', '1.3': 'Y', '1.4': 'N' },

@@ -7,11 +7,12 @@
  * a connected one must still pool.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 test('bayesian-nma: disconnected network → clear message, no uncaught error', async ({ page }) => {
   const pageErrs = [];
   page.on('pageerror', e => pageErrs.push(e.message));
-  await page.goto('http://localhost:8088/bayesian-nma/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/bayesian-nma/index.html', { waitUntil: 'load' });
 
   const disc = await page.evaluate(() => {
     document.getElementById('src').value = 'A, B, -0.30, 0.10\nA, B, -0.25, 0.12\nC, D, 0.10, 0.11\nC, D, 0.05, 0.13';

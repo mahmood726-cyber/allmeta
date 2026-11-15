@@ -7,7 +7,8 @@
  * Host: synthesis-journal/index.html (loads ma-studies / ma-pooled / ma-core).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/synthesis-journal/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/synthesis-journal/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION|favicon/;
 
 test('renders the Synthēsis standard from demo data, no errors', async ({ page }) => {

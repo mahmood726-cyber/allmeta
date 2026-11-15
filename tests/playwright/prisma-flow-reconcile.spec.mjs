@@ -6,7 +6,8 @@
  *     reported 0 excluded/included to screen readers; now uses the real keys.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/prisma-flow/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/prisma-flow/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('prisma-flow: reconciliation catches impossible chains; <desc> reports real counts', async ({ page }) => {

@@ -10,8 +10,9 @@
  *  deterministic transforms.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/search/';
+const APP_URL = ALM_BASE_URL + '/search/';
 
 test.describe('search', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

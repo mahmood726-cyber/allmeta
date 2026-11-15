@@ -15,7 +15,8 @@
  * app's prediction at x=0 must equal −d, and the app's slopes must equal −beta[:cov].
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/nma-meta-reg/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/nma-meta-reg/index.html';
 
 const RAW = [
   ['A', 'B', -0.30, 0.10, 50], ['A', 'B', -0.25, 0.12, 55], ['A', 'B', -0.40, 0.11, 45],

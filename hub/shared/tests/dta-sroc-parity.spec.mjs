@@ -13,7 +13,8 @@
  *     "all"    (+0.5 to every cell of every study; the default)  → α=2.87891754  β=−0.89983822  ρ=0.8
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/dta-sroc/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/dta-sroc/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('dta-sroc default example: SROC α/β + Spearman ρ match R lm()/cor()', async ({ page }) => {

@@ -20,8 +20,9 @@
  *   npx playwright test mh-peto-bus.spec.mjs --reporter=list
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/mh-peto/';
+const URL = ALM_BASE_URL + '/mh-peto/';
 const TOL = 1e-6;
 
 async function waitForBus(page) {

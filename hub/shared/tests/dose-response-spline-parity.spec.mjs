@@ -14,7 +14,8 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-const APP = 'http://localhost:8088/dose-response-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const APP = ALM_BASE_URL + '/dose-response-ma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const STUDIES = JSON.parse(readFileSync(new URL('./_dr_data_full.json', import.meta.url), 'utf-8'));
 

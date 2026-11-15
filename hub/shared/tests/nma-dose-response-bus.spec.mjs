@@ -17,8 +17,9 @@
  *   npx playwright test nma-dose-response-bus.spec.mjs --reporter=list
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/nma-dose-response-app/';
+const URL = ALM_BASE_URL + '/nma-dose-response-app/';
 
 const SEED = {
   _schema: 'ma-comparisons-v1',

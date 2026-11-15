@@ -14,7 +14,8 @@
  * return the UM.FS OR (~0.2905), not the CM.AL OR.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/rare-events-glmm/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/rare-events-glmm/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 const ROWS = [

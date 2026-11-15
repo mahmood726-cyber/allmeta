@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(join(__dirname, '..', 'tooltips.js'), 'utf-8');
@@ -30,8 +31,8 @@ test.describe('tooltips', () => {
   });
 
   test('known term gets aria-describedby and a tooltip element', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => document.querySelector('[data-gloss="HKSJ"]').hasAttribute('aria-describedby'));
     const id = await page.locator('[data-gloss="HKSJ"]').getAttribute('aria-describedby');
     expect(id).toBeTruthy();
@@ -41,8 +42,8 @@ test.describe('tooltips', () => {
   });
 
   test('unknown term falls back to abbr textContent', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => document.querySelector('[data-gloss="UNKNOWN_TERM"]').hasAttribute('aria-describedby'));
     const id = await page.locator('[data-gloss="UNKNOWN_TERM"]').getAttribute('aria-describedby');
     const tip = page.locator('#' + id);
@@ -87,8 +88,8 @@ test.describe('tooltips i18n', () => {
 
   test('language switcher is injected where glossary terms exist', async ({ page }) => {
     await routeAll(page);
-    await page.goto('http://localhost:8088/');
-    await page.setContent(harnessFor(), { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(harnessFor(), { baseURL: ALM_BASE_URL + '/' });
     const sel = page.locator('.alm-lang-switch select');
     await expect(sel).toBeVisible();
     await expect(sel.locator('option')).toHaveCount(4); // en/es/ar/zh
@@ -96,8 +97,8 @@ test.describe('tooltips i18n', () => {
 
   test('switching to Spanish loads es glossary and shows the disclaimer', async ({ page }) => {
     await routeAll(page);
-    await page.goto('http://localhost:8088/');
-    await page.setContent(harnessFor(), { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(harnessFor(), { baseURL: ALM_BASE_URL + '/' });
     const { tip } = await tipText(page);
     await page.evaluate(() => window.alm.tooltips.setLang('es'));
     await expect(tip).toContainText('Corrección de varianza');
@@ -106,8 +107,8 @@ test.describe('tooltips i18n', () => {
 
   test('Arabic sets dir=rtl on the tooltip and shows the Arabic disclaimer', async ({ page }) => {
     await routeAll(page);
-    await page.goto('http://localhost:8088/');
-    await page.setContent(harnessFor(), { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(harnessFor(), { baseURL: ALM_BASE_URL + '/' });
     const { tip } = await tipText(page);
     await page.evaluate(() => window.alm.tooltips.setLang('ar'));
     await expect(tip).toHaveAttribute('dir', 'rtl');
@@ -116,16 +117,16 @@ test.describe('tooltips i18n', () => {
 
   test('stored language (zh) is applied on load', async ({ page }) => {
     await routeAll(page);
-    await page.goto('http://localhost:8088/');
-    await page.setContent(harnessFor('zh'), { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(harnessFor('zh'), { baseURL: ALM_BASE_URL + '/' });
     const { tip } = await tipText(page);
     await expect(tip).toContainText('机器翻译'); // disclaimer
   });
 
   test('missing translation falls back to authoritative English', async ({ page }) => {
     await routeAll(page, { esStatus: 404 });
-    await page.goto('http://localhost:8088/');
-    await page.setContent(harnessFor(), { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(harnessFor(), { baseURL: ALM_BASE_URL + '/' });
     const { tip } = await tipText(page);
     await page.evaluate(() => window.alm.tooltips.setLang('es'));
     await expect(tip).toContainText('variance correction'); // English long text

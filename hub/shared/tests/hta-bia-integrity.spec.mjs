@@ -4,8 +4,9 @@
  * browser engine behavior, NOT a full guided BIA import/plot/export workflow.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/HTA/index.html';
+const URL = ALM_BASE_URL + '/HTA/index.html';
 const group = (population, drugCost = 1) => ({
     population, prevalence: 1, timeHorizon: 1, uptake: [1],
     newTx: { drugCost }, currentTx: { drugCost: 0 }, discountRate: 0

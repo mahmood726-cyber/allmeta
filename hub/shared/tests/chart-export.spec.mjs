@@ -6,6 +6,7 @@
  * raise console errors.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 // Representative sample of apps wired with chart-export-auto.js (the full rollout
@@ -18,7 +19,7 @@ for (const app of WIRED) {
     const errs = [];
     page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
     page.on('pageerror', e => errs.push('PAGE:' + e.message));
-    await page.goto('http://localhost:8088/' + app + '/index.html', { waitUntil: 'load' });
+    await page.goto(ALM_BASE_URL + '/' + app + '/index.html', { waitUntil: 'load' });
     for (const sel of ['#btn-run', '#btn-example']) { const b = await page.$(sel); if (b) await b.click().catch(() => {}); }
     await page.waitForTimeout(1500);
     const bars = await page.$$eval('.alm-xbar', els => els.length);
@@ -30,7 +31,7 @@ for (const app of WIRED) {
 }
 
 test('export actually downloads files with correct extensions', async ({ page }) => {
-  await page.goto('http://localhost:8088/nma-meta-reg/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/nma-meta-reg/index.html', { waitUntil: 'load' });
   const b = await page.$('#btn-run'); if (b) await b.click();
   await page.waitForTimeout(1200);
   for (const fmt of ['SVG', 'PNG', 'JPG']) {
@@ -43,7 +44,7 @@ test('export actually downloads files with correct extensions', async ({ page })
 });
 
 test('PDF export lazy-loads jsPDF from vendor/ and downloads a .pdf', async ({ page }) => {
-  await page.goto('http://localhost:8088/nma-meta-reg/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/nma-meta-reg/index.html', { waitUntil: 'load' });
   const b = await page.$('#btn-run'); if (b) await b.click();
   await page.waitForTimeout(1200);
   // jsPDF must NOT be present until the first PDF click (lazy-loaded).

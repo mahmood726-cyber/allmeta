@@ -1,6 +1,7 @@
 /** Smoke + numeric consistency: hsroc example pools, renders ρ/DOR/LR/AUC, no errors. */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/hsroc/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/hsroc/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('hsroc runs example; rho/DOR/LR/AUC render and are internally consistent', async ({ page }) => {

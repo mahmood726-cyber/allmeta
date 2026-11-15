@@ -12,7 +12,8 @@
  *   DL+z:      est=0.4311529625 se=0.1758795613 ci=[ 0.0864353568,0.7758705683] tau2=0.1823439407 I2=77.8617314097
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/webr-validator/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/webr-validator/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 const YI = [0.42, -0.18, 0.91, 0.05, 0.67, -0.33, 1.12, 0.28];
