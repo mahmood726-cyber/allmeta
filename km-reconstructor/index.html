@@ -134,7 +134,7 @@
     </section>
   </main>
   <footer>
-    Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9. <strong>Validation:</strong> the reconstructed K-M tracks the digitized input to &lt;0.02 survival; total events hits the reported value; median &amp; events fall within a documented heuristic band of R <code>IPDfromKM</code>'s full Guyot reconstruction — explicitly NOT IPD-level parity (<code>hub/shared/tests/km-reconstructor-parity.spec.mjs</code>).
+    Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9. <strong>Validation:</strong> on the single test fixture in <code>hub/shared/tests/km-reconstructor-parity.spec.mjs</code>, the reconstructed K-M tracks the digitized input to &lt;0.02 survival, total events is within 3 of the reported value, and median &amp; events are within a stated tolerance (median &plusmn;3, events &plusmn;20) of R <code>IPDfromKM</code>'s full Guyot reconstruction. That tolerance is not met on every input (the page's default example misses it) and is explicitly NOT IPD-level parity.
   </footer>
   <script src="../shared/km-fusion-v1.js"></script>
   <script>
