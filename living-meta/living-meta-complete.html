@@ -1608,12 +1608,21 @@ window.LMA = window.LMA || {};
     const estimate = w.reduce((sum, wi, i) => sum + wi * yi[i], 0) / sumW;
     const se = Math.sqrt(1 / sumW);
     const z = LMA.qnorm(1 - (1 - level) / 2);
-    const { Q, df, pvalue } = LMA.calculateQ(yi, vi);
+    const { Q, df, pvalue, sumW: sumWFE, sumW2: sumW2FE } = LMA.calculateQ(yi, vi);
     const I2result = LMA.calculateI2(Q, df, k);
+    // I^2 of THIS tau2 (metafor: 100 tau2 / (tau2 + s2), s2 the typical within-study variance
+    // (k-1) sum(w) / (sum(w)^2 - sum(w^2)), w = 1/vi). The Q-based (Q - df)/Q equals it only for DL
+    // (until 2026-11-15 it was shown for every estimator: dat.bcg REML 92.10 vs metafor 92.21).
+    // I2_Q and its Higgins-Thompson CI (I2_Q_ci) are kept under their own names.
+    let I2 = I2result.I2;
+    if (k >= 2) {
+      const s2 = (k - 1) * sumWFE / (sumWFE * sumWFE - sumW2FE);
+      I2 = (Number.isFinite(s2) && tau2 + s2 > 0) ? 100 * tau2 / (tau2 + s2) : I2result.I2;
+    }
 
     return {
       estimate, se, ci_lower: estimate - z * se, ci_upper: estimate + z * se,
-      tau2, tau: Math.sqrt(tau2), I2: I2result.I2, I2_ci: { lower: I2result.ci_lower, upper: I2result.ci_upper },
+      tau2, tau: Math.sqrt(tau2), I2, I2_Q: I2result.I2, I2_Q_ci: { lower: I2result.ci_lower, upper: I2result.ci_upper },
       Q, df, pvalue_Q: pvalue, k, method, weights: w, converged: tau2Result.converged
     };
   };
@@ -1851,38 +1860,47 @@ window.LMA = window.LMA || {};
    * Begg and Mazumdar rank correlation test
    * Reference: Begg CB, Mazumdar M. Operating characteristics of a rank correlation test for publication bias. Biometrics. 1994;50(4):1088-1101.
    *
-   * Validated: Matches R metafor ranktest()
+   * Matches metafor ranktest(exact = FALSE) (normal approximation); metafor's default uses the exact
+   * null distribution when k < 50 and there are no ties.
    */
   LMA.beggTest = function(yi, vi) {
     const k = yi.length;
     if (k < 3) return { error: 'Need at least 3 studies for Begg test' };
 
-    // Calculate standardized residuals from FE model
-    const { thetaFE } = LMA.calculateQ(yi, vi);
-    const sei = vi.map(v => Math.sqrt(v));
-    const residuals = yi.map(y => y - thetaFE);
-
-    // Kendall's tau between standardized residuals and variances
-    let concordant = 0, discordant = 0, tiesY = 0, tiesV = 0;
-
+    // metafor ranktest(): Kendall's tau between the standardised deviates
+    //   (yi - thetaFE) / sqrt(vi - 1/sum(w))     (Begg & Mazumdar 1994, eq. 1)
+    // and the variances vi. (Until 2026-11-15 the raw residuals yi - thetaFE were ranked:
+    // dat.bcg tau -0.1795, metafor 0.0256.) tau is tau-b; p is the normal approximation of
+    // cor.test(method = "kendall", exact = FALSE), i.e. ranktest(..., exact = FALSE), with the
+    // tie-corrected variance of S = concordant - discordant.
+    const { thetaFE, sumW } = LMA.calculateQ(yi, vi);
+    const ystar = yi.map((y, i) => (y - thetaFE) / Math.sqrt(vi[i] - 1 / sumW));
+    let S = 0, concordant = 0, discordant = 0;
     for (let i = 0; i < k; i++) {
       for (let j = i + 1; j < k; j++) {
-        const yDiff = residuals[i] - residuals[j];
-        const vDiff = vi[i] - vi[j];
-
-        if (yDiff === 0) tiesY++;
-        else if (vDiff === 0) tiesV++;
-        else if (yDiff * vDiff > 0) concordant++;
-        else discordant++;
+        const s = Math.sign(ystar[i] - ystar[j]) * Math.sign(vi[i] - vi[j]);
+        if (s > 0) concordant++; else if (s < 0) discordant++;
+        S += s;
       }
     }
-
+    const tieGroups = arr => {
+      const c = new Map(); arr.forEach(a => c.set(a, (c.get(a) || 0) + 1));
+      return [...c.values()].filter(t => t > 1);
+    };
+    const tx = tieGroups(ystar), tv = tieGroups(vi);
     const n0 = k * (k - 1) / 2;
-    const tau = (concordant - discordant) / n0;
-
-    // Continuity-corrected variance (Kendall, 1970)
-    const varTau = (2 * (2 * k + 5)) / (9 * k * (k - 1));
-    const z = tau / Math.sqrt(varTau);
+    const sum = (a, f) => a.reduce((acc, t) => acc + f(t), 0);
+    if (tx.length === 1 && tx[0] === k || tv.length === 1 && tv[0] === k) {
+      // All variances (or all deviates) equal: no rank correlation exists (R cor.test returns NA).
+      return { tau: 0, z: 0, pvalue: 1, concordant, discordant, n_pairs: n0, method: 'Begg-Mazumdar (normal approximation)',
+        citation: 'Begg CB, Mazumdar M. Biometrics. 1994;50:1088-1101',
+        interpretation: 'No asymmetry detectable (all variances or all deviates are equal)' };
+    }
+    const tau = S / Math.sqrt((n0 - sum(tx, t => t * (t - 1) / 2)) * (n0 - sum(tv, t => t * (t - 1) / 2)));
+    const varS = (k * (k - 1) * (2 * k + 5) - sum(tx, t => t * (t - 1) * (2 * t + 5)) - sum(tv, t => t * (t - 1) * (2 * t + 5))) / 18
+      + sum(tx, t => t * (t - 1)) * sum(tv, t => t * (t - 1)) / (2 * k * (k - 1))
+      + sum(tx, t => t * (t - 1) * (t - 2)) * sum(tv, t => t * (t - 1) * (t - 2)) / (9 * k * (k - 1) * (k - 2));
+    const z = S / Math.sqrt(varS);
     const pvalue = 2 * LMA.pnormUpper(Math.abs(z));
 
     return {
@@ -1892,7 +1910,7 @@ window.LMA = window.LMA || {};
       concordant,
       discordant,
       n_pairs: n0,
-      method: 'Begg-Mazumdar',
+      method: 'Begg-Mazumdar (normal approximation)',
       citation: 'Begg CB, Mazumdar M. Biometrics. 1994;50:1088-1101',
       interpretation: pvalue < 0.05 ? 'Significant asymmetry (p<0.05)' : pvalue < 0.1 ? 'Marginal asymmetry (p<0.1)' : 'No significant asymmetry'
     };
@@ -1902,79 +1920,60 @@ window.LMA = window.LMA || {};
    * Trim and Fill
    * Reference: Duval S, Tweedie R. Trim and fill: A simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics. 2000;56(2):455-463.
    *
-   * Supports both L0 and R0 estimators:
-   * - L0 (default): Linear estimator, counts asymmetric deviations
-   * - R0: Rank-based estimator, more robust to outliers
-   *
-   * NOTE ON R DISCREPANCIES (REVIEWER RESPONSE):
-   * The iterative imputation sequence can lead to ±1 study differences from R metafor
-   * in edge cases. This is a known sensitivity of the L0 estimator (Peters et al., 2007).
-   * For sensitivity analysis, users should try both L0 and R0 estimators and both sides.
-   *
-   * Validated: Matches R metafor trimfill() in 13/14 test datasets (1 differs by 1 study)
+   * Supports the L0 (default) and R0 estimators, either side, any tau2 estimator.
+   * Matches metafor trimfill(rma(yi, vi, method), estimator, side) in k0 and the filled estimate
+   * (hub/shared/tests/unit/living-meta-r-audit5.test.mjs, 13 cases). metafor chooses the side
+   * from the sign of a regression test when `side` is not given; here the default is 'right'.
    */
   LMA.trimAndFill = function(yi, vi, options = {}) {
-    const { side = 'right', maxiter = 100, estimator = 'L0' } = options;
+    // metafor trimfill.rma.uni (Duval & Tweedie 2000): the k0 most extreme studies on the side
+    // opposite the missing ones are trimmed, the model refitted on the rest until k0 is stable,
+    // and their mirror images about the trimmed estimate are filled in.
+    //   L0 = (4 Sr - k(k+1)) / (2k - 1),  Sr = sum of the positive signed ranks of |yi - mu|
+    //   R0 = k - gamma - 1,               gamma = largest rank among the negative deviations
+    // `side` is where the missing studies are imputed; `method` is the tau2 estimator of every fit
+    // (DL by default, as before). (Until 2026-11-15 "L0" was the count of positive minus negative
+    // deviations and "R0" used the L0 formula: dat.bcg k0 = 0, metafor 1.)
+    const { side = 'right', maxiter = 100, estimator = 'L0', method = 'DL' } = options;
     const k = yi.length;
-
     if (k < 3) return { error: 'Need at least 3 studies for trim and fill', k0: 0 };
+    if (estimator !== 'L0' && estimator !== 'R0') throw new LMA.AppError('Unknown trim-and-fill estimator: ' + estimator, { category: LMA.ErrorCategory.VALIDATION });
+    const fit = (y, v) => LMA.metaAnalysis(y, v, { method });
 
-    // Get initial pooled estimate
-    let result = LMA.metaAnalysisDL(yi, vi);
-    let theta = result.estimate;
-    let k0 = 0;
-    let yi_filled = [...yi];
-    let vi_filled = [...vi];
+    // Work on the scale where the missing studies are on the LEFT: flip for side = 'right'.
+    const flip = side === 'right' ? -1 : 1;
+    const ord = yi.map((y, i) => ({ y: flip * y, v: vi[i] })).sort((a, b) => a.y - b.y);
+    const y = ord.map(o => o.y), v = ord.map(o => o.v);
 
-    for (let iter = 0; iter < maxiter; iter++) {
-      // Deviations from pooled estimate
-      const deviations = yi_filled.map((y, i) => ({ yi: y, vi: vi_filled[i], dev: y - theta }));
-
-      // Sort by absolute deviation
-      deviations.sort((a, b) => Math.abs(a.dev) - Math.abs(b.dev));
-
-      // Calculate ranks of absolute deviations
-      const n = deviations.length;
-      const ranks = deviations.map((_, i) => i + 1);
-
-      let newK0;
-
+    let k0 = 0, k0prev = -1, beta = NaN, iter = 0;
+    while (k0 !== k0prev) {
+      k0prev = k0;
+      if (++iter > maxiter) throw new LMA.AppError('Trim and fill did not converge', { category: LMA.ErrorCategory.ANALYSIS });
+      beta = fit(y.slice(0, k - k0), v.slice(0, k - k0)).estimate;
+      const c = y.map(t => t - beta);
+      // rank(abs(c), ties.method = "first"), signed
+      const idx = c.map((_, i) => i).sort((a, b) => Math.abs(c[a]) - Math.abs(c[b]) || a - b);
+      const rank = new Array(k);
+      idx.forEach((ii, r) => { rank[ii] = r + 1; });
+      const signed = c.map((t, i) => Math.sign(t) * rank[i]);
+      let est;
       if (estimator === 'R0') {
-        // R0 estimator: rank-based, more robust
-        // k0 = (4*S - n*(n+1)) / (2*n - 1), where S = sum of ranks on one side
-        const rightRanks = deviations.filter(d => d.dev > 0).map((d, idx) =>
-          ranks[deviations.indexOf(d)]
-        );
-        const S = LMA.sum(rightRanks);
-        newK0 = side === 'right'
-          ? Math.max(0, Math.round((4 * S - n * (n + 1)) / (2 * n - 1)))
-          : Math.max(0, Math.round((n * (n + 1) - 4 * S) / (2 * n - 1)));
+        const neg = signed.filter(r => r < 0).map(r => -r);
+        est = k - (neg.length ? Math.max(...neg) : 0) - 1;
       } else {
-        // L0 estimator (default): count asymmetric deviations
-        const positive = deviations.filter(d => d.dev > 0).length;
-        const negative = deviations.filter(d => d.dev < 0).length;
-        newK0 = side === 'right' ? Math.max(0, positive - negative) : Math.max(0, negative - positive);
+        const Sr = signed.filter(r => r > 0).reduce((a, b) => a + b, 0);
+        est = (4 * Sr - k * (k + 1)) / (2 * k - 1);
       }
-
-      if (newK0 === k0) break;
-      k0 = newK0;
-
-      // Impute missing studies
-      const extreme = deviations.slice(-k0);
-      const imputed = extreme.map(d => ({
-        yi: 2 * theta - d.yi,
-        vi: d.vi
-      }));
-
-      yi_filled = [...yi, ...imputed.map(d => d.yi)];
-      vi_filled = [...vi, ...imputed.map(d => d.vi)];
-
-      // Recalculate pooled estimate
-      result = LMA.metaAnalysisDL(yi_filled, vi_filled);
-      theta = result.estimate;
+      k0 = Math.round(Math.max(0, est));
     }
 
-    const adjustedResult = LMA.metaAnalysisDL(yi_filled, vi_filled);
+    // Fill: mirror the k0 largest (flipped scale) about beta, back on the original scale.
+    const fillY = y.slice(k - k0).map(t => flip * (2 * beta - t));
+    const fillV = v.slice(k - k0);
+    const yi_filled = [...yi, ...fillY];
+    const vi_filled = [...vi, ...fillV];
+    const original = fit(yi, vi);
+    const adjustedResult = k0 > 0 ? fit(yi_filled, vi_filled) : original;
 
     return {
       k0,
@@ -1982,13 +1981,14 @@ window.LMA = window.LMA || {};
       k_filled: yi_filled.length,
       side,
       estimator,
-      estimate_original: LMA.metaAnalysisDL(yi, vi).estimate,
+      tau2_method: method,
+      estimate_original: original.estimate,
       estimate_adjusted: adjustedResult.estimate,
       se_adjusted: adjustedResult.se,
       ci_adjusted: { lower: adjustedResult.ci_lower, upper: adjustedResult.ci_upper },
       yi_filled,
       vi_filled,
-      method: `Trim and Fill (${estimator})`,
+      method: `Trim and Fill (${estimator}, ${side} side, ${method})`,
       citation: 'Duval S, Tweedie R. Biometrics. 2000;56:455-463',
       note: 'For sensitivity analysis, try both L0 and R0 estimators',
       message: k0 === 0 ? 'No missing studies detected' : `Estimated ${k0} missing studies on the ${side} side`
@@ -2105,7 +2105,9 @@ window.LMA = window.LMA || {};
    * R METAFOR BENCHMARK DATASETS
    * ============================
    *
-   * All datasets from R packages with expected results from metafor 4.4-0
+   * Expected results: metafor 5.2.1 (R 4.6.0) rma(yi, vi, method) on exactly the yi / vi below
+   * (hub/shared/tests/unit/fixtures/living-meta-validation-metafor-audit5.R). Until 2026-11-15 they were
+   * this page's own output and the BCG data were not dat.bcg.
    *
    * R Code to generate benchmarks:
    * ```R
@@ -2122,31 +2124,34 @@ window.LMA = window.LMA || {};
       description: 'Effectiveness of BCG vaccine against tuberculosis',
       citation: 'Colditz GA, et al. JAMA. 1994;271:698-702',
       source: 'metafor::dat.bcg',
-      yi: [-0.8893, -1.5854, -1.3481, -1.4416, -0.2175, -0.7861, -1.6209, -0.4717,
-           -0.0173, 0.4459, -0.0173, 0.5878, -1.3863],
-      vi: [0.0320, 0.0120, 0.0115, 0.0204, 0.0510, 0.0633, 0.0175, 0.0096,
-           0.0511, 0.0255, 0.2252, 0.0200, 0.0096],
+      // escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg), 4 dp.
+      // (Until 2026-11-15 six yi and every vi here differed from dat.bcg.)
+      yi: [-0.8893, -1.5854, -1.3481, -1.4416, -0.2175, -0.7861, -1.6209, 0.0120,
+           -0.4694, -1.3713, -0.3394, 0.4459, -0.0173],
+      vi: [0.3256, 0.1946, 0.4154, 0.0200, 0.0512, 0.0069, 0.2230, 0.0040,
+           0.0564, 0.0730, 0.0124, 0.5325, 0.0714],
       expected: {
-        // Note: Values computed by this implementation using standard meta-analysis formulas
-        REML: { estimate: -0.6929, se: 0.22, tau2: 0.59, I2: 96.6, Q: 354.14, k: 13 },
-        DL:   { estimate: -0.6932, se: 0.22, tau2: 0.58, I2: 96.6, Q: 354.14, k: 13 },
-        FE:   { estimate: -0.909, se: 0.039, tau2: 0,    I2: 96.6, Q: 354.14, k: 13 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: -0.714534273275211, se: 0.179782858738692, tau2: 0.313252847021627, I2: 92.2086535451548, Q: 151.814918985836, k: 13 },
+        DL:   { estimate: -0.714084218383755, se: 0.178656328563263, tau2: 0.308395570858314, I2: 92.095638504988, Q: 151.814918985836, k: 13 },
+        FE:   { estimate: -0.432137240066288, se: 0.0405714324618322, tau2: 0, I2: 92.095638504988, Q: 151.814918985836, k: 13 }
       }
     },
 
-    // Dataset 2: Aspirin for MI prevention (Hart et al., 1999)
+    // Dataset 2: low heterogeneity (constructed; key kept as 'aspirin' for existing callers)
     aspirin: {
-      name: 'Aspirin/MI (dat.hart1999)',
-      description: 'Aspirin for secondary prevention of cardiovascular events',
-      citation: 'Hart RG, et al. Ann Intern Med. 1999;131:492-501',
-      source: 'metafor::dat.hart1999 (subset)',
+      // Not from metadat::dat.hart1999 (warfarin trials; their log ORs are -0.78 ... -1.54).
+      name: 'Low-heterogeneity example (constructed)',
+      description: 'Constructed log ratios with Q < df (tau2 = 0)',
+      citation: 'Constructed for validation',
+      source: 'Constructed',
       yi: [-0.2744, -0.1863, -0.3417, -0.1508, -0.4005, -0.2231],
       vi: [0.0148, 0.0071, 0.0240, 0.0056, 0.0403, 0.0089],
       expected: {
-        // Note: Low heterogeneity - tau² truncated to 0, I² becomes 0
-        REML: { estimate: -0.214, se: 0.042, tau2: 0, I2: 0, Q: 2.62, k: 6 },
-        DL:   { estimate: -0.214, se: 0.042, tau2: 0, I2: 0, Q: 2.62, k: 6 },
-        FE:   { estimate: -0.214, se: 0.042, tau2: 0, I2: 0, Q: 2.62, k: 6 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: -0.213761507454986, se: 0.0420396652115981, tau2: 0, I2: 0, Q: 2.61964930849812, k: 6 },
+        DL:   { estimate: -0.213761507454986, se: 0.0420396652115981, tau2: 0, I2: 0, Q: 2.61964930849812, k: 6 },
+        FE:   { estimate: -0.213761507454986, se: 0.0420396652115981, tau2: 0, I2: 0, Q: 2.61964930849812, k: 6 }
       }
     },
 
@@ -2159,9 +2164,10 @@ window.LMA = window.LMA || {};
       yi: [0.50, 0.52, 0.48, 0.51, 0.49],
       vi: [0.04, 0.04, 0.04, 0.04, 0.04],
       expected: {
-        REML: { estimate: 0.50, se: 0.0894, tau2: 0, I2: 0, Q: 0.1, k: 5 },
-        DL:   { estimate: 0.50, se: 0.0894, tau2: 0, I2: 0, Q: 0.1, k: 5 },
-        FE:   { estimate: 0.50, se: 0.0894, tau2: 0, I2: 0, Q: 0.1, k: 5 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: 0.5, se: 0.0894427190999916, tau2: 0, I2: 0, Q: 0.025, k: 5 },
+        DL:   { estimate: 0.5, se: 0.0894427190999916, tau2: 0, I2: 0, Q: 0.025, k: 5 },
+        FE:   { estimate: 0.5, se: 0.0894427190999916, tau2: 0, I2: 0, Q: 0.025, k: 5 }
       }
     },
 
@@ -2174,9 +2180,10 @@ window.LMA = window.LMA || {};
       yi: [0.2, 0.8, 0.3, 1.2, 0.5, 0.1, 0.9, 0.6],
       vi: [0.02, 0.03, 0.02, 0.04, 0.02, 0.03, 0.02, 0.03],
       expected: {
-        // Note: Values computed by this implementation
-        REML: { estimate: 0.565, se: 0.125, tau2: 0.099, I2: 80, Q: 34.94, k: 8 },
-        DL:   { estimate: 0.565, se: 0.125, tau2: 0.099, I2: 80, Q: 34.94, k: 8 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: 0.566088031423011, se: 0.129374787385126, tau2: 0.108002248962815, I2: 81.3144847729762, Q: 34.9358974358974, k: 8 },
+        DL:   { estimate: 0.565495025156209, se: 0.124960832774102, tau2: 0.0990454545454546, I2: 79.9633027522936, Q: 34.9358974358974, k: 8 },
+        FE:   { estimate: 0.538461538461539, se: 0.0554700196225229, tau2: 0, I2: 79.9633027522936, Q: 34.9358974358974, k: 8 }
       }
     },
 
@@ -2186,32 +2193,33 @@ window.LMA = window.LMA || {};
       description: 'Edge case: single study input',
       citation: 'N/A',
       source: 'Simulated',
+      note: 'At k = 1 metafor reports I² = 0; this page reports I² as undefined (REML, FE), so I² is not compared there.',
       yi: [0.5],
       vi: [0.04],
       expected: {
-        // Note: I² is null/undefined for single study (df=0)
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
         REML: { estimate: 0.5, se: 0.2, tau2: 0, I2: null, Q: 0, k: 1 },
         DL:   { estimate: 0.5, se: 0.2, tau2: 0, I2: 0, Q: 0, k: 1 },
         FE:   { estimate: 0.5, se: 0.2, tau2: 0, I2: null, Q: 0, k: 1 }
       }
     },
 
-    // Dataset 6: Magnesium/MI (dat.egger2001) - REVIEWER REQUESTED
-    // Classic publication bias demonstration dataset
+    // Dataset 6: small-study asymmetry (constructed; key kept as 'magnesium' for existing callers)
     magnesium: {
-      name: 'Magnesium/MI (dat.egger2001)',
-      description: 'Intravenous magnesium for acute MI - classic publication bias example',
-      citation: 'Egger M, et al. BMJ. 1997;315:629-634',
-      source: 'metafor::dat.egger2001',
+      // Not metadat::dat.egger2001 (its escalc("OR") yi start -0.83, -1.06, -1.28; ISIS-4 has vi 0.001).
+      name: 'Small-study asymmetry example (constructed)',
+      description: 'Constructed log ratios with small-study asymmetry (trim and fill imputes on the right)',
+      citation: 'Constructed for validation',
+      source: 'Constructed',
       yi: [-1.609, -0.511, -0.644, -0.223, -0.169, -0.693, -0.598, -0.154, 0.131,
            -0.811, -0.336, -0.693, 0.080, -0.099, 0.095, 0.041],
       vi: [0.410, 0.082, 0.191, 0.016, 0.041, 0.352, 0.364, 0.071, 0.069,
            0.681, 0.154, 0.493, 0.125, 0.001, 0.007, 0.001],
       expected: {
-        // Computed values from this implementation - demonstrates publication bias
-        REML: { estimate: -0.0916, se: 0.054, tau2: 0.011, I2: 51.3, Q: 30.83, k: 16 },
-        DL:   { estimate: -0.0916, se: 0.054, tau2: 0.011, I2: 51.3, Q: 30.83, k: 16 },
-        FE:   { estimate: -0.0365, se: 0.021, tau2: 0, I2: 51.3, Q: 30.83, k: 16 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: -0.100307009362429, se: 0.0579923849858498, tau2: 0.0138884296480858, I2: 56.8292950677408, Q: 30.8317368377196, k: 16 },
+        DL:   { estimate: -0.0915990330481637, se: 0.0541576401334489, tau2: 0.0111354383479529, I2: 51.3488322797016, Q: 30.8317368377196, k: 16 },
+        FE:   { estimate: -0.0365093846758003, se: 0.0208434096740763, tau2: 0, I2: 51.3488322797016, Q: 30.8317368377196, k: 16 }
       }
     },
 
@@ -2225,9 +2233,10 @@ window.LMA = window.LMA || {};
       yi: Array.from({length: 50}, (_, i) => 0.3 + (i % 5) * 0.1 - 0.2),
       vi: Array.from({length: 50}, () => 0.025), // Fixed variance for reproducibility
       expected: {
-        // Note: With these deterministic values, I² is low (homogeneous pattern)
-        REML: { estimate: 0.30, se: 0.022, tau2: 0, I2: 0, Q: 40, k: 50 },
-        DL:   { estimate: 0.30, se: 0.022, tau2: 0, I2: 0, Q: 40, k: 50 }
+        // metafor 5.2.1 rma(yi, vi, method) on exactly these yi / vi (R 4.6.0)
+        REML: { estimate: 0.3, se: 0.0223606797749979, tau2: 0, I2: 0, Q: 40, k: 50 },
+        DL:   { estimate: 0.3, se: 0.0223606797749979, tau2: 0, I2: 0, Q: 40, k: 50 },
+        FE:   { estimate: 0.3, se: 0.0223606797749979, tau2: 0, I2: 0, Q: 40, k: 50 }
       }
     }
   };
@@ -2250,6 +2259,7 @@ window.LMA = window.LMA || {};
       const datasetResult = {
         name: dataset.name,
         source: dataset.source,
+        note: dataset.note,
         k: dataset.yi.length,
         methods: {}
       };
@@ -2325,7 +2335,8 @@ window.LMA = window.LMA || {};
 
         for (const [metric, comp] of Object.entries(data.comparisons)) {
           const mark = comp.pass ? '✓' : '✗';
-          console.log(`│    ${mark} ${metric}: computed=${comp.computed.toFixed(4)}, expected=${comp.expected.toFixed(4)}, diff=${comp.diff.toExponential(2)}`);
+          const f4 = x => (x == null ? '—' : x.toFixed(4));
+          console.log(`│    ${mark} ${metric}: computed=${f4(comp.computed)}, expected=${f4(comp.expected)}, diff=${comp.diff == null ? '—' : comp.diff.toExponential(2)}`);
         }
       }
     }
@@ -2875,7 +2886,9 @@ window.LMA = window.LMA || {};
     const reml = LMA.metaAnalysis(d.yi, d.vi, { method: 'REML' });
     const egger = LMA.eggerTest(d.yi, d.vi);
     const begg = LMA.beggTest(d.yi, d.vi);
-    const trimfill = LMA.trimAndFill(d.yi, d.vi);
+    // = metafor trimfill(rma(yi, vi, method = "REML"), side = "right", estimator = "L0")
+    const trimfill = LMA.trimAndFill(d.yi, d.vi, { method: 'REML', side: 'right', estimator: 'L0' });
+    const qp = reml.pvalue_Q < 0.001 ? 'p &lt; 0.001' : 'p = ' + reml.pvalue_Q.toFixed(3);
 
     document.getElementById('demo-results').innerHTML = `
       <div class="space-y-4">
@@ -2887,7 +2900,7 @@ window.LMA = window.LMA || {};
             <tr><td>Standard error</td><td>${reml.se.toFixed(4)}</td></tr>
             <tr><td>τ² (between-study variance)</td><td>${reml.tau2.toFixed(4)}</td></tr>
             <tr><td>I² (heterogeneity)</td><td>${reml.I2.toFixed(1)}%</td></tr>
-            <tr><td>Q statistic (df=${reml.df})</td><td>${reml.Q.toFixed(2)}, p<0.001</td></tr>
+            <tr><td>Q statistic (df=${reml.df})</td><td>${reml.Q.toFixed(2)}, ${qp}</td></tr>
           </table>
         </div>
 
@@ -2895,8 +2908,8 @@ window.LMA = window.LMA || {};
           <h4 class="font-semibold">Publication Bias Tests</h4>
           <table class="table validation-table mt-2">
             <tr><td>Egger's test intercept</td><td>${egger.intercept.toFixed(4)} (p=${egger.pvalue.toFixed(4)})</td></tr>
-            <tr><td>Begg's tau</td><td>${begg.tau.toFixed(4)} (p=${begg.pvalue.toFixed(4)})</td></tr>
-            <tr><td>Trim & Fill k₀</td><td>${trimfill.k0} studies imputed</td></tr>
+            <tr><td>Begg's tau</td><td>${begg.tau.toFixed(4)} (p=${begg.pvalue.toFixed(4)}, normal approximation)</td></tr>
+            <tr><td>Trim &amp; Fill k₀ (L0, right side, REML)</td><td>${trimfill.k0} studies imputed</td></tr>
             <tr><td>Adjusted estimate</td><td>${trimfill.estimate_adjusted.toFixed(4)}</td></tr>
           </table>
         </div>
@@ -2928,13 +2941,13 @@ window.LMA = window.LMA || {};
               <p class="text-gray-500">${v.summary.passed}/${v.summary.total} tests passed</p>
             </div>
           </div>
-          <p class="text-sm text-gray-600">All statistical methods validated against R metafor package version 4.4-0</p>
+          <p class="text-sm text-gray-600">Pooled estimate, SE, τ², I² and Q compared with R metafor 5.2.1 (R 4.6.0) <code>rma(yi, vi, method)</code> on the data shown; the expected values were produced by that call, not by this page. Tolerances are listed in <code>LMA.runValidation</code>.</p>
         </div>
 
         ${v.datasets.map(d => `
           <div class="card p-4 mb-4">
             <h3 class="font-semibold mb-2">${d.name} (k=${d.k})</h3>
-            <p class="text-xs text-gray-500 mb-3">${d.source}</p>
+            <p class="text-xs text-gray-500 mb-3">${d.source}${d.note ? ' — ' + d.note : ''}</p>
             ${Object.entries(d.methods).map(([method, data]) => `
               <div class="mb-3">
                 <h4 class="text-sm font-medium ${data.allPass ? 'text-green-700' : 'text-red-700'}">${data.allPass ? '✓' : '✗'} ${method}</h4>
@@ -2944,9 +2957,9 @@ window.LMA = window.LMA || {};
                     ${Object.entries(data.comparisons).map(([metric, c]) => `
                       <tr>
                         <td>${metric}</td>
-                        <td>${c.computed.toFixed(4)}</td>
-                        <td>${c.expected.toFixed(4)}</td>
-                        <td>${c.diff.toExponential(2)}</td>
+                        <td>${c.computed == null ? '—' : c.computed.toFixed(4)}</td>
+                        <td>${c.expected == null ? '—' : c.expected.toFixed(4)}</td>
+                        <td>${c.diff == null ? '—' : c.diff.toExponential(2)}</td>
                         <td class="${c.pass ? 'validation-pass' : 'validation-fail'}">${c.pass ? '✓' : '✗'}</td>
                       </tr>
                     `).join('')}
