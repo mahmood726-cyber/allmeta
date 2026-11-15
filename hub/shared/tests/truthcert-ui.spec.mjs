@@ -95,7 +95,11 @@ test.describe('TruthCert UI (via workbench)', () => {
 // app-named receipt of its current studies.
 // Cover all three getStudies paths the receipt button uses:
 //  - parseStudies(#f-data)  : forest-plot (in-IIFE getStudies)
-//  - studiesFromTextarea(#f-data, "label-est-se") : meta-regression (swept)
+//  - the page's fitted rows (__almValidatorStudies) : meta-regression (lane decprep, decision 28 / P08:
+//    it re-read #f-data with studiesFromTextarea, so it signed a 2-study, no-moderator input the page
+//    never fits (k < 3), and read a comma label's tail as the effect. The receipt is now of the rows
+//    the regression was fitted on, so the fixture is an input the page fits and it is Run first; the
+//    negative test below pins that an input the page does not fit gives no receipt.)
 //  - the page's fitted rows (__almValidatorStudies) : pet-peese (lane rcpt2: it re-read #src with
 //    studiesFromTextarea, which reads commas only and signed rows the page had not fitted -- this
 //    fixture had 2 studies, which pet-peese refuses (k < 3), and was never Run. The receipt is
@@ -104,7 +108,7 @@ test.describe('TruthCert UI (via workbench)', () => {
 //  - custom producer getter : mh-peto (computes per-study effects from 2x2)
 const POOLERS = [
   { name: 'forest-plot',     fill: { sel: '#f-data', val: INPUT },                                count: 2 },
-  { name: 'meta-regression', fill: { sel: '#f-data', val: INPUT },                                count: 2 },
+  { name: 'meta-regression', fill: { sel: '#f-data', val: 'Trial A, -0.22, 0.11, 1\nTrial B, -0.31, 0.14, 2\nTrial C, 0.04, 0.19, 3\nTrial D, 0.10, 0.20, 4' }, run: true, count: 4 },
   { name: 'pet-peese',       fill: { sel: '#src',    val: '0.25, 0.08, S1\n0.18, 0.10, S2\n0.05, 0.12, S3' }, run: true, count: 3 },
   { name: 'mh-peto',         fill: null,                                                          count: 5 }, // default 2x2 fixture
 ];
@@ -138,3 +142,18 @@ for (const app of POOLERS) {
     });
   });
 }
+
+// meta-regression signs only what it fitted: 2 studies and no moderator is never fitted (k < 3), so the
+// receipt button gives no receipt (it used to sign the text box regardless).
+test('TruthCert receipt — meta-regression: an input the page does not fit gives no receipt', async ({ page }) => {
+  await page.goto('http://localhost:8088/meta-regression/');
+  await page.waitForFunction(() => window.TruthCertUI && window.MaStudies && document.getElementById('btn-truthcert'), { timeout: 10_000 });
+  await page.evaluate((k) => window.TruthCertUI.setKey(k), KEY);
+  await page.fill('#f-data', INPUT);
+  await page.locator('#btn-run').click();
+  let downloaded = false;
+  page.on('download', () => { downloaded = true; });
+  await page.locator('#btn-truthcert').click();
+  await page.waitForTimeout(2000);
+  expect(downloaded).toBe(false);
+});
