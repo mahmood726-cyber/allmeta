@@ -158,7 +158,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (the IGLS start and BFGS optimisation of <code>mvmeta</code>; parity with <code>mada::reitsma(method = "ml")</code> on all six <code>mada</code> example datasets). The prediction region is that of <code>mada::plot.reitsma(predict = TRUE)</code> (between-study plus estimation uncertainty). A univariate DerSimonian-Laird per-margin approximation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) is retained only as a k&nbsp;&lt;&nbsp;4 fallback where Σ is not identifiable. 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (the IGLS start and BFGS optimisation of <code>mvmeta</code>; parity with <code>mada::reitsma(method = "ml")</code> on all six <code>mada</code> example datasets). The prediction region is that of <code>mada::plot.reitsma(predict = TRUE)</code> (between-study plus estimation uncertainty). For k&nbsp;=&nbsp;3 (or if the ML fit fails) the page shows a univariate DerSimonian-Laird per-margin approximation instead (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) and says so above the results: the shared engine fits the bivariate model only for k&nbsp;&ge;&nbsp;4, although <code>mada::reitsma</code> does fit k&nbsp;=&nbsp;3 (with a warning), so those values are not mada's. SROC AUC = <code>mada::AUC</code> (trapezoid over FPR 0.01–0.99), shown for the bivariate ML fit only. Per-study CIs are exact Clopper-Pearson (= <code>binom.test</code>). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -195,7 +195,7 @@
     window.__almResults = function () {
       var state = readState();
       var parsed = parseStudies(state.data);
-      var p = fitModel(parsed.studies).p;
+      var fm = fitModel(parsed.studies), p = fm.p;
       var rows = parsed.studies.map(function (s) {
         return {
           study:     s.label,
@@ -209,6 +209,7 @@
           logitSe:   +s.logitSe.toFixed(6),
           logitFPR:  +s.logitFPR.toFixed(6),
           corrected: s.corrected ? 1 : 0,
+          Se_lo: s.seCI[0], Se_hi: s.seCI[1], Sp_lo: s.spCI[0], Sp_hi: s.spCI[1],
         };
       });
       return {
@@ -222,6 +223,8 @@
         rho:       p ? +p.rho.toFixed(8)     : null,
         pool_se:   p ? +invLogit(p.muSe).toFixed(6)  : null,
         pool_sp:   p ? +(1 - invLogit(p.muFPR)).toFixed(6) : null,
+        model:     parsed.studies.length >= 3 ? fm.model : null,
+        auc:       (fm.fit && fm.fit.auc) ? fm.fit.auc.rg[0] : null,
         rows:      rows,
       };
     };
@@ -276,9 +279,12 @@
         var logitFPR = Math.log(fpr / (1 - fpr));
         var vSe  = 1/tpA + 1/fnA;
         var vFPR = 1/fpA + 1/tnA;
+        var nPos = tp + fn, nNeg = tn + fp;
         studies.push({
           label: label, tp: tp, fp: fp, fn: fn, tn: tn,
           corrected: zero,
+          seObs: nPos > 0 ? tp / nPos : NaN, spObs: nNeg > 0 ? tn / nNeg : NaN,
+          seCI: clopperPearson(tp, nPos), spCI: clopperPearson(tn, nNeg),
           se: se, sp: sp, fpr: fpr,
           logitSe: logitSe, logitFPR: logitFPR,
           vSe: vSe, vFPR: vFPR,
@@ -338,18 +344,18 @@
     // Returns { p, fit, mlUsed } where p has the pool()-shaped fields the renderer reads;
     // when ML drove it, p.covMuOff carries the exact cov(μ_Se, μ_FPR) for LR/DOR delta CIs.
     function fitModel(studies) {
-      var fit = null;
+      var fit = null, mlError = null;
       if (studies.length >= 4 && window.AlmDTABivariate) {
         try {
           fit = window.AlmDTABivariate.fit(studies.map(function (s) {
             return { tp: s.tp, fp: s.fp, fn: s.fn, tn: s.tn };
           }), { method: "ml" });
-        } catch (e) { fit = null; }
+        } catch (e) { fit = null; mlError = e && e.message ? e.message : String(e); }
       }
       if (fit) {
         var rhoB = fit.Sigma[0][1] / Math.sqrt(fit.Sigma[0][0] * fit.Sigma[1][1]);
         return {
-          fit: fit, mlUsed: true,
+          fit: fit, mlUsed: true, model: "bivariate-ML",
           p: {
             muSe:    fit.muLogitSe,          muFPR:   fit.muLogitFPR,
             seMuSe:  Math.sqrt(fit.covMu[0][0]), seMuFPR: Math.sqrt(fit.covMu[1][1]),
@@ -359,10 +365,47 @@
           },
         };
       }
-      return { fit: null, mlUsed: false, p: studies.length >= 3 ? pool(studies) : null };
+      return { fit: null, mlUsed: false, model: "univariate-DL", mlError: mlError,
+               p: studies.length >= 3 ? pool(studies) : null };
     }
 
     function invLogit(x) { return 1 / (1 + Math.exp(-x)); }
+
+    // Exact (Clopper-Pearson) 95% CI for x successes in n trials = R binom.test(x, n)$conf.int:
+    // [qbeta(.025, x, n-x+1), qbeta(.975, x+1, n-x)], 0 / 1 at the boundaries.
+    function _lnGamma(z) {
+      var g = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+      if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - _lnGamma(1 - z);
+      z -= 1; var x = g[0]; for (var i = 1; i < 9; i++) x += g[i] / (z + i);
+      var t = z + 7.5; return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+    }
+    function _betacf(x, a, b) {
+      var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap, h, m, m2, aa, del;
+      if (Math.abs(d) < 1e-300) d = 1e-300; d = 1 / d; h = d;
+      for (m = 1; m <= 10000; m++) {
+        m2 = 2 * m; aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < 1e-300) d = 1e-300; c = 1 + aa / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < 1e-300) d = 1e-300; c = 1 + aa / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d;
+        del = d * c; h *= del; if (Math.abs(del - 1) < 1e-15) break;
+      }
+      return h;
+    }
+    function _pbeta(x, a, b) {
+      if (x <= 0) return 0; if (x >= 1) return 1;
+      var bt = Math.exp(_lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+      return x < (a + 1) / (a + b + 2) ? bt * _betacf(x, a, b) / a : 1 - bt * _betacf(1 - x, b, a) / b;
+    }
+    function _qbeta(p, a, b) {
+      var lo = 0, hi = 1;
+      for (var i = 0; i < 200 && hi - lo > 1e-15; i++) { var mid = (lo + hi) / 2; if (_pbeta(mid, a, b) < p) lo = mid; else hi = mid; }
+      return (lo + hi) / 2;
+    }
+    function clopperPearson(x, n) {
+      if (!(n > 0) || !(x >= 0) || x > n || Math.round(x) !== x || Math.round(n) !== n) return [NaN, NaN];
+      return [x === 0 ? 0 : _qbeta(0.025, x, n - x + 1), x === n ? 1 : _qbeta(0.975, x + 1, n - x)];
+    }
 
     function fmt(x, d) { return Number.isFinite(x) ? x.toFixed(d == null ? 3 : d) : "—"; }
     function fmtPct(x) { return Number.isFinite(x) ? (100*x).toFixed(1) + "%" : "—"; }
@@ -478,7 +521,8 @@
       // Warnings banner
       var msgs = [];
       if (warnings.length > 0) msgs.push(warnings.join("; "));
-      if (studies.length > 0 && studies.length < 5) msgs.push("k=" + studies.length + " — bivariate convergence may fail (advanced-stats.md recommends k≥5).");
+      if (studies.length === 3) msgs.push("k=3 — the shared bivariate engine fits only k≥4, so the estimates below are a univariate DerSimonian-Laird fit per margin, not the bivariate model (mada::reitsma does fit k=3 and gives different values).");
+      else if (studies.length === 4) msgs.push("k=4 — bivariate convergence may fail (advanced-stats.md recommends k≥5).");
       if (msgs.length > 0) {
         warnEl.textContent = msgs.join(" ");
         warnEl.classList.add("is-visible");
@@ -499,12 +543,17 @@
       var p = fm.p, fit = fm.fit;
 
       // Per-study table
-      var tbl = ['<table><thead><tr><th>Study</th><th>Se</th><th>Sp</th><th>logit(Se)</th><th>logit(FPR)</th></tr></thead><tbody>'];
+      var tbl = ['<table><thead><tr><th>Study</th><th>Se (95% CI)</th><th>Sp (95% CI)</th><th>logit(Se)</th><th>logit(FPR)</th></tr></thead><tbody>'];
+      var anyCorrected = false;
+      function pctCI(v, ci) { return fmtPct(v) + ' (' + (Number.isFinite(ci[0]) ? (100*ci[0]).toFixed(1) + '–' + (100*ci[1]).toFixed(1) : '—') + ')'; }
       for (var i = 0; i < studies.length; i++) {
         var s = studies[i];
-        tbl.push('<tr><td>' + escXml(s.label) + '</td><td>' + fmtPct(s.se) + '</td><td>' + fmtPct(s.sp) + '</td><td>' + fmt(s.logitSe) + '</td><td>' + fmt(s.logitFPR) + '</td></tr>');
+        if (s.corrected) anyCorrected = true;
+        tbl.push('<tr><td>' + escXml(s.label) + (s.corrected ? '*' : '') + '</td><td>' + pctCI(s.seObs, s.seCI) + '</td><td>' + pctCI(s.spObs, s.spCI) + '</td><td>' + fmt(s.logitSe) + '</td><td>' + fmt(s.logitFPR) + '</td></tr>');
       }
       tbl.push('</tbody></table>');
+      tbl.push('<p style="color:var(--muted);font-size:0.78rem;margin:0.3rem 0 0">Se, Sp and their exact Clopper-Pearson 95% CIs (= R <code>binom.test</code>) use the observed counts.' +
+        (anyCorrected ? ' * zero cell: the logits (and the model) use the 0.5 continuity correction.' : '') + '</p>');
       perStudyWrap.innerHTML = tbl.join("");
 
       // Summary estimates
@@ -528,20 +577,17 @@
       var seLogDOR = Math.sqrt(Math.max(0, _vSe + _vF - 2*_cov));
       function _ciExp(v, se) { return [Math.exp(Math.log(v) - Z975*se), Math.exp(Math.log(v) + Z975*se)]; }
       var ciLRp = _ciExp(lrPos, seLogLRp), ciLRn = _ciExp(lrNeg, seLogLRn), ciDOR = _ciExp(dorVal, seLogDOR);
-      // SROC AUC: numerical area under the symmetric SROC curve (slope σ_Se/σ_FPR,
-      // matching mada::reitsma) integrated over FPR ∈ (0,1). Only when both τ² > 0.
-      var aucVal = null;
-      if (p.tauFPR2 > 0 && p.tauSe2 > 0) {
-        var _slope = Math.sqrt(p.tauSe2 / p.tauFPR2), _intc = p.muSe - _slope * p.muFPR;
-        var _a = 0, _pF = null, _pSe = null;
-        for (var _lf = -8; _lf <= 8; _lf += 0.01) {
-          var _fpr = 1/(1+Math.exp(-_lf)), _se = 1/(1+Math.exp(-(_intc + _slope*_lf)));
-          if (_pF !== null) _a += (_fpr - _pF) * (_se + _pSe) / 2;
-          _pF = _fpr; _pSe = _se;
-        }
-        aucVal = Math.max(0, Math.min(1, _a));
-      }
-      summaryWrap.innerHTML = '<table><tbody>' +
+      // SROC AUC: only for the bivariate ML fit, = the shared engine's mada::AUC value
+      // (Rutter-Gatsonis SROC, mada trapezoid rule over FPR = 0.01..0.99; fit.auc.rg[0]).
+      // The DL fallback (k = 3, or a failed ML fit) has no AUC: its symmetric curve belongs to a
+      // model mada does not fit, so any number would have no R counterpart -> "not available".
+      var aucVal = (fit && fit.auc && Number.isFinite(fit.auc.rg[0])) ? fit.auc.rg[0] : null;
+      var modelLine = fm.mlUsed
+        ? 'Model shown: bivariate random-effects (Reitsma), maximum likelihood — <code>mada::reitsma(method = "ml")</code>.'
+        : 'Model shown: univariate DerSimonian-Laird per margin (logit Se, logit FPR) with an empirical correlation — not the bivariate model. ' +
+          (studies.length < 4 ? 'The shared bivariate engine fits only k&nbsp;&ge;&nbsp;4; <code>mada::reitsma</code> does fit k&nbsp;=&nbsp;3 and gives different estimates.'
+                              : 'The bivariate ML fit failed' + (fm.mlError ? ' (' + escXml(fm.mlError) + ')' : '') + '.');
+      summaryWrap.innerHTML = '<p style="font-size:0.85rem;margin:0 0 0.4rem">' + modelLine + '</p><table><tbody>' +
         '<tr><td><strong>Pooled Sensitivity</strong></td><td><strong>' + fmtPct(sumSe) + '</strong></td><td>95% CI ' + fmtPct(ciSe[0]) + ' – ' + fmtPct(ciSe[1]) + '</td></tr>' +
         '<tr><td><strong>Pooled Specificity</strong></td><td><strong>' + fmtPct(sumSp) + '</strong></td><td>95% CI ' + fmtPct(ciSp[0]) + ' – ' + fmtPct(ciSp[1]) + '</td></tr>' +
         '<tr><td>τ²(logit Se)</td><td>' + fmt(p.tauSe2, 4) + '</td><td>τ²(logit FPR) = ' + fmt(p.tauFPR2, 4) + '</td></tr>' +
@@ -549,7 +595,8 @@
         '<tr><td>Diagnostic OR (<abbr data-gloss="DOR">DOR</abbr>)</td><td>' + fmt(dorVal, 2) + '</td><td>95% CI ' + fmt(ciDOR[0], 2) + ' to ' + fmt(ciDOR[1], 2) + '</td></tr>' +
         '<tr><td>Positive LR (LR+)</td><td>' + fmt(lrPos, 2) + '</td><td>95% CI ' + fmt(ciLRp[0], 2) + ' to ' + fmt(ciLRp[1], 2) + ' &nbsp;Se/(1-Sp)</td></tr>' +
         '<tr><td>Negative LR (LR-)</td><td>' + fmt(lrNeg, 2) + '</td><td>95% CI ' + fmt(ciLRn[0], 2) + ' to ' + fmt(ciLRn[1], 2) + ' &nbsp;(1-Se)/Sp</td></tr>' +
-        (aucVal !== null ? '<tr><td>SROC area under curve (AUC)</td><td>' + fmt(aucVal, 3) + '</td><td>Numerical area under the symmetric SROC curve.</td></tr>' : '') +
+        (aucVal !== null ? '<tr><td>SROC area under curve (AUC)</td><td>' + fmt(aucVal, 3) + '</td><td>Rutter-Gatsonis SROC, FPR 0.01–0.99 (= <code>mada::AUC</code>).</td></tr>'
+          : (!fm.mlUsed ? '<tr><td>SROC area under curve (AUC)</td><td>not available</td><td>Reported only for the bivariate ML fit (<code>mada::AUC</code>); the univariate DL fallback shown here has no mada counterpart.</td></tr>' : '')) +
         '</tbody></table>';
 
       // Stat chips
@@ -563,7 +610,7 @@
         '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
         '<div class="stat" title="' + escXml(rhoTitle) + '"><span class="k">' + rhoLabel + '</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
         '<div class="stat" title="Diagnostic odds ratio = (Se·Sp)/((1−Se)(1−Sp)). Single global summary of accuracy."><span class="k"><abbr data-gloss="DOR">DOR</abbr></span><span class="v">' + fmt(dorVal, 2) + '</span></div>' +
-        (aucVal !== null ? '<div class="stat" title="Area under the symmetric SROC curve (numerical). 1.0 = perfect, 0.5 = uninformative."><span class="k">SROC AUC</span><span class="v">' + fmt(aucVal, 3) + '</span></div>' : '') +
+        (aucVal !== null ? '<div class="stat" title="Area under the SROC curve over FPR 0.01–0.99 (mada::AUC rule). 1.0 = perfect, 0.5 = uninformative."><span class="k">SROC AUC</span><span class="v">' + fmt(aucVal, 3) + '</span></div>' : '') +
         '</div>';
 
       // SROC plot
