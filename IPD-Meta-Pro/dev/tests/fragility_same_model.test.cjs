@@ -8,7 +8,8 @@
 // setting (APP.analysisSettings, as the study diagnostics do), and refuses, with a notice, when that model does not
 // reproduce the saved main result (pooled estimate and p within 1e-7).
 // Reference: fragility_same_model_reference.R (R 4.6.0, metafor rma; HKSJ as the page applies it). Scenarios: A REML +
-// HKSJ not significant while fixed effect is (old search: 1 for 11 of 12 studies); C REML + HKSJ significant; B DL.
+// HKSJ not significant while fixed effect is (old fixed-effect search: 1 for every study); C REML + HKSJ significant; B DL;
+// D fixed effect, not significant (fragility_either_direction.test.cjs). Indices are searched in both directions (IPD-Fix3).
 //   node dev/tests/fragility_same_model.test.cjs [path/to/ipd-meta-pro.html]
 const path = require('node:path');
 const { loadPage } = require('./p60_page_loader.cjs');
@@ -30,7 +31,7 @@ const setup = (sc, settings, pooled) => {
   return { text: run('__m.join("")').replace(/<[^>]+>/g, ' ').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&#39;|&apos;/g, "'").replace(/\s+/g, ' '), notes: run('__notes.join(" | ")') };
 };
 const shown = (text, rows) => rows.map(r => { const m = text.match(new RegExp(r.study + '(?: \\(most fragile\\))? ' + r.n + ' \\S+ (\\d+|>50)(?= |$)')); return m ? m[1] : null; });
-for (const name of ['A', 'C', 'B']) {
+for (const name of ['A', 'C', 'B', 'D']) {
   const sc = ref[name];
   const settings = { reMethod: sc.method, useHKSJ: sc.hksj, outcomeType: 'survival', confLevel: 0.95 };
   // the page's own refit of the unshifted studies equals R's main analysis
@@ -41,8 +42,11 @@ for (const name of ['A', 'C', 'B']) {
   const { text, notes } = setup(sc, settings, { pooled: sc.main.pooled, pValue: sc.main.p });
   const want = sc.index.map(i => i ? String(i) : '>50');
   check(name + ': indices = R search with the same model ' + JSON.stringify(want), JSON.stringify(shown(text, sc.rows)) === JSON.stringify(want), JSON.stringify(shown(text, sc.rows)) + ' | ' + notes + ' | ' + text.slice(0, 300));
-  check(name + ': the modal names the re-pool model', new RegExp("re-pooled with the main analysis' model \\(" + (sc.method === 'REML' ? 'REML random-effects' : 'DerSimonian-Laird random-effects') + (sc.hksj ? ' with the Hartung-Knapp' : ' \\(z-test\\)')).test(text), text.slice(0, 600));
-  if (name === 'A') check('A: the old fixed-effect search would have given 1 for 11 of 12 studies (reference sanity)', sc.index_fixed_effect_z.filter(i => i === 1).length === 11, JSON.stringify(sc.index_fixed_effect_z));
+  check(name + ': the modal names the re-pool model', new RegExp("re-pooled with the main analysis' model \\(" + (sc.method === 'REML' ? 'REML random-effects' : sc.method === 'FE' ? 'fixed-effect inverse-variance' : 'DerSimonian-Laird random-effects') + (sc.hksj ? ' with the Hartung-Knapp' : ' \\(z-test\\)')).test(text), text.slice(0, 600));
+  // IPD-Fix3: the reference search is now written from the definition (both directions); a fixed-effect re-pool that
+  // already disagrees with the main verdict flips at the first step for EVERY study (it was 11 of 12 with the
+  // one-directional rule, the zero-event trial T11 being the exception).
+  if (name === 'A') check('A: the old fixed-effect search would have given 1 for every one of the 12 studies (reference sanity)', sc.index_fixed_effect_z.length === 12 && sc.index_fixed_effect_z.every(i => i === 1), JSON.stringify(sc.index_fixed_effect_z));
 }
 {
   // saved results that the recorded settings cannot reproduce: refused with a notice, no index
