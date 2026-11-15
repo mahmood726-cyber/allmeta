@@ -43,3 +43,17 @@ test('mean-single-group: a very small p is not printed as p = 0', () => {
   assert.doesNotMatch(src, /round\(pval,4\)/);
   assert.match(src, /ifelse\(pval < 1e-4, \"p < 0\.0001\", paste0\(\"p = \", round\(pval, 4\)\)\)/);
 });
+
+// Follow-up (coordinator on #605). 5. One "Confidence Level" input did two jobs: it converted
+// the input CIs to SEs (sei = (upper - lower) / (2 z)) AND set the output CI/PI level, so asking
+// for a 90% output silently re-read 95% input CIs as 90% ones (SEs shrink by 1.96/1.645).
+// The input-CI level is now its own control; the output level no longer touches the SEs.
+test('mean-single-group: input-CI level (for SE) is separate from the output level', () => {
+  const src = appR();
+  assert.match(src, /selectInput\("input_ci_level",/);
+  const di = block(src, 'dataInput <- reactive({');
+  assert.match(di, /z <- qnorm\(1 - \(1 - as\.numeric\(input\$input_ci_level\)\/100\)\/2\)/, di);
+  assert.doesNotMatch(di, /input\$conf_level\)\/100/, di);
+  const mr = block(src, 'metaResult <- reactive({');
+  assert.match(mr, /level = as\.numeric\(input\$conf_level\)/, mr);
+});
