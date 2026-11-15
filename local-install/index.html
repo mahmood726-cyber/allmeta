@@ -50,7 +50,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Local R Install</h1>
-    <p>For tasks that genuinely need native R (Stan / JAGS MCMC, very large networks, custom priors), install R locally. This page is a one-stop recipe: install R, add the CRAN packages allmeta uses, and reproduce any analysis on your machine. WebR covers 90% of use cases in the browser — this is the 10%.</p>
+    <p>For tasks that genuinely need native R (Stan / JAGS MCMC, very large networks, custom priors), install R locally. This page is a one-stop recipe: install R, add the CRAN packages allmeta uses, and reproduce any analysis on your machine. WebR covers most analyses in the browser; this page is for the rest.</p>
   </header>
   <main>
     <section>
@@ -65,7 +65,7 @@
           <tr><td>Exact Bayesian MA (<code>bayesmeta</code>)</td><td>—</td><td>✓</td><td>✓</td></tr>
           <tr><td>Bayesian NMA with MCMC (<code>gemtc</code>, <code>multinma</code>)</td><td>—</td><td>—</td><td>✓ (needs JAGS/Stan)</td></tr>
           <tr><td>Full HMC / NUTS (<code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>)</td><td>—</td><td>—</td><td>✓</td></tr>
-          <tr><td>IPD models (<code>ipdmeta</code>, <code>nlme</code>)</td><td>—</td><td>partial</td><td>✓</td></tr>
+          <tr><td>IPD models (<code>lme4</code>, <code>nlme</code>)</td><td>—</td><td>partial</td><td>✓</td></tr>
           <tr><td>Very large networks (&gt;40 treatments)</td><td>—</td><td>slow</td><td>✓</td></tr>
         </tbody>
       </table>
@@ -83,7 +83,7 @@
       <p><a href="https://posit.co/download/rstudio-desktop/">RStudio Desktop</a> (free) or <a href="https://quarto.org/">Quarto</a> for reproducible reports.</p>
       <h3>Step 3 — the allmeta package set</h3>
       <p>Copy this into your R console. It covers everything this hub does natively, plus the MCMC packages that only work locally:</p>
-      <pre id="pkg-script">button<button class="copy" data-target="pkg-script">Copy</button>
+      <pre id="pkg-script"><button class="copy" data-target="pkg-script">Copy</button>
 # allmeta — full CRAN stack
 pkgs <- c(
   # Pairwise + random-effects
@@ -91,13 +91,13 @@ pkgs <- c(
   # Network meta-analysis
   "netmeta", "gemtc", "multinma", "bnma",
   # Diagnostic test accuracy
-  "mada", "CopulaDTA",
+  "mada",
   # Publication bias / sensitivity
-  "metasens", "puniform", "weightr", "dmetar",
+  "metasens", "puniform", "weightr",
   # Bayesian
-  "bayesmeta", "brms", "baggr", "RoBMA",
+  "bayesmeta", "brms", "RoBMA",
   # IPD
-  "ipdmeta", "ecoreg",
+  "lme4", "ecoreg",
   # Risk of bias / GRADE
   "robvis", "metaumbrella",
   # K-M reconstruction
@@ -106,6 +106,8 @@ pkgs <- c(
   "revtools", "synthesisr", "metagear"
 )
 install.packages(pkgs, dependencies = TRUE)
+# Not on CRAN (checked 2026-11-15): dmetar is GitHub-only (MathiasHarrer/dmetar);
+# CopulaDTA, baggr and ipdmeta are archived on CRAN (install from the CRAN archive if needed).
 # MCMC back-ends
 # JAGS: install from https://sourceforge.net/projects/mcmc-jags/
 # Stan / rstan:
@@ -154,7 +156,7 @@ reit &lt;- reitsma(d); print(summary(reit)); plot(reit)</pre>
 
       <h3><span class="pill local">Publication bias — Copas</span></h3>
       <pre>library(meta); library(metasens)
-m &lt;- metagen(TE, seTE, data = d)
+m &lt;- metagen(yi, sei, data = dat)   # dat from the pairwise block above
 co &lt;- copas(m); print(co); plot(co)</pre>
 
       <h3><span class="pill local">Multi-level (3-level) MA</span></h3>
@@ -180,9 +182,9 @@ head(ipd)</pre>
 
     <section>
       <h2>MCMC back-ends</h2>
-      <h3>JAGS (for <code>gemtc</code>, <code>rjags</code>, <code>R2jags</code>, <code>multinma</code>)</h3>
+      <h3>JAGS (for <code>gemtc</code>, <code>rjags</code>, <code>R2jags</code>, <code>bnma</code>)</h3>
       <p>Download from <a href="https://sourceforge.net/projects/mcmc-jags/">mcmc-jags</a>. On Windows, JAGS auto-registers with R. On macOS with Homebrew: <code>brew install jags</code>. On Linux: <code>apt-get install jags</code>.</p>
-      <h3>Stan (for <code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>, <code>bayesmeta</code>+Stan)</h3>
+      <h3>Stan (for <code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>, <code>multinma</code>)</h3>
       <p><code>cmdstanr</code> is the modern, recommended path. After <code>install.packages("cmdstanr")</code> run <code>cmdstanr::install_cmdstan()</code> which compiles Stan in the background (5-15 minutes first time). On Windows, Rtools provides the C++ toolchain.</p>
       <h3>Verify</h3>
       <pre>library(rstan)
@@ -208,7 +210,9 @@ renv::snapshot()       # call this after you finish the analysis
     document.querySelectorAll("button.copy").forEach(b => {
       b.addEventListener("click", () => {
         const target = document.getElementById(b.dataset.target);
-        const text = target.textContent.replace(/^button<button[^>]+>Copy<\/button>\n/, "");
+        const clone = target.cloneNode(true);
+        clone.querySelectorAll("button.copy").forEach(x => x.remove());
+        const text = clone.textContent.replace(/^\r?\n/, "");
         navigator.clipboard.writeText(text);
         b.textContent = "Copied!";
         setTimeout(() => { b.textContent = "Copy"; }, 1500);
