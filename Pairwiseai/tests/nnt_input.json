@@ -1,0 +1,213 @@
+{
+ "SGLT2_ACM": {
+  "name": "SGLT2i - All-Cause Mortality (5 trials)",
+  "source": "Pooled SGLT2 trials",
+  "category": "sig_uncertain",
+  "teaching_point": "HR 0.92 (0.86-0.99), p=0.03 is significant but only 5% P(HR<0.85)",
+  "studies": [
+   {
+    "name": "DAPA-HF 2019",
+    "events_t": 276,
+    "n_t": 2373,
+    "events_c": 329,
+    "n_c": 2371
+   },
+   {
+    "name": "EMPEROR-Reduced 2020",
+    "events_t": 249,
+    "n_t": 1863,
+    "events_c": 266,
+    "n_c": 1867
+   },
+   {
+    "name": "DELIVER 2022",
+    "events_t": 497,
+    "n_t": 3131,
+    "events_c": 526,
+    "n_c": 3132
+   },
+   {
+    "name": "EMPEROR-Preserved 2021",
+    "events_t": 422,
+    "n_t": 2997,
+    "events_c": 463,
+    "n_c": 2991
+   },
+   {
+    "name": "SOLOIST-WHF 2021",
+    "events_t": 51,
+    "n_t": 608,
+    "events_c": 58,
+    "n_c": 614
+   }
+  ]
+ },
+ "BINARY_RR": {
+  "name": "Aspirin for MI Prevention (Risk Ratio)",
+  "source": "Classic aspirin trials meta-analysis",
+  "category": "binary",
+  "dataType": "binary",
+  "measure": "RR",
+  "teaching_point": "Risk ratio is often more intuitive for clinical interpretation",
+  "studies": [
+   {
+    "name": "UK-TIA 1988",
+    "events_t": 102,
+    "n_t": 815,
+    "events_c": 117,
+    "n_c": 806
+   },
+   {
+    "name": "AMIS 1980",
+    "events_t": 239,
+    "n_t": 2267,
+    "events_c": 254,
+    "n_c": 2257
+   },
+   {
+    "name": "CDP 1976",
+    "events_t": 44,
+    "n_t": 758,
+    "events_c": 64,
+    "n_c": 771
+   },
+   {
+    "name": "PARIS I 1980",
+    "events_t": 85,
+    "n_t": 810,
+    "events_c": 99,
+    "n_c": 406
+   },
+   {
+    "name": "ISIS-2 1988",
+    "events_t": 791,
+    "n_t": 8587,
+    "events_c": 1029,
+    "n_c": 8600
+   },
+   {
+    "name": "RISC 1990",
+    "events_t": 5,
+    "n_t": 397,
+    "events_c": 18,
+    "n_c": 399
+   }
+  ]
+ },
+ "BINARY_RD": {
+  "name": "Antibiotic Prophylaxis (Risk Difference)",
+  "source": "Surgical prophylaxis trials",
+  "category": "binary",
+  "dataType": "binary",
+  "measure": "RD",
+  "teaching_point": "Risk difference gives absolute risk reduction (ARR), useful for NNT calculation",
+  "studies": [
+   {
+    "name": "Adams 2005",
+    "events_t": 3,
+    "n_t": 120,
+    "events_c": 12,
+    "n_c": 118
+   },
+   {
+    "name": "Baker 2008",
+    "events_t": 5,
+    "n_t": 200,
+    "events_c": 18,
+    "n_c": 198
+   },
+   {
+    "name": "Chen 2010",
+    "events_t": 2,
+    "n_t": 85,
+    "events_c": 8,
+    "n_c": 82
+   },
+   {
+    "name": "Davis 2012",
+    "events_t": 8,
+    "n_t": 310,
+    "events_c": 25,
+    "n_c": 305
+   },
+   {
+    "name": "Evans 2014",
+    "events_t": 4,
+    "n_t": 150,
+    "events_c": 14,
+    "n_c": 148
+   },
+   {
+    "name": "Foster 2016",
+    "events_t": 6,
+    "n_t": 225,
+    "events_c": 19,
+    "n_c": 220
+   },
+   {
+    "name": "Garcia 2018",
+    "events_t": 1,
+    "n_t": 95,
+    "events_c": 7,
+    "n_c": 92
+   },
+   {
+    "name": "Harris 2020",
+    "events_t": 9,
+    "n_t": 280,
+    "events_c": 22,
+    "n_c": 275
+   }
+  ]
+ },
+ "SGLT2_HR": {
+  "name": "SGLT2i - HF Hospitalization (HR)",
+  "source": "Major SGLT2 RCTs",
+  "category": "hr",
+  "dataType": "hr",
+  "measure": "HR",
+  "teaching_point": "Hazard ratio meta-analysis from published trial data",
+  "studies": [
+   {
+    "name": "DAPA-HF 2019",
+    "hr": 0.7,
+    "ci_lower": 0.59,
+    "ci_upper": 0.83,
+    "n_events": 549,
+    "subgroup": "HFrEF"
+   },
+   {
+    "name": "EMPEROR-Reduced 2020",
+    "hr": 0.69,
+    "ci_lower": 0.59,
+    "ci_upper": 0.81,
+    "n_events": 588,
+    "subgroup": "HFrEF"
+   },
+   {
+    "name": "DELIVER 2022",
+    "hr": 0.79,
+    "ci_lower": 0.69,
+    "ci_upper": 0.91,
+    "n_events": 747,
+    "subgroup": "HFpEF"
+   },
+   {
+    "name": "EMPEROR-Preserved 2021",
+    "hr": 0.71,
+    "ci_lower": 0.6,
+    "ci_upper": 0.83,
+    "n_events": 611,
+    "subgroup": "HFpEF"
+   },
+   {
+    "name": "SOLOIST-WHF 2021",
+    "hr": 0.64,
+    "ci_lower": 0.49,
+    "ci_upper": 0.83,
+    "n_events": 245,
+    "subgroup": "Acute HF"
+   }
+  ]
+ }
+}

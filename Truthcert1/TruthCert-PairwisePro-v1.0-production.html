@@ -2363,6 +2363,7 @@ function runMultiverseAnalysis() {
   document.getElementById('multiverseResults').innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
       <p><strong>${mv.analyzedSubsets} specifications tested</strong></p>
+      ${mv.sampling && !mv.sampling.enumerated ? `<p style="font-size: var(--text-xs); color: var(--text-secondary);">Random sample of ${mv.sampling.B} of the ${mv.totalPossibleSubsets} subsets, seed ${mv.sampling.seed} (stream multiverse); Monte Carlo SE of the share significant ${pwFmtSe(mv.sampling.mc_se_proportion_significant)}.</p>` : `<p style="font-size: var(--text-xs); color: var(--text-secondary);">Every subset of two or more studies (no sampling).</p>`}
       <p>Effect range: <strong>${mv.summary.minEffect.toFixed(3)}</strong> to <strong>${mv.summary.maxEffect.toFixed(3)}</strong></p>
       <p>Median: <strong>${mv.summary.medianEffect.toFixed(3)}</strong></p>
       <p>Significant in: <strong>${(mv.robustness.proportionSignificant * 100).toFixed(0)}%</strong> of specifications</p>
@@ -2667,7 +2668,7 @@ function renderOutlierDetection(results, containerId = 'outlierResults') {
     const rowStyle = s.isOutlier ? 'background: var(--color-danger-100);' : '';
     html += `
       <tr style="${rowStyle} border-bottom: 1px solid var(--border-subtle);">
-        <td style="padding: var(--space-1);">${s.name}</td>
+        <td style="padding: var(--space-1);">${sanitizeHTML(s.name)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.stdRes.toFixed(2)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.looInfluence.toFixed(2)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.ensemble.toFixed(2)}</td>
@@ -2752,7 +2753,7 @@ function renderCumulativePlot(data, containerId, title) {
     if (container) {
       let html = `<table style="width:100%; font-size: var(--text-xs);"><thead><tr><th>Step</th><th>Effect</th><th>95% CI</th></tr></thead><tbody>`;
       data.forEach(d => {
-        html += `<tr><td>${d.label}</td><td>${d.theta.toFixed(3)}</td><td>[${d.ci_lower.toFixed(3)}, ${d.ci_upper.toFixed(3)}]</td></tr>`;
+        html += `<tr><td>${sanitizeHTML(d.label)}</td><td>${d.theta.toFixed(3)}</td><td>[${d.ci_lower.toFixed(3)}, ${d.ci_upper.toFixed(3)}]</td></tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
@@ -2953,18 +2954,35 @@ print(f"SE: {se_re:.4f}")
 print(f"95% CI: [{theta_re - 1.96*se_re:.4f}, {theta_re + 1.96*se_re:.4f}]")
 print(f"tau2: {tau2:.4f}")
 `;
-  container.querySelector('.card__body').innerHTML = `
-    <div style="margin-bottom: var(--space-3);">
-      <h4 style="margin-bottom: var(--space-2);">R Code (metafor)</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${rCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${rCode.replace(/`/g, '\\`')}\`); showToast('R code copied!', 'success')">Copy R Code</button>
-    </div>
-    <div>
-      <h4 style="margin-bottom: var(--space-2);">Python Code</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${pythonCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${pythonCode.replace(/`/g, '\\`')}\`); showToast('Python code copied!', 'success')">Copy Python Code</button>
-    </div>
-  `;
+  // Lane pwrest3: built with the DOM, not innerHTML. The code embeds the study names, so <code>${rCode}</code>
+  // ran a label like <img src=x onerror=...>; and the Copy buttons carried the whole code inside an
+  // onclick="...writeText(`...`)" attribute, which the first double quote of the R code (method="REML") ended,
+  // so every click was a SyntaxError and nothing was copied. Now textContent and a click listener.
+  const body = container.querySelector('.card__body');
+  body.textContent = '';
+  [['R Code (metafor)', rCode, 'R code copied!', 'Copy R Code'],
+   ['Python Code', pythonCode, 'Python code copied!', 'Copy Python Code']].forEach(([title, code, done, label], i) => {
+    const wrap = document.createElement('div');
+    if (i === 0) wrap.style.marginBottom = 'var(--space-3)';
+    const h = document.createElement('h4');
+    h.style.marginBottom = 'var(--space-2)';
+    h.textContent = title;
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);';
+    const c = document.createElement('code');
+    c.textContent = code;
+    pre.appendChild(c);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--outline btn--sm';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      Promise.resolve().then(() => navigator.clipboard.writeText(code))
+        .then(() => showToast(done, 'success'), e => showToast('Copy failed: ' + (e && e.message || e), 'error'));
+    });
+    wrap.append(h, pre, btn);
+    body.appendChild(wrap);
+  });
 }
 // Render these two panels as part of publishing the result: renderResults runs in the same task
 // that assigns AppState.results. (They used to be painted by a 500 ms timer after runAnalysis, so
@@ -3079,6 +3097,77 @@ if (originalRunAnalysis2) {
     // TruthCert analysis for the Verdict and HTA tabs runs when this run's result is rendered.
     truthCertPendingForRun = true;
     return originalRunAnalysis2.apply(this, arguments);
+  };
+}
+// A Run that fails (fewer than 2 valid studies, or an error inside the engine) publishes no result, so it
+// must not leave the verdict armed: the next repaint of some other result (a project load, a panel
+// refresh) would otherwise compute a verdict for a result no Run produced. runAnalysis disarms through this.
+window.__truthCertDisarmRun = function() { truthCertPendingForRun = false; };
+// Loading a project shows the SAVED verdict with the saved results, or none at all -- never the verdict of
+// whatever was analysed before the load. (applyProjectState repainted the saved results and left
+// AppState.truthcert untouched, so run A, run B, load A put B's verdict beside A's results, and the next
+// save stored that pair.)
+const truthCertVerdictPanelInitial = (function() {
+  const p = document.getElementById('panel-verdict');
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  return { html: p ? p.innerHTML : null, pre: pre ? pre.style.display : null, cfg: cfg ? cfg.style.display : null };
+})();
+// HTA has an evidence tier only for an assessed verdict other than UNCERTAIN (lane pwrest3, agy review of #572):
+// otherwise the HTA section goes back to its state at page load. Used after a run and after a project load
+// (both only ever OPENED it, so an UNCERTAIN / NOT ASSESSED verdict after an assessed one left HTA offered).
+function truthCertSyncHTA(verdict) {
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  const offered = !!verdict && verdict !== 'UNCERTAIN' && verdict !== 'NOT ASSESSED';
+  if (offered) { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+  else {
+    if (pre && truthCertVerdictPanelInitial.pre !== null) pre.style.display = truthCertVerdictPanelInitial.pre;
+    if (cfg && truthCertVerdictPanelInitial.cfg !== null) cfg.style.display = truthCertVerdictPanelInitial.cfg;
+  }
+  return offered;
+}
+function clearTruthCertVerdict() {
+  AppState.truthcert = null; AppState.verdict = null; AppState.threatLedger = null; AppState.grade = null;
+  const p = document.getElementById('panel-verdict');
+  if (p && truthCertVerdictPanelInitial.html !== null) p.innerHTML = truthCertVerdictPanelInitial.html;
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  if (pre && truthCertVerdictPanelInitial.pre !== null) pre.style.display = truthCertVerdictPanelInitial.pre;
+  if (cfg && truthCertVerdictPanelInitial.cfg !== null) cfg.style.display = truthCertVerdictPanelInitial.cfg;
+}
+// The saved verdict belongs to the saved results when it describes the same pooled estimate and k.
+function truthCertVerdictMatchesResults(tc, results) {
+  if (!tc || !tc.verdict || !tc.results || !results) return false;
+  const pooled = results.pooled || results;
+  const same = (a, b) => typeof a === 'number' && typeof b === 'number' && (a === b || Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b)));
+  const k = Array.isArray(results.yi) ? results.yi.length : results.k;
+  return same(tc.results.theta, pooled.theta) && same(tc.results.se, pooled.se) && tc.results.k === k;
+}
+function restoreTruthCertVerdict(state) {
+  const tc = state.truthcert;
+  if (!truthCertVerdictMatchesResults(tc, state.results)) {
+    clearTruthCertVerdict();
+    return false;
+  }
+  AppState.truthcert = tc; AppState.verdict = tc.verdict; AppState.threatLedger = tc.threatLedger || null; AppState.grade = tc.grade || null;
+  try {
+    if (typeof renderVerdictPanel === 'function') renderVerdictPanel();
+    truthCertSyncHTA(tc.verdict.verdict);
+  } catch (e) {
+    console.warn('[TruthCert] Saved verdict could not be shown:', e.message);
+    clearTruthCertVerdict();
+    return false;
+  }
+  return true;
+}
+const originalApplyProjectStateTC = window.applyProjectState;
+if (typeof originalApplyProjectStateTC === 'function') {
+  window.applyProjectState = function(state) {
+    // a load never computes a verdict, even if an earlier Run failed while armed
+    truthCertPendingForRun = false;
+    if (state && state.results && typeof stripRemovedResultFields === 'function') stripRemovedResultFields(state.results);
+    const out = originalApplyProjectStateTC.apply(this, arguments);
+    // only a load that brings results replaces them; a data-only import keeps the current (matching) pair
+    if (state && state.results) restoreTruthCertVerdict(state);
+    return out;
   };
 }
 // Fixed Meta-Regression that uses the selected covariate

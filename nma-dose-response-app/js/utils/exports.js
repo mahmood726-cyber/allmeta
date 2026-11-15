@@ -8,13 +8,16 @@
  * @param {Array} stats - Summary statistics from state.lastStats
  * @returns {string} LaTeX code
  */
+// Every line below ends in a real newline ('\n'). The strings once wrote '\\n' (a backslash and
+// an "n"), so the whole .tex file was one line, and the "% No data available" comment then
+// swallowed the rest of it, \end{document} included (re-review lane rrev61, F2).
 function exportLatexTables(stats) {
-  if (!stats || !stats.length) return '% No data available\\n';
+  if (!stats || !stats.length) return 'No model summary is available: no analysis has been run.\n\n';
 
-  let latex = '\\begin{table}[htbp]\\n\\centering\\n';
-  latex += '\\caption{Model Summary}\\n\\label{tab:model-summary}\\n';
-  latex += '\\begin{tabular}{lcccccc}\\n\\hline\\n';
-  latex += 'Treatment & Model & Emax & ED50 & AICc & SUCRA & P(best) \\\\\\n\\hline\\n';
+  let latex = '\\begin{table}[htbp]\n\\centering\n';
+  latex += '\\caption{Model Summary}\n\\label{tab:model-summary}\n';
+  latex += '\\begin{tabular}{lcccccc}\n\\hline\n';
+  latex += 'Treatment & Model & Emax & ED50 & AICc & SUCRA & P(best) \\\\\n\\hline\n';
 
   stats.forEach(item => {
     const t = escapeLatex(item.treatment || '');
@@ -25,40 +28,58 @@ function exportLatexTables(stats) {
     const sucra = formatLatexNumber(item.sucra);
     const pbest = formatLatexNumber(item.pbest);
 
-    latex += `${t} & ${m} & ${emax} & ${ed50} & ${aicc} & ${sucra} & ${pbest} \\\\\\n`;
+    latex += `${t} & ${m} & ${emax} & ${ed50} & ${aicc} & ${sucra} & ${pbest} \\\\\n`;
   });
 
-  latex += '\\hline\\n\\end{tabular}\\n\\end{table}\\n\\n';
+  latex += '\\hline\n\\end{tabular}\n\\end{table}\n\n';
   return latex;
 }
 
 /**
  * Export full analysis as LaTeX document
- * @param {Object} data - Complete analysis data
+ * @param {Object} data - Complete analysis data. data.globalMetrics carries the values the
+ *   Diagnostics panel shows: Q (Global Q), df (Global df), Qp (Global Q p), I2 as a FRACTION
+ *   (0.931 is printed 93.1%, as Diagnostics prints it) and tau2.
  * @returns {string} Complete LaTeX document
  */
 function exportLatexDocument(data) {
-  const { stats, curves, globalMetrics } = data;
+  const { stats, globalMetrics } = data;
 
-  let latex = '\\documentclass{article}\\n\\usepackage{booktabs}\\n\\usepackage{longtable}\\n\\usepackage{graphicx}\\n\n';
-  latex += '\\title{Network Meta-Analysis Dose-Response Results}\\n';
-  latex += '\\author{NMA Dose-Response Studio}\\n\\date{\\today}\\n\\begin{document}\\n\\maketitle\\n\n';
+  let latex = '\\documentclass{article}\n\\usepackage{booktabs}\n\\usepackage{longtable}\n\\usepackage{graphicx}\n\n';
+  latex += '\\title{Network Meta-Analysis Dose-Response Results}\n';
+  latex += '\\author{NMA Dose-Response Studio}\n\\date{\\today}\n\\begin{document}\n\\maketitle\n\n';
 
   // Summary statistics section
-  latex += '\\section{Model Summary}\\n';
+  latex += '\\section{Model Summary}\n';
   latex += exportLatexTables(stats);
 
-  // Heterogeneity statistics
-  if (globalMetrics) {
-    latex += '\\section{Heterogeneity}\\n\\begin{itemize}\\n';
-    latex += `\\item Q-statistic: ${formatLatexNumber(globalMetrics.Q)}\\n`;
-    latex += `\\item I\\textsuperscript{2}: ${formatLatexNumber(globalMetrics.I2)}\\%\\n`;
-    latex += `\\item \\texttau\\textsuperscript{2}: ${formatLatexNumber(globalMetrics.tau2)}\\n`;
-    latex += '\\end{itemize}\\n\\n';
+  // Heterogeneity statistics: the Diagnostics panel's values (Global Q is the sum of the
+  // per-treatment residual Q statistics, on the summed residual df). With no analysis, or no
+  // Global Q (no treatment has residual df), NO number is printed: a Q of 0 on 0 df, an I² of 0%
+  // or an I² left over from an earlier run is not a heterogeneity estimate (agy review of #565).
+  const g = globalMetrics;
+  latex += '\\section{Heterogeneity}\n';
+  if (!stats || !stats.length) {
+    latex += 'Heterogeneity was not computed: no analysis has been run.\n\n';
+  } else if (!g || !latexIsFinite(g.Q) || !latexIsFinite(g.df) || g.df <= 0) {
+    latex += 'Heterogeneity was not computed: no treatment has residual degrees of freedom.\n\n';
+  } else {
+    let qLine = `Global Q (sum of the per-treatment residual Q): ${formatLatexNumber(g.Q)}`;
+    qLine += ` (df = ${Number(g.df)}${latexIsFinite(g.Qp) ? `, p = ${formatLatexNumber(g.Qp)}` : ''})`;
+    const i2 = latexIsFinite(g.I2) ? `${(Number(g.I2) * 100).toFixed(1)}\\%` : 'N/A';
+    latex += '\\begin{itemize}\n';
+    latex += `\\item ${qLine}\n`;
+    latex += `\\item $I^2$: ${i2}\n`;
+    latex += `\\item $\\tau^2$: ${formatLatexNumber(g.tau2)}\n`;
+    latex += '\\end{itemize}\n\n';
   }
 
-  latex += '\\end{document}';
+  latex += '\\end{document}\n';
   return latex;
+}
+
+function latexIsFinite(v) {
+  return typeof v === 'number' && Number.isFinite(v);
 }
 
 /**
