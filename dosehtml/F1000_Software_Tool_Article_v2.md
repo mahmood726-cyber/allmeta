@@ -15,9 +15,9 @@ Corresponding author: Mahmood Ahmad (mahmood726@gmail.com)
 
 **Background:** Dose-response meta-analysis synthesises evidence on how the magnitude of an exposure relates to the risk of an outcome across multiple studies. Existing software for this purpose requires proficiency in R or commercial statistical packages, limiting accessibility for clinical researchers.
 
-**Methods:** We developed Dose Response Pro v18.1, an open-source browser-based application that implements the Greenland and Longnecker two-stage generalized least squares (GLS) method for dose-response meta-analysis. The tool is written entirely in HTML and JavaScript and requires no installation or server infrastructure. It provides interactive data entry, CSV import, model fitting (linear and quadratic), heterogeneity assessment, sensitivity analysis, subgroup analysis, publication bias diagnostics, and export of R-compatible code. Numerical accuracy was validated against the R packages dosresmeta (version 2.2.0), metafor (version 4.8.0), and mvmeta (version 1.0.3) using three benchmark scenarios.
+**Methods:** We developed Dose Response Pro v18.1, an open-source browser-based application that implements the Greenland and Longnecker two-stage generalized least squares (GLS) method for dose-response meta-analysis. The tool is written entirely in HTML and JavaScript and requires no installation or server infrastructure. It provides interactive data entry, CSV import, model fitting (linear and quadratic), heterogeneity assessment, sensitivity analysis, subgroup analysis, publication bias diagnostics, and export of R-compatible code. Numerical accuracy of the command-line implementation of the same method (dose-response-cli.py, in the repository) was validated against the R packages dosresmeta (version 2.2.0), metafor (version 4.8.0), and mvmeta (version 1.0.3) using three benchmark scenarios; this validation was not run on the browser page.
 
-**Results:** All three validation scenarios passed with maximum absolute differences of 7.56 x 10^-6 for regression coefficients, 4.38 x 10^-6 for standard errors, and 6.65 x 10^-9 for the between-study variance estimate (tau-squared). Grid-level predictions across 41 dose points per scenario showed maximum log-relative risk differences of 4.0 x 10^-6 and maximum standard error differences of 1.1 x 10^-5. The application runs entirely client-side in Chrome, Firefox, Safari, and Edge, with typical analysis completion times under two seconds for datasets of 20 or fewer studies.
+**Results:** In this command-line validation, all three scenarios passed with maximum absolute differences of 7.56 x 10^-6 for regression coefficients, 4.38 x 10^-6 for standard errors, and 6.65 x 10^-9 for the between-study variance estimate (tau-squared). Grid-level predictions across 41 dose points per scenario showed maximum log-relative risk differences of 4.0 x 10^-6 and maximum standard error differences of 1.1 x 10^-5. The application runs entirely client-side in Chrome, Firefox, Safari, and Edge, with typical analysis completion times under two seconds for datasets of 20 or fewer studies.
 
 **Conclusions:** Dose Response Pro v18.1 provides an accessible, validated, and open-source alternative for dose-response meta-analysis that eliminates the requirement for statistical programming expertise. Source code, validation scripts, sample datasets, and a live demo are freely available.
 
@@ -66,13 +66,13 @@ The user workflow consists of four steps:
 
 2. **Model configuration.** Users select the functional form (linear or quadratic), the heterogeneity estimator (DerSimonian-Laird or REML), and optional settings for sensitivity and subgroup analyses.
 
-3. **Analysis execution.** Clicking "Run Analysis" executes the GLS estimation, generates the dose-response curve with confidence and prediction intervals, and populates diagnostic panels including heterogeneity statistics, influence diagnostics, and publication bias assessments.
+3. **Analysis execution.** Clicking "Run Analysis" executes the GLS estimation, generates the dose-response curve with a confidence band, and populates diagnostic panels including heterogeneity statistics, influence diagnostics, and publication bias assessments.
 
 4. **Export.** Users can export results as downloadable reports, figures, and R-compatible code that reproduces the analysis using the metafor package [6].
 
 ### Validation
 
-Numerical accuracy was assessed by comparing Dose Response Pro output against the R package dosresmeta (version 2.2.0) [4] running on R 4.5.2, with metafor 4.8.0 [6] and mvmeta 1.0.3 [5] as supporting packages. Three benchmark scenarios were used:
+Numerical accuracy was assessed by comparing the output of the command-line implementation (`dose-response-cli.py`; the browser page itself was not run in this validation) against the R package dosresmeta (version 2.2.0) [4] running on R 4.5.2, with metafor 4.8.0 [6] and mvmeta 1.0.3 [5] as supporting packages. Three benchmark scenarios were used:
 
 1. **Simple linear trend** (3 studies, 3 dose levels each): a straightforward dose-response relationship to verify baseline accuracy.
 2. **Quadratic trend** (4 studies, 3 dose levels each): a non-linear relationship testing the quadratic model component.
@@ -96,7 +96,7 @@ All three benchmark scenarios passed validation. Table 1 summarises the agreemen
 | Quadratic | 4 | 3 per study | 2.0 x 10^-6 | 3.0 x 10^-6 | < 10^-9 | 41/41 pass | 2.0 x 10^-6 | 7.0 x 10^-6 | PASS |
 | High heterogeneity | 5 | 3 per study | 8.0 x 10^-6 | 1.2 x 10^-5 | < 10^-9 | 41/41 pass | 4.0 x 10^-6 | 1.1 x 10^-5 | PASS |
 
-Across all scenarios, the maximum absolute difference in any regression coefficient was 7.56 x 10^-6, in any standard error was 1.2 x 10^-5, and in tau-squared was less than 10^-9. All 123 grid-level predictions (41 points x 3 scenarios) were within tolerance.
+Across all scenarios (command-line implementation, not the browser page), the maximum absolute difference in any regression coefficient was 7.56 x 10^-6, in any standard error was 1.2 x 10^-5, and in tau-squared was less than 10^-9. All 123 grid-level predictions (41 points x 3 scenarios) were within tolerance.
 
 ### Feature overview
 
