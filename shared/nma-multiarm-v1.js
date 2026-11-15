@@ -437,7 +437,17 @@
 
     var obs = projectObservations(asm, asm.V);
     var feFit = gls(asm.X, obs.y, asm.V);
-    if (!feFit) return { ok: false, error: "singular design (disconnected network?)", warnings: built.errors };
+    if (!feFit) {
+      // invert() refuses a pivot below an absolute 1e-13. A disconnected network is one cause; a CONNECTED network
+      // whose SEs are near 1e-6 or 1e8 in data units is another (V or X'V^-1 X has entries near 1e-13), and was
+      // reported as "disconnected network?". Say which. No number changes: both are refusals.
+      var parent = Object.create(null), rootOf = function (t) { while (parent[t] !== t) t = parent[t] = parent[parent[t]]; return t; };
+      treatments.forEach(function (t) { parent[t] = t; });
+      rows.forEach(function (r) { parent[rootOf(r.t1)] = rootOf(r.t2); });
+      var roots = Object.create(null); treatments.forEach(function (t) { roots[rootOf(t)] = true; });
+      if (Object.keys(roots).length > 1) return { ok: false, error: "singular design (disconnected network?)", warnings: built.errors };
+      throw numericalRange("the network is connected, but at the scale of these effects and standard errors its GLS matrices have a pivot below 1e-13 (singular to this app); re-express the effects and SEs in other units (multiply both by the same constant) and run again");
+    }
 
     var model = (opts.model || "fe").toLowerCase();
     var method = String(opts.method || "DL").toUpperCase();
