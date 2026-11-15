@@ -366,7 +366,7 @@
                   <button class="btn btn--ghost btn--sm" id="importCsvBtn">Import CSV</button>
                   <button class="btn btn--primary btn--sm" id="importKMBtn" title="Import from KM Extractor JSON">📊 KM Import</button>
                   <input type="file" id="kmFileInput" accept=".json" style="display: none;" aria-label="Km File Input">
-                  <button class="btn btn--ghost btn--sm" id="exportCsvBtn">Export CSV</button><button class="btn btn--outline btn--sm" onclick="exportToR()" style="margin-left: 8px;">
+                  <button class="btn btn--ghost btn--sm" id="exportCsvBtn">Export CSV</button><button class="btn btn--outline btn--sm" onclick="document.querySelector('.tab-btn[data-tab=code]').click()" title="Opens the Code tab, which holds the R script for the current analysis" style="margin-left: 8px;">
                       📊 Export to R
                     </button>
                   <button class="btn btn--ghost btn--sm" id="clearAllBtn">Clear All</button>
@@ -597,10 +597,9 @@ Test B 2021,72,8,18,202</pre>
           <div class="card">
             <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3 class="card__title" data-tooltip="Combines statistical analysis with clinical decision-making. Integrates GRADE certainty, effect magnitude, and evidence quality.">🎯 Decision-Driven Meta-Analysis <span class="info-icon">?</span></h3>
-              <button class="btn btn--primary btn--sm" onclick="computeDDMA()">▶ Compute DDMA</button>
             </div>
             <div class="card__body" id="ddma-results">
-              <p class="text-secondary">Click "Compute DDMA" to run Decision-Driven Meta-Analysis.</p>
+              <p class="text-secondary">Decision-Driven Meta-Analysis is not computed on this page: its engine (app.min.js) records the DDMA result as skipped.</p>
               <p class="text-sm text-secondary" style="margin-top: var(--space-2);">Includes: P(benefit), decision thresholds, MCID sensitivity.</p>
             </div>
           </div>
@@ -609,10 +608,9 @@ Test B 2021,72,8,18,202</pre>
           <div class="card">
             <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3 class="card__title" data-tooltip="Measures variation between studies beyond sampling error. High heterogeneity suggests subgroup differences or methodological variation.">📊 Heterogeneity Analysis <span class="info-icon">?</span></h3>
-              <button class="btn btn--primary btn--sm" onclick="computeHeterogeneity()">▶ Compute</button>
             </div>
             <div class="card__body" id="heterogeneity-results">
-              <p class="text-secondary">Click "Compute" to run heterogeneity analyses.</p>
+              <p class="text-secondary">Run the analysis first; this panel fills in automatically after a run.</p>
               <p class="text-sm text-secondary" style="margin-top: var(--space-2);">Includes: LOO, Baujat, CV-I squared, prediction intervals.</p>
             </div>
           </div>
@@ -630,10 +628,9 @@ Test B 2021,72,8,18,202</pre>
           <div class="card">
             <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3 class="card__title" data-tooltip="Tests whether studies with significant/favorable results are more likely to be published, potentially inflating the pooled estimate.">⚖️ Publication Bias <span class="info-icon">?</span></h3>
-              <button class="btn btn--primary btn--sm" onclick="computeBias()">▶ Compute</button>
             </div>
             <div class="card__body" id="bias-results">
-              <p class="text-secondary">Click "Compute" to run bias analyses.</p>
+              <p class="text-secondary">Run the analysis first; this panel fills in automatically after a run.</p>
               <p class="text-sm text-secondary" style="margin-top: var(--space-2);">Includes: Egger, PET-PEESE, Trim-fill, Selection models.</p>
             </div>
           </div>
@@ -839,10 +836,6 @@ Test B 2021,72,8,18,202</pre>
             <div style="margin-top: 24px; padding: 16px; background: var(--color-bg-secondary); border-radius: 8px; font-size: 0.85rem; color: var(--color-text-secondary);">
               <h4 style="font-weight: 600; margin-bottom: 8px;">Technical Notes</h4>
               <ul style="margin: 0; padding-left: 20px;"><li>Regularized incomplete beta function uses jstat Lentz continued fraction algorithm</li><li>Student t-distribution CDF/quantile computed via incomplete beta</li><li>REML estimation uses Fisher scoring with convergence tolerance 1e-8</li><li>HKSJ adjustment uses proper t-distribution with k-1 degrees of freedom</li><li>All results match R to at least 6 significant figures</li></ul>
-            </div>
-            <div style="margin-top: 24px; text-align: center;">
-              <button class="btn btn--primary" onclick="runLiveValidation()"><span>Run Live Validation</span></button>
-              <p style="margin-top: 8px; font-size: 0.85rem; color: var(--color-text-secondary);">Execute validation tests against current implementation</p>
             </div>
             <div id="liveValidationResults" style="margin-top: 16px;"></div>
             </div>
@@ -1399,22 +1392,6 @@ Test B 2021,72,8,18,202</pre>
                       });
                       renderPRISMADiagram(data, 'prismaContainer');
                     ">Generate Diagram</button>
-                    <button class="btn btn--outline btn--sm" onclick="
-                      const data = generatePRISMAData({
-                        records_identified: parseInt(document.getElementById('prisma_records').value) || 0,
-                        duplicates_removed: parseInt(document.getElementById('prisma_duplicates').value) || 0,
-                        records_after_duplicates: (parseInt(document.getElementById('prisma_records').value) || 0) - (parseInt(document.getElementById('prisma_duplicates').value) || 0),
-                        records_screened: (parseInt(document.getElementById('prisma_records').value) || 0) - (parseInt(document.getElementById('prisma_duplicates').value) || 0),
-                        records_excluded: parseInt(document.getElementById('prisma_excluded').value) || 0,
-                        reports_assessed: (parseInt(document.getElementById('prisma_records').value) || 0) - (parseInt(document.getElementById('prisma_duplicates').value) || 0) - (parseInt(document.getElementById('prisma_excluded').value) || 0),
-                        reports_excluded: parseInt(document.getElementById('prisma_ft_excluded').value) || 0,
-                        studies_included: AppState.results ? AppState.results.k : 10,
-                        reports_included: AppState.results ? AppState.results.k : 10,
-                        databases: ['PubMed', 'Embase', 'Cochrane'],
-                        records_other: 20
-                      });
-                      exportPRISMASVG(data);
-                    ">Export SVG</button>
                     <div id="prismaContainer" style="margin-top: var(--space-3);"></div>
                   </div>
                 </div>
