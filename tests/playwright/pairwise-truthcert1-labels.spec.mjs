@@ -57,6 +57,7 @@ test('study, subgroup and trial labels render as text in every panel', async ({ 
     runFullAnalysis();
     for (let i = 0; i < 300 && !(AppState.results.loo && AppState.results.loo.loo_results); i++) await wait(100);
     try { runMLOutlierDetection(); } catch (e) { window.__xerr = String(e); }
+    window.__xerrOutlier = window.__xerr || null;   // asserted below (agy review of #573)
     const res = AppState.results;
     renderOutlierDetection(mlOutlierDetection(res.studies.map(s => s.yi), res.studies.map(s => s.vi), res.studies.map(s => s.name)), 'outlierResults');
     const tmp = document.createElement('div'); tmp.id = '__cumFallback'; document.body.appendChild(tmp);
@@ -91,6 +92,7 @@ test('study, subgroup and trial labels render as text in every panel', async ({ 
   expect(txt.subgroups, 'subgroup analysis ran').toBe(2);
   expect(txt.bias).toContain(EVIL[1] + ' A');
   expect(txt.bias).toContain(EVIL[0] + ' B');
+  expect(await page.evaluate(() => window.__xerrOutlier), 'runMLOutlierDetection (the Detect Outliers button) threw').toBeNull();
   expect(errors).toEqual([]);
 });
 

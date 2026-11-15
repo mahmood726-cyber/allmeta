@@ -13,9 +13,12 @@ import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REF = JSON.parse(fs.readFileSync(path.join(process.env.REPO_ROOT || path.join(HERE, '..', '..'), 'Truthcert1', 'tests', 'i2ci_r460.json'), 'utf8'));
-const PATH = '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html';
+// lane pwrest4 (review rrevpw2): the Pairwise AI bundle reports the same CI (it had the Higgins-Thompson interval
+// beside its tau2-based I2: BCG demo 6 trials RR, R [50.3, 97.3]).
+const PAGES = { 'TruthCert Pairwise Pro': '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html',
+  'Pairwise AI bundle': '/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html' };
 
-async function open(page) {
+async function open(page, PATH) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   await page.addInitScript(() => localStorage.setItem('truthcert_visited', 'true'));
@@ -25,41 +28,43 @@ async function open(page) {
   return errors;
 }
 
-test('I2 95% CI equals metafor confint for every tau2 estimator (Q-profile CI of tau2 mapped to I2)', async ({ page }) => {
-  await open(page);
-  const got = await page.evaluate(r => {
-    const o = {};
-    for (const [k, d] of Object.entries(r.data)) {
-      o[k] = {};
-      for (const m of Object.keys(r.fits[k])) {
-        const h = calculateHeterogeneity(d.yi, d.vi, r.fits[k][m].tau2);
-        o[k][m] = { lo: h.I2_ci.lower, hi: h.I2_ci.upper, I2: h.I2, method: h.I2_ci.method };
+for (const [NAME, PATH] of Object.entries(PAGES)) {
+  test(NAME + ': ' + 'I2 95% CI equals metafor confint for every tau2 estimator (Q-profile CI of tau2 mapped to I2)', async ({ page }) => {
+    await open(page, PATH);
+    const got = await page.evaluate(r => {
+      const o = {};
+      for (const [k, d] of Object.entries(r.data)) {
+        o[k] = {};
+        for (const m of Object.keys(r.fits[k])) {
+          const h = calculateHeterogeneity(d.yi, d.vi, r.fits[k][m].tau2);
+          o[k][m] = { lo: h.I2_ci.lower, hi: h.I2_ci.upper, I2: h.I2, method: h.I2_ci.method };
+        }
       }
+      return o;
+    }, REF);
+    const bad = [];
+    for (const [k, f] of Object.entries(REF.fits)) for (const [m, r] of Object.entries(f)) {
+      const g = got[k][m];
+      if (!(Math.abs(g.lo - r.I2_ci[0]) < 1e-6)) bad.push(`${k} ${m} I2 lower page ${g.lo} R ${r.I2_ci[0]}`);
+      if (!(Math.abs(g.hi - r.I2_ci[1]) < 1e-6)) bad.push(`${k} ${m} I2 upper page ${g.hi} R ${r.I2_ci[1]}`);
+      if (!(Math.abs(g.I2 - r.I2) < 1e-8)) bad.push(`${k} ${m} I2 page ${g.I2} R ${r.I2}`);
+      if (g.method !== 'Q-profile') bad.push(`${k} ${m} method ${g.method}`);
     }
-    return o;
-  }, REF);
-  const bad = [];
-  for (const [k, f] of Object.entries(REF.fits)) for (const [m, r] of Object.entries(f)) {
-    const g = got[k][m];
-    if (!(Math.abs(g.lo - r.I2_ci[0]) < 1e-6)) bad.push(`${k} ${m} I2 lower page ${g.lo} R ${r.I2_ci[0]}`);
-    if (!(Math.abs(g.hi - r.I2_ci[1]) < 1e-6)) bad.push(`${k} ${m} I2 upper page ${g.hi} R ${r.I2_ci[1]}`);
-    if (!(Math.abs(g.I2 - r.I2) < 1e-8)) bad.push(`${k} ${m} I2 page ${g.I2} R ${r.I2}`);
-    if (g.method !== 'Q-profile') bad.push(`${k} ${m} method ${g.method}`);
-  }
-  expect(bad).toEqual([]);
-});
+    expect(bad).toEqual([]);
+  });
 
-test('the Results tab shows the Q-profile I2 CI (BCG demo)', async ({ page }) => {
-  test.setTimeout(60000);
-  const errors = await open(page);
-  await page.evaluate(() => loadDemoDataset('BCG'));
-  await page.waitForTimeout(400);
-  await page.evaluate(() => { window.__prev = AppState.results; runAnalysis(); });
-  await page.waitForFunction(() => AppState.results && AppState.results.pooled && AppState.results !== window.__prev, null, { timeout: 30000 });
-  const g = await page.evaluate(() => ({ ci: AppState.results.het.I2_ci, txt: document.getElementById('panel-analysis').innerText }));
-  const r = REF.fits.BCG.REML.I2_ci;
-  expect(Math.abs(g.ci.lower - r[0])).toBeLessThan(1e-6);
-  expect(Math.abs(g.ci.upper - r[1])).toBeLessThan(1e-6);
-  expect(g.txt).toContain(`${r[0].toFixed(1)}% – ${r[1].toFixed(1)}%`);
-  expect(errors).toEqual([]);
-});
+  test(NAME + ': ' + 'the Results tab shows the Q-profile I2 CI (BCG demo)', async ({ page }) => {
+    test.setTimeout(60000);
+    const errors = await open(page, PATH);
+    await page.evaluate(() => loadDemoDataset('BCG'));
+    await page.waitForTimeout(400);
+    await page.evaluate(() => { window.__prev = AppState.results; runAnalysis(); });
+    await page.waitForFunction(() => AppState.results && AppState.results.pooled && AppState.results !== window.__prev, null, { timeout: 30000 });
+    const g = await page.evaluate(() => ({ ci: AppState.results.het.I2_ci, txt: document.getElementById('panel-analysis').innerText }));
+    const r = REF.fits.BCG.REML.I2_ci;
+    expect(Math.abs(g.ci.lower - r[0])).toBeLessThan(1e-6);
+    expect(Math.abs(g.ci.upper - r[1])).toBeLessThan(1e-6);
+    expect(g.txt).toContain(`${r[0].toFixed(1)}% – ${r[1].toFixed(1)}%`);
+    expect(errors).toEqual([]);
+  });
+}

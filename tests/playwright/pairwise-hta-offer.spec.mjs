@@ -11,7 +11,8 @@ import { test, expect } from '@playwright/test';
 //    after one that offered HTA left HTA offered.
 
 const PAGES = [
-  ['TruthCert Pairwise Pro', '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html', ''],
+  // Truthcert1 has an MCID input since lane pwrest4 (no MCID: NOT ASSESSED), so it runs the NOT ASSESSED checks too
+  ['TruthCert Pairwise Pro', '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html', '0.80'],
   ['Pairwise AI bundle', '/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html', '0.80'],
 ];
 
@@ -78,7 +79,7 @@ for (const [name, path, mcid] of PAGES) {
     expect({ pre: g.pre, cfg: g.cfg }, 'run UNCERTAIN: HTA back to its state at load').toEqual({ pre: initial.pre, cfg: initial.cfg });
 
     if (mcid) {
-      // bundle: a saved NOT ASSESSED verdict (no MCID) loaded while HTA is offered, and an MCID cleared after a run
+      // a saved NOT ASSESSED verdict (no MCID) loaded while HTA is offered, and an MCID cleared after a run
       await page.evaluate(() => loadDemoDataset('SGLT2_ACM'));
       await run(page, '');
       expect((await hta(page)).verdict).toBe('NOT ASSESSED');

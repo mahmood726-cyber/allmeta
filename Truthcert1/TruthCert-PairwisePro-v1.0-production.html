@@ -536,6 +536,11 @@ Test B 2021,72,8,18,202</pre>
                       </label>
                     </div>
                   </div>
+                  <div class="input-group" style="margin-bottom: var(--space-4);" id="mcidSettingGroup">
+                    <label class="input-label" for="mcidInput">MCID for the TruthCert verdict and GRADE imprecision</label>
+                    <input type="text" inputmode="decimal" class="input input--sm" id="mcidInput" value="" placeholder="none" autocomplete="off" aria-describedby="mcidHelp">
+                    <p class="text-xs text-secondary" id="mcidHelp" style="margin-top: var(--space-1);">Minimal clinically important difference on the scale of the measure: a ratio for OR / RR / HR (e.g. 0.90), otherwise a difference in the measure's units (e.g. 5 for 5 mmHg). Left blank, the verdict and GRADE imprecision are not assessed.</p>
+                  </div>
                   <div class="input-group" id="ccSettingGroup">
                     <label class="input-label" data-tooltip="Added to zero cells in 2x2 tables. 0.5 is standard; treatment-arm uses the opposite arm ratio; none excludes zero-cell studies.">Continuity Correction <span class="info-icon">?</span></label>
                     <div class="select-wrapper" style="width: 100%;">
@@ -2230,7 +2235,7 @@ Test B 2021,72,8,18,202</pre>
             <li><strong>UNCERTAIN:</strong> Poor precision (SE > 8×MCID) OR major threats present</li>
           </ul>
           <p style="margin-top:var(--space-2);"><strong>Threat assessment (12 points):</strong> Small k, high I², publication bias (Egger's p<0.10), estimator instability (CV>15%)</p>
-          <p style="margin-top:var(--space-2);"><strong>MCID (δ):</strong> Default 0.1054 on log scale (~10% RRR). TOST equivalence bounds: ±δ.</p>
+          <p style="margin-top:var(--space-2);"><strong>MCID (δ):</strong> entered in the Data tab on the scale of the measure (a ratio for OR / RR / HR, used as |log ratio|; a difference otherwise). There is no default: without one the verdict and GRADE imprecision are not assessed. TOST equivalence bounds: ±δ.</p>
         </div>
       </details>
       <details style="margin-bottom:var(--space-3);">
@@ -3319,7 +3324,7 @@ window.runLeaveOneOutCorrected = function() {
     if (container) {
       let html = `
         <p style="margin-bottom: var(--space-2);"><strong>Full model:</strong> ${fullTheta.toFixed(4)} (SE: ${fullSE.toFixed(4)})</p>
-        <p style="margin-bottom: var(--space-2);"><strong>Most influential:</strong> ${mostInfluential?.omitted || 'None'} (change: ${maxChange.toFixed(4)})</p>
+        <p style="margin-bottom: var(--space-2);"><strong>Most influential:</strong> ${sanitizeHTML(mostInfluential?.omitted || 'None')} (change: ${maxChange.toFixed(4)})</p>
         <table style="width: 100%; font-size: var(--text-xs); border-collapse: collapse;">
           <thead>
             <tr style="border-bottom: 2px solid var(--border-default);">
@@ -3335,7 +3340,7 @@ window.runLeaveOneOutCorrected = function() {
         const highlight = Math.abs(r.change) === maxChange ? 'background: var(--color-warning-100);' : '';
         html += `
           <tr style="${highlight} border-bottom: 1px solid var(--border-subtle);">
-            <td style="padding: 4px;">${r.omitted}</td>
+            <td style="padding: 4px;">${sanitizeHTML(r.omitted)}</td>
             <td style="text-align: right; padding: 4px;">${r.theta.toFixed(4)}</td>
             <td style="text-align: right; padding: 4px;">[${r.ci_lower.toFixed(3)}, ${r.ci_upper.toFixed(3)}]</td>
             <td style="text-align: right; padding: 4px;">${r.change >= 0 ? '+' : ''}${r.change.toFixed(4)}</td>
@@ -3632,18 +3637,18 @@ function renderSearchStrategy(strategy, containerId) {
   }
   container.innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
-      <h4 style="margin-bottom: var(--space-2);">Search Strategies for: ${strategy.topic}</h4>
+      <h4 style="margin-bottom: var(--space-2);">Search Strategies for: ${sanitizeHTML(strategy.topic)}</h4>
       <div style="margin-bottom: var(--space-2);">
         <strong>PubMed:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.pubmed}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.pubmed)}</pre>
       </div>
       <div style="margin-bottom: var(--space-2);">
         <strong>Cochrane:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.cochrane}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.cochrane)}</pre>
       </div>
       <div>
         <strong>Embase:</strong>
-        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${strategy.embase}</pre>
+        <pre style="background: var(--surface-base); padding: var(--space-2); overflow-x: auto; font-size: 0.75rem;">${sanitizeHTML(strategy.embase)}</pre>
       </div>
     </div>
   `;
