@@ -161,7 +161,11 @@ describe('PCG32 Properties', () => {
                     return chiSq < 21.67;
                 }
             ),
-            { numRuns: 10 }
+            // A p > 0.01 goodness-of-fit test rejects a perfect generator 1% of the time, so with
+            // fast-check's default time-based seed this property failed CI by chance (run 43716563210:
+            // fc seed 1193369374 -> PCG32 seed 1968975637, chi2 = 26.83). Pinned fast-check seed: the
+            // same 10 PCG32 seeds every run; the 21.67 threshold is unchanged.
+            { numRuns: 10, seed: 20261115 }
         );
     });
 
@@ -178,7 +182,9 @@ describe('PCG32 Properties', () => {
                     return values.size === 1000;
                 }
             ),
-            { numRuns: 20 }
+            // 1000 draws of a uniform 32-bit value repeat with probability ~1.2e-4 (birthday bound),
+            // ~0.2% over 20 random seeds: a chance failure too. Pinned for the same reason as above.
+            { numRuns: 20, seed: 20261115 }
         );
     });
 
