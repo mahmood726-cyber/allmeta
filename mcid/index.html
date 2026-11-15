@@ -99,7 +99,7 @@
     </section>
   </main>
   <footer>
-    Distribution-based rules: Norman's 0.5·SD (Norman, Sloan &amp; Wyrwich, Med Care 2003); 1·SEM (Wyrwich 1999); 1.96·SEM ≈ 95% smallest detectable change. Anchor-based: Juniper EF et al., J Clin Epidemiol 1994. NI margin: ICH E10, FDA guidance on non-inferiority clinical trials (2016). The 95% SDC multiplier is R's exact <code>qnorm(0.975)</code> (not 1.96); rule arithmetic is regression-guarded in <code>hub/shared/tests/mcid-parity.spec.mjs</code>.
+    Distribution-based rules: Norman's 0.5·SD (Norman, Sloan &amp; Wyrwich, Med Care 2003); 1·SEM (Wyrwich 1999); 1.96·SEM is a 95% band around one measurement; the smallest detectable change of a change score is 1.96·√2·SEM (de Vet et al., Health Qual Life Outcomes 2006;4:54). NI margin M2 = (1 − preserved fraction) × M1. Anchor-based: Juniper EF et al., J Clin Epidemiol 1994. NI margin: ICH E10, FDA guidance on non-inferiority clinical trials (2016). The 95% SDC multiplier is R's exact <code>qnorm(0.975)</code> (not 1.96); rule arithmetic is regression-guarded in <code>hub/shared/tests/mcid-parity.spec.mjs</code>.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -122,15 +122,17 @@
       }
       if (Number.isFinite(sem)) {
         rows.push({ m: "1·SEM", v: sem, rat: "One SEM; matches SD in highly reliable measures." });
-        rows.push({ m: "1.96·SEM (SDC)", v: Z975 * sem, rat: "Smallest detectable change — outside test-retest noise." });
+        rows.push({ m: "1.96·SEM", v: Z975 * sem, rat: "95% band around a single measurement (one-occasion noise)." });
+        // SDC of a change score: two measurements are involved, so sqrt(2) (de Vet 2006, HQLO 4:54).
+        rows.push({ m: "SDC = 1.96·√2·SEM", v: Z975 * Math.SQRT2 * sem, rat: "Smallest detectable change between two occasions — outside test-retest noise (de Vet 2006)." });
       }
       if (Number.isFinite(somewhat) && Number.isFinite(none)) {
         rows.push({ m: "Anchor (Juniper)", v: somewhat - none, rat: "Mean change for 'somewhat improved' − 'no change'." });
       }
       if (Number.isFinite(hist) && Number.isFinite(frac)) {
-        // M2 = fraction of the active comparator's effect that must be preserved
-        // (ICH E10 / FDA NI guidance). A 50% preservation ⇒ margin = 0.5 × hist.
-        rows.push({ m: `NI margin (preserve ${(frac * 100).toFixed(0)}% of active effect)`, v: frac * hist, rat: "Effect the new treatment must retain relative to the active comparator's effect vs placebo." });
+        // M2 = the part of the active comparator's effect M1 that may be LOST: preserving a
+        // fraction f of M1 leaves M2 = (1 − f) × M1 (ICH E10 / FDA 2016 NI guidance).
+        rows.push({ m: `NI margin (preserve ${(frac * 100).toFixed(0)}% of active effect)`, v: (1 - frac) * hist, rat: "Largest loss of the active comparator's effect vs placebo that is still non-inferior: M2 = (1 − preserved fraction) × M1." });
       }
 
       const tbody = document.getElementById("tbody");
@@ -181,7 +183,8 @@
         oneSEM: i.sem,
         sdc: Z975 * i.sem,
         anchor: i.somewhat - i.none,
-        niMargin: i.frac * i.hist,
+        sdcChange: Z975 * Math.SQRT2 * i.sem,   // de Vet 2006 SDC (two occasions)
+        niMargin: (1 - i.frac) * i.hist,       // M2 = (1 − preserved fraction) × M1
       };
     };
 
