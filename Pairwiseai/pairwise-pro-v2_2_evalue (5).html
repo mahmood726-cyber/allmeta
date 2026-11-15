@@ -3172,7 +3172,7 @@
         alert.innerHTML = `
           <span class="alert__icon">⚠️</span>
           <div class="alert__content">
-            <div class="alert__text">${validStudies.length} valid studies. Minimum 3 studies recommended for reliable estimates.</div>
+            <div class="alert__text">${validStudies.length} valid ${validStudies.length === 1 ? 'study' : 'studies'}. Minimum 3 studies recommended for reliable estimates.</div>
           </div>
         `;
       } else if (validStudies.length > 100) {
@@ -5642,7 +5642,8 @@
       // === BIOMARKERS (continuous, lower=benefit for NT-proBNP) ===
       'ntprobnp_change': [
         'nt-probnp change', 'ntprobnp reduction', 'nt-probnp reduction',
-        'change in nt-probnp', 'bnp change', 'natriuretic peptide'
+        'change in nt-probnp', 'bnp change', 'natriuretic peptide',
+        'nt-probnp', 'ntprobnp', 'nt probnp', 'nt-pro-bnp', 'nt pro-bnp', 'n-terminal probnp', 'n-terminal pro-bnp'
       ],
       
       // === ATRIAL FIBRILLATION (ratio, lower=benefit) ===
@@ -5748,7 +5749,7 @@
         };
       for (const [n, s] of syn) {
         const a = s.split(" ").filter(e => e.length > 2),
-          i = a.filter(e => t.includes(e));
+          i = a.filter(e => e.length > 4 ? t.includes(e) : synonymWordMatch(t, e));
         if (a.length >= 2 && i.length >= 2) return {
           key: n,
           confidence: .7,
@@ -5845,7 +5846,7 @@
       'creatinine': ['creatinine', 'serum creatinine', 'cr'],
       
       // Cardiac biomarkers
-      'ntprobnp': ['nt-probnp', 'ntprobnp', 'nt probnp', 'n-terminal probnp'],
+      'ntprobnp': ['nt-probnp', 'ntprobnp', 'nt probnp', 'n-terminal probnp', 'nt-pro-bnp', 'nt pro-bnp', 'n-terminal pro-bnp', 'n-terminal pro-b-type natriuretic peptide'],
       'bnp': ['bnp', 'b-type natriuretic peptide'],
       'troponin': ['troponin', 'hs-troponin', 'hstnt', 'hs-tnt'],
       
@@ -6429,6 +6430,16 @@
       }
     }
     
+    // Slope / p-value cell of the covariate card: a regression that was refused (k<5) says it was not run
+    // instead of "N/A"; a non-finite value (NaN, null) prints "N/A" rather than throwing.
+    function covariateCardValue(result, field) {
+      const reg = result.regression;
+      if (reg && reg.available === false) {
+        return result.data && result.data.length < 5 ? 'Not run (k&lt;5)' : 'Not run';
+      }
+      return reg && Number.isFinite(reg[field]) ? reg[field].toFixed(4) : 'N/A';
+    }
+
     /**
      * UI for covariate-adjusted analysis
      */
@@ -6470,11 +6481,11 @@
             <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">
               <div>
                 <div class="text-xs text-secondary">Slope (β₁)</div>
-                <div class="text-lg font-mono">${result.regression && result.regression.slope !== undefined ? result.regression.slope.toFixed(4) : 'N/A'}</div>
+                <div class="text-lg font-mono">${covariateCardValue(result, 'slope')}</div>
               </div>
               <div>
                 <div class="text-xs text-secondary">p-value</div>
-                <div class="text-lg font-mono">${result.regression && result.regression.p_value !== undefined ? result.regression.p_value.toFixed(4) : 'N/A'}</div>
+                <div class="text-lg font-mono">${covariateCardValue(result, 'p_value')}</div>
               </div>
             </div>
             <p class="text-sm" style="margin-top: var(--space-3);">

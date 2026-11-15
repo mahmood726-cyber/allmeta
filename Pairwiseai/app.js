@@ -1018,7 +1018,7 @@ function _updateDataSummary() {
   document.getElementById("statTotalN").textContent = n.toLocaleString();
   const a = document.getElementById("dataStatusAlert");
   if (0 === e.length) a.className = "alert alert--info", a.innerHTML = '\n          <span class="alert__icon">ℹ️</span>\n          <div class="alert__content">\n            <div class="alert__text">Enter study data or load a demo dataset to begin.</div>\n          </div>\n        ';
-  else if (e.length < 3) a.className = "alert alert--warning", a.innerHTML = `\n          <span class="alert__icon">⚠️</span>\n          <div class="alert__content">\n            <div class="alert__text">${e.length} valid studies. Minimum 3 studies recommended for reliable estimates.</div>\n          </div>\n        `;
+  else if (e.length < 3) a.className = "alert alert--warning", a.innerHTML = `\n          <span class="alert__icon">⚠️</span>\n          <div class="alert__content">\n            <div class="alert__text">${e.length} valid ${1===e.length?"study":"studies"}. Minimum 3 studies recommended for reliable estimates.</div>\n          </div>\n        `;
   else if (e.length > 100) a.className = "alert alert--warning", a.innerHTML = `\n          <span class="alert__icon">⚠️</span>\n          <div class="alert__content">\n            <div class="alert__text">${e.length} studies detected. Large datasets may be slow. Consider using R/Python for >100 studies.</div>\n          </div>\n        `;
   else {
     a.className = "alert alert--success";
@@ -3522,7 +3522,7 @@ const OUTCOME_DICTIONARY = {
     kccq: ["kccq", "kansas city cardiomyopathy questionnaire", "kccq-tss", "kccq total symptom score", "kccq-css", "kccq clinical summary score", "kccq-os", "kccq overall score"],
     nyha_improvement: ["nyha improvement", "nyha class improvement", "functional class improvement", "improvement in nyha"],
     "6mwd": ["6mwd", "6-minute walk distance", "6 minute walk test", "6mwt", "six minute walk distance", "walk distance"],
-    ntprobnp_change: ["nt-probnp change", "ntprobnp reduction", "nt-probnp reduction", "change in nt-probnp", "bnp change", "natriuretic peptide"],
+    ntprobnp_change: ["nt-probnp change", "ntprobnp reduction", "nt-probnp reduction", "change in nt-probnp", "bnp change", "natriuretic peptide", "nt-probnp", "ntprobnp", "nt probnp", "nt-pro-bnp", "nt pro-bnp", "n-terminal probnp", "n-terminal pro-bnp"],
     af_recurrence: ["af recurrence", "atrial fibrillation recurrence", "afib recurrence", "recurrent af", "af/afl recurrence"],
     new_onset_af: ["new onset af", "incident af", "new atrial fibrillation", "development of af"]
   },
@@ -3664,7 +3664,7 @@ function mapOutcomeToStandard(e) {
     };
   for (const [n, s] of syn) {
     const a = s.split(" ").filter(e => e.length > 2),
-      i = a.filter(e => t.includes(e));
+      i = a.filter(e => e.length > 4 ? t.includes(e) : synonymWordMatch(t, e));
     if (a.length >= 2 && i.length >= 2) return {
       key: n,
       confidence: .7,
@@ -3746,7 +3746,7 @@ const BASELINE_COVARIATE_MAP = {
   egfr: ["egfr", "gfr", "eGFR ml/min", "eGFR (ml/min/1.73m2)", "estimated gfr"],
   egfr_lt_60: ["egfr <60", "egfr < 60", "ckd stage 3+"],
   creatinine: ["creatinine", "serum creatinine", "cr"],
-  ntprobnp: ["nt-probnp", "ntprobnp", "nt probnp", "n-terminal probnp"],
+  ntprobnp: ["nt-probnp", "ntprobnp", "nt probnp", "n-terminal probnp", "nt-pro-bnp", "nt pro-bnp", "n-terminal pro-bnp", "n-terminal pro-b-type natriuretic peptide"],
   bnp: ["bnp", "b-type natriuretic peptide"],
   troponin: ["troponin", "hs-troponin", "hstnt", "hs-tnt"],
   lvef: ["lvef", "ef", "ejection fraction", "lv ejection fraction", "left ventricular ef"],
@@ -4097,6 +4097,12 @@ function populateMultiOutcomeDropdowns(e) {
   s && (s.innerHTML = r, n.has("cv_death_or_hfh") && (s.value = "cv_death_or_hfh")), i && (i.innerHTML = r, n.has("cv_death_or_hfh") && (i.value = "cv_death_or_hfh"))
 }
 
+// Slope / p-value cell of the covariate card: a regression that was refused (k<5) says it was not run instead of "N/A"; a non-finite value (NaN, null) prints "N/A" rather than throwing.
+function covariateCardValue(e, t) {
+  const n = e.regression;
+  return n && !1 === n.available ? e.data && e.data.length < 5 ? "Not run (k&lt;5)" : "Not run" : n && Number.isFinite(n[t]) ? n[t].toFixed(4) : "N/A"
+}
+
 function runCovariateAdjustedUI() {
   if (0 === AppState.multiOutcome.trials.length) return void alert("Load trial data first");
   const e = document.getElementById("covariateSelect"),
@@ -4108,7 +4114,7 @@ function runCovariateAdjustedUI() {
       outcome: a
     }),
     i = document.getElementById("covariateResults");
-  i && (s.available ? i.innerHTML = `\n        <div class="card">\n          <div class="card__header">\n            <h3 class="card__title">📊 Covariate-Adjusted: ${sanitizeHTML(n)} -> ${sanitizeHTML(a)}</h3>\n          </div>\n          <div class="card__body">\n            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">\n              <div>\n                <div class="text-xs text-secondary">Slope (β₁)</div>\n                <div class="text-lg font-mono">${s.regression&&void 0!==s.regression.slope?s.regression.slope.toFixed(4):"N/A"}</div>\n              </div>\n              <div>\n                <div class="text-xs text-secondary">p-value</div>\n                <div class="text-lg font-mono">${s.regression&&void 0!==s.regression.p_value?s.regression.p_value.toFixed(4):"N/A"}</div>\n              </div>\n            </div>\n            <p class="text-sm" style="margin-top: var(--space-3);">\n              <strong>Interpretation:</strong> ${sanitizeHTML(s.interpretation)}\n            </p>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              Based on ${s.data.length} trials with both ${sanitizeHTML(n)} and ${sanitizeHTML(a)}\n            </p>\n          </div>\n        </div>\n      ` : i.innerHTML = `<div class="card"><div class="card__body text-warning">${sanitizeHTML(s.warning)}</div></div>`)
+  i && (s.available ? i.innerHTML = `\n        <div class="card">\n          <div class="card__header">\n            <h3 class="card__title">📊 Covariate-Adjusted: ${sanitizeHTML(n)} -> ${sanitizeHTML(a)}</h3>\n          </div>\n          <div class="card__body">\n            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">\n              <div>\n                <div class="text-xs text-secondary">Slope (β₁)</div>\n                <div class="text-lg font-mono">${covariateCardValue(s,"slope")}</div>\n              </div>\n              <div>\n                <div class="text-xs text-secondary">p-value</div>\n                <div class="text-lg font-mono">${covariateCardValue(s,"p_value")}</div>\n              </div>\n            </div>\n            <p class="text-sm" style="margin-top: var(--space-3);">\n              <strong>Interpretation:</strong> ${sanitizeHTML(s.interpretation)}\n            </p>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              Based on ${s.data.length} trials with both ${sanitizeHTML(n)} and ${sanitizeHTML(a)}\n            </p>\n          </div>\n        </div>\n      ` : i.innerHTML = `<div class="card"><div class="card__body text-warning">${sanitizeHTML(s.warning)}</div></div>`)
 }
 
 function runTrajectoryUI() {
