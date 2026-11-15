@@ -3621,39 +3621,43 @@ function getOutcomeMetadata(e) {
 }
 
 function mapOutcomeToStandard(e) {
-  const t = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " ");
-  for (const [n, a] of Object.entries(OUTCOME_DICTIONARY))
-    for (const s of a)
-      if (t === s) return {
-        key: n,
-        confidence: 1,
-        original: e
-      };
-  for (const [n, a] of Object.entries(OUTCOME_DICTIONARY))
-    for (const s of a)
-      if (s.length >= 3 && t.includes(s)) return {
-        key: n,
-        confidence: .9,
-        original: e
-      };
-  for (const [n, a] of Object.entries(OUTCOME_DICTIONARY))
-    for (const s of a)
-      if (2 === s.length) {
-        if (new RegExp(`\\b${s}\\b`, "i").test(t)) return {
-          key: n,
-          confidence: .85,
-          original: e
-        }
-      } for (const [n, a] of Object.entries(OUTCOME_DICTIONARY))
-    for (const s of a) {
-      const a = s.split(" ").filter(e => e.length > 2),
-        i = a.filter(e => t.includes(e));
-      if (a.length >= 2 && i.length >= 2) return {
-        key: n,
-        confidence: .7,
-        original: e
-      }
+  // Exact match first (a standard key such as "cv_death" or "cv death" counts as its own synonym), then the
+  // LONGEST synonym contained in the name ("time to first hf hospitalization" before "hf hospitalization"),
+  // then 2-letter synonyms as whole words, then a 2-of-n word overlap. Ties keep table order.
+  const t = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
+    syn = [];
+  for (const [n, a] of Object.entries(OUTCOME_DICTIONARY)) {
+    syn.push([n, n.toLowerCase()], [n, n.toLowerCase().replace(/_/g, " ")]);
+    for (const s of a) syn.push([n, s.toLowerCase()])
+  }
+  for (const [n, s] of syn)
+    if (t === s) return {
+      key: n,
+      confidence: 1,
+      original: e
+    };
+  const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
+  for (const [n, s] of byLength)
+    if (s.length >= 3 && t.includes(s)) return {
+      key: n,
+      confidence: .9,
+      original: e
+    };
+  for (const [n, s] of syn)
+    if (2 === s.length && new RegExp(`\\b${s}\\b`, "i").test(t)) return {
+      key: n,
+      confidence: .85,
+      original: e
+    };
+  for (const [n, s] of syn) {
+    const a = s.split(" ").filter(e => e.length > 2),
+      i = a.filter(e => t.includes(e));
+    if (a.length >= 2 && i.length >= 2) return {
+      key: n,
+      confidence: .7,
+      original: e
     }
+  }
   return {
     key: "custom_" + t.replace(/\s+/g, "_").slice(0, 30),
     confidence: 0,
@@ -3756,28 +3760,29 @@ const BASELINE_COVARIATE_MAP = {
 };
 
 function parseBaselineCharacteristics(e) {
+  // Exact match first, then the LONGEST synonym contained in the name ("age >=65" before "age", "female"
+  // before "male"), 2-letter synonyms only as whole words ("hr" not inside "chronic"). Ties keep table order.
   const t = {},
-    n = [];
+    n = [],
+    syn = [];
+  for (const [e, a] of Object.entries(BASELINE_COVARIATE_MAP))
+    for (const s of a) syn.push([e, s.toLowerCase()]);
+  const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
   let a = e;
   Array.isArray(e) && (a = {}, e.forEach(e => {
     e.name && void 0 !== e.value && (a[e.name] = e.value)
   }));
   for (const [e, s] of Object.entries(a)) {
-    const a = e.toLowerCase().trim();
-    let i = !1;
-    for (const [e, n] of Object.entries(BASELINE_COVARIATE_MAP)) {
-      for (const r of n)
-        if (a === r || a.includes(r)) {
-          let n = s;
-          if ("string" == typeof n) {
-            const e = n.match(/^([\d.]+)/);
-            e && (n = parseFloat(e[1]))
-          }
-          t[e] = n, i = !0;
-          break
-        } if (i) break
-    }
-    i || n.push({
+    const a = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
+      i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 2 ? a.includes(e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
+    if (i) {
+      let n = s;
+      if ("string" == typeof n) {
+        const e = n.match(/^([\d.]+)/);
+        e && (n = parseFloat(e[1]))
+      }
+      t[i[0]] = n
+    } else n.push({
       key: e,
       value: s
     })
