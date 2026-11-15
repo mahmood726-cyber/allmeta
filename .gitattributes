@@ -50,3 +50,7 @@ hub/shared/tests/unit/p07-translation-input.json -text
 # hero-effect-se-label.test.cjs compares the adapter's LF output to this R input
 # fixture byte for byte; a CRLF checkout (core.autocrlf=true) failed it on Windows.
 hub/shared/tests/fixtures/hero-bcg-input.csv text eol=lf
+# P04-R2 pins the MD5 of p04-design-labels-input.json (recorded by
+# p04-design-labels-reference.R from the LF bytes), so a CRLF checkout
+# (core.autocrlf=true) failed the provenance check on Windows.
+nma/tests/fixtures/*.json text eol=lf
