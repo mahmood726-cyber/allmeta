@@ -343,8 +343,8 @@
     if (!isFinite(bestNll)) { bestU = [0, 0, 0]; bestNll = objective(bestU); }
 
     // Coarse grid (multiples of the typical within-study SE).
-    var tauGrid = [0, 0.25, 0.5, 1, 1.5, 2.5, 4, 6, 10, 15];
-    var rhoGrid = [-0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9];
+    var tauGrid = [0, 0.03, 0.1, 0.25, 0.5, 1, 1.5, 2.5, 4, 6, 10, 15];
+    var rhoGrid = [-1, -0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9, 1];
     for (var i = 0; i < tauGrid.length; i++)
       for (var j = 0; j < tauGrid.length; j++)
         for (var l = 0; l < rhoGrid.length; l++) {
@@ -356,24 +356,56 @@
     // Pattern search: tau steps in SE units, rho steps 0.2x as large; halve the step
     // whenever no coordinate move improves; stop at a step of 1e-10 (relative).
     var dimScale = [1, 1, 0.2];
-    var step = 0.25;
-    for (var iter = 0; iter < 20000 && step >= 1e-10; iter++) {
-      var improved = false;
-      for (var d = 0; d < 3; d++) {
-        for (var sgn of [-1, 1]) {
-          var u2 = bestU.slice();
-          u2[d] += sgn * step * dimScale[d];
-          if (d < 2 && u2[d] < 0) u2[d] = 0;
-          // rho_between may reach the +/-1 boundary (metafor's REML optimum can sit there;
-          // Sigma_RE is then singular but V_i + Sigma_RE stays positive definite). Clamp,
-          // like tau at 0, rather than skip the move (was: skip beyond +/-0.99).
-          if (d === 2) u2[d] = Math.max(-1, Math.min(1, u2[d]));
-          if (u2[d] === bestU[d]) continue;
-          var nll2 = objective(u2);
-          if (nll2 < bestNll) { bestNll = nll2; bestU = u2; improved = true; }
+    function patternSearch(u0, f0, step) {
+      var bu = u0, bf = f0;
+      for (var iter = 0; iter < 20000 && step >= 1e-10; iter++) {
+        var improved = false;
+        for (var d = 0; d < 3; d++) {
+          for (var sgn of [-1, 1]) {
+            var u2 = bu.slice();
+            u2[d] += sgn * step * dimScale[d];
+            if (d < 2 && u2[d] < 0) u2[d] = 0;
+            // rho_between may reach the +/-1 boundary (metafor's REML optimum can sit there;
+            // Sigma_RE is then singular but V_i + Sigma_RE stays positive definite). Clamp,
+            // like tau at 0, rather than skip the move (was: skip beyond +/-0.99).
+            if (d === 2) u2[d] = Math.max(-1, Math.min(1, u2[d]));
+            if (u2[d] === bu[d]) continue;
+            var nll2 = objective(u2);
+            if (nll2 < bf) { bf = nll2; bu = u2; improved = true; }
+          }
         }
+        if (!improved) step *= 0.5;
       }
-      if (!improved) step *= 0.5;
+      return { u: bu, f: bf };
+    }
+    var ps = patternSearch(bestU, bestNll, 0.25);
+    bestU = ps.u; bestNll = ps.f;
+
+    // Boundary escape. At tau_d = 0 the likelihood is flat in rho, so a coordinate search
+    // cannot leave that corner when the better point needs tau_d > 0 AND a different rho
+    // at once (e.g. a small tau_d with rho near +/-1): every single-coordinate move is
+    // worse. Probe small tau_d jointly with rho, restart the search from the best probe,
+    // and keep it only if it lowers -2logL_R. (agy review round 2 on PR #600: 12 of 40
+    // simulated data sets stalled at tau_d = 0, -2logL_R up to 0.21 above metafor.)
+    // "At" the boundary means within 1e-6 SE of it: the step-limited search can stop just
+    // above 0, and the snap below would then move it onto 0 without this escape ever running.
+    for (var esc = 0; esc < 5 && (bestU[0] < 1e-6 || bestU[1] < 1e-6); esc++) {
+      var probeBest = null, probeF = Infinity, probeStep = 0.05;
+      var tauProbe = [1e-4, 3e-4, 1e-3, 3e-3, 0.01, 0.03, 0.1, 0.3];
+      var rhoProbe = [-1, -0.95, -0.8, -0.5, 0, 0.5, 0.8, 0.95, 1];
+      for (var dd = 0; dd < 2; dd++) {
+        if (!(bestU[dd] < 1e-6)) continue;
+        for (var a1 = 0; a1 < tauProbe.length; a1++)
+          for (var a2 = 0; a2 < rhoProbe.length; a2++) {
+            var up = bestU.slice(); up[dd] = tauProbe[a1]; up[2] = rhoProbe[a2];
+            var fp = objective(up);
+            if (fp < probeF) { probeF = fp; probeBest = up; probeStep = tauProbe[a1]; }
+          }
+      }
+      if (!probeBest) break;
+      // first step on the scale of the probe, so the search does not jump straight back to 0
+      var ps2 = patternSearch(probeBest, probeF, probeStep);
+      if (ps2.f < bestNll - 1e-12) { bestU = ps2.u; bestNll = ps2.f; } else break;
     }
     // Back to the caller's units.
     // Snap a between-study SD that the step-limited search left within 1e-6 SE of the
