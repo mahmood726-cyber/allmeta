@@ -66,8 +66,8 @@
       var ev = global.AlmEValue.eValues(meas, pooled.pointEstimate, pooled.ciLo, pooled.ciHi, {});
       return Object.assign(base, {
         status: "ok",
-        verdict: "E-value " + ev.point.toFixed(2) + " (nearest-CI-bound " + ev.ci.toFixed(2) + ")",
-        detail: ev.ci <= 1
+        verdict: "E-value " + ev.point.toFixed(2) + " (nearest-CI-bound " + (ev.ci === null ? "not applicable: " + ev.reasons.ci : ev.ci.toFixed(2)) + ")",
+        detail: ev.ci === null ? "not applicable: " + ev.reasons.ci : ev.ci <= 1
           ? "the CI already includes the null — confounding robustness is undefined"
           : "an unmeasured confounder would need RR ≥ " + ev.ci.toFixed(2) + " with both exposure and outcome to move the CI to the null"
       });

@@ -33,7 +33,8 @@ function widget() {
   return {
     get result() { return window.__almLastEValue(); },
     get text() { return elements['ev-out'].textContent; },
-    set(measure, point, lo, hi, badField) {
+    set(measure, point, lo, hi, badField, rare = false) {
+      elements['ev-rare'].checked = rare;
       for (const [id, value] of Object.entries({ measure, point, lo, hi })) {
         elements['ev-' + id].value = String(value);
         elements['ev-' + id].validity.badInput = id === badField;
@@ -106,13 +107,13 @@ test('P20-R7 control: signed SMD/d and zero-width intervals remain valid', () =>
   assert.equal(E.eValues('RR', 2, 2, 2).ci, E.eValue(2));
 });
 
-test('P20-R7 control: missing and partial CI behavior is unchanged by this complete-CI fix', () => {
-  assert.equal(E.eValues('RR', 2, null, null).ci, 1);
+test('P20-R7 control: missing CI is NA; supplied near limits retain R values', () => {
+  assert.equal(E.eValues('RR', 2, null, null).ci, null);
   assert.equal(E.eValues('RR', 2, 1.5, null).ci, E.eValue(1.5));
   assert.equal(E.eValues('RR', 0.6, null, 0.9).ci, E.eValue(0.9));
   const ui = widget();
   ui.set('RR', 2, '', '');
-  assert.equal(ui.result.ci, 1);
+  assert.equal(ui.result.ci, null);
   ui.set('RR', 2, 1.5, '');
   assert.equal(ui.result.ci, E.eValue(1.5));
 });
@@ -157,6 +158,32 @@ for (const id of ['reversed', 'outside', 'valid', 'crossing']) {
       for (const key of ['point', 'ci']) {
         assert.ok(Math.abs(actual[key] - c.expected[key]) <= 1e-6, `${id}: ${key}`);
       }
+    }
+  });
+}
+
+const naReference = JSON.parse(readFileSync(new URL(
+  'effect-size-converter/tests/fixtures/p20-p22-evalue-na-reference.json', root), 'utf8'));
+for (const c of naReference.cases) {
+  test(`P20/P22 R NA semantics engine: ${c.id}`, () => {
+    const r = E.eValues(c.measure, c.point, c.lo, c.hi, {rare:c.rare, sd:c.sd});
+    for (const key of ['point','ci','lower','upper']) {
+      if (c.expected[key] === null) {
+        assert.equal(r[key], null, key + ' must preserve R NA');
+        assert.match(r.reasons[key], /missing|farther/i);
+      } else assert.ok(Math.abs(r[key]-c.expected[key]) < 1e-12, key);
+    }
+    assert.deepEqual(JSON.parse(JSON.stringify(r)), r, 'export preserves null without NaN coercion');
+  });
+  if (!['D','MD'].includes(c.measure)) test(`P20 R NA semantics widget: ${c.id}`, () => {
+    const ui = widget();
+    ui.set(c.measure,c.point,c.lo ?? '',c.hi ?? '',undefined,c.rare);
+    if(c.expected.ci === null) assert.equal(ui.result.ci,null);
+    else assert.ok(Math.abs(ui.result.ci-c.expected.ci)<1e-12);
+    assert.match(ui.text,/not applicable.*(?:missing|farther)/i);
+    for(const key of ['lower','upper']) {
+      if(c.expected[key] === null) assert.equal(ui.result[key],null);
+      else assert.ok(Math.abs(ui.result[key]-c.expected[key])<1e-12);
     }
   });
 }

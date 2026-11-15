@@ -70,8 +70,9 @@ def test_fresh_pinned_evalue_source_reference():
         args = ','.join(json.dumps(case[k]) for k in ('measure', 'point', 'lo', 'hi'))
         actual = _run(f"E.eValues({args}, {{rare: {json.dumps(case['rare'])}}})")
         assert actual['point'] == pytest.approx(case['expected']['point'], abs=1e-6, rel=0)
-        # The UI overrides legacy engine CI=1 when both limits are absent.
-        if case['lo'] is not None:
+        if case['expected']['ci'] is None:
+            assert actual['ci'] is None
+        else:
             assert actual['ci'] == pytest.approx(case['expected']['ci'], abs=1e-6, rel=0)
         for field in ('point', 'lo', 'hi'):
             expected = case['expected']['rr'][field]

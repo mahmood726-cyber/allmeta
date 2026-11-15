@@ -235,11 +235,13 @@
         refuse("derived risk ratio or E-value was non-finite.");
         return;
       }
-      if (!hasLo) r.ci = null; // Missing uncertainty must not masquerade as CI crossing the null.
+      var ev = function (key) { return r[key] == null ? 'not applicable (' + r.reasons[key] + ')' : fmt(r[key]); };
       window.__almLastEValue = function () { return r; };
       tbody.innerHTML =
         "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
-        + "<tr><td>E-value (CI limit nearest null)</td><td class='big'>" + fmt(r.ci) + "</td></tr>"
+        + "<tr><td>E-value (CI limit nearest null)</td><td class='big'>" + ev('ci') + "</td></tr>"
+        + "<tr><td>E-value (lower limit)</td><td>" + ev('lower') + "</td></tr>"
+        + "<tr><td>E-value (upper limit)</td><td>" + ev('upper') + "</td></tr>"
         + "<tr><td>Approx. risk ratio used</td><td><code>" + fmt(r.rr.point) + "</code>"
         + (r.rr.lo != null ? " (CI <code>" + fmt(r.rr.lo) + "</code>–<code>" + fmt(r.rr.hi) + "</code>)" : "") + "</td></tr>";
 

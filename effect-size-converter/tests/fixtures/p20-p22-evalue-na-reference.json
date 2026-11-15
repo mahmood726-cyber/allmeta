@@ -1,0 +1,1209 @@
+{
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "method": "Offline EValue 4.1.4 formula transcription cross-checked against recorded native outputs; not installed EValue",
+    "disclosure": "Synthetic test inputs; MD standardized by supplied SD"
+  },
+  "cases": [
+    {
+      "id": "RR-FALSE-above-complete",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-above-crossing",
+      "measure": "RR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-above-missing",
+      "measure": "RR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-above-near-only",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-above-far-only",
+      "measure": "RR",
+      "point": 2,
+      "lo": null,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-below-complete",
+      "measure": "RR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "RR-FALSE-below-crossing",
+      "measure": "RR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "RR-FALSE-below-missing",
+      "measure": "RR",
+      "point": 0.5,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "RR-FALSE-below-near-only",
+      "measure": "RR",
+      "point": 0.5,
+      "lo": null,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "RR-FALSE-below-far-only",
+      "measure": "RR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-above-complete",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": 1.7493924946668791,
+        "lower": 1.7493924946668791,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-above-crossing",
+      "measure": "OR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-above-missing",
+      "measure": "OR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-above-near-only",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": 1.7493924946668791,
+        "lower": 1.7493924946668791,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-above-far-only",
+      "measure": "OR",
+      "point": 2,
+      "lo": null,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-below-complete",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.1795804271032742,
+        "ci": 1.7493924946668791,
+        "lower": null,
+        "upper": 1.7493924946668791
+      }
+    },
+    {
+      "id": "OR-FALSE-below-crossing",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.1795804271032742,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "OR-FALSE-below-missing",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.1795804271032742,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-FALSE-below-near-only",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": null,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.1795804271032742,
+        "ci": 1.7493924946668791,
+        "lower": null,
+        "upper": 1.7493924946668791
+      }
+    },
+    {
+      "id": "OR-FALSE-below-far-only",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.1795804271032742,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-above-complete",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-above-crossing",
+      "measure": "OR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-above-missing",
+      "measure": "OR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-above-near-only",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-above-far-only",
+      "measure": "OR",
+      "point": 2,
+      "lo": null,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-below-complete",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 0.66666666666666663,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "OR-TRUE-below-crossing",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 1.2,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "OR-TRUE-below-missing",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": null,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "OR-TRUE-below-near-only",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": null,
+      "hi": 0.66666666666666663,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "OR-TRUE-below-far-only",
+      "measure": "OR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-above-complete",
+      "measure": "HR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308881,
+        "ci": 1.9785413868880748,
+        "lower": 1.9785413868880748,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-above-crossing",
+      "measure": "HR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308881,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-above-missing",
+      "measure": "HR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308881,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-above-near-only",
+      "measure": "HR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308881,
+        "ci": 1.9785413868880748,
+        "lower": 1.9785413868880748,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-above-far-only",
+      "measure": "HR",
+      "point": 2,
+      "lo": null,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308881,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-below-complete",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308877,
+        "ci": 1.9785413868880748,
+        "lower": null,
+        "upper": 1.9785413868880748
+      }
+    },
+    {
+      "id": "HR-FALSE-below-crossing",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308877,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "HR-FALSE-below-missing",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308877,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-FALSE-below-near-only",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": null,
+      "hi": 0.66666666666666663,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308877,
+        "ci": 1.9785413868880748,
+        "lower": null,
+        "upper": 1.9785413868880748
+      }
+    },
+    {
+      "id": "HR-FALSE-below-far-only",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 2.6064092655308877,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-above-complete",
+      "measure": "HR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-above-crossing",
+      "measure": "HR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-above-missing",
+      "measure": "HR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-above-near-only",
+      "measure": "HR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": 2.3660254037844384,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-above-far-only",
+      "measure": "HR",
+      "point": 2,
+      "lo": null,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-below-complete",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 0.66666666666666663,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "HR-TRUE-below-crossing",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": 1.2,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "HR-TRUE-below-missing",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": null,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "HR-TRUE-below-near-only",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": null,
+      "hi": 0.66666666666666663,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "lower": null,
+        "upper": 2.3660254037844384
+      }
+    },
+    {
+      "id": "HR-TRUE-below-far-only",
+      "measure": "HR",
+      "point": 0.5,
+      "lo": 0.37037037037037035,
+      "hi": null,
+      "rare": true,
+      "sd": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-above-complete",
+      "measure": "SMD",
+      "point": 0.29999999999999999,
+      "lo": 0.10000000000000001,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-above-crossing",
+      "measure": "SMD",
+      "point": 0.29999999999999999,
+      "lo": -0.10000000000000001,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-above-missing",
+      "measure": "SMD",
+      "point": 0.29999999999999999,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-above-near-only",
+      "measure": "SMD",
+      "point": 0.29999999999999999,
+      "lo": 0.10000000000000001,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-above-far-only",
+      "measure": "SMD",
+      "point": 0.29999999999999999,
+      "lo": null,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-below-complete",
+      "measure": "SMD",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": -0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "SMD-FALSE-below-crossing",
+      "measure": "SMD",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": 0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "SMD-FALSE-below-missing",
+      "measure": "SMD",
+      "point": -0.29999999999999999,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "SMD-FALSE-below-near-only",
+      "measure": "SMD",
+      "point": -0.29999999999999999,
+      "lo": null,
+      "hi": -0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "SMD-FALSE-below-far-only",
+      "measure": "SMD",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-above-complete",
+      "measure": "D",
+      "point": 0.29999999999999999,
+      "lo": 0.10000000000000001,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-above-crossing",
+      "measure": "D",
+      "point": 0.29999999999999999,
+      "lo": -0.10000000000000001,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-above-missing",
+      "measure": "D",
+      "point": 0.29999999999999999,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-above-near-only",
+      "measure": "D",
+      "point": 0.29999999999999999,
+      "lo": 0.10000000000000001,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-above-far-only",
+      "measure": "D",
+      "point": 0.29999999999999999,
+      "lo": null,
+      "hi": 0.59999999999999998,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-below-complete",
+      "measure": "D",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": -0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "D-FALSE-below-crossing",
+      "measure": "D",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": 0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "D-FALSE-below-missing",
+      "measure": "D",
+      "point": -0.29999999999999999,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "D-FALSE-below-near-only",
+      "measure": "D",
+      "point": -0.29999999999999999,
+      "lo": null,
+      "hi": -0.10000000000000001,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "D-FALSE-below-far-only",
+      "measure": "D",
+      "point": -0.29999999999999999,
+      "lo": -0.59999999999999998,
+      "hi": null,
+      "rare": false,
+      "sd": 1,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-above-complete",
+      "measure": "MD",
+      "point": 0.59999999999999998,
+      "lo": 0.20000000000000001,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-above-crossing",
+      "measure": "MD",
+      "point": 0.59999999999999998,
+      "lo": -0.20000000000000001,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": 1,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-above-missing",
+      "measure": "MD",
+      "point": 0.59999999999999998,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-above-near-only",
+      "measure": "MD",
+      "point": 0.59999999999999998,
+      "lo": 0.20000000000000001,
+      "hi": null,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": 1.4182940640718693,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-above-far-only",
+      "measure": "MD",
+      "point": 0.59999999999999998,
+      "lo": null,
+      "hi": 1.2,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-below-complete",
+      "measure": "MD",
+      "point": -0.59999999999999998,
+      "lo": -1.2,
+      "hi": -0.20000000000000001,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "MD-FALSE-below-crossing",
+      "measure": "MD",
+      "point": -0.59999999999999998,
+      "lo": -1.2,
+      "hi": 0.20000000000000001,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1,
+        "lower": null,
+        "upper": 1
+      }
+    },
+    {
+      "id": "MD-FALSE-below-missing",
+      "measure": "MD",
+      "point": -0.59999999999999998,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    },
+    {
+      "id": "MD-FALSE-below-near-only",
+      "measure": "MD",
+      "point": -0.59999999999999998,
+      "lo": null,
+      "hi": -0.20000000000000001,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": 1.4182940640718693,
+        "lower": null,
+        "upper": 1.4182940640718693
+      }
+    },
+    {
+      "id": "MD-FALSE-below-far-only",
+      "measure": "MD",
+      "point": -0.59999999999999998,
+      "lo": -1.2,
+      "hi": null,
+      "rare": false,
+      "sd": 2,
+      "expected": {
+        "point": 1.9561101859855488,
+        "ci": null,
+        "lower": null,
+        "upper": null
+      }
+    }
+  ]
+}
