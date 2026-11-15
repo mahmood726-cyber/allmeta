@@ -140,11 +140,22 @@ print(nm); netsplit(nm); netheat(nm); netrank(nm)</pre>
 
       <h3><span class="pill local">Bayesian NMA</span> equivalent to Network MA with SUCRA — real MCMC</h3>
       <pre>library(gemtc)
-# Requires JAGS (install separately)
-net &lt;- mtc.network(data.re = d)  # d = per-comparison effect + se
-model &lt;- mtc.model(net, type = "consistency", link = "identity", likelihood = "normal")
-fit &lt;- mtc.run(model, n.adapt = 2000, n.iter = 20000, thin = 5, n.chain = 3)
-print(summary(fit)); rank.probability(fit); sucra(rank.probability(fit))</pre>
+# Requires JAGS (install separately). Uses d from the NMA block above.
+# mtc.network(data.re =) wants one row per ARM with columns study, treatment, diff, std.err:
+# the study's baseline arm has diff = NA (std.err NA in a two-arm study), the other arm
+# carries the difference from that baseline (here treat1 minus treat2 = netmeta's TE, seTE).
+re &lt;- data.frame(study     = rep(d$studlab, each = 2),
+                 treatment = c(rbind(d$treat2, d$treat1)),
+                 diff      = c(rbind(NA, d$TE)),
+                 std.err   = c(rbind(NA, d$seTE)))
+net &lt;- mtc.network(data.re = re)
+set.seed(2026)  # mtc.model draws the initial values in R
+model &lt;- mtc.model(net, type = "consistency", link = "identity", likelihood = "normal",
+                   linearModel = "random", n.chain = 3)
+model$inits &lt;- lapply(seq_along(model$inits), function(i)   # fix JAGS's own RNG per chain
+  c(model$inits[[i]], list(.RNG.name = "base::Mersenne-Twister", .RNG.seed = i)))
+fit &lt;- mtc.run(model, n.adapt = 2000, n.iter = 20000, thin = 5)
+print(summary(fit)); relative.effect.table(fit); sucra(rank.probability(fit))</pre>
 
       <h3><span class="pill local">DTA</span> equivalent to HSROC / DTA SROC</h3>
       <pre>library(mada)
@@ -161,23 +172,25 @@ co &lt;- copas(m); print(co); plot(co)</pre>
 
       <h3><span class="pill local">Multi-level (3-level) MA</span></h3>
       <pre>library(metafor)
-# data: study, outcome, yi, vi
-res &lt;- rma.mv(yi, V = vi, random = ~ 1 | study/outcome, data = d, method = "REML")
+d3 &lt;- dat.konstantopoulos2011   # example: schools within districts; columns district, school, yi, vi
+res &lt;- rma.mv(yi, V = vi, random = ~ 1 | district/school, data = d3, method = "REML")
 print(res); summary(res)</pre>
 
       <h3><span class="pill local">Risk of bias — RoB 2 / ROBINS-I / QUADAS-2</span></h3>
       <pre>library(robvis)
-d &lt;- read.csv("your_rob2_assessments.csv")  # one row per study, columns per domain
-rob_traffic_light(data = d, tool = "ROB2")
-rob_summary(data = d, tool = "ROB2")</pre>
+rob &lt;- data_rob2   # example; for your own: rob &lt;- read.csv("your_rob2.csv") with the same columns
+rob_traffic_light(data = rob, tool = "ROB2")
+rob_summary(data = rob, tool = "ROB2")</pre>
 
       <h3><span class="pill local">K-M IPD reconstruction</span></h3>
       <pre>library(IPDfromKM)
-# curve: data.frame(time, surv)
-# risk:  data.frame(time, nrisk)
-pre &lt;- preprocess(dat = curve, trisk = risk$time, nrisk = risk$nrisk)
-ipd &lt;- getIPD(pre, armID = 1, tot.events = 145)
-head(ipd)</pre>
+# example: a digitised curve (time, survival %) and its numbers-at-risk table;
+# replace with your own digitiser output and the published at-risk table
+curve &lt;- Radiationdata$radio
+pre &lt;- preprocess(dat = curve, trisk = Radiationdata$trisk,
+                  nrisk = Radiationdata$nrisk.radio, maxy = 100)
+ipd &lt;- getIPD(pre, armID = 1)
+head(ipd$IPD)</pre>
     </section>
 
     <section>
