@@ -12,8 +12,8 @@
 #             exact likelihood. exactreml is metafor rma.mv(REML) on the same kept rows WITH that covariance (the
 #             variance of the shared arm) -- the likelihood the page maximises.
 #  worker   : meta::metabin(sm = "OR" / "RR") TE and seTE^2 per study (incr 0.5 only in a study with a zero cell;
-#             RR.Cochrane = TRUE, i.e. n + 2*incr in the RR, the page's (RevMan) convention -- metabin's default adds
-#             1*incr to n; no effect on OR).
+#             metabin's default RR.Cochrane = FALSE, i.e. n + incr in the RR -- the page's convention since lane nmapro4;
+#             until then the page used RR.Cochrane = TRUE, n + 2*incr (RevMan); no effect on OR).
 #  registry : metabin seTE (OR, RR) for the very large trials of fixtures/nmapro2-bigtrial.csv.
 #  coxyear  : lm(yi ~ year, weights = 1/vi) slope and SE on the page's Poisson-equivalent contrasts
 #             yi = log(((e1+.5)/(n1+1)) / ((e2+.5)/(n2+1))), vi = 1/(e1+.5) + 1/(e2+.5).
@@ -64,7 +64,7 @@ out$exactreml <- list(tau2 = fr$tau2, TE = L(setNames(as.numeric(coef(fr)), trts
 
 wk <- list()
 for (s in c("OR", "RR")) {
-  mb <- metabin(e1, n1, e2, n2, data = sm, sm = s, method = "Inverse", allstudies = TRUE, RR.Cochrane = TRUE)
+  mb <- metabin(e1, n1, e2, n2, data = sm, sm = s, method = "Inverse", allstudies = TRUE)
   wk[[s]] <- list(yi = mb$TE, vi = mb$seTE^2)
 }
 out$worker <- wk
