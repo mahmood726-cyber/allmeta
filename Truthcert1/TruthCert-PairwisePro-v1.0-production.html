@@ -3117,6 +3117,19 @@ const truthCertVerdictPanelInitial = (function() {
   const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
   return { html: p ? p.innerHTML : null, pre: pre ? pre.style.display : null, cfg: cfg ? cfg.style.display : null };
 })();
+// HTA has an evidence tier only for an assessed verdict other than UNCERTAIN (lane pwrest3, agy review of #572):
+// otherwise the HTA section goes back to its state at page load. Used after a run and after a project load
+// (both only ever OPENED it, so an UNCERTAIN / NOT ASSESSED verdict after an assessed one left HTA offered).
+function truthCertSyncHTA(verdict) {
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  const offered = !!verdict && verdict !== 'UNCERTAIN' && verdict !== 'NOT ASSESSED';
+  if (offered) { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+  else {
+    if (pre && truthCertVerdictPanelInitial.pre !== null) pre.style.display = truthCertVerdictPanelInitial.pre;
+    if (cfg && truthCertVerdictPanelInitial.cfg !== null) cfg.style.display = truthCertVerdictPanelInitial.cfg;
+  }
+  return offered;
+}
 function clearTruthCertVerdict() {
   AppState.truthcert = null; AppState.verdict = null; AppState.threatLedger = null; AppState.grade = null;
   const p = document.getElementById('panel-verdict');
@@ -3142,8 +3155,7 @@ function restoreTruthCertVerdict(state) {
   AppState.truthcert = tc; AppState.verdict = tc.verdict; AppState.threatLedger = tc.threatLedger || null; AppState.grade = tc.grade || null;
   try {
     if (typeof renderVerdictPanel === 'function') renderVerdictPanel();
-    const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
-    if (tc.verdict.verdict !== 'UNCERTAIN' && tc.verdict.verdict !== 'NOT ASSESSED') { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+    truthCertSyncHTA(tc.verdict.verdict);
   } catch (e) {
     console.warn('[TruthCert] Saved verdict could not be shown:', e.message);
     clearTruthCertVerdict();

@@ -79,7 +79,7 @@ test('study, subgroup and trial labels render as text in every panel', async ({ 
     out: (document.getElementById('outlierResults') || {}).innerText || '',
     cum: document.getElementById('__cumFallback').innerText,
     mo: (document.getElementById('multiOutcomeStatus') || {}).innerText || '',
-    sub: document.getElementById('panel-analysis').innerText + document.getElementById('panel-heterogeneity').innerText,
+    subgroups: (AppState.results.subgroups && AppState.results.subgroups.subgroups || []).length,
   }));
   expect(txt.loo, 'leave-one-out ran').toBeGreaterThan(0);
   expect(txt.bias).toContain('<img src=x onerror=alert(1)> #1');
@@ -87,6 +87,10 @@ test('study, subgroup and trial labels render as text in every panel', async ({ 
   expect(txt.out).toContain('<img src=x onerror=alert(1)> #1');
   expect(txt.cum).toContain('<img src=x onerror=alert(1)> #1');
   expect(txt.mo).toContain('<img src=x onerror=alert(4)>');
+  // subgroup labels: the subgroup table (Bias tab, after the Full analyses) shows them as text
+  expect(txt.subgroups, 'subgroup analysis ran').toBe(2);
+  expect(txt.bias).toContain(EVIL[1] + ' A');
+  expect(txt.bias).toContain(EVIL[0] + ' B');
   expect(errors).toEqual([]);
 });
 
