@@ -916,9 +916,18 @@
       // only, so the bus button is meaningful in the "effect, SE" mode (the
       // default). For binary mode the user should compute logOR first.
       MaStudies.attachButtons({
-        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
+        btnLoad: "#btn-bus-load",
         textarea: "#src", format: "est-se-label",
         onAfterLoad: run,
+      });
+      // Bus "Save" stores the studies this page analysed, not a re-read of the input with the
+      // shared reader (lane rcpt2).
+      document.getElementById("btn-bus-save").addEventListener("click", function () {
+        var rows = [];
+        try { rows = window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { rows = []; }
+        if (!rows.length) { if (window.Toast) Toast.show("Nothing to save.", "warn"); return; }
+        var ok = MaStudies.write(rows);
+        if (window.Toast) Toast.show(ok ? ("Saved " + rows.length + " studies to shared bus.") : "Could not save to bus.", ok ? "warn" : "error");
       });
     }
 
@@ -1019,7 +1028,10 @@
     } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pubbias-tests", textarea: "#src", format: "est-se-label" });
+      // Sign the studies this page analysed (the set "Verify in R" re-fits: [] when the page refused
+      // the input), not a re-read of the input with the shared reader (lane rcpt2).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pubbias-tests",
+        getStudies: function () { try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; } } });
     }
   });
 })();
