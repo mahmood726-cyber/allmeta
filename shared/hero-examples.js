@@ -36,7 +36,7 @@
       { key: "bcg", label: "BCG vaccine (Berkey 1995, log-RR)" },
     ],
     glmm: [
-      { key: "eltrombopag", label: "Eltrombopag (Stijnen 2010, rare-events)" },
+      { key: "eltrombopag", label: "Rare-events example (illustrative; source unverified)" },
     ],
     "cross-design": [
       { key: "bcg", label: "BCG vaccine (Berkey 1995, RCT + obs)" },
