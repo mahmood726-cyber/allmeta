@@ -113,10 +113,11 @@ for (const [name, path] of Object.entries(PAGES)) {
     expect(txt.cum).toContain(EVIL[0] + ' #1');
     expect(txt.search).toContain(EVIL[1] + ' searchTopic');
     expect(txt.bias).toContain(EVIL[0] + ' #1');
-    // buttons wired to functions these pages never define (pre-existing; listed by name so that any other
-    // ReferenceError, e.g. a helper this fix relies on, fails the test -- agy review of #573)
-    const UNWIRED = /^ReferenceError: (exportToR|exportPRISMASVG|computeDDMA|runLiveValidation) is not defined$/;
-    expect(errors.filter(e => !UNWIRED.test(e)), 'page errors (other than the known unwired buttons)').toEqual([]);
+    // Requirement: pressing every button on every tab raises no page error at all. There is no allow-list:
+    // until #604 (lane aitems) four buttons called functions these pages never defined (exportToR,
+    // exportPRISMASVG, computeDDMA, runLiveValidation) and their ReferenceErrors were excused here by name;
+    // those buttons are now wired or removed, so any such error reappearing must fail this test.
+    expect(errors, 'page errors while sweeping every button').toEqual([]);
   });
 
   test(`${name}: the R and Python exports carry each study label as one string literal`, async ({ page }) => {
