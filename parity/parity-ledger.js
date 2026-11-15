@@ -11,7 +11,7 @@ window.ALM_PARITY_LEDGER = {
   "uncovered": [
     {
       "app": "everything-model",
-      "reason": "Bespoke variational-EM Bayesian hierarchical model (outcome x time x RoB) — no standard R package equivalent to check against."
+      "reason": "Joint outcome x time x RoB mixed model fitted by ML (EM + profile-likelihood polish); unit-tested against metafor::rma.mv(method=\"ML\") (lane audit7) but not yet through this ledger."
     },
     {
       "app": "cross-network",
