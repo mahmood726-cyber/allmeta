@@ -5747,6 +5747,19 @@ function getOutcomeMetadata(e) {
   }
 }
 
+// Whole-word test for the 3-4 character synonyms of OUTCOME_DICTIONARY / BASELINE_COVARIATE_MAP: no letter
+// immediately before the synonym and no letter immediately after it, except one plural / participle "s" or "d"
+// ("arbs", "males", "aged"), so "men" no longer matches inside "treatment", "age" inside "percentage", "ami" inside
+// "amiodarone". 2-character synonyms keep their \b rule; 5+ character synonyms still match as substrings.
+function synonymWordMatch(t, s) {
+  const L = e => /[a-z]/.test(e || "");
+  for (let i = t.indexOf(s); i >= 0; i = t.indexOf(s, i + 1)) {
+    const j = i + s.length;
+    if (!L(t[i - 1]) && (!L(t[j]) || /[sd]/.test(t[j]) && !L(t[j + 1]))) return !0
+  }
+  return !1
+}
+
 function mapOutcomeToStandard(e) {
   // Exact match first (a standard key such as "cv_death" or "cv death" counts as its own synonym), then the
   // LONGEST synonym contained in the name ("time to first hf hospitalization" before "hf hospitalization"),
@@ -5765,7 +5778,7 @@ function mapOutcomeToStandard(e) {
     };
   const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
   for (const [n, s] of byLength)
-    if (s.length >= 3 && t.includes(s)) return {
+    if (s.length > 4 ? t.includes(s) : s.length >= 3 && synonymWordMatch(t, s)) return {
       key: n,
       confidence: .9,
       original: e
@@ -5858,7 +5871,7 @@ const BASELINE_COVARIATE_MAP = {
   male_pct: ["male", "male %", "men", "male sex", "% male"],
   female_pct: ["female", "female %", "women", "female sex", "% female"],
   egfr: ["egfr", "gfr", "eGFR ml/min", "eGFR (ml/min/1.73m2)", "estimated gfr"],
-  egfr_lt_60: ["egfr <60", "egfr < 60", "ckd stage 3+", "ckd"],
+  egfr_lt_60: ["egfr <60", "egfr < 60", "ckd stage 3+"],
   creatinine: ["creatinine", "serum creatinine", "cr"],
   ntprobnp: ["nt-probnp", "ntprobnp", "nt probnp", "n-terminal probnp"],
   bnp: ["bnp", "b-type natriuretic peptide"],
@@ -5901,7 +5914,7 @@ function parseBaselineCharacteristics(e) {
   }));
   for (const [e, s] of Object.entries(a)) {
     const a = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
-      i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 2 ? a.includes(e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
+      i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 4 ? a.includes(e[1]) : e[1].length > 2 ? synonymWordMatch(a, e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
     if (i) {
       let n = s;
       if ("string" == typeof n) {
@@ -6029,7 +6042,7 @@ function covariateAdjustedAnalysis(e, t, n = {}) {
     covariate: t,
     outcome: a,
     regression: i,
-    interpretation: i.slope < 0 ? `Effect increases (more benefit) with higher ${t}` : `Effect decreases (less benefit) with higher ${t}`,
+    interpretation: !1 === i.available ? s.length < 5 ? `Meta-regression not run (k<5): only ${s.length} trials have both ${a} and ${t}` : `Meta-regression not run: ${i.warning}` : isFinite(i.slope) ? i.slope < 0 ? `Effect increases (more benefit) with higher ${t}` : `Effect decreases (less benefit) with higher ${t}` : `Meta-regression slope not estimable for ${t}`,
     data: s
   }
 }

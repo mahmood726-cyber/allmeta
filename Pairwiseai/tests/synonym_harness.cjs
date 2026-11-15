@@ -15,7 +15,11 @@ function grab(re) {
   }
   throw new Error('unbalanced: ' + re);
 }
+// synonymWordMatch (the whole-word rule for 3-4 character synonyms) exists only after the fix; tolerate its absence
+// so the HEAD builds fail on the assertions rather than in the harness
+const hasWord = /function synonymWordMatch\(/.test(src);
 const code = [
+  hasWord ? grab(/function synonymWordMatch\(/) : '',
   'var ' + grab(/OUTCOME_DICTIONARY\s*=\s*\{/) + ';',
   'var ' + grab(/BASELINE_COVARIATE_MAP\s*=\s*\{/) + ';',
   grab(/function mapOutcomeToStandard\(/),
