@@ -75,3 +75,18 @@ test('hsroc: k >= 4 reports the ML bivariate model', () => {
   const r = run(EXAMPLE).ctx.__almResults();
   assert.equal(r.model, 'bivariate-ML');
 });
+
+// Review of #589 (agy): at k = 3 the page still printed an AUC from the DL fallback's own
+// symmetric curve (0.910) - a curve of a model mada does not fit, so the number has no R
+// counterpart (mada::reitsma at k = 3 fits the bivariate model). It must be shown as not
+// available, and the export must agree with the display.
+// (The 1/99 divisor itself is mada's rule: mada:::AUC.default(function(x) rep(1, length(x)))
+// = 0.989899, R 4.6.0 / mada 0.5.12, lane audit4 run/aucsrc.R.)
+test('hsroc: k = 3 (DL fallback) shows no SROC AUC, and the export agrees', () => {
+  const p = run(EXAMPLE.split('\n').slice(0, 3).join('\n'));
+  const summary = text(p.el('summary-wrap').innerHTML), chips = text(p.el('stats-wrap').innerHTML);
+  assert.match(summary, /SROC area under curve \(AUC\) not available/, summary);
+  assert.doesNotMatch(summary, /\(AUC\) \d/, summary);
+  assert.doesNotMatch(chips, /SROC AUC \d/, chips);
+  assert.equal(p.ctx.__almResults().auc, null);
+});

@@ -158,7 +158,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (the IGLS start and BFGS optimisation of <code>mvmeta</code>; parity with <code>mada::reitsma(method = "ml")</code> on all six <code>mada</code> example datasets). The prediction region is that of <code>mada::plot.reitsma(predict = TRUE)</code> (between-study plus estimation uncertainty). For k&nbsp;=&nbsp;3 (or if the ML fit fails) the page shows a univariate DerSimonian-Laird per-margin approximation instead (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) and says so above the results: the shared engine fits the bivariate model only for k&nbsp;&ge;&nbsp;4, although <code>mada::reitsma</code> does fit k&nbsp;=&nbsp;3 (with a warning), so those values are not mada's. SROC AUC = <code>mada::AUC</code> (trapezoid over FPR 0.01–0.99). Per-study CIs are exact Clopper-Pearson (= <code>binom.test</code>). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (the IGLS start and BFGS optimisation of <code>mvmeta</code>; parity with <code>mada::reitsma(method = "ml")</code> on all six <code>mada</code> example datasets). The prediction region is that of <code>mada::plot.reitsma(predict = TRUE)</code> (between-study plus estimation uncertainty). For k&nbsp;=&nbsp;3 (or if the ML fit fails) the page shows a univariate DerSimonian-Laird per-margin approximation instead (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) and says so above the results: the shared engine fits the bivariate model only for k&nbsp;&ge;&nbsp;4, although <code>mada::reitsma</code> does fit k&nbsp;=&nbsp;3 (with a warning), so those values are not mada's. SROC AUC = <code>mada::AUC</code> (trapezoid over FPR 0.01–0.99), shown for the bivariate ML fit only. Per-study CIs are exact Clopper-Pearson (= <code>binom.test</code>). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -577,20 +577,11 @@
       var seLogDOR = Math.sqrt(Math.max(0, _vSe + _vF - 2*_cov));
       function _ciExp(v, se) { return [Math.exp(Math.log(v) - Z975*se), Math.exp(Math.log(v) + Z975*se)]; }
       var ciLRp = _ciExp(lrPos, seLogLRp), ciLRn = _ciExp(lrNeg, seLogLRn), ciDOR = _ciExp(dorVal, seLogDOR);
-      // SROC AUC. ML fit: the shared engine's mada::AUC value (Rutter-Gatsonis SROC, trapezoid
-      // over FPR = 0.01..0.99; fit.auc.rg[0]). DL fallback: the same mada grid rule applied to the
-      // fallback's symmetric curve (slope σ_Se/σ_FPR). Only when both τ² > 0.
-      var aucVal = null;
-      if (fit) {
-        aucVal = (fit.auc && Number.isFinite(fit.auc.rg[0])) ? fit.auc.rg[0] : null;
-      } else if (p.tauFPR2 > 0 && p.tauSe2 > 0) {
-        var _slope = Math.sqrt(p.tauSe2 / p.tauFPR2), _intc = p.muSe - _slope * p.muFPR, _a = 0;
-        for (var _g = 1; _g <= 99; _g++) {
-          var _fpr = _g / 100, _sv = invLogit(_intc + _slope * Math.log(_fpr / (1 - _fpr)));
-          _a += (_g === 1 || _g === 99) ? _sv / 2 : _sv;
-        }
-        aucVal = _a / 99;
-      }
+      // SROC AUC: only for the bivariate ML fit, = the shared engine's mada::AUC value
+      // (Rutter-Gatsonis SROC, mada trapezoid rule over FPR = 0.01..0.99; fit.auc.rg[0]).
+      // The DL fallback (k = 3, or a failed ML fit) has no AUC: its symmetric curve belongs to a
+      // model mada does not fit, so any number would have no R counterpart -> "not available".
+      var aucVal = (fit && fit.auc && Number.isFinite(fit.auc.rg[0])) ? fit.auc.rg[0] : null;
       var modelLine = fm.mlUsed
         ? 'Model shown: bivariate random-effects (Reitsma), maximum likelihood — <code>mada::reitsma(method = "ml")</code>.'
         : 'Model shown: univariate DerSimonian-Laird per margin (logit Se, logit FPR) with an empirical correlation — not the bivariate model. ' +
@@ -604,7 +595,8 @@
         '<tr><td>Diagnostic OR (<abbr data-gloss="DOR">DOR</abbr>)</td><td>' + fmt(dorVal, 2) + '</td><td>95% CI ' + fmt(ciDOR[0], 2) + ' to ' + fmt(ciDOR[1], 2) + '</td></tr>' +
         '<tr><td>Positive LR (LR+)</td><td>' + fmt(lrPos, 2) + '</td><td>95% CI ' + fmt(ciLRp[0], 2) + ' to ' + fmt(ciLRp[1], 2) + ' &nbsp;Se/(1-Sp)</td></tr>' +
         '<tr><td>Negative LR (LR-)</td><td>' + fmt(lrNeg, 2) + '</td><td>95% CI ' + fmt(ciLRn[0], 2) + ' to ' + fmt(ciLRn[1], 2) + ' &nbsp;(1-Se)/Sp</td></tr>' +
-        (aucVal !== null ? '<tr><td>SROC area under curve (AUC)</td><td>' + fmt(aucVal, 3) + '</td><td>' + (fm.mlUsed ? 'Rutter-Gatsonis SROC, FPR 0.01–0.99 (= <code>mada::AUC</code>).' : 'Symmetric curve of the DL fallback, FPR 0.01–0.99 (mada grid rule).') + '</td></tr>' : '') +
+        (aucVal !== null ? '<tr><td>SROC area under curve (AUC)</td><td>' + fmt(aucVal, 3) + '</td><td>Rutter-Gatsonis SROC, FPR 0.01–0.99 (= <code>mada::AUC</code>).</td></tr>'
+          : (!fm.mlUsed ? '<tr><td>SROC area under curve (AUC)</td><td>not available</td><td>Reported only for the bivariate ML fit (<code>mada::AUC</code>); the univariate DL fallback shown here has no mada counterpart.</td></tr>' : '')) +
         '</tbody></table>';
 
       // Stat chips
