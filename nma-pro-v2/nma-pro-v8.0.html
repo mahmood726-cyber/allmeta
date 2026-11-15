@@ -474,11 +474,17 @@ checkLoops(studies,treatments){const edges=new Set();studies.forEach(s=>edges.ad
 checkRareEvents(studies){let zeroCount=0;studies.forEach(s=>{if((s.events1||0)===0||(s.events2||0)===0)zeroCount++});return{hasRare:zeroCount/studies.length>0.25,zeroCount}},
 calcGeometryMetrics(studies,connectivity){const{treatments,adj}=connectivity;const n=treatments.length;const edgeSet=new Set();studies.forEach(s=>edgeSet.add([s.treatment1,s.treatment2].sort().join('|')));const m=edgeSet.size;let triangles=0,triplets=0;treatments.forEach(u=>{const nbrs=Array.from(adj[u]);for(let i=0;i<nbrs.length;i++)for(let j=i+1;j<nbrs.length;j++){triplets++;if(adj[nbrs[i]].has(nbrs[j]))triangles++}});const agglomCoef=triplets>0?(3*triangles)/triplets:0;const bfs=(start)=>{const dist={};treatments.forEach(t=>dist[t]=Infinity);dist[start]=0;const q=[start];while(q.length){const u=q.shift();for(const v of adj[u])if(dist[v]===Infinity){dist[v]=dist[u]+1;q.push(v)}}return Object.values(dist).filter(d=>d!==Infinity)};let sumDist=0,countDist=0;treatments.forEach(t=>{const dists=bfs(t);sumDist+=dists.reduce((a,b)=>a+b,0);countDist+=dists.length});const meanShortestPath=countDist>0?(sumDist/countDist).toFixed(2):0;const edgeDist=[];treatments.forEach(t=>edgeDist.push(adj[t].size));const totalDeg=edgeDist.reduce((a,b)=>a+b,0);const probs=edgeDist.map(d=>d/totalDeg);const shannon=-probs.reduce((s,p)=>p>0?s+p*Math.log(p):s,0);const maxEntropy=Math.log(n);const diversityIdx=maxEntropy>0?(shannon/maxEntropy):0;const maxEdges=(n*(n-1))/2;const directProp=m/maxEdges;const density=(2*m)/(n*(n-1));const effectiveN=Math.exp(shannon);return{agglomerationCoef:agglomCoef.toFixed(2),meanShortestPath:parseFloat(meanShortestPath),diversityIndex:diversityIdx.toFixed(2),directProportion:directProp.toFixed(2),networkDensity:density.toFixed(2),effectiveTreatments:effectiveN.toFixed(2)}}};
 
+// Display names of the small-sample corrections (lane nmapro6, 2026-11-15). The "kr" option is NOT Kenward-Roger: it
+// inflates the variance by max(1, 1 + (Q - df)/(df + 2)) and uses t on a reduced network df, floor(df / (1 + 0.5 (Q/df
+// - 1))) -- an ad hoc rule with no likelihood-based df. Until 2026-11-15 the UI, the methods text and the exports called
+// it "Kenward-Roger". The option value stays "kr" so saved sessions still load.
+var CORRECTION_LABELS={none:'None',hksj:'HKSJ',kr:'t on network df (ad hoc)',sj:'Sidik-Jonkman (SJ)',mkh:'Modified KH (mKH)'};
+var CORRECTION_LONG={hksj:'Hartung-Knapp-Sidik-Jonkman (HKSJ)',kr:'ad hoc variance inflation max(1, 1 + (Q - df)/(df + 2)) with a t quantile on a reduced network df (an ad hoc rule, not the Kenward-Roger method)',sj:'Sidik-Jonkman',mkh:'modified Knapp-Hartung'};
 const FrequentistNMA={
 analyze(studies,options={}){const{reference,effectMeasure='OR',estimator='REML',smallStudyCorrection='hksj',predictionIntervals=true,zeroCellCorrection='haldane',mkhFloor=2.0}=options;
 this.assertZeroCellOption(studies,effectMeasure,zeroCellCorrection);// a row whose effect is not computable (yi or vi not finite, e.g. counts without n) is left out, as netmeta leaves out
 // "comparisons with missing TE / seTE"; until 2026-11-15 it entered the fit as NaN, which the old LU silently skipped past
-const allRows=this.calcEffects(studies,effectMeasure,zeroCellCorrection);const processed=allRows.filter(s=>s.yi!==null&&Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi)));const notComputable=allRows.filter(s=>s.yi!==null&&!(Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi)))).map(s=>String(s.name??''));this.assertConnected(processed,reference);const matrices=this.buildMatrices(processed,reference,{effectMeasure,zeroCellCorrection});const tau2Result=this.estimateTau2(matrices,estimator);const effects=this.calcTreatmentEffects(matrices,tau2Result.tau2,smallStudyCorrection,mkhFloor);const heterogeneity=this.calcHeterogeneity(matrices,tau2Result.tau2);
+const allRows=this.calcEffects(studies,effectMeasure,zeroCellCorrection);const ok=s=>Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi));const processed=allRows.filter(s=>s.yi!==null&&ok(s));const dropped=allRows.filter(s=>s.yi!==null&&!ok(s));const notComputable=dropped.map(s=>String(s.name??''));const notComputableDetail=dropped.map(s=>({name:String(s.name??''),treatment1:String(s.treatment1??''),treatment2:String(s.treatment2??''),reason:s.notComputableReason||'effect not computable'}));this.assertConnected(processed,reference);const matrices=this.buildMatrices(processed,reference,{effectMeasure,zeroCellCorrection});const tau2Result=this.estimateTau2(matrices,estimator);const effects=this.calcTreatmentEffects(matrices,tau2Result.tau2,smallStudyCorrection,mkhFloor);const heterogeneity=this.calcHeterogeneity(matrices,tau2Result.tau2);
 if(predictionIntervals)this.addPredictionIntervals(effects,tau2Result.tau2,matrices);const leagueTable=this.buildLeagueTable(effects,matrices.treatments,reference,effectMeasure);
 
 // modelSelection is computed on first read (it needs the REML / ML fit, which leave-one-out style callers never use).
@@ -488,7 +494,7 @@ if(predictionIntervals)this.addPredictionIntervals(effects,tau2Result.tau2,matri
 // tau2 and heterogeneity) no longer pay for them -- about a quarter of each refit's fitGLS calls (lane nmapro6,
 // 2026-11-15). None of the three can throw (each guards its own fits), so deferring them changes no failure count.
 // The placeholders keep the keys in their old order, so a saved session's JSON is unchanged.
-const out={notComputable,effects,heterogeneity,leagueTable,consistency:null,consistencySummary:null,tau2:tau2Result.tau2,tau:Math.sqrt(tau2Result.tau2),tau2CI:null,pmCI:null,treatments:matrices.treatments,reference,processed,matrices};const lazy=(key,make)=>{let has=false,val;Object.defineProperty(out,key,{enumerable:true,configurable:true,get(){if(!has){val=make();has=true}return val},set(v){val=v;has=true}})};const tau2Hat=tau2Result.tau2,dbt=heterogeneity?.designByTreatment||null;lazy('consistency',()=>this.nodeSplitting(processed,matrices,tau2Hat));lazy('consistencySummary',()=>this.summarizeInconsistency(out.consistency,dbt));lazy('tau2CI',()=>this.profileLikelihoodCI(matrices,tau2Hat,estimator));lazy('pmCI',()=>this.pauleMandel_CI(matrices,tau2Hat));let msCache;Object.defineProperty(out,'modelSelection',{enumerable:true,configurable:true,get(){if(msCache===undefined){try{msCache=ModelSelection.compareModels(matrices,estimator,tau2Result.tau2)}catch(e){msCache=null}}return msCache},set(v){msCache=v}});return out},
+const out={notComputable,notComputableDetail,effects,heterogeneity,leagueTable,consistency:null,consistencySummary:null,tau2:tau2Result.tau2,tau:Math.sqrt(tau2Result.tau2),tau2CI:null,pmCI:null,treatments:matrices.treatments,reference,processed,matrices};const lazy=(key,make)=>{let has=false,val;Object.defineProperty(out,key,{enumerable:true,configurable:true,get(){if(!has){val=make();has=true}return val},set(v){val=v;has=true}})};const tau2Hat=tau2Result.tau2,dbt=heterogeneity?.designByTreatment||null;lazy('consistency',()=>this.nodeSplitting(processed,matrices,tau2Hat));lazy('consistencySummary',()=>this.summarizeInconsistency(out.consistency,dbt));lazy('tau2CI',()=>this.profileLikelihoodCI(matrices,tau2Hat,estimator));lazy('pmCI',()=>this.pauleMandel_CI(matrices,tau2Hat));let msCache;Object.defineProperty(out,'modelSelection',{enumerable:true,configurable:true,get(){if(msCache===undefined){try{msCache=ModelSelection.compareModels(matrices,estimator,tau2Result.tau2)}catch(e){msCache=null}}return msCache},set(v){msCache=v}});return out},
 // Connectivity (netmeta 3.7.0 stops on a disconnected network: "Network consists of k separate sub-networks"). The
 // treatments not reachable from the reference (or, with no reference, from the first treatment) are not identified:
 // throw naming them. Until 2026-11-15 nothing checked this on the engine path (leave-one-out, influence and any
@@ -518,7 +524,10 @@ calcEffects(studies,effectMeasure,zeroCellCorrection='haldane'){
 // ALL its arms, as netmeta's pairwise() does; until 2026-11-14 only the rows touching the zero arm were corrected, so
 // the study's contrasts were not consistent (TE(A-B) uncorrected, TE(A-C), TE(B-C) corrected) and differed from R.
 const zeroStudy=new Set();{const by=new Map();studies.forEach(s=>{const id=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():null;if(id===null)return;if(!by.has(id))by.set(id,[]);by.get(id).push(s)});by.forEach((rows,id)=>{if(new Set(rows.map(r=>[String(r.treatment1),String(r.treatment2)].sort().join('|'))).size<2)return;if(rows.some(r=>{const e1=r.events1||0,e2=r.events2||0;return Number.isFinite(Number(r.n1))&&Number.isFinite(Number(r.n2))&&(e1===0||e2===0||(r.n1-e1)===0||(r.n2-e2)===0)}))zeroStudy.add(id)})}
-return studies.map(s=>{let yi,vi;const directYi=Number(s?.yi);const directVi=Number(s?.vi);const directSe=Number(s?.se);if(Number.isFinite(directYi)&&((Number.isFinite(directVi)&&directVi>0)||(Number.isFinite(directSe)&&directSe>0))){yi=directYi;vi=Number.isFinite(directVi)&&directVi>0?directVi:directSe**2}else if(['OR','RR','HR'].includes(effectMeasure)){const e1=s.events1||0,e2=s.events2||0,n1=s.n1,n2=s.n2;const hasZero=e1===0||e2===0||(n1-e1)===0||(n2-e2)===0||(s&&s.name!=null&&zeroStudy.has(String(s.name).trim()));const isDoubleZero=(e1===0&&e2===0)||((n1-e1)===0&&(n2-e2)===0);
+// A value is a number only if it is a finite number or a non-blank numeric string: '' / null / undefined are MISSING,
+// not 0 (Number('') === 0, so a blank TE with an SE entered as TE = 0; lane nmapro6, 2026-11-15).
+const num=v=>{if(typeof v==='number')return Number.isFinite(v)?v:NaN;if(typeof v!=='string'||v.trim()==='')return NaN;const x=Number(v.trim());return Number.isFinite(x)?x:NaN};
+return studies.map(s=>{let yi,vi,why=null;const directYi=num(s?.yi);const directVi=num(s?.vi);const directSe=num(s?.se);if(Number.isFinite(directYi)&&((Number.isFinite(directVi)&&directVi>0)||(Number.isFinite(directSe)&&directSe>0))){yi=directYi;vi=Number.isFinite(directVi)&&directVi>0?directVi:directSe**2}else if(['OR','RR','HR'].includes(effectMeasure)){const e1=s.events1||0,e2=s.events2||0,n1=s.n1,n2=s.n2;const hasZero=e1===0||e2===0||(n1-e1)===0||(n2-e2)===0||(s&&s.name!=null&&zeroStudy.has(String(s.name).trim()));const isDoubleZero=(e1===0&&e2===0)||((n1-e1)===0&&(n2-e2)===0);
 // Skip double-zero studies if using exclusion method
 if(isDoubleZero&&zeroCellCorrection==='exclude'){return{...s,yi:null,vi:null,se:null,excluded:true,reason:'Double-zero'}}
 // Calculate continuity correction
@@ -534,9 +543,22 @@ const a=e1+cc,b=(n1-e1)+cc,c=e2+cc,d=(n2-e2)+cc;if(effectMeasure==='OR'||effectM
 // RR as meta::metabin's default (RR.Cochrane = FALSE, the convention netmeta's pairwise() inherits): the increment is
 // added to the events and ONCE to n. Until 2026-11-14 both engines used n + 2*incr (metabin RR.Cochrane = TRUE, RevMan).
 const m1=n1+cc,m2=n2+cc;yi=Math.log((a/m1)/(c/m2));vi=1/a-1/m1+1/c-1/m2}}else if(effectMeasure==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;// until 2026-11-15 only the rows touching the zero arm got the increment (OR/RR/HR had the all-arm rule, RD not)
-vi=rdVariance(s.events1||0,s.n1,s.events2||0,s.n2,!!(s&&s.name!=null&&zeroStudy.has(String(s.name).trim())))}else if(effectMeasure==='SMD'){const n1=s.n1,n2=s.n2;if(!s.sd1||!s.sd2||s.sd1<=0||s.sd2<=0){yi=0;vi=1}else{const pooledSD=Math.sqrt(((n1-1)*s.sd1**2+(n2-1)*s.sd2**2)/(n1+n2-2)),d=((s.mean1||0)-(s.mean2||0))/pooledSD,j=1-3/(4*(n1+n2-2)-1);yi=d*j;
+vi=rdVariance(s.events1||0,s.n1,s.events2||0,s.n2,!!(s&&s.name!=null&&zeroStudy.has(String(s.name).trim())))}else if(effectMeasure==='SMD'){const n1=num(s.n1),n2=num(s.n2),m1=num(s.mean1),m2=num(s.mean2),sd1=num(s.sd1),sd2=num(s.sd2);
+// No usable SMD (a mean, SD or n missing, an SD <= 0, or n1 + n2 <= 2): not computable, so analyze() leaves the row
+// out and lists it (netmeta / pairwise give such a comparison TE = NA and drop it). Until 2026-11-15 it entered the
+// network as yi = 0, vi = 1, and a missing mean as 0.
+if(!(Number.isFinite(m1)&&Number.isFinite(m2)&&sd1>0&&sd2>0&&n1>0&&n2>0&&n1+n2>2)){yi=NaN;vi=NaN;why='SMD needs mean, SD > 0 and n in both arms'}else{const pooledSD=Math.sqrt(((n1-1)*sd1**2+(n2-1)*sd2**2)/(n1+n2-2)),d=(m1-m2)/pooledSD,j=1-3/(4*(n1+n2-2)-1);yi=d*j;
 // Hedges exact variance formula
-const df=n1+n2-2;const c4=1-3/(4*df-1);const exactVar=(n1+n2)/(n1*n2)+(yi*yi)/(2*df)*(1-c4*c4);vi=exactVar}}else{yi=s.yi||0;vi=s.vi||1}return{...s,yi,vi,se:Math.sqrt(vi)}})},
+const df=n1+n2-2;const c4=1-3/(4*df-1);const exactVar=(n1+n2)/(n1*n2)+(yi*yi)/(2*df)*(1-c4*c4);vi=exactVar}}else if(effectMeasure==='MD'){
+// MD from arm data as meta::metacont / netmeta pairwise(sm = "MD"): TE = mean1 - mean2, var = sd1^2/n1 + sd2^2/n2.
+// No direct TE / SE and incomplete arm data: not computable (dropped and listed). Until 2026-11-15 every MD row
+// without a direct effect, complete or not, entered the network as yi = 0, vi = 1.
+const n1=num(s.n1),n2=num(s.n2),m1=num(s.mean1),m2=num(s.mean2),sd1=num(s.sd1),sd2=num(s.sd2);if(Number.isFinite(m1)&&Number.isFinite(m2)&&sd1>0&&sd2>0&&n1>0&&n2>0){yi=m1-m2;vi=sd1**2/n1+sd2**2/n2}else{yi=NaN;vi=NaN;why='MD needs a TE with SE > 0, or mean, SD > 0 and n in both arms'}}else{yi=NaN;vi=NaN;why='no TE with SE > 0'}
+if(why===null&&!(Number.isFinite(yi)&&Number.isFinite(vi)))why=['OR','RR','HR','RD'].includes(effectMeasure)?'events / n missing or invalid':'effect not computable';
+return why===null?{...s,yi,vi,se:Math.sqrt(vi)}:{...s,yi,vi,se:Math.sqrt(vi),notComputableReason:why}})},
+// The rows of calcEffects with a usable effect (yi finite, vi finite and > 0), for modules that pool rows directly;
+// an excluded (double-zero) or not-computable row is left out, as analyze() does.
+usableEffects(studies,effectMeasure,zeroCellCorrection){return this.calcEffects(studies,effectMeasure,zeroCellCorrection).filter(s=>s&&s.yi!==null&&Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi)))},
 buildMatrices(studies,reference,options={}){const effectMeasure=options.effectMeasure||'OR';const zeroCellCorrection=options.zeroCellCorrection||'haldane';const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort();const refIdx=treatments.indexOf(reference);if(refIdx>0){treatments.splice(refIdx,1);treatments.unshift(reference)}const n=studies.length,p=treatments.length-1,X=Matrix.zeros(n,p),y=[],v=[];studies.forEach((s,i)=>{y.push(s.yi);const vi0=Number(s.vi);v.push(Number.isFinite(vi0)&&vi0>0?vi0:NMA_CONSTANTS.VARIANCE_FLOOR);const i1=treatments.indexOf(s.treatment1)-1,i2=treatments.indexOf(s.treatment2)-1;if(i1>=0)X[i][i1]=1;if(i2>=0)X[i][i2]=-1});const V=Matrix.zeros(n,n);for(let i=0;i<n;i++)V[i][i]=v[i];
 if(['OR','RR','HR'].includes(effectMeasure)){const byStudy=new Map();studies.forEach((s,i)=>{const key=s.name&&String(s.name).trim()?String(s.name).trim():`__row_${i}`;if(!byStudy.has(key))byStudy.set(key,[]);byStudy.get(key).push({idx:i,study:s})});const calcCC=(eVal,nVal)=>{const hasZero=eVal===0||eVal===nVal;let cc=0;if(hasZero){if(zeroCellCorrection==='haldane')cc=0.5;else if(zeroCellCorrection==='tacc')cc=0.5;else if(zeroCellCorrection==='reciprocal')cc=1/(2*Math.max(1,nVal));else if(zeroCellCorrection==='sweeting')cc=0.5;else if(zeroCellCorrection==='none')cc=0.001;else cc=0.5}return cc};
 byStudy.forEach(group=>{if(group.length<2)return;const studyZero=group.some(({study:st})=>{const e1=st.events1||0,e2=st.events2||0;return e1===0||e2===0||(st.n1-e1)===0||(st.n2-e2)===0});const armVarRaw=new Map();group.forEach(({study})=>{const addArm=(trt,e,n)=>{const nVal=Number(n);if(!trt||!Number.isFinite(nVal)||nVal<=0)return;const eRaw=Number(e);const eVal=Number.isFinite(eRaw)?Math.max(0,Math.min(nVal,eRaw)):0;const cc=calcCC(studyZero?0:eVal,nVal);const a=eVal+cc,b=(nVal-eVal)+cc;if(!(a>0&&b>0))return;const armV=effectMeasure==='RR'?1/a-1/(nVal+cc):1/a+1/b;// RR: var log risk (netmeta pairwise); until 2026-11-14 the log-odds variance
@@ -780,7 +802,7 @@ buildLeagueTable(effectsResult,treatments,reference,effectMeasure){const{effects
 const BayesianNMA={
 analyze(studies,options={}){
 const{reference,effectMeasure='OR',nChains=4,nIter=2000,burnin=400,thin=2,priorTau={type:'halfnormal',scale:0.5},betaPriorSD=null,seed,modelType='random',ppcReplicates=400,backendProfile='nmapro',likelihood='normal',studentTdf=7,customSpec=null}=options;
-const processed=FrequentistNMA.calcEffects(studies,effectMeasure);
+const processed=FrequentistNMA.usableEffects(studies,effectMeasure);
 // effectMeasure decides the multi-arm arm variance (RR: 1/e - 1/n); until 2026-11-14 it was omitted, so RR got the OR formula
 const matrices=FrequentistNMA.buildMatrices(processed,reference,{effectMeasure});
 let{X,y,v,n,p,treatments,studies:matrixStudies=[]}=matrices;
@@ -1142,7 +1164,7 @@ plainLanguage:warnings.length>0?
 
 const CrossValidationI2={
 analyze(studies,options={}){const{effectMeasure='OR',kFolds=5,nReps=15}=options;
-const processed=FrequentistNMA.calcEffects(studies,effectMeasure);const n=processed.length;if(n<10)return{applicable:false,message:'Need =10 studies'};
+const processed=FrequentistNMA.usableEffects(studies,effectMeasure);const n=processed.length;if(n<10)return{applicable:false,message:'Need =10 studies'};
 let cvI2Values=[],apparentI2Values=[];for(let rep=0;rep<nReps;rep++){const shuffled=[...processed].sort(()=>MainRNG.random()-0.5);const foldSize=Math.ceil(n/kFolds);let cvResiduals=[];
 for(let fold=0;fold<kFolds;fold++){const testStart=fold*foldSize,testEnd=Math.min((fold+1)*foldSize,n);const train=shuffled.filter((_,i)=>i<testStart||i>=testEnd);const test=shuffled.slice(testStart,testEnd);if(train.length<3)continue;
 const trainY=train.map(s=>s.yi),trainW=train.map(s=>1/s.vi);const pooled=Stats.sum(trainY.map((y,i)=>trainW[i]*y))/Stats.sum(trainW);test.forEach(s=>{cvResiduals.push((s.yi-pooled)**2/s.vi)})}
@@ -1168,7 +1190,7 @@ interpret(gIndex,pBias){if(gIndex>0.8&&pBias.risk==='Low')return'Good transporta
 const CumulativeNMA={
 analyze(studies,options={}){const{effectMeasure='OR'}=options;const sorted=[...studies].sort((a,b)=>(a.year||2000)-(b.year||2000));const cumulative=[];let runningStudies=[];
 sorted.forEach(study=>{runningStudies.push(study);if(runningStudies.length<2)return;
-try{const processed=FrequentistNMA.calcEffects(runningStudies,effectMeasure);const y=processed.map(s=>s.yi),v=processed.map(s=>s.vi),w=v.map(vi=>1/vi);const pooled=Stats.sum(y.map((yi,i)=>w[i]*yi))/Stats.sum(w);const se=Math.sqrt(1/Stats.sum(w));
+try{const processed=FrequentistNMA.usableEffects(runningStudies,effectMeasure);const y=processed.map(s=>s.yi),v=processed.map(s=>s.vi),w=v.map(vi=>1/vi);const pooled=Stats.sum(y.map((yi,i)=>w[i]*yi))/Stats.sum(w);const se=Math.sqrt(1/Stats.sum(w));
 cumulative.push({year:study.year||2000,nStudies:runningStudies.length,estimate:pooled,se,ci:[pooled-NMA_CONSTANTS.Z_95*se,pooled+NMA_CONSTANTS.Z_95*se],studyAdded:study.name})}catch(e){console.warn('Cumulative analysis error at study',study.name,':',e.message)}});
 const firstSig=cumulative.find(c=>c.ci[0]>0||c.ci[1]<0);return{cumulative,firstSignificant:firstSig||null,interpretation:`${cumulative.length} cumulative analyses${firstSig?`. First sig: ${firstSig.year}`:''}`}}};
 
@@ -1185,12 +1207,12 @@ rank(effectsResult,treatments,direction='lower',options={}){const pScores=this.c
 
 const CNMA={
 analyze(studies,options={}){const{separator='+',effectMeasure='OR'}=options;const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort();const hasCombinations=treatments.some(t=>t.includes(separator));if(!hasCombinations)return{applicable:false,message:'No combination treatments. CNMA requires treatments with separator (e.g., DrugA+DrugB)'};const components=new Set(),treatmentComponents={};treatments.forEach(t=>{const parts=t.split(separator).map(p=>p.trim()).filter(p=>p);treatmentComponents[t]=parts;parts.forEach(p=>components.add(p))});const compList=Array.from(components).sort();if(compList.length<2)return{applicable:false,message:'Need multiple components'};
-const processed=FrequentistNMA.calcEffects(studies,effectMeasure);const n=processed.length,X=[];processed.forEach(s=>{const c1=treatmentComponents[s.treatment1]||[s.treatment1],c2=treatmentComponents[s.treatment2]||[s.treatment2];X.push(compList.map(c=>(c1.includes(c)?1:0)-(c2.includes(c)?1:0)))});
+const processed=FrequentistNMA.usableEffects(studies,effectMeasure);const n=processed.length,X=[];processed.forEach(s=>{const c1=treatmentComponents[s.treatment1]||[s.treatment1],c2=treatmentComponents[s.treatment2]||[s.treatment2];X.push(compList.map(c=>(c1.includes(c)?1:0)-(c2.includes(c)?1:0)))});
 const y=processed.map(s=>s.yi),v=processed.map(s=>s.vi),W=v.map(vi=>1/vi),p=compList.length;const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}
 try{const beta=Matrix.solve(XtWX,XtWy),vcov=Matrix.inverse(XtWX);const componentEffects=compList.map((c,i)=>({component:c,estimate:beta[i],se:Math.sqrt(vcov[i][i]),ci_lower:beta[i]-getCritVal(0.95)*Math.sqrt(vcov[i][i]),ci_upper:beta[i]+getCritVal(0.95)*Math.sqrt(vcov[i][i]),pValue:2*(Stats.pnormU(Math.abs(beta[i]/Math.sqrt(vcov[i][i]))))}));let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return{applicable:true,components:compList,componentEffects,heterogeneity:{Q,df:n-p,I2:Math.max(0,((Q-(n-p))/Q)*100)}}}catch(e){return{applicable:false,message:'CNMA failed'}}}};
 
 const NetworkMetaRegression={
-analyze(studies,covariate,options={}){const{effectMeasure='OR'}=options;if(!covariate||studies.some(s=>s[covariate]===undefined))return{applicable:false,message:'Covariate incomplete'};const processed=FrequentistNMA.calcEffects(studies,effectMeasure);const x=processed.map(s=>s[covariate]),y=processed.map(s=>s.yi),v=processed.map(s=>s.vi),xMean=Stats.mean(x),xC=x.map(xi=>xi-xMean),n=processed.length,W=v.map(vi=>1/vi);let tau2=0;
+analyze(studies,covariate,options={}){const{effectMeasure='OR'}=options;if(!covariate||studies.some(s=>s[covariate]===undefined))return{applicable:false,message:'Covariate incomplete'};const processed=FrequentistNMA.usableEffects(studies,effectMeasure);const x=processed.map(s=>s[covariate]),y=processed.map(s=>s.yi),v=processed.map(s=>s.vi),xMean=Stats.mean(x),xC=x.map(xi=>xi-xMean),n=processed.length,W=v.map(vi=>1/vi);let tau2=0;
 for(let iter=0;iter<50;iter++){const Ws=W.map((w,i)=>1/(v[i]+tau2));const XtWX=[[0,0],[0,0]],XtWy=[0,0];for(let i=0;i<n;i++){XtWy[0]+=Ws[i]*y[i];XtWy[1]+=xC[i]*Ws[i]*y[i];XtWX[0][0]+=Ws[i];XtWX[0][1]+=xC[i]*Ws[i];XtWX[1][0]+=xC[i]*Ws[i];XtWX[1][1]+=xC[i]*xC[i]*Ws[i]}const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++)Q+=Ws[i]*(y[i]-beta[0]-beta[1]*xC[i])**2;const newTau2=Math.max(0,tau2*(Q/(n-2)));if(Math.abs(newTau2-tau2)<1e-6)break;tau2=newTau2}
 const Ws=W.map((w,i)=>1/(v[i]+tau2));const XtWX=[[0,0],[0,0]],XtWy=[0,0];for(let i=0;i<n;i++){XtWy[0]+=Ws[i]*y[i];XtWy[1]+=xC[i]*Ws[i]*y[i];XtWX[0][0]+=Ws[i];XtWX[0][1]+=xC[i]*Ws[i];XtWX[1][0]+=xC[i]*Ws[i];XtWX[1][1]+=xC[i]*xC[i]*Ws[i]}const beta=Matrix.solve(XtWX,XtWy),vcov=Matrix.inverse(XtWX);const slope=beta[1],slopeSE=Math.sqrt(vcov[1][1]);return{applicable:true,covariate,intercept:beta[0],slope,slopeSE,slopeCI:[slope-getCritVal(0.95)*slopeSE,slope+getCritVal(0.95)*slopeSE],slopePValue:2*(Stats.pnormU(Math.abs(slope/slopeSE))),tau2,R2:0,data:processed.map((s,i)=>({study:s.name,x:x[i],y:y[i],se:Math.sqrt(v[i])})),xMean}},
 categoricalAnalysis(studies,covariate,options={}){const{effectMeasure='OR',reference}=options;if(!covariate||studies.some(s=>s[covariate]===undefined||s[covariate]===''))return{applicable:false,message:'Categorical covariate incomplete or missing values'};
@@ -1205,7 +1227,7 @@ const validSubgroups=subgroupResults.filter(r=>r.applicable);if(validSubgroups.l
 const pooledMean=validSubgroups.reduce((s,g)=>{const w=1/(g.se*g.se);return s+w*g.estimate},0)/validSubgroups.reduce((s,g)=>s+1/(g.se*g.se),0);
 let Qbetween=0;validSubgroups.forEach(g=>{const w=1/(g.se*g.se);Qbetween+=w*Math.pow(g.estimate-pooledMean,2)});
 const dfBetween=validSubgroups.length-1;const pQbetween=dfBetween>0?Stats.pchisqU(Qbetween,dfBetween):1;
-const processed=FrequentistNMA.calcEffects(studies,effectMeasure);const Qtotal=processed.reduce((sum,s)=>sum+s.yi*s.yi/s.vi,0)-Math.pow(processed.reduce((sum,s)=>sum+s.yi/s.vi,0),2)/processed.reduce((sum,s)=>sum+1/s.vi,0);
+const processed=FrequentistNMA.usableEffects(studies,effectMeasure);const Qtotal=processed.reduce((sum,s)=>sum+s.yi*s.yi/s.vi,0)-Math.pow(processed.reduce((sum,s)=>sum+s.yi/s.vi,0),2)/processed.reduce((sum,s)=>sum+1/s.vi,0);
 return{applicable:true,covariate,reference:resolvedReference,selectedComparator,comparison:`${selectedComparator} vs ${resolvedReference}`,subgroupResults,Qwithin,dfWithin,Qbetween,dfBetween,pQbetween,Qtotal,interpretation:pQbetween<0.05?'Significant subgroup differences':'No significant subgroup differences',significantDifference:pQbetween<0.05}}};
 
 const CINeMA={
@@ -2465,7 +2487,7 @@ exportFingerprint(){
 if(!AppState.results){Toast.show('Run analysis first', "warn");return;}
 const payload={studies:AppState.studies,options:{reference:AppState.reference,effectMeasure:AppState.effectMeasure,estimator:AppState.estimator,smallStudyCorrection:AppState.smallStudyCorrection,predictionIntervals:AppState.predictionIntervals},timestamp:new Date().toISOString()};
 const id=this.hash(payload);
-const content=`NMA Pro v8.1 Fingerprint\nID: ${id}\nGenerated: ${payload.timestamp}\nStudies: ${AppState.studies.length}\nTreatments: ${AppState.results.treatments.length}\nReference: ${AppState.reference}\nEffect Measure: ${AppState.effectMeasure}\nEstimator: ${AppState.estimator}\nSmall-study correction: ${AppState.smallStudyCorrection}\nPrediction intervals: ${AppState.predictionIntervals}\n`;
+const content=`NMA Pro v8.1 Fingerprint\nID: ${id}\nGenerated: ${payload.timestamp}\nStudies: ${AppState.studies.length}\nTreatments: ${AppState.results.treatments.length}\nReference: ${AppState.reference}\nEffect Measure: ${AppState.effectMeasure}\nEstimator: ${AppState.estimator}\nSmall-study correction: ${CORRECTION_LABELS[AppState.smallStudyCorrection]??AppState.smallStudyCorrection}\nPrediction intervals: ${AppState.predictionIntervals}\n`;
 const blob=new Blob([content],{type:'text/plain'});
 const url=URL.createObjectURL(blob);
 const a=document.createElement('a');
@@ -2717,7 +2739,7 @@ return results;
 //    reciprocal / sweeting have no netmeta equivalent (stated, parity off).
 //  * method.tau: DL / ML / REML as the page; PM is not in netmeta: the export fixes tau2 at the page's PM value
 //    (tau.preset) and says so, the benchmark refuses to claim parity. FE -> common = TRUE, random = FALSE.
-//  * HKSJ / mKH / SJ / KR intervals: netmeta 3.7.0 has no variance-scaled interval (method.random.ci is "classic" or
+//  * HKSJ / mKH / SJ / ad hoc network-df t intervals: netmeta 3.7.0 has no variance-scaled interval (method.random.ci is "classic" or
 //    "t-dist"); the script reproduces tau2, Q, the estimates and SEs before the correction, and says so.
 const RScriptBuilder={
 // a value is a number only if it is a finite number or a non-blank numeric string ('' / null / true are NOT 0)
@@ -2755,8 +2777,8 @@ const multiArm=(()=>{const by=new Map();studies.forEach(s=>{const id=s&&s.name!=
 // REML: netmeta 0.10105, page 0.09992 = rma.mv). The export then adds net.page with tau2 fixed at the page's value.
 const exactNote=multiArm&&(est==='REML'||est==='ML');let pageFit='';
 if(exactNote){const t=Number(options.tau2);notes.push(`netmeta's ${est} treats the contrasts of a multi-arm study as independent (its ${est} uses V = seTE^2); the page maximises the exact likelihood WITH the multi-arm covariance (as metafor rma.mv), so net$tau^2 differs from the page`+(options.mode!=='benchmark'&&Number.isFinite(t)?'; net.page fixes tau2 at the page\'s value and reproduces its estimates and SEs':''));if(options.mode==='benchmark')reproducible=false;else if(Number.isFinite(t))pageFit=`\n# the page's analysis: tau2 fixed at its exact-likelihood ${est} value\nnet.page <- netmeta(TE, seTE, treat1, treat2, studlab, data = p1, sm = ${this.str(smR)},\n               reference.group = ${this.str(options.reference||'')}, common = FALSE, random = TRUE, tau.preset = sqrt(${this.num(t)}),\n               level = ${level}, level.ma = ${level})\n`}
-if(corr!=='none'&&est!=='FE')notes.push(`the page's "${corr}" small-sample correction scales the variance (HKSJ: by max(1, Q/df.Q)) and uses t on df.Q; netmeta 3.7.0 has no such interval, so the CIs / p-values below are the uncorrected ones (tau2, Q, estimates and SEs before the correction are comparable)`);
-const head=`# NMA Pro v8.1 - R netmeta script reproducing the page's analysis\n# effect measure ${em}, estimator ${est}, zero-cell ${zc}, correction ${corr}, level ${level}\n`+(notes.length?notes.map(n=>'# NOTE: '+n).join('\n')+'\n':'')+`library(netmeta)\n\n`;
+if(corr!=='none'&&est!=='FE')notes.push(`the page's "${corr==='kr'?'kr: t on network df (ad hoc), not Kenward-Roger':corr}" small-sample correction scales the variance (HKSJ: by max(1, Q/df.Q)) and uses t on df.Q; netmeta 3.7.0 has no such interval, so the CIs / p-values below are the uncorrected ones (tau2, Q, estimates and SEs before the correction are comparable)`);
+const head=`# NMA Pro v8.1 - R netmeta script reproducing the page's analysis\n# effect measure ${em}, estimator ${est}, zero-cell ${zc}, correction ${corr==='kr'?'kr (t on network df, ad hoc; not Kenward-Roger)':corr}, level ${level}\n`+(notes.length?notes.map(n=>'# NOTE: '+n).join('\n')+'\n':'')+`library(netmeta)\n\n`;
 if(tauArg===null){code+=`stop(${this.str('No parity run: '+notes[notes.length-1])})\n`;return{code:head+code,notes,reproducible,kind}}
 code+=`\nnet <- netmeta(TE, seTE, treat1, treat2, studlab, data = p1, sm = ${this.str(smR)},\n               reference.group = ${this.str(options.reference||'')}, ${tauArg},\n               level = ${level}, level.ma = ${level})\n`+pageFit;
 return{code:head+code,notes,reproducible,kind}},
@@ -3180,7 +3202,7 @@ const HierarchicalRCTObs={
 description:'Include non-randomized evidence with bias adjustment',
 analyze(rctStudies,obsStudies,options={}){
 const{reference,effectMeasure='OR',biasAdjustment='hierarchical',priorBias={mean:0,sd:0.5}}=options;
-const rctProcessed=FrequentistNMA.calcEffects(rctStudies,effectMeasure);const obsProcessed=FrequentistNMA.calcEffects(obsStudies,effectMeasure);
+const rctProcessed=FrequentistNMA.usableEffects(rctStudies,effectMeasure);const obsProcessed=FrequentistNMA.usableEffects(obsStudies,effectMeasure);
 const results={rctOnly:{},combined:{},biasEstimates:{},sensitivity:{},nRCT:rctProcessed.length,nObs:obsProcessed.length};
 if(rctProcessed.length>=2){const rctResult=FrequentistNMA.analyze(rctStudies,{reference,effectMeasure,estimator:'REML',smallStudyCorrection:'hksj'});results.rctOnly={effects:rctResult.effects,heterogeneity:rctResult.heterogeneity,nStudies:rctProcessed.length}}
 const adjustedObs=obsProcessed.map(s=>{const biasVariance=priorBias.sd*priorBias.sd;return{...s,vi:s.vi+biasVariance,studyType:'observational',biasAdjusted:true}});
@@ -3854,7 +3876,7 @@ const reference=options.reference;
 const estimator=options.estimator||'REML';
 const alpha=options.alpha||0.05;
 if(!studies||studies.length<4)return{applicable:false,message:'Need at least 4 studies for forward search'};
-const processed=FrequentistNMA.calcEffects(studies,effectMeasure);
+const processed=FrequentistNMA.usableEffects(studies,effectMeasure);
 if(!processed||processed.length<4)return{applicable:false,message:'Insufficient valid studies'};
 let fullResult;
 try{fullResult=FrequentistNMA.analyze(studies,{effectMeasure,estimator,reference});}catch(e){return{applicable:false,message:'NMA analysis failed: '+e.message};}
@@ -6677,7 +6699,7 @@ let text=`A frequentist network meta-analysis was conducted using the ${estimato
 text+=` Treatment effects were expressed as ${emLabel} with ${confPct}% confidence intervals.`;
 const correction=AppState.smallStudyCorrection;
 if(correction&&correction!=='none'){
-const corrLabel={hksj:'Hartung-Knapp-Sidik-Jonkman (HKSJ)',kr:'Kenward-Roger',sj:'Sidik-Jonkman',mkh:'modified Knapp-Hartung'}[correction]??correction;
+const corrLabel=CORRECTION_LONG[correction]??correction;
 text+=` The ${corrLabel} correction was applied to account for uncertainty in the heterogeneity estimate.`;
 }
 text+=` Treatment rankings were derived from P-scores (frequentist analog of SUCRA) based on ${AppState.rankingSimulations??2000} Monte Carlo simulations.`;
@@ -7045,7 +7067,7 @@ init(){document.addEventListener('click',e=>{if(!e.target.closest('.download-dro
 function toggleTheme(){const html=document.documentElement,curr=html.getAttribute('data-theme'),next=curr==='light'?'dark':'light';html.setAttribute('data-theme',next);document.getElementById('themeIcon').textContent=next==='light'?'☀️':'🌙';localStorage.setItem('nma-pro-theme',next);if(AppState.results)setTimeout(()=>{refreshAllPlots()},100)}
 // Redraw saved results without refitting; include both cumulative and classic ranking plots.
 function refreshAllPlots(){if(!AppState.results)return;const r=AppState.results;renderNetworkGraph(AppState.studies,r.treatments);renderForestPlot(r);renderCaterpillarPlot(r);if(Array.isArray(AppState.ranking)&&AppState.ranking.length>0){renderRankingTable(AppState.ranking);renderRankogram(AppState.ranking);renderSUCRACurves(AppState.ranking);renderRankProbMatrix(AppState.ranking)}if(r.heterogeneity)renderFunnelPlot(r);if(r.consistency){renderConsistencyResults(r.consistency);renderConsistencyPlot(r.consistency)}if(AppState.contributionMatrix&&AppState.contributionMatrix.applicable)renderContributionMatrix(AppState.contributionMatrix);if(AppState.netHeatData&&AppState.netHeatData.applicable)renderNetHeatPlot(AppState.netHeatData);if(AppState.metaRegResult&&AppState.metaRegCovariate)renderBubblePlot(AppState.metaRegResult,AppState.metaRegCovariate);if(AppState.cnmaResults){refreshCNMAForestPlot();renderCNMASplitPlot(AppState.cnmaResults)};if(AppState.bayesianResults)renderBayesianResults(AppState.bayesianResults);if(AppState.leaveOneOutResults&&AppState.leaveOneOutResults.applicable){renderLeaveOneOutResults(AppState.leaveOneOutResults);drawInfluencePlot(AppState.leaveOneOutResults)}if(AppState.cumulativeResults)renderCumulativeResults(AppState.cumulativeResults);if(AppState.doseResponseResults&&AppState.doseResponseResults.applicable)refreshDoseResponsePlot();if(AppState.subgroupResults&&AppState.subgroupResults.applicable){renderSubgroupResults(AppState.subgroupResults);renderSubgroupForestPlot(AppState.subgroupResults)}if(AppState.pubBiasResults)renderPubBiasResults(AppState.pubBiasResults);if(AppState.cstreamResults)renderCSTREAMResults(AppState.cstreamResults);try{ComparisonHeatmap.render(AppState.results);}catch(e){}TreatmentFocusLab.render()}
-function restoreLoadedAnalysisState(){if(!AppState.results||typeof AppState.results!=='object')return;try{refreshAllPlots();if(AppState.results.heterogeneity)updateHeterogeneityPanel(AppState.results.heterogeneity,AppState.results.tau2CI,AppState.results.effects?.correctionMethod,AppState.results.modelSelection);if(AppState.results.leagueTable)renderLeagueTable(AppState.results.leagueTable,AppState.effectMeasure);if(AppState.cinemaResults)renderCINeMAResults(AppState.cinemaResults);if(AppState.gradeResults)renderGRADEResults(AppState.gradeResults);if(AppState.results.effects&&AppState.reference)renderEValues(AppState.results);if(AppState.results.effects)renderThresholdAnalysis(AppState.results)}catch(err){console.warn('Failed to restore loaded analysis state',err)}}
+function restoreLoadedAnalysisState(){if(!AppState.results||typeof AppState.results!=='object')return;try{renderDroppedRowsNotice(AppState.results)}catch(e){console.warn('dropped-rows notice:',e)}try{refreshAllPlots();if(AppState.results.heterogeneity)updateHeterogeneityPanel(AppState.results.heterogeneity,AppState.results.tau2CI,AppState.results.effects?.correctionMethod,AppState.results.modelSelection);if(AppState.results.leagueTable)renderLeagueTable(AppState.results.leagueTable,AppState.effectMeasure);if(AppState.cinemaResults)renderCINeMAResults(AppState.cinemaResults);if(AppState.gradeResults)renderGRADEResults(AppState.gradeResults);if(AppState.results.effects&&AppState.reference)renderEValues(AppState.results);if(AppState.results.effects)renderThresholdAnalysis(AppState.results)}catch(err){console.warn('Failed to restore loaded analysis state',err)}}
 function refreshDoseResponsePlot(){const dr=AppState.doseResponseResults;if(!dr||!dr.applicable||typeof Plotly==='undefined'||!dr.doseEffectCurve||dr.doseEffectCurve.length===0)return;const colors=getThemeColors();const isRatio=['OR','RR','HR'].includes(AppState.effectMeasure);const plotEl=document.getElementById('doseResponsePlot');if(!plotEl)return;const plotWidth=plotEl.offsetWidth||800;const maxDose=dr.doseData&&dr.doseData.length>0?Math.max(...dr.doseData.map(d=>d.dose)):1;Plotly.newPlot('doseResponsePlot',[{type:'scatter',mode:'lines',name:'Emax Curve',x:dr.doseEffectCurve.map(d=>d.dose),y:dr.doseEffectCurve.map(d=>isRatio?Math.exp(d.effect):d.effect),line:{color:colors.accent,width:3}},{type:'scatter',mode:'markers',name:'Studies',x:dr.doseData.map(d=>d.dose),y:dr.doseData.map(d=>isRatio?Math.exp(d.yi):d.yi),marker:{size:12,color:colors.node,line:{color:'white',width:1}},text:dr.doseData.map(d=>d.study),hovertemplate:'%{text}<br>Dose: %{x}<br>Effect: %{y:.3f}<extra></extra>'}],{paper_bgcolor:colors.background,plot_bgcolor:colors.background,width:plotWidth,height:340,xaxis:{title:{text:'Dose (mg)',font:{size:12}},gridcolor:colors.grid,tickfont:{color:colors.text}},yaxis:{title:{text:isRatio?'Odds Ratio':'Effect Size',font:{size:12}},gridcolor:colors.grid,tickfont:{color:colors.text}},shapes:[{type:'line',x0:0,x1:maxDose*1.2,y0:isRatio?1:0,y1:isRatio?1:0,line:{color:colors.danger,width:1,dash:'dash'}}],margin:{l:60,r:20,t:20,b:50},font:{color:colors.text},showlegend:true,legend:{x:1,y:1,xanchor:'right'}},{responsive:true})}
 function refreshCNMAForestPlot(){const res=AppState.cnmaResults;if(!res||!res.applicable||typeof Plotly==='undefined')return;const colors=getThemeColors();const isRatio=['OR','RR','HR'].includes(AppState.effectMeasure);const y=res.componentEffects.map(c=>c.component),x=res.componentEffects.map(c=>isRatio?Math.exp(c.estimate):c.estimate),xL=res.componentEffects.map(c=>isRatio?Math.exp(c.ci_lower):c.ci_lower),xU=res.componentEffects.map(c=>isRatio?Math.exp(c.ci_upper):c.ci_upper);Plotly.newPlot('cnmaForestPlot',[{type:'scatter',mode:'markers',x:x,y:y,error_x:{type:'data',symmetric:false,array:xU.map((u,i)=>u-x[i]),arrayminus:x.map((v,i)=>v-xL[i]),color:colors.secondary,thickness:2,width:8},marker:{size:14,color:colors.secondary,symbol:'diamond'}}],{paper_bgcolor:colors.background,plot_bgcolor:colors.background,xaxis:{type:isRatio?'log':'linear',gridcolor:colors.grid,tickfont:{color:colors.text}},yaxis:{gridcolor:colors.grid,tickfont:{color:colors.text}},shapes:[{type:'line',x0:isRatio?1:0,x1:isRatio?1:0,y0:-0.5,y1:y.length-0.5,line:{color:colors.danger,width:2,dash:'dash'}}],margin:{l:100,r:20,t:20,b:50},font:{color:colors.text}},{responsive:true})}
 
@@ -8179,10 +8201,10 @@ function _drawDeferredPlots(thunks){
   if(queue.length)schedule();
 }
 function initializePanels(){const panels=document.getElementById('tabPanels');panels.innerHTML=`
-<div id="panel-data" class="tab-panel tab-panel--active"><div class="card" style="margin-bottom:var(--space-4)"><div class="card__header"><span class="card__title">Study Data</span><div class="flex gap-2"><div class="download-dropdown" style="display:inline-block;"><button class="btn btn--sm btn--ghost" id="loadDatasetBtn" onclick="PlotDownloader.toggleMenu(this)">Load Dataset</button><div class="download-dropdown__menu"><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('thrombolytics')">Thrombolytics (10 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('smoking')">Smoking Cessation (24 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('depression')">Antidepressants (15 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('painkillers')">NSAIDs Pain (12 studies, SMD)</button></div></div><button class="btn btn--sm btn--ghost" id="busLoadBtn" title="Load multi-arm studies from the shared ma-comparisons-v1 bus (other allmeta NMA apps push here)">Load from bus</button><button class="btn btn--sm btn--ghost" id="busSaveBtn" title="Save current studies to the shared ma-comparisons-v1 bus">Save to bus</button><button class="btn btn--sm btn--ghost" id="clearAllBtn">Clear</button><button class="btn btn--sm btn--secondary" id="addStudyBtn">+ Add Study</button>${PlotDownloader.createTableDropdown('studyTable','NMA_StudyData')}</div></div><div class="card__body" style="overflow-x:auto"><table class="data-table" id="studyTable"><thead><tr><th title="Name of the study (e.g., Smith 2020)">Study</th><th title="First treatment being compared">Arm 1</th><th title="Number of patients with the outcome in Arm 1 (e.g., deaths, cured)">E1</th><th title="Total number of patients in Arm 1">N1</th><th title="Average value in Arm 1 (for continuous outcomes like blood pressure)">M1</th><th title="How spread out the values are in Arm 1">SD1</th><th title="Drug dose in Arm 1 (mg) - needed for dose-response analysis">D1</th><th title="Treatment class for Arm 1 (e.g., SSRI) - used for class effect models">C1</th><th title="Second treatment being compared">Arm 2</th><th title="Number of patients with the outcome in Arm 2">E2</th><th title="Total number of patients in Arm 2">N2</th><th title="Average value in Arm 2 (for continuous outcomes)">M2</th><th title="How spread out the values are in Arm 2">SD2</th><th title="Drug dose in Arm 2 (mg) - needed for dose-response analysis">D2</th><th title="Treatment class for Arm 2 (e.g., SSRI) - used for class effect models">C2</th><th title="Year the study was published">Year</th><th title="Risk of Bias: low (good quality), high (potential problems), or unclear">ROB</th><th></th></tr></thead><tbody id="studyTableBody"></tbody></table></div></div><div class="card"><div class="card__header"><span class="card__title">Analysis Options</span></div><div class="card__body"><div class="flex gap-6 flex-wrap items-center"><div><label class="text-xs text-secondary" title="The baseline treatment - all other treatments will be compared against this one">Reference</label><select class="select mt-1" id="referenceSelect" style="min-width:120px" aria-label="Reference"></select></div><div><label class="text-xs text-secondary" title="Is a lower value better (e.g., fewer deaths) or higher better (e.g., more cures)?">Direction</label><div class="flex gap-3 mt-1"><label class="checkbox-label"><input type="radio" name="direction" value="lower" checked> Lower better</label><label class="checkbox-label"><input type="radio" name="direction" value="higher"> Higher better</label></div></div><div><label class="text-xs text-secondary" title="Correction for small studies - HKSJ is recommended, makes confidence intervals wider when there are few studies">Small-Study Correction</label><select class="select mt-1" id="smallStudyCorrectionSelect" aria-label="Small-Study Correction"><option value="none">None</option><option value="hksj" selected>HKSJ</option><option value="kr">Kenward-Roger</option><option value="sj">Sidik-Jonkman</option><option value="mkh">Modified KH</option></select></div><div><label class="text-xs text-secondary" title="How to handle zero-event cells in binary outcomes. Align this with R settings for parity checks. The increment is added only in a study with a zero cell; for RR it is added to the events and once to n (meta::metabin default, RR.Cochrane = FALSE), not the RevMan n + 2 x increment">Zero-Cell Correction</label><select class="select mt-1" id="zeroCellCorrectionSelect" aria-label="Zero-Cell Correction"><option value="haldane" selected>Haldane (0.5)</option><option value="tacc">TACC</option><option value="reciprocal">Reciprocal</option><option value="sweeting">Sweeting</option><option value="none">Near-zero</option><option value="exclude">Exclude double-zero</option></select></div><div><label class="text-xs text-secondary" title="Number of simulations used for ranking uncertainty and rank probabilities">Rank Simulations</label><input type="number" class="input mt-1" id="rankingSimInput" value="2000" min="200" max="50000" step="100" style="width:120px" aria-label="Rank Simulations"></div><div><label class="text-xs text-secondary" title="Optional fixed seed for ranking reproducibility. Leave blank for deterministic auto-seed from analysis fingerprint">Rank Seed</label><input type="number" class="input mt-1" id="rankingSeedInput" placeholder="Auto" min="1" step="1" style="width:120px"></div><div><label class="checkbox-label" title="Shows the expected range if you did a new study - wider than confidence intervals because it accounts for between-study variation"><input type="checkbox" id="predictionCheckbox" checked> Prediction intervals</label></div><div class="feature-pills"><span class="feature-pill" title="Run a Bayesian analysis - gives probability distributions instead of point estimates">Bayesian</span><span class="feature-pill" title="Cross-validated I² - checks if heterogeneity estimate is reliable">CV-I²</span><span class="feature-pill" title="Check if results would apply to a different patient population">C-STREAM</span><span class="feature-pill" title="Rate the quality of evidence using the GRADE framework">GRADE</span></div></div></div></div></div>
+<div id="panel-data" class="tab-panel tab-panel--active"><div class="card" style="margin-bottom:var(--space-4)"><div class="card__header"><span class="card__title">Study Data</span><div class="flex gap-2"><div class="download-dropdown" style="display:inline-block;"><button class="btn btn--sm btn--ghost" id="loadDatasetBtn" onclick="PlotDownloader.toggleMenu(this)">Load Dataset</button><div class="download-dropdown__menu"><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('thrombolytics')">Thrombolytics (10 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('smoking')">Smoking Cessation (24 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('depression')">Antidepressants (15 studies, OR)</button><button class="download-dropdown__item" onclick="BenchmarkDatasets.loadDataset('painkillers')">NSAIDs Pain (12 studies, SMD)</button></div></div><button class="btn btn--sm btn--ghost" id="busLoadBtn" title="Load multi-arm studies from the shared ma-comparisons-v1 bus (other allmeta NMA apps push here)">Load from bus</button><button class="btn btn--sm btn--ghost" id="busSaveBtn" title="Save current studies to the shared ma-comparisons-v1 bus">Save to bus</button><button class="btn btn--sm btn--ghost" id="clearAllBtn">Clear</button><button class="btn btn--sm btn--secondary" id="addStudyBtn">+ Add Study</button>${PlotDownloader.createTableDropdown('studyTable','NMA_StudyData')}</div></div><div class="card__body" style="overflow-x:auto"><table class="data-table" id="studyTable"><thead><tr><th title="Name of the study (e.g., Smith 2020)">Study</th><th title="First treatment being compared">Arm 1</th><th title="Number of patients with the outcome in Arm 1 (e.g., deaths, cured)">E1</th><th title="Total number of patients in Arm 1">N1</th><th title="Average value in Arm 1 (for continuous outcomes like blood pressure)">M1</th><th title="How spread out the values are in Arm 1">SD1</th><th title="Drug dose in Arm 1 (mg) - needed for dose-response analysis">D1</th><th title="Treatment class for Arm 1 (e.g., SSRI) - used for class effect models">C1</th><th title="Second treatment being compared">Arm 2</th><th title="Number of patients with the outcome in Arm 2">E2</th><th title="Total number of patients in Arm 2">N2</th><th title="Average value in Arm 2 (for continuous outcomes)">M2</th><th title="How spread out the values are in Arm 2">SD2</th><th title="Drug dose in Arm 2 (mg) - needed for dose-response analysis">D2</th><th title="Treatment class for Arm 2 (e.g., SSRI) - used for class effect models">C2</th><th title="Year the study was published">Year</th><th title="Risk of Bias: low (good quality), high (potential problems), or unclear">ROB</th><th></th></tr></thead><tbody id="studyTableBody"></tbody></table></div></div><div class="card"><div class="card__header"><span class="card__title">Analysis Options</span></div><div class="card__body"><div class="flex gap-6 flex-wrap items-center"><div><label class="text-xs text-secondary" title="The baseline treatment - all other treatments will be compared against this one">Reference</label><select class="select mt-1" id="referenceSelect" style="min-width:120px" aria-label="Reference"></select></div><div><label class="text-xs text-secondary" title="Is a lower value better (e.g., fewer deaths) or higher better (e.g., more cures)?">Direction</label><div class="flex gap-3 mt-1"><label class="checkbox-label"><input type="radio" name="direction" value="lower" checked> Lower better</label><label class="checkbox-label"><input type="radio" name="direction" value="higher"> Higher better</label></div></div><div><label class="text-xs text-secondary" title="Correction for small studies - HKSJ is recommended, makes confidence intervals wider when there are few studies">Small-Study Correction</label><select class="select mt-1" id="smallStudyCorrectionSelect" aria-label="Small-Study Correction"><option value="none">None</option><option value="hksj" selected>HKSJ</option><option value="kr" title="Ad hoc: variance x max(1, 1 + (Q - df)/(df + 2)) and t on a reduced network df. Not Kenward-Roger.">t on network df (ad hoc)</option><option value="sj">Sidik-Jonkman</option><option value="mkh">Modified KH</option></select></div><div><label class="text-xs text-secondary" title="How to handle zero-event cells in binary outcomes. Align this with R settings for parity checks. The increment is added only in a study with a zero cell; for RR it is added to the events and once to n (meta::metabin default, RR.Cochrane = FALSE), not the RevMan n + 2 x increment">Zero-Cell Correction</label><select class="select mt-1" id="zeroCellCorrectionSelect" aria-label="Zero-Cell Correction"><option value="haldane" selected>Haldane (0.5)</option><option value="tacc">TACC</option><option value="reciprocal">Reciprocal</option><option value="sweeting">Sweeting</option><option value="none">Near-zero</option><option value="exclude">Exclude double-zero</option></select></div><div><label class="text-xs text-secondary" title="Number of simulations used for ranking uncertainty and rank probabilities">Rank Simulations</label><input type="number" class="input mt-1" id="rankingSimInput" value="2000" min="200" max="50000" step="100" style="width:120px" aria-label="Rank Simulations"></div><div><label class="text-xs text-secondary" title="Optional fixed seed for ranking reproducibility. Leave blank for deterministic auto-seed from analysis fingerprint">Rank Seed</label><input type="number" class="input mt-1" id="rankingSeedInput" placeholder="Auto" min="1" step="1" style="width:120px"></div><div><label class="checkbox-label" title="Shows the expected range if you did a new study - wider than confidence intervals because it accounts for between-study variation"><input type="checkbox" id="predictionCheckbox" checked> Prediction intervals</label></div><div class="feature-pills"><span class="feature-pill" title="Run a Bayesian analysis - gives probability distributions instead of point estimates">Bayesian</span><span class="feature-pill" title="Cross-validated I² - checks if heterogeneity estimate is reliable">CV-I²</span><span class="feature-pill" title="Check if results would apply to a different patient population">C-STREAM</span><span class="feature-pill" title="Rate the quality of evidence using the GRADE framework">GRADE</span></div></div></div></div></div>
 <div id="panel-guardian" class="tab-panel"><div class="grid grid-cols-2"><div class="card"><div class="card__header"><span class="card__title">Network Guardian</span><button class="btn btn--sm btn--ghost" id="recheckBtn">Re-check</button></div><div class="card__body"><div class="health-gauge"><svg class="health-gauge__svg" viewBox="0 0 180 180"><circle class="health-gauge__bg" cx="90" cy="90" r="78"></circle><circle class="health-gauge__progress health-gauge__progress--good" id="healthProgress" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"></circle></svg><div class="health-gauge__value"><span class="health-gauge__number" id="healthScore">--</span><span class="health-gauge__label">Health</span></div></div><div class="stat-grid mt-6"><div class="stat-card"><div class="stat-card__value" id="integrityScore">--</div><div class="stat-card__label" title="Is your data complete and valid? Higher = fewer missing values and data errors">Integrity</div></div><div class="stat-card"><div class="stat-card__value" id="evidenceScore">--</div><div class="stat-card__label" title="How much evidence do you have? Based on number of studies and total patients">Evidence</div></div><div class="stat-card"><div class="stat-card__value" id="riskScore">--</div><div class="stat-card__label" title="Overall risk of problems with your analysis - considers bias, small studies, etc.">Risk</div></div></div></div></div><div class="card"><div class="card__header"><span class="card__title">Validation Checks</span></div><div class="card__body"><ul class="validation-list" id="validationList"></ul><div class="alert alert--info mt-4" id="recommendationAlert"><span class="alert__icon"></span><div class="alert__text" id="recommendationText">Run analysis to see recommendations</div></div></div></div></div><div class="card"><div class="card__header"><span class="card__title">Network Geometry</span></div><div class="card__body"><div class="stat-grid"><div class="stat-card"><div class="stat-card__value" id="agglomCoef">--</div><div class="stat-card__label" title="How clustered is your network? High values mean treatments tend to be compared within tight groups">Agglomeration</div></div><div class="stat-card"><div class="stat-card__value" id="meanPath">--</div><div class="stat-card__label" title="Average number of steps to get from one treatment to another. Lower = more connected network">Mean Path</div></div><div class="stat-card"><div class="stat-card__value" id="diversityIdx">--</div><div class="stat-card__label" title="Is evidence spread evenly? Low diversity means most evidence comes from a few comparisons">Diversity</div></div><div class="stat-card"><div class="stat-card__value" id="directProp">--</div><div class="stat-card__label" title="What percentage of treatment pairs have been directly compared in at least one study?">Direct Prop</div></div><div class="stat-card"><div class="stat-card__value" id="netDensity">--</div><div class="stat-card__label" title="How complete is the network? 1.0 = every treatment compared to every other treatment">Density</div></div><div class="stat-card"><div class="stat-card__value" id="effTreat">--</div><div class="stat-card__label" title="Effective number of treatments - accounts for how well-connected each treatment is">Eff. Treatments</div></div></div></div></div></div>
 <div id="panel-network" class="tab-panel"><div class="card"><div class="card__header"><span class="card__title" title="Each circle is a treatment. Lines connect treatments that were compared directly. Thicker lines = more studies. Bigger circles = more patients.">Network Graph</span>${PlotDownloader.createDropdown('networkPlot','NMA_Network')}</div><div class="card__body"><div class="plot-container" style="height:500px" id="networkPlot"><div class="plot-container__empty"><span class="plot-container__empty-icon"></span><span>Run analysis to visualize network</span></div></div></div></div></div>
-<div id="panel-results" class="tab-panel"><div class="grid grid-cols-2"><div class="card"><div class="card__header"><span class="card__title" title="Shows effect size for each treatment vs reference. Diamond = point estimate, thick line = 95% CI, thin purple line = 95% PI. If line crosses 1 (or 0), effect is not statistically significant.">Forest Plot</span>${ContextualHelpTips.createIcon('forest')}<button class="btn btn--ghost btn--sm" id="saveSnapshotBtn" title="Save current analysis as snapshot for comparison">Save Snapshot</button><button class="btn btn--ghost btn--sm" id="compareSnapshotsBtn" title="Compare saved analysis snapshots" style="display:none;">Compare</button>${PlotDownloader.createDropdown('forestPlot','NMA_Forest')}</div><div class="card__body"><div class="plot-container" style="height:350px" id="forestPlot"></div><div id="forestTableContainer"></div></div></div><div class="card"><div class="card__header"><span class="card__title" title="Matrix comparing ALL treatments. Read across rows. Green shading = row treatment is better than column. Red shading = row treatment is worse. Bold = statistically significant.">League Table</span>${ContextualHelpTips.createIcon('league')}${PlotDownloader.createTableDropdown('leagueTableContainer','NMA_LeagueTable')}</div><div class="card__body overflow-x-auto" id="leagueTableContainer"></div></div></div><div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Robustness Dashboard</div><button class="btn btn--primary btn--sm" id="runRobustnessBtn">Run All Checks</button></div><div class="card__body" id="robustnessDashContainer"><p class="text-secondary text-center">Click "Run All Checks" to assess robustness across multiple dimensions.</p></div></div><div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Manuscript Results Text</div><button class="btn btn--ghost btn--sm" id="genManuscriptBtn">Generate</button><button class="btn btn--ghost btn--sm" id="genMethodsBtn">Generate Methods</button></div><div class="card__body" id="manuscriptTextContainer" style="display:none;"><div id="manuscriptTextOutput" style="background:var(--surface-raised);padding:16px;border-radius:8px;font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;"></div><button class="btn btn--primary btn--sm mt-2" id="copyManuscriptBtn">Copy to Clipboard</button><p class="text-xs text-secondary mt-1">Auto-generated following PRISMA-NMA guidelines. Review and edit before submission.</p></div></div></div>
+<div id="panel-results" class="tab-panel"><div id="droppedRowsNotice" role="status" aria-live="polite"></div><div class="grid grid-cols-2"><div class="card"><div class="card__header"><span class="card__title" title="Shows effect size for each treatment vs reference. Diamond = point estimate, thick line = 95% CI, thin purple line = 95% PI. If line crosses 1 (or 0), effect is not statistically significant.">Forest Plot</span>${ContextualHelpTips.createIcon('forest')}<button class="btn btn--ghost btn--sm" id="saveSnapshotBtn" title="Save current analysis as snapshot for comparison">Save Snapshot</button><button class="btn btn--ghost btn--sm" id="compareSnapshotsBtn" title="Compare saved analysis snapshots" style="display:none;">Compare</button>${PlotDownloader.createDropdown('forestPlot','NMA_Forest')}</div><div class="card__body"><div class="plot-container" style="height:350px" id="forestPlot"></div><div id="forestTableContainer"></div></div></div><div class="card"><div class="card__header"><span class="card__title" title="Matrix comparing ALL treatments. Read across rows. Green shading = row treatment is better than column. Red shading = row treatment is worse. Bold = statistically significant.">League Table</span>${ContextualHelpTips.createIcon('league')}${PlotDownloader.createTableDropdown('leagueTableContainer','NMA_LeagueTable')}</div><div class="card__body overflow-x-auto" id="leagueTableContainer"></div></div></div><div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Robustness Dashboard</div><button class="btn btn--primary btn--sm" id="runRobustnessBtn">Run All Checks</button></div><div class="card__body" id="robustnessDashContainer"><p class="text-secondary text-center">Click "Run All Checks" to assess robustness across multiple dimensions.</p></div></div><div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Manuscript Results Text</div><button class="btn btn--ghost btn--sm" id="genManuscriptBtn">Generate</button><button class="btn btn--ghost btn--sm" id="genMethodsBtn">Generate Methods</button></div><div class="card__body" id="manuscriptTextContainer" style="display:none;"><div id="manuscriptTextOutput" style="background:var(--surface-raised);padding:16px;border-radius:8px;font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;"></div><button class="btn btn--primary btn--sm mt-2" id="copyManuscriptBtn">Copy to Clipboard</button><p class="text-xs text-secondary mt-1">Auto-generated following PRISMA-NMA guidelines. Review and edit before submission.</p></div></div></div>
 <div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Caterpillar Plot</div>${PlotDownloader.createDropdown('caterpillarPlotContainer','NMA_Caterpillar')}</div><div class="card__body"><div id="caterpillarPlotContainer" class="plot-container" style="height:400px;"></div></div></div>
 <div class="card" style="margin-top:var(--space-4);"><div class="card__header"><div class="card__title">Comparison Heatmap</div>${PlotDownloader.createDropdown('comparisonHeatmapPlot','NMA_Heatmap')}</div><div class="card__body"><div id="comparisonHeatmapPlot" class="plot-container" style="height:500px;"></div></div></div>
 <div id="panel-ranking" class="tab-panel"><div class="grid grid-cols-2"><div class="card"><div class="card__header"><span class="card__title" title="Shows which treatments are most likely to be best. Rank 1 = best. P-score/SUCRA near 1 = high probability of being best.">Treatment Rankings</span>${ContextualHelpTips.createIcon('pscore')}${PlotDownloader.createTableDropdown('rankingTableBody','NMA_Rankings')}</div><div class="card__body" id="rankingTableContainer"><table class="data-table" id="rankingTable"><thead><tr><th>Rank</th><th>Treatment</th><th title="Probability of being best (0-1). A score of 0.9 means 90% chance this is the best treatment">P-score</th><th title="Same as P-score but from Bayesian analysis. 100% = always ranked best, 0% = always ranked worst">SUCRA</th><th title="Average position when treatments are ranked. 1 = best, higher numbers = worse">Mean Rank</th><th title="Range where the true rank likely falls. Wide range = uncertain ranking">95% CI</th></tr></thead><tbody id="rankingTableBody"></tbody></table></div></div><div class="card"><div class="card__header"><span class="card__title" title="Bar chart showing probability of each treatment being ranked 1st, 2nd, 3rd, etc. Flat bars = uncertain ranking, tall single bar = confident ranking.">Rankogram</span>${PlotDownloader.createDropdown('rankogramPlot','NMA_Rankogram')}</div><div class="card__body"><div class="plot-container" style="height:300px" id="rankogramPlot"></div><div class="mt-4" id="rankProbMatrixContainer"></div></div></div></div>
@@ -8514,7 +8536,7 @@ if(container)container.style.display='';
 
 function renderBubblePlot(res,cov){if(typeof Plotly==='undefined'||!res||!res.data||res.data.length===0)return;const el=document.getElementById('bubblePlot');if(!el)return;const container=document.getElementById('bubblePlotContainer');if(container&&!container.querySelector('.download-dropdown')){const header=document.createElement('div');header.className='flex justify-between items-center mb-2';header.innerHTML=`<h4 style="font-size:14px;font-weight:600;color:var(--text-primary)" title="Shows relationship between covariate and effect size. Each bubble is a study - larger bubbles = more precise. Dashed line = regression fit">Bubble Plot</h4>${PlotDownloader.createDropdown('bubblePlot','NMA_BubblePlot')}`;container.insertBefore(header,container.firstChild)}const colors=getThemeColors();const x=res.data.map(d=>d.x),y=res.data.map(d=>d.y);if(x.some(v=>v===undefined||isNaN(v))||y.some(v=>v===undefined||isNaN(v)))return;const sizes=res.data.map(d=>Math.max(10,40/Math.max(0.1,d.se||0.5))),texts=res.data.map(d=>d.study||'Unknown');const xMin=Math.min(...x),xMax=Math.max(...x),xPad=(xMax-xMin)*0.1||0.5;const regX=[xMin-xPad,xMax+xPad],regY=regX.map(xi=>res.intercept+res.slope*(xi-(res.xMean||0)));Plotly.newPlot(el,[{type:'scatter',mode:'markers',x:x,y:y,text:texts,marker:{size:sizes,color:colors.node,opacity:0.8,line:{color:'white',width:2}},hovertemplate:'%{text}<br>'+cov+': %{x:.2f}<br>Effect: %{y:.3f}<extra></extra>'},{type:'scatter',mode:'lines',x:regX,y:regY,line:{color:colors.danger,width:2,dash:'dash'},hoverinfo:'skip'}],{paper_bgcolor:colors.background,plot_bgcolor:colors.background,width:el.offsetWidth-6,height:340,xaxis:{title:cov,gridcolor:colors.grid,tickfont:{color:colors.text},autorange:true},yaxis:{title:'Effect Size',gridcolor:colors.grid,tickfont:{color:colors.text},autorange:true},shapes:[{type:'line',x0:xMin-xPad,x1:xMax+xPad,y0:0,y1:0,line:{color:colors.grid,width:1,dash:'dot'}}],margin:{l:60,r:20,t:20,b:50},font:{color:colors.text},showlegend:false},{responsive:true})}
 
-function updateHeterogeneityPanel(het,tau2CI,correctionMethod,modelSelection){document.getElementById('hetTau2').textContent=het.tau2.toFixed(4);document.getElementById('hetTau').textContent=het.tau.toFixed(4);document.getElementById('hetI2').textContent=het.I2.toFixed(1)+'%';document.getElementById('hetH2').textContent=het.H2.toFixed(2);document.getElementById('hetTau2').parentElement.title='Between-study variance. Higher values = more variation between studies';document.getElementById('hetTau').parentElement.title='Standard deviation of true effects between studies';document.getElementById('hetI2').parentElement.title='Percentage of variation due to real differences (not chance). <25% low, 25-50% moderate, 50-75% substantial, >75% considerable';document.getElementById('hetH2').parentElement.title='Ratio of total variance to sampling variance. H2=1 means no heterogeneity';let ciText=tau2CI?`95% CI: [${tau2CI.lower.toFixed(4)}, ${tau2CI.upper.toFixed(4)}]`:'';if(correctionMethod&&correctionMethod!=='none'){const methodNames={'hksj':'HKSJ','kr':'Kenward-Roger (KR)','sj':'Sidik-Jonkman (SJ)','mkh':'Modified KH (mKH)'};ciText+=ciText?' | ':'';ciText+=`Correction: ${methodNames[correctionMethod]||correctionMethod.toUpperCase()}`}if(ciText)document.getElementById('hetTau2CI').textContent=ciText;const interp=document.getElementById('hetInterpretation');let level,msg;if(het.I2<25){level='success';msg='Low heterogeneity'}else if(het.I2<50){level='info';msg='Low-moderate heterogeneity'}else if(het.I2<75){level='warning';msg='Moderate-high heterogeneity'}else{level='danger';msg='Substantial heterogeneity'}interp.className=`alert alert--${level}`;interp.innerHTML=`<span class="alert__icon"></span><div class="alert__text">${msg}<br>Q = ${het.Q.toFixed(2)}, df = ${het.df}, p ${het.pQ<0.001?'< 0.001':'= '+het.pQ.toFixed(3)}</div>`;
+function updateHeterogeneityPanel(het,tau2CI,correctionMethod,modelSelection){document.getElementById('hetTau2').textContent=het.tau2.toFixed(4);document.getElementById('hetTau').textContent=het.tau.toFixed(4);document.getElementById('hetI2').textContent=het.I2.toFixed(1)+'%';document.getElementById('hetH2').textContent=het.H2.toFixed(2);document.getElementById('hetTau2').parentElement.title='Between-study variance. Higher values = more variation between studies';document.getElementById('hetTau').parentElement.title='Standard deviation of true effects between studies';document.getElementById('hetI2').parentElement.title='Percentage of variation due to real differences (not chance). <25% low, 25-50% moderate, 50-75% substantial, >75% considerable';document.getElementById('hetH2').parentElement.title='Ratio of total variance to sampling variance. H2=1 means no heterogeneity';let ciText=tau2CI?`95% CI: [${tau2CI.lower.toFixed(4)}, ${tau2CI.upper.toFixed(4)}]`:'';if(correctionMethod&&correctionMethod!=='none'){const methodNames=CORRECTION_LABELS;ciText+=ciText?' | ':'';ciText+=`Correction: ${methodNames[correctionMethod]||correctionMethod.toUpperCase()}`}if(ciText)document.getElementById('hetTau2CI').textContent=ciText;const interp=document.getElementById('hetInterpretation');let level,msg;if(het.I2<25){level='success';msg='Low heterogeneity'}else if(het.I2<50){level='info';msg='Low-moderate heterogeneity'}else if(het.I2<75){level='warning';msg='Moderate-high heterogeneity'}else{level='danger';msg='Substantial heterogeneity'}interp.className=`alert alert--${level}`;interp.innerHTML=`<span class="alert__icon"></span><div class="alert__text">${msg}<br>Q = ${het.Q.toFixed(2)}, df = ${het.df}, p ${het.pQ<0.001?'< 0.001':'= '+het.pQ.toFixed(3)}</div>`;
 // Model Selection Panel
 const msContainer=document.getElementById('modelSelectionPanel');
 if(msContainer&&modelSelection){
@@ -9589,7 +9611,7 @@ const rankingRows=ranking.map(item=>`<tr><td class="stat">${item.rank}</td><td>$
 const effectRows=Object.entries(r.effects.effects).filter(([t])=>t!==(AppState.reference||'')).map(([t,e])=>{const est=isRatio?Math.exp(e.estimate):e.estimate;const ciL=isRatio?Math.exp(e.ci_lower):e.ci_lower;const ciU=isRatio?Math.exp(e.ci_upper):e.ci_upper;const pVal=e.pValue<0.001?'<0.001':e.pValue.toFixed(3);return`<tr><td>${Security.escapeHtml(t)} vs ${Security.escapeHtml(AppState.reference||'')}</td><td class="stat">${est.toFixed(3)}</td><td class="stat">${ciL.toFixed(3)} to ${ciU.toFixed(3)}</td><td class="stat">${pVal}</td></tr>`}).join('');
 const discussionItems=[`The network included ${AppState.studies.length} studies and ${r.treatments.length} treatments, with ${heteroInterp}.`,`Consistency diagnostics indicate that ${consistencyInterp}.`,`Publication bias risk level: ${Security.escapeHtml(pubBiasRisk)}. ${Security.escapeHtml(pubBiasText)}`];
 if(top)discussionItems.unshift(`The top-ranked treatment was ${Security.escapeHtml(top.treatment)} (P-score ${top.pScore.toFixed(3)}, SUCRA ${top.sucra.toFixed(1)}%).`);
-const report=`<!DOCTYPE html><html><head><title>NMA Pro v8.1 Report</title><style>body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;max-width:980px;margin:32px auto;padding:24px;color:#0f172a;line-height:1.55}h1{color:#0c4a6e;margin-bottom:0}h2{color:#0f172a;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-top:28px}h3{color:#334155;margin-top:22px}table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left}th{background:#f8fafc}.muted{color:#475569}.stat{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-block;background:#ecfeff;color:#155e75;border:1px solid #a5f3fc;border-radius:999px;padding:3px 10px;font-size:12px}ul{padding-left:20px}</style></head><body><h1>Network Meta-Analysis Report</h1><p class="muted"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <span class="badge">NMA Pro v8.1</span></p><h2>Methods</h2><p>A frequentist random-effects network meta-analysis was performed with <strong>${Security.escapeHtml(AppState.estimator)}</strong> heterogeneity estimation and effect measure <strong>${Security.escapeHtml(AppState.effectMeasure)}</strong>. Reference treatment was <strong>${Security.escapeHtml(AppState.reference||'')}</strong>. Small-study correction used: <strong>${Security.escapeHtml(AppState.smallStudyCorrection)}</strong>. Zero-cell correction used: <strong>${Security.escapeHtml(AppState.zeroCellCorrection||'haldane')}</strong>${AppState.effectMeasure==='RR'?' (risk ratio: increment added to the events and once to n, as meta::metabin with RR.Cochrane = FALSE)':''}. Direction of benefit: <strong>${Security.escapeHtml(AppState.direction)}</strong>.</p><p>Treatment ranking used simulation-based rank probabilities (${rankingSim} simulations) with deterministic seed <span class="stat">${rankingSeed}</span> to ensure reproducibility of rank outputs.</p><h2>Results</h2><h3>Network Summary</h3><ul><li><strong>Studies:</strong> ${AppState.studies.length}</li><li><strong>Treatments:</strong> ${r.treatments.length}</li><li><strong>Treatments in network:</strong> ${r.treatments.map(t=>Security.escapeHtml(t)).join(', ')}</li></ul><h3>Heterogeneity and Consistency</h3><ul><li><strong>Tau-squared:</strong> <span class="stat">${r.tau2.toFixed(4)}</span></li><li><strong>I-squared:</strong> <span class="stat">${heteroI2.toFixed(1)}%</span> (${heteroInterp})</li><li><strong>Q:</strong> <span class="stat">${r.heterogeneity.Q.toFixed(2)}</span> (df=${r.heterogeneity.df}, p=${r.heterogeneity.pQ<0.001?'<0.001':r.heterogeneity.pQ.toFixed(3)})</li><li><strong>Local inconsistency flags:</strong> ${inconsCount}</li><li><strong>Global inconsistency (Fisher p):</strong> ${fisherP===null?'Not estimable':(fisherP<0.001?'<0.001':fisherP.toFixed(3))}</li><li><strong>Design-by-treatment (between designs, netmeta decomp.design):</strong> ${inconsSummary?.designByTreatment?.pValue==null?'Not estimable':('Q = '+Number(inconsSummary.designByTreatment.Q).toFixed(2)+', df = '+inconsSummary.designByTreatment.df+', p '+(inconsSummary.designByTreatment.pValue<0.001?'<0.001':'= '+Number(inconsSummary.designByTreatment.pValue).toFixed(3)))}</li></ul><h3>Treatment Rankings</h3><table><thead><tr><th>Rank</th><th>Treatment</th><th>P-score</th><th>SUCRA</th><th>Mean Rank</th><th>95% Rank CI</th><th>Prob. Best</th></tr></thead><tbody>${rankingRows||'<tr><td colspan="7" class="muted">No ranking available</td></tr>'}</tbody></table><h3>Relative Effects vs Reference</h3><table><thead><tr><th>Comparison</th><th>Effect</th><th>95% CI</th><th>p-value</th></tr></thead><tbody>${effectRows||'<tr><td colspan="4" class="muted">No relative effects available</td></tr>'}</tbody></table><h2>Discussion</h2><ul>${discussionItems.map(item=>`<li>${item}</li>`).join('')}</ul><h2>Limitations</h2><ul><li>Ranking metrics (P-score/SUCRA) summarize relative ordering but do not replace clinical judgment.</li><li>Residual heterogeneity or inconsistency can bias comparative inferences when assumptions are violated.</li><li>Publication bias assessment may be underpowered in sparse networks.</li><li>Results depend on the selected effect measure, estimator, and correction options.</li></ul><h2>Reproducibility</h2><ul><li><strong>Analysis fingerprint:</strong> <span class="stat">${fingerprint}</span></li><li><strong>Ranking seed:</strong> <span class="stat">${rankingSeed}</span></li><li><strong>Ranking simulations:</strong> <span class="stat">${rankingSim}</span></li><li><strong>Export format version:</strong> <span class="stat">8.1.0</span></li></ul><hr><p class="muted"><em>Generated by NMA Pro v8.1</em></p></body></html>`;
+const report=`<!DOCTYPE html><html><head><title>NMA Pro v8.1 Report</title><style>body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;max-width:980px;margin:32px auto;padding:24px;color:#0f172a;line-height:1.55}h1{color:#0c4a6e;margin-bottom:0}h2{color:#0f172a;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-top:28px}h3{color:#334155;margin-top:22px}table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left}th{background:#f8fafc}.muted{color:#475569}.stat{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-block;background:#ecfeff;color:#155e75;border:1px solid #a5f3fc;border-radius:999px;padding:3px 10px;font-size:12px}ul{padding-left:20px}</style></head><body><h1>Network Meta-Analysis Report</h1><p class="muted"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <span class="badge">NMA Pro v8.1</span></p><h2>Methods</h2><p>A frequentist random-effects network meta-analysis was performed with <strong>${Security.escapeHtml(AppState.estimator)}</strong> heterogeneity estimation and effect measure <strong>${Security.escapeHtml(AppState.effectMeasure)}</strong>. Reference treatment was <strong>${Security.escapeHtml(AppState.reference||'')}</strong>. Small-study correction used: <strong>${Security.escapeHtml(CORRECTION_LABELS[AppState.smallStudyCorrection]??AppState.smallStudyCorrection)}</strong>. Zero-cell correction used: <strong>${Security.escapeHtml(AppState.zeroCellCorrection||'haldane')}</strong>${AppState.effectMeasure==='RR'?' (risk ratio: increment added to the events and once to n, as meta::metabin with RR.Cochrane = FALSE)':''}. Direction of benefit: <strong>${Security.escapeHtml(AppState.direction)}</strong>.</p><p>Treatment ranking used simulation-based rank probabilities (${rankingSim} simulations) with deterministic seed <span class="stat">${rankingSeed}</span> to ensure reproducibility of rank outputs.</p><h2>Results</h2><h3>Network Summary</h3><ul><li><strong>Studies:</strong> ${AppState.studies.length}</li><li><strong>Treatments:</strong> ${r.treatments.length}</li><li><strong>Treatments in network:</strong> ${r.treatments.map(t=>Security.escapeHtml(t)).join(', ')}</li></ul><h3>Heterogeneity and Consistency</h3><ul><li><strong>Tau-squared:</strong> <span class="stat">${r.tau2.toFixed(4)}</span></li><li><strong>I-squared:</strong> <span class="stat">${heteroI2.toFixed(1)}%</span> (${heteroInterp})</li><li><strong>Q:</strong> <span class="stat">${r.heterogeneity.Q.toFixed(2)}</span> (df=${r.heterogeneity.df}, p=${r.heterogeneity.pQ<0.001?'<0.001':r.heterogeneity.pQ.toFixed(3)})</li><li><strong>Local inconsistency flags:</strong> ${inconsCount}</li><li><strong>Global inconsistency (Fisher p):</strong> ${fisherP===null?'Not estimable':(fisherP<0.001?'<0.001':fisherP.toFixed(3))}</li><li><strong>Design-by-treatment (between designs, netmeta decomp.design):</strong> ${inconsSummary?.designByTreatment?.pValue==null?'Not estimable':('Q = '+Number(inconsSummary.designByTreatment.Q).toFixed(2)+', df = '+inconsSummary.designByTreatment.df+', p '+(inconsSummary.designByTreatment.pValue<0.001?'<0.001':'= '+Number(inconsSummary.designByTreatment.pValue).toFixed(3)))}</li></ul><h3>Treatment Rankings</h3><table><thead><tr><th>Rank</th><th>Treatment</th><th>P-score</th><th>SUCRA</th><th>Mean Rank</th><th>95% Rank CI</th><th>Prob. Best</th></tr></thead><tbody>${rankingRows||'<tr><td colspan="7" class="muted">No ranking available</td></tr>'}</tbody></table><h3>Relative Effects vs Reference</h3><table><thead><tr><th>Comparison</th><th>Effect</th><th>95% CI</th><th>p-value</th></tr></thead><tbody>${effectRows||'<tr><td colspan="4" class="muted">No relative effects available</td></tr>'}</tbody></table><h2>Discussion</h2><ul>${discussionItems.map(item=>`<li>${item}</li>`).join('')}</ul><h2>Limitations</h2><ul><li>Ranking metrics (P-score/SUCRA) summarize relative ordering but do not replace clinical judgment.</li><li>Residual heterogeneity or inconsistency can bias comparative inferences when assumptions are violated.</li><li>Publication bias assessment may be underpowered in sparse networks.</li><li>Results depend on the selected effect measure, estimator, and correction options.</li></ul><h2>Reproducibility</h2><ul><li><strong>Analysis fingerprint:</strong> <span class="stat">${fingerprint}</span></li><li><strong>Ranking seed:</strong> <span class="stat">${rankingSeed}</span></li><li><strong>Ranking simulations:</strong> <span class="stat">${rankingSim}</span></li><li><strong>Export format version:</strong> <span class="stat">8.1.0</span></li></ul><hr><p class="muted"><em>Generated by NMA Pro v8.1</em></p></body></html>`;
 const blob=new Blob([report],{type:'text/html'});
 const url=URL.createObjectURL(blob);
 const a=document.createElement('a');
@@ -9641,7 +9663,8 @@ errors.push(`Row ${rowNum}: Need at least 7 columns`);
 continue
 }
 const t1=String(row.treatment1??'').trim();const t2=String(row.treatment2??'').trim();
-const yi=Number(row.yi),se=Number(row.se),vi=Number(row.vi);
+// a blank TE / SE / variance cell is missing, not 0 (Number('') === 0 made a blank TE with an SE a TE of 0; nmapro6)
+const numCell=v=>v===''||v===null||v===undefined||String(v).trim()===''?NaN:Number(String(v).trim());const yi=numCell(row.yi),se=numCell(row.se),vi=numCell(row.vi);
 const hasDirectInput=Number.isFinite(yi)&&((Number.isFinite(se)&&se>0)||(Number.isFinite(vi)&&vi>0));
 // A count field that is present but not a number (NA, NaN, '.', blank) is MISSING. netmeta/meta give that comparison TE = NA and leave it
 // out of the network with a warning; until 2026-11-15 the page read NA events as 0 (sanitizeInteger default) and blank events
@@ -9759,6 +9782,9 @@ reader.readAsText(file)
 input.click()
 }
 
+// Rows with no usable effect (e.g. an MD / SMD row with a blank TE, SD or mean) are left out of the network, as netmeta
+// leaves out comparisons with missing TE / seTE; this says which, in the Results tab and a toast (lane nmapro6).
+function renderDroppedRowsNotice(results){const box=document.getElementById('droppedRowsNotice');const rows=Array.isArray(results?.notComputableDetail)?results.notComputableDetail:[];if(box){if(!rows.length){box.innerHTML='';}else{box.innerHTML=`<div class="alert alert--warning mb-4"><span class="alert__icon">!</span><div class="alert__text"><strong>${rows.length} row${rows.length===1?'':'s'} left out (no usable effect):</strong> ${rows.map(r=>`${Security.escapeHtml(r.name||'unnamed')} (${Security.escapeHtml(r.treatment1)} vs ${Security.escapeHtml(r.treatment2)}: ${Security.escapeHtml(r.reason)})`).join('; ')}. As netmeta does with a comparison whose TE / seTE is missing, ${rows.length===1?'it is':'they are'} not in the network; complete or remove ${rows.length===1?'it':'them'} to include ${rows.length===1?'it':'them'}.</div></div>`;}}if(rows.length&&typeof Toast!=='undefined')Toast.show(`${rows.length} row${rows.length===1?'':'s'} left out: no usable effect (see Results)`,'warn')}
 async function runAnalysis(){if(AppState.studies.length<2){Toast.show('Need at least 2 studies', "warn");return}const t0=performance.now();showLoading('Running Guardian...',5);AppState.effectMeasure=document.getElementById('effectMeasureSelect').value;AppState.estimator=document.getElementById('estimatorSelect').value;AppState.reference=document.getElementById('referenceSelect').value;AppState.direction=document.querySelector('input[name="direction"]:checked').value;AppState.smallStudyCorrection=document.getElementById('smallStudyCorrectionSelect').value;AppState.predictionIntervals=document.getElementById('predictionCheckbox').checked;AppState.zeroCellCorrection=document.getElementById('zeroCellCorrectionSelect')?.value||'haldane';const rankingSimInput=parseInt(document.getElementById('rankingSimInput')?.value,10);AppState.rankingSimulations=Number.isFinite(rankingSimInput)?Math.max(200,Math.min(50000,Math.floor(rankingSimInput))):2000;const rankingSeedRaw=String(document.getElementById('rankingSeedInput')?.value??'').trim();const parsedSeed=parseInt(rankingSeedRaw,10);AppState.userRankingSeed=Number.isFinite(parsedSeed)&&parsedSeed>0?Math.floor(parsedSeed):null;
 if(!AppState.reference){const t=new Set();AppState.studies.forEach(s=>{t.add(s.treatment1);t.add(s.treatment2)});AppState.reference=Array.from(t).sort()[0]}
 const analysisOptions={reference:AppState.reference,effectMeasure:AppState.effectMeasure,estimator:AppState.estimator,direction:AppState.direction,smallStudyCorrection:AppState.smallStudyCorrection,predictionIntervals:AppState.predictionIntervals,zeroCellCorrection:AppState.zeroCellCorrection,rankingSimulations:AppState.rankingSimulations,userRankingSeed:AppState.userRankingSeed};
@@ -9770,6 +9796,7 @@ if(!AppState.guardian.canProceed){hideLoading();Toast.show('Guardian blocked: '+
 try{
 
 showLoading('Estimating t²...',20);await new Promise(r=>setTimeout(r,50));AppState.results=FrequentistNMA.analyze(AppState.studies,{reference:AppState.reference,effectMeasure:AppState.effectMeasure,estimator:AppState.estimator,smallStudyCorrection:AppState.smallStudyCorrection,predictionIntervals:AppState.predictionIntervals,zeroCellCorrection:AppState.zeroCellCorrection});
+renderDroppedRowsNotice(AppState.results);
 showLoading('Computing rankings...',35);await new Promise(r=>setTimeout(r,50));AppState.ranking=TreatmentRanking.rank(AppState.results.effects,AppState.results.treatments,AppState.direction,{seed:AppState.rankingSeed,nSim:AppState.rankingSimulations});
 showLoading('Running CINeMA...',45);await new Promise(r=>setTimeout(r,50));AppState.cinemaResults=CINeMA.assess(AppState.results,AppState.studies,{reference:AppState.reference});
 showLoading('Running GRADE-NMA...',55);await new Promise(r=>setTimeout(r,50));AppState.gradeResults=GRADE_NMA.assess(AppState.results,AppState.studies,{reference:AppState.reference});
@@ -10030,7 +10057,7 @@ async function runLeaveOneOut(){if(!AppState.results){Toast.show('Run main analy
 
 async function runMultiverse(){if(!AppState.results){Toast.show('Run main analysis first', "warn");return}showLoading('Running multiverse robustness...',35);await new Promise(r=>setTimeout(r,100));try{const options={reference:AppState.reference,effectMeasure:AppState.effectMeasure,direction:AppState.direction,seed:AppState.rankingSeed};AppState.multiverseResults=RobustnessMultiverse.analyze(AppState.studies,options);if(!AppState.multiverseResults.applicable){hideLoading();Toast.show(AppState.multiverseResults.message||'Multiverse run failed', "warn");return}recordAudit('multiverse_run',{nScenarios:AppState.multiverseResults.nScenarios,nSuccessful:AppState.multiverseResults.nSuccessful,consensusTreatment:AppState.multiverseResults.consensusTreatment,stabilityIndex:AppState.multiverseResults.stabilityIndex});renderMultiverseResults(AppState.multiverseResults);hideLoading();switchTab('sensitivity');announce('Multiverse robustness complete')}catch(e){hideLoading();Toast.show('Multiverse failed: '+e.message, "warn")}}
 
-function renderMultiverseResults(result){const container=document.getElementById('multiverseContainer');if(!container)return;if(!result||!result.applicable){container.innerHTML='<p class="text-secondary">No multiverse results</p>';return}const stabilityPct=(Number(result.stabilityIndex||0)*100);const stabilityTone=result.robustness==='High'?'success':result.robustness==='Moderate'?'warning':'danger';const countsRows=(result.topFrequency||[]).map(r=>`<tr><td>${Security.escapeHtml(r.treatment)}</td><td class="font-mono text-right">${r.count}</td><td class="font-mono text-right">${(r.proportion*100).toFixed(1)}%</td></tr>`).join('');let html=`<div class="alert alert--${stabilityTone} mb-4"><span class="alert__icon"></span><div class="alert__text"><strong>Consensus top treatment:</strong> ${Security.escapeHtml(result.consensusTreatment||'N/A')}<br><strong>Stability:</strong> ${stabilityPct.toFixed(1)}% across ${result.nSuccessful}/${result.nScenarios} successful scenarios (${Security.escapeHtml(result.robustness)}).</div></div>`;const tau2Txt=Array.isArray(result.tau2Range)&&result.tau2Range[0]!==null?`${result.tau2Range[0].toFixed(4)} to ${result.tau2Range[1].toFixed(4)}`:'N/A';const i2Txt=Array.isArray(result.i2Range)&&result.i2Range[0]!==null?`${result.i2Range[0].toFixed(1)}% to ${result.i2Range[1].toFixed(1)}%`:'N/A';html+=`<div class="stat-grid mb-4"><div class="stat-card"><div class="stat-card__value">${result.nSuccessful}/${result.nScenarios}</div><div class="stat-card__label">Successful Scenarios</div></div><div class="stat-card"><div class="stat-card__value">${tau2Txt}</div><div class="stat-card__label">t² Range</div></div><div class="stat-card"><div class="stat-card__value">${i2Txt}</div><div class="stat-card__label">I² Range</div></div></div>`;html+=`<div class="grid grid-cols-2 gap-4"><div><div class="flex justify-between items-center mb-2"><h4 style="font-size:14px;font-weight:600;color:var(--text-primary)">Top-Treatment Frequency</h4>${PlotDownloader.createTableDropdown('multiverseCountsTable','NMA_Multiverse_TopFrequency')}</div><div id="multiverseCountsTable"><table class="data-table"><thead><tr><th>Treatment</th><th class="text-right">Wins</th><th class="text-right">Share</th></tr></thead><tbody>${countsRows||'<tr><td colspan="3" class="text-secondary">No counts</td></tr>'}</tbody></table></div></div>`;const scenarioRows=(result.scenarioResults||[]).map(r=>r.status==='ok'?`<tr><td>${r.scenarioId}</td><td>${Security.escapeHtml(r.estimator)}</td><td>${Security.escapeHtml(r.smallStudyCorrection)}</td><td>${Security.escapeHtml(r.topTreatment||'N/A')}</td><td class="font-mono">${Number.isFinite(r.topPScore)?r.topPScore.toFixed(3):'N/A'}</td><td class="font-mono">${Number.isFinite(r.tau2)?r.tau2.toFixed(4):'N/A'}</td><td class="font-mono">${Number.isFinite(r.I2)?r.I2.toFixed(1)+'%':'N/A'}</td></tr>`:`<tr><td>${r.scenarioId}</td><td>${Security.escapeHtml(r.estimator)}</td><td>${Security.escapeHtml(r.smallStudyCorrection)}</td><td colspan="4" class="text-secondary">Failed: ${Security.escapeHtml(r.error||'Unknown error')}</td></tr>`).join('');html+=`<div><div class="flex justify-between items-center mb-2"><h4 style="font-size:14px;font-weight:600;color:var(--text-primary)">Scenario Matrix</h4>${PlotDownloader.createTableDropdown('multiverseScenarioTable','NMA_Multiverse_Scenarios')}</div><div style="max-height:320px;overflow:auto"><div id="multiverseScenarioTable"><table class="data-table"><thead><tr><th>#</th><th>Estimator</th><th>Correction</th><th>Top</th><th>P-score</th><th>t²</th><th>I²</th></tr></thead><tbody>${scenarioRows}</tbody></table></div></div></div></div>`;container.innerHTML=html}
+function renderMultiverseResults(result){const container=document.getElementById('multiverseContainer');if(!container)return;if(!result||!result.applicable){container.innerHTML='<p class="text-secondary">No multiverse results</p>';return}const stabilityPct=(Number(result.stabilityIndex||0)*100);const stabilityTone=result.robustness==='High'?'success':result.robustness==='Moderate'?'warning':'danger';const countsRows=(result.topFrequency||[]).map(r=>`<tr><td>${Security.escapeHtml(r.treatment)}</td><td class="font-mono text-right">${r.count}</td><td class="font-mono text-right">${(r.proportion*100).toFixed(1)}%</td></tr>`).join('');let html=`<div class="alert alert--${stabilityTone} mb-4"><span class="alert__icon"></span><div class="alert__text"><strong>Consensus top treatment:</strong> ${Security.escapeHtml(result.consensusTreatment||'N/A')}<br><strong>Stability:</strong> ${stabilityPct.toFixed(1)}% across ${result.nSuccessful}/${result.nScenarios} successful scenarios (${Security.escapeHtml(result.robustness)}).</div></div>`;const tau2Txt=Array.isArray(result.tau2Range)&&result.tau2Range[0]!==null?`${result.tau2Range[0].toFixed(4)} to ${result.tau2Range[1].toFixed(4)}`:'N/A';const i2Txt=Array.isArray(result.i2Range)&&result.i2Range[0]!==null?`${result.i2Range[0].toFixed(1)}% to ${result.i2Range[1].toFixed(1)}%`:'N/A';html+=`<div class="stat-grid mb-4"><div class="stat-card"><div class="stat-card__value">${result.nSuccessful}/${result.nScenarios}</div><div class="stat-card__label">Successful Scenarios</div></div><div class="stat-card"><div class="stat-card__value">${tau2Txt}</div><div class="stat-card__label">t² Range</div></div><div class="stat-card"><div class="stat-card__value">${i2Txt}</div><div class="stat-card__label">I² Range</div></div></div>`;html+=`<div class="grid grid-cols-2 gap-4"><div><div class="flex justify-between items-center mb-2"><h4 style="font-size:14px;font-weight:600;color:var(--text-primary)">Top-Treatment Frequency</h4>${PlotDownloader.createTableDropdown('multiverseCountsTable','NMA_Multiverse_TopFrequency')}</div><div id="multiverseCountsTable"><table class="data-table"><thead><tr><th>Treatment</th><th class="text-right">Wins</th><th class="text-right">Share</th></tr></thead><tbody>${countsRows||'<tr><td colspan="3" class="text-secondary">No counts</td></tr>'}</tbody></table></div></div>`;const scenarioRows=(result.scenarioResults||[]).map(r=>r.status==='ok'?`<tr><td>${r.scenarioId}</td><td>${Security.escapeHtml(r.estimator)}</td><td>${Security.escapeHtml(CORRECTION_LABELS[r.smallStudyCorrection]??r.smallStudyCorrection)}</td><td>${Security.escapeHtml(r.topTreatment||'N/A')}</td><td class="font-mono">${Number.isFinite(r.topPScore)?r.topPScore.toFixed(3):'N/A'}</td><td class="font-mono">${Number.isFinite(r.tau2)?r.tau2.toFixed(4):'N/A'}</td><td class="font-mono">${Number.isFinite(r.I2)?r.I2.toFixed(1)+'%':'N/A'}</td></tr>`:`<tr><td>${r.scenarioId}</td><td>${Security.escapeHtml(r.estimator)}</td><td>${Security.escapeHtml(CORRECTION_LABELS[r.smallStudyCorrection]??r.smallStudyCorrection)}</td><td colspan="4" class="text-secondary">Failed: ${Security.escapeHtml(r.error||'Unknown error')}</td></tr>`).join('');html+=`<div><div class="flex justify-between items-center mb-2"><h4 style="font-size:14px;font-weight:600;color:var(--text-primary)">Scenario Matrix</h4>${PlotDownloader.createTableDropdown('multiverseScenarioTable','NMA_Multiverse_Scenarios')}</div><div style="max-height:320px;overflow:auto"><div id="multiverseScenarioTable"><table class="data-table"><thead><tr><th>#</th><th>Estimator</th><th>Correction</th><th>Top</th><th>P-score</th><th>t²</th><th>I²</th></tr></thead><tbody>${scenarioRows}</tbody></table></div></div></div></div>`;container.innerHTML=html}
 
 function collectConsensusSignals(){
 const signals=[];
@@ -11250,7 +11277,7 @@ const scenarioNames=[
 'Bayesian conservative prior','Bayesian heavy-tail likelihood','Prediction-shift scenario','MCID threshold edge','Cluster tie-heavy network',
 'High inconsistency proxy','Low inconsistency proxy','Reference-shift proxy','Precision-weighted dominance','Balanced-evidence network',
 'Small-study corrected profile','No correction profile','Extreme baseline risk','Low event-rate profile','HKSJ robustness check',
-'KR robustness check','DL estimator proxy','PM estimator proxy','Long-tail posterior proxy','Rank-flip sensitivity'
+'Ad hoc network-df t robustness check','DL estimator proxy','PM estimator proxy','Long-tail posterior proxy','Rank-flip sensitivity'
 ];
 const list=this.loadSnapshots();
 const existingIds=new Set(list.map(s=>String(s?.id||'')));
@@ -14124,6 +14151,132 @@ const esc=Security.escapeHtml; // [R7-P2-9] reuse app's escapeHtml
 function fmtNum(v,dp=6){return(v===null||v===undefined||!Number.isFinite(v))?'N/A':v.toFixed(dp);}
 function fmtPct(v){return(v===null||v===undefined||!Number.isFinite(v))?'N/A':v.toFixed(1)+'%';}
 
+/* -- the netmeta script run in WebR (a function so tests can run exactly this script in desktop R; lane nmapro6) -- */
+function buildNetmetaCode(validRows,o){const{ref,em,plan,confLevel,smallValues,smallValuesFallback,rCommon,hksjArg,rMethodTau,estimatorJS}=o;
+  return `
+library(netmeta)
+library(jsonlite)
+TE <- c(${validRows.map(r=>r.yi.toPrecision(15)).join(',')})
+seTE <- c(${validRows.map(r=>Math.sqrt(r.vi).toPrecision(15)).join(',')})
+treat1 <- c(${validRows.map(r=>rStr(String(r.treatment1||''))).join(',')})
+treat2 <- c(${validRows.map(r=>rStr(String(r.treatment2||''))).join(',')})
+studlab <- c(${validRows.map(r=>rStr(String(r.name||''))).join(',')})
+net <- netmeta(TE, seTE, treat1, treat2, studlab,
+               sm=${rStr(em)}, reference.group=${rStr(ref)},
+               ${plan.tauArg},
+               level=${confLevel}${hksjArg})
+net.own <- ${plan.ownArg?`netmeta(TE, seTE, treat1, treat2, studlab, sm=${rStr(em)}, reference.group=${rStr(ref)}, ${plan.ownArg}, level=${confLevel})`:'NULL'}
+rnk <- tryCatch(
+  netrank(net, small.values=${rStr(smallValues)}),
+  error=function(e) tryCatch(netrank(net, small.values=${rStr(smallValuesFallback)}), error=function(e2) NULL)
+)
+pscores <- if(!is.null(rnk)){
+  if(${rCommon}) setNames(as.numeric(rnk$Pscore.common), names(rnk$Pscore.common))
+  else setNames(as.numeric(rnk$Pscore.random), names(rnk$Pscore.random))
+} else c()
+trts <- net$trts
+rref <- net$reference.group
+mat <- if(${rCommon}) "common" else "random"
+effs <- list()
+league <- list()
+predict_list <- list()
+for(t in trts){
+  if(t==rref) next
+  idx <- match(t, trts)
+  ridx <- match(rref, trts)
+  if(mat=="common"){
+    effs[[t]] <- list(estimate=net$TE.common[idx,ridx], se=net$seTE.common[idx,ridx],
+      ci_lower=net$lower.common[idx,ridx], ci_upper=net$upper.common[idx,ridx],
+      pvalue=net$pval.common[idx,ridx])
+  } else {
+    effs[[t]] <- list(estimate=net$TE.random[idx,ridx], se=net$seTE.random[idx,ridx],
+      ci_lower=net$lower.random[idx,ridx], ci_upper=net$upper.random[idx,ridx],
+      pvalue=net$pval.random[idx,ridx])
+  }
+  predict_list[[t]] <- tryCatch(list(
+    lower=net$lower.predict.random[idx,ridx],
+    upper=net$upper.predict.random[idx,ridx]
+  ), error=function(e) list(lower=NA, upper=NA))
+}
+for(i in seq_along(trts)){
+  for(j in seq_along(trts)){
+    if(i==j) next
+    key <- paste0(trts[i], ":", trts[j])
+    if(mat=="common"){
+      league[[key]] <- list(TE=net$TE.common[i,j], seTE=net$seTE.common[i,j],
+        lower=net$lower.common[i,j], upper=net$upper.common[i,j])
+    } else {
+      league[[key]] <- list(TE=net$TE.random[i,j], seTE=net$seTE.random[i,j],
+        lower=net$lower.random[i,j], upper=net$upper.random[i,j])
+    }
+  }
+}
+ns_results <- tryCatch({
+  ns <- netsplit(net, level=${confLevel})
+  ns_list <- list()
+  ns_df <- if(mat=="common") ns$common else ns$random
+  ns_direct <- if(mat=="common") ns$direct.common else ns$direct.random
+  ns_indirect <- if(mat=="common") ns$indirect.common else ns$indirect.random
+  ns_compare <- if(mat=="common") ns$compare.common else ns$compare.random
+  for(i in seq_len(nrow(ns_df))){
+    comp <- ns$comparison[i]
+    ns_list[[comp]] <- list(
+      direct=ns_direct$TE[i],
+      indirect=ns_indirect$TE[i],
+      diff=ns_compare$TE[i],
+      pvalue=ns_compare$p[i]
+    )
+  }
+  ns_list
+}, error=function(e) list())
+out <- list(
+  method=mat,
+  tau2=as.numeric(net$tau^2), tau=as.numeric(net$tau),
+  I2=100*as.numeric(net$I2), Q=as.numeric(net$Q), # netmeta I2 is a proportion, the page reports % (compared 81.4 with 0.814 until 2026-11-15)
+  df=as.numeric(net$df.Q), pQ=as.numeric(net$pval.Q),
+  pscores=as.list(pscores), effects=effs, league=league,
+  predict=predict_list, nodesplit=ns_results,
+  reference=${rStr(ref)}, sm=${rStr(em)},
+  method_tau=${rStr(plan.tau2Check?(estimatorJS==='FE'?'FE':rMethodTau):'tau.preset')},
+  tau2_own=if(is.null(net.own)) NA else as.numeric(net.own$tau^2),
+  nStudies=net$k, nTreatments=net$n,
+  netmeta_version=as.character(packageVersion("netmeta")),
+  engine="netmeta"
+)
+toJSON(out, auto_unbox=TRUE, digits=10)`;}
+window.WebRValidation=Object.assign(window.WebRValidation||{},{buildNetmetaCode});
+
+/* -- Like-with-like plan (lane nmapro6, 2026-11-15) --
+   Until 2026-11-15 the check ran netmeta with method.tau = "REML" for every estimator other than DL / ML / FE, so a
+   page fitted with Paule-Mandel was compared with netmeta's REML (tau2, effects, SEs and CIs all differ), and the
+   page's HKSJ-scaled SEs / t intervals / P-scores / PIs were compared with netmeta's uncorrected ones.
+   * FE -> common = TRUE; DL / REML / ML -> netmeta's own method.tau, tau2 compared.
+   * PM (or any estimator netmeta lacks): netmeta has no Paule-Mandel estimator (method.tau must be "DL", "ML" or
+     "REML"), so tau2 is FIXED at the page's value (tau.preset) and the tau2 check is SKIPPED with a visible note; the
+     estimates, SEs, league table, Q / I2 and node-splits are then compared at the same tau2.
+   * REML / ML with a multi-arm study: netmeta's REML / ML treat a multi-arm study's contrasts as independent, the page
+     maximises the exact likelihood with the multi-arm covariance (= metafor rma.mv), so netmeta's own tau2 is shown
+     for information and not scored; the comparisons use tau.preset = the page's tau2 (as the R export's net.page).
+   * a small-sample correction (HKSJ, mKH, SJ, t on network df): netmeta 3.7.0 has none, so the page's SEs are
+     compared before the correction (SE / sqrt(factor)), its P-scores recomputed without the factor, and the CI and
+     prediction-interval checks are skipped with a note. */
+function webrPlan(o){
+  const est=String(o?.estimator||'REML').toUpperCase(),corr=String(o?.correction||'none'),t2=Number(o?.tau2);
+  const notes=[];const plan={estimator:est,correction:corr,tauArg:'',ownArg:null,tau2Check:true,uncorrected:false,skipCI:false,skipPI:false,notes};
+  const preset=Number.isFinite(t2)&&t2>=0?`common=FALSE, random=TRUE, tau.preset=sqrt(${t2.toPrecision(17)})`:null;
+  if(est==='FE'){plan.tauArg='common=TRUE, random=FALSE, method.tau="REML"';plan.tau2Check=false;notes.push('common-effect model: the page tau2 is 0 by definition; netmeta still reports a REML tau2 that its common-effect estimates do not use, so tau2 is not compared.');}
+  else if(['DL','REML','ML'].includes(est)&&!(o?.multiArm&&est!=='DL')){plan.tauArg=`common=FALSE, random=TRUE, method.tau="${est}"`;}
+  else if(['REML','ML'].includes(est)){plan.tauArg=preset;plan.ownArg=`common=FALSE, random=TRUE, method.tau="${est}"`;plan.tau2Check=false;
+    notes.push(`netmeta's ${est} treats the contrasts of a multi-arm study as independent; the page maximises the exact ${est} likelihood with the multi-arm covariance (as metafor rma.mv). tau2 is therefore not scored (netmeta's own value is shown for information), and the estimates, SEs and the rest are compared with tau2 fixed at the page's value (tau.preset).`);}
+  else{plan.tauArg=preset;plan.tau2Check=false;
+    notes.push(`netmeta has no ${est==='PM'?'Paule-Mandel':est} estimator (method.tau must be "DL", "ML" or "REML"), so the page's tau2 is NOT independently checked: netmeta is run with tau2 fixed at the page's value (tau.preset) and the estimates, SEs, league table, Q / I2 and node-splits are compared at that tau2.`);}
+  if(plan.tauArg===null){plan.tauArg='common=FALSE, random=TRUE, method.tau="REML"';plan.tau2Check=false;notes.push('the page has no finite tau2 to fix; netmeta REML is shown for information only');}
+  if(corr!=='none'&&est!=='FE'){plan.uncorrected=true;plan.skipCI=true;plan.skipPI=true;
+    notes.push(`the page's "${String(o?.correctionLabel||corr)}" small-sample correction scales the variances (and uses t quantiles); netmeta 3.7.0 has no such interval, so SEs and P-scores are compared before the correction and the CI and prediction-interval checks are skipped.`);}
+  return plan;
+}
+window.WebRValidation=Object.assign(window.WebRValidation||{},{plan:webrPlan});
+
 /* ── Card injection ── */
 function injectWebRCard(){
   const panel=document.getElementById('panel-validation');
@@ -14241,7 +14394,10 @@ async function runFullValidation(){
     /* ── Step 3: Build data and send to R ── */
     showProgress(40,useNetmeta?'Running R netmeta NMA...':'Running R metafor NMA (netmeta unavailable)...');
     // Map estimator — [R9-P0-1] FE must use valid method.tau (DL is ignored when common=TRUE)
-    const rMethodTau=estimatorJS==='DL'?'DL':estimatorJS==='ML'?'ML':'REML'; // FE→REML (tau ignored for common-effect); PM has no netmeta equivalent (REML is compared)
+    const rMethodTau=estimatorJS==='DL'?'DL':estimatorJS==='ML'?'ML':'REML'; // labels netmeta's own estimate only; the netmeta call uses plan.tauArg (webrPlan)
+    const _vr=(results.processed||[]).filter(s=>Number.isFinite(s.yi)&&Number.isFinite(s.vi)&&s.vi>0);
+    const _byStudy=new Map();_vr.forEach(s=>{const id=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():null;if(id===null)return;if(!_byStudy.has(id))_byStudy.set(id,new Set());_byStudy.get(id).add([String(s.treatment1),String(s.treatment2)].sort().join('|'))});
+    const plan=webrPlan({estimator:estimatorJS,correction:results.effects?.correctionMethod||'none',correctionLabel:(window.CORRECTION_LABELS||{})[results.effects?.correctionMethod],multiArm:Array.from(_byStudy.values()).some(x=>x.size>1),tau2:results.tau2});
     const rCommon=estimatorJS==='FE'?'TRUE':'FALSE';
     const rRandom=estimatorJS==='FE'?'FALSE':'TRUE';
     const smallValues=direction==='lower'?'desirable':'undesirable';
@@ -14269,96 +14425,7 @@ async function runFullValidation(){
         document.getElementById('webr-netmeta-progress').style.display='none';
         return;
       }
-      rCode=`
-library(netmeta)
-library(jsonlite)
-TE <- c(${validRows.map(r=>r.yi.toPrecision(15)).join(',')})
-seTE <- c(${validRows.map(r=>Math.sqrt(r.vi).toPrecision(15)).join(',')})
-treat1 <- c(${validRows.map(r=>rStr(String(r.treatment1||''))).join(',')})
-treat2 <- c(${validRows.map(r=>rStr(String(r.treatment2||''))).join(',')})
-studlab <- c(${validRows.map(r=>rStr(String(r.name||''))).join(',')})
-net <- netmeta(TE, seTE, treat1, treat2, studlab,
-               sm=${rStr(em)}, reference.group=${rStr(ref)},
-               common=${rCommon}, random=${rRandom},
-               method.tau=${rStr(rMethodTau)},
-               level=${confLevel}${hksjArg})
-rnk <- tryCatch(
-  netrank(net, small.values=${rStr(smallValues)}),
-  error=function(e) tryCatch(netrank(net, small.values=${rStr(smallValuesFallback)}), error=function(e2) NULL)
-)
-pscores <- if(!is.null(rnk)){
-  if(${rCommon}) setNames(as.numeric(rnk$Pscore.common), names(rnk$Pscore.common))
-  else setNames(as.numeric(rnk$Pscore.random), names(rnk$Pscore.random))
-} else c()
-trts <- net$trts
-rref <- net$reference.group
-mat <- if(${rCommon}) "common" else "random"
-effs <- list()
-league <- list()
-predict_list <- list()
-for(t in trts){
-  if(t==rref) next
-  idx <- match(t, trts)
-  ridx <- match(rref, trts)
-  if(mat=="common"){
-    effs[[t]] <- list(estimate=net$TE.common[idx,ridx], se=net$seTE.common[idx,ridx],
-      ci_lower=net$lower.common[idx,ridx], ci_upper=net$upper.common[idx,ridx],
-      pvalue=net$pval.common[idx,ridx])
-  } else {
-    effs[[t]] <- list(estimate=net$TE.random[idx,ridx], se=net$seTE.random[idx,ridx],
-      ci_lower=net$lower.random[idx,ridx], ci_upper=net$upper.random[idx,ridx],
-      pvalue=net$pval.random[idx,ridx])
-  }
-  predict_list[[t]] <- tryCatch(list(
-    lower=net$lower.predict.random[idx,ridx],
-    upper=net$upper.predict.random[idx,ridx]
-  ), error=function(e) list(lower=NA, upper=NA))
-}
-for(i in seq_along(trts)){
-  for(j in seq_along(trts)){
-    if(i==j) next
-    key <- paste0(trts[i], ":", trts[j])
-    if(mat=="common"){
-      league[[key]] <- list(TE=net$TE.common[i,j], seTE=net$seTE.common[i,j],
-        lower=net$lower.common[i,j], upper=net$upper.common[i,j])
-    } else {
-      league[[key]] <- list(TE=net$TE.random[i,j], seTE=net$seTE.random[i,j],
-        lower=net$lower.random[i,j], upper=net$upper.random[i,j])
-    }
-  }
-}
-ns_results <- tryCatch({
-  ns <- netsplit(net, level=${confLevel})
-  ns_list <- list()
-  ns_df <- if(mat=="common") ns$common else ns$random
-  ns_direct <- if(mat=="common") ns$direct.common else ns$direct.random
-  ns_indirect <- if(mat=="common") ns$indirect.common else ns$indirect.random
-  ns_compare <- if(mat=="common") ns$compare.common else ns$compare.random
-  for(i in seq_len(nrow(ns_df))){
-    comp <- ns$comparison[i]
-    ns_list[[comp]] <- list(
-      direct=ns_direct$TE[i],
-      indirect=ns_indirect$TE[i],
-      diff=ns_compare$TE[i],
-      pvalue=ns_compare$p[i]
-    )
-  }
-  ns_list
-}, error=function(e) list())
-out <- list(
-  method=mat,
-  tau2=as.numeric(net$tau^2), tau=as.numeric(net$tau),
-  I2=as.numeric(net$I2), Q=as.numeric(net$Q),
-  df=as.numeric(net$df.Q), pQ=as.numeric(net$pval.Q),
-  pscores=as.list(pscores), effects=effs, league=league,
-  predict=predict_list, nodesplit=ns_results,
-  reference=${rStr(ref)}, sm=${rStr(em)},
-  method_tau=${rStr(rMethodTau)},
-  nStudies=net$k, nTreatments=net$n,
-  netmeta_version=as.character(packageVersion("netmeta")),
-  engine="netmeta"
-)
-toJSON(out, auto_unbox=TRUE, digits=10)`;
+      rCode=buildNetmetaCode(validRows,{ref,em,plan,confLevel,smallValues,smallValuesFallback,rCommon,hksjArg,rMethodTau,estimatorJS});
     }else{
       // Metafor fallback — pairwise only (no full network)
       const processed=results.processed||[];
@@ -14371,7 +14438,7 @@ toJSON(out, auto_unbox=TRUE, digits=10)`;
         return;
       }
       // Build pairwise metafor code for each comparison
-      rCode=buildMetaforFallbackCode(validRows,ref,em,rMethodTau,confLevel);
+      rCode=buildMetaforFallbackCode(validRows,ref,em,['FE','DL','REML','ML','PM'].includes(estimatorJS)?estimatorJS:'REML',confLevel); // rma.uni has PM and FE: the pairwise fallback uses the page's estimator (was REML for PM / FE)
     }
 
     /* ── Step 4: Execute R code ── */
@@ -14384,7 +14451,7 @@ toJSON(out, auto_unbox=TRUE, digits=10)`;
 
     /* ── Step 5: Compare results ── */
     showProgress(85,'Comparing JS vs R results...');
-    const comparison=compareResults(results,rData,ref,em,isRatio); // [R7-P2-8] removed unused params
+    const comparison=compareResults(results,rData,ref,em,isRatio,useNetmeta?plan:null,direction); // [R7-P2-8] removed unused params
 
     /* ── Step 6: Render ── */
     showProgress(100,'Done!');
@@ -14461,14 +14528,19 @@ toJSON(out, auto_unbox=TRUE, digits=10)`;
 }
 
 /* ── Compare JS and R results ── */
-function compareResults(jsResults,rData,ref,em,isRatio){
+function compareResults(jsResults,rData,ref,em,isRatio,plan,direction){
   const tol={effect:0.01,se:0.01,tau2:0.005,I2:1.0,Q:0.5,pScore:0.03,pValue:0.02}; // [P1-7] tightened pValue
   const checks=[];
   const isNetmeta=rData.engine==='netmeta';
+  plan=plan||{tau2Check:true,uncorrected:false,skipCI:false,skipPI:false,notes:[]};
+  const notes=isNetmeta?plan.notes.slice():[];
+  const cf=Number(jsResults.effects?.correctionFactor)||1;
+  const seDiv=plan.uncorrected?Math.sqrt(cf):1;
 
   // 1. Heterogeneity
   if(isNetmeta){
-    checks.push(makeCheck('tau-squared','Heterogeneity',jsResults.tau2??null,rData.tau2??null,tol.tau2,'abs'));
+    if(plan.tau2Check)checks.push(makeCheck('tau-squared','Heterogeneity',jsResults.tau2??null,rData.tau2??null,tol.tau2,'abs'));
+    else notes.push('tau-squared not compared (see above): page '+fmtNum(jsResults.tau2??null,6)+(Number.isFinite(rData.tau2_own)?', netmeta\'s own estimate '+fmtNum(rData.tau2_own,6)+' (information only)':''));
     checks.push(makeCheck('I-squared (%)','Heterogeneity',jsResults.heterogeneity?.I2??null,rData.I2??null,tol.I2,'abs'));
     checks.push(makeCheck('Q statistic','Heterogeneity',jsResults.heterogeneity?.Q??null,rData.Q??null,tol.Q,'abs'));
   }
@@ -14483,9 +14555,10 @@ function compareResults(jsResults,rData,ref,em,isRatio){
     const jsE=jsEffects[t],rE=rEffects[t];
     if(!jsE||!rE)continue;
     checks.push(makeCheck(t+' estimate','Treatment Effects',jsE.estimate??null,rE.estimate??null,tol.effect,'abs'));
-    checks.push(makeCheck(t+' SE','Treatment Effects',jsE.se??null,rE.se??null,tol.se,'abs'));
+    checks.push(makeCheck(t+(seDiv!==1?' SE (before correction)':' SE'),'Treatment Effects',Number.isFinite(jsE.se)?jsE.se/seDiv:null,rE.se??null,tol.se,'abs'));
+    if(!plan.skipCI){
     checks.push(makeCheck(t+' CI lower','Treatment Effects',jsE.ci_lower??null,rE.ci_lower??null,tol.effect*2,'abs'));
-    checks.push(makeCheck(t+' CI upper','Treatment Effects',jsE.ci_upper??null,rE.ci_upper??null,tol.effect*2,'abs'));
+    checks.push(makeCheck(t+' CI upper','Treatment Effects',jsE.ci_upper??null,rE.ci_upper??null,tol.effect*2,'abs'));}
   }
 
   // 2b. [P0-5] League table (all pairwise comparisons)
@@ -14518,6 +14591,8 @@ function compareResults(jsResults,rData,ref,em,isRatio){
   if(jsRanking&&Array.isArray(jsRanking)&&Object.keys(rPscores).length>0){
     const jsRankMap={};
     jsRanking.forEach(r=>{if(r.treatment)jsRankMap[r.treatment]=r.pScore;});
+    // with a correction factor != 1 the page's P-scores use the scaled variances; netmeta's do not: recompute without it
+    if(isNetmeta&&plan.uncorrected&&cf!==1&&typeof TreatmentRanking!=='undefined'&&jsResults.effects){try{const ps=TreatmentRanking.calcPScores({...jsResults.effects,correctionFactor:1},treatments,direction||'lower');Object.keys(jsRankMap).forEach(t=>{if(Number.isFinite(ps[t]))jsRankMap[t]=ps[t]})}catch(e){}}
 
     for(const t of treatments){
       const jsP=jsRankMap[t]??null;
@@ -14544,7 +14619,8 @@ function compareResults(jsResults,rData,ref,em,isRatio){
   // 4. [P1-10] Prediction intervals
   const rPredict=rData.predict||{};
   const jsEffObj=jsResults.effects?.effects||{};
-  if(isNetmeta&&Object.keys(rPredict).length>0){
+  if(isNetmeta&&plan.skipPI&&Object.keys(rPredict).length>0)notes.push('prediction intervals not compared: the page\'s use the corrected variance');
+  if(isNetmeta&&!plan.skipPI&&Object.keys(rPredict).length>0){
     for(const t of treatments){
       if(t===ref)continue;
       const rPI=rPredict[t];
@@ -14593,8 +14669,9 @@ function compareResults(jsResults,rData,ref,em,isRatio){
   const pct=total>0?(passed/total*100):0;
   const level=pct>=99?'Excellent':pct>=95?'Good':pct>=85?'Moderate — review failures':'Low — investigation required'; // [R7-P2-5]
 
-  return{checks,passed,failed,total,pct,level,isNetmeta,engine:rData.engine||'unknown'};
+  return{checks,passed,failed,total,pct,level,isNetmeta,engine:rData.engine||'unknown',notes};
 }
+window.WebRValidation=Object.assign(window.WebRValidation||{},{compareResults});
 
 function makeCheck(name,section,jsVal,rVal,tolerance,kind){
   const jsOk=typeof jsVal==='number'&&Number.isFinite(jsVal);
@@ -14632,6 +14709,9 @@ function renderValidationReport(container,comp,ref,em,isRatio,estimator,rData,co
     <span style="font-size:12px;color:var(--text-secondary,#666);">Engine: ${esc(engine)}</span></div>
     <p style="margin:6px 0 0;font-size:13px;color:var(--text-secondary,#555);">JS engine concordant with ${esc(engine)} for ${esc(em)} effect measure, ${esc(estimator)} estimator, reference: ${esc(ref)}.</p>
   </div>`;
+
+  // What was not compared like with like, and why (lane nmapro6)
+  if(Array.isArray(comp.notes)&&comp.notes.length){html+=`<div class="webr-like-notes" role="note" style="padding:10px 14px;border-radius:8px;background:#fffbeb;border-left:4px solid #d97706;margin-bottom:16px;font-size:13px;color:#92400e;"><strong>Not compared like with like:</strong><ul style="margin:6px 0 0;padding-left:18px;">${comp.notes.map(n=>'<li>'+esc(n)+'</li>').join('')}</ul></div>`;}
 
   // Stat cards
   html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
@@ -14727,6 +14807,7 @@ function downloadReport(comparison,ref,em,estimator,rData){
     engine:rData.engine||'unknown',
     settings:{effectMeasure:em,estimator,reference:ref},
     summary:{total:comparison.total,passed:comparison.passed,failed:comparison.failed,concordance:comparison.pct,level:comparison.level},
+    notes:comparison.notes||[],
     checks:comparison.checks.map(c=>({name:c.name,section:c.section,jsValue:c.jsVal,rValue:c.rVal,difference:c.diff,tolerance:c.tolerance,pass:c.pass})),
     rOutput:rData
   };
