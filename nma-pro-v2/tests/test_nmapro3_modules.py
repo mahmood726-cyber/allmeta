@@ -113,7 +113,8 @@ def test_worker_and_main_OR_RR_equal_metabin():
     bad = []
     for em in ('OR', 'RR'):
         r = R['worker'][em]
-        for eng in ('worker', 'main'):
+        assert V['worker'][em]['worker'] is None, em  # lane nmapro5: the worker engine is removed (one engine); its rows must be absent
+        for eng in ('main',):
             for i, s in enumerate(V['worker'][em][eng]):
                 if not (_close(s['yi'], r['yi'][i], 1e-10) and _close(s['vi'], r['vi'][i], 1e-10)):
                     bad.append('%s %s row %d: %r vs yi %r vi %r' % (em, eng, i, s, r['yi'][i], r['vi'][i]))

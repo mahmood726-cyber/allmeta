@@ -45,15 +45,15 @@ for (const m of html.slice(0, main.index).matchAll(/<script src="\.\.\/shared\/(
   vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 }
 vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, CBMBaselineDualNMA, ClusterRobustNMA, EnhancedCNMA,' +
-  ' RobustTailedNMA, WORKER_CODE, reg: RapidReview};',
+  ' RobustTailedNMA, WORKER_CODE: typeof WORKER_CODE !== "undefined" ? WORKER_CODE : null, reg: RapidReview};',
   ctx, { filename: 'nma-pro-v8.0.html' });
 const X = vm.runInContext('__X', ctx);
 
 // the worker's engine runs in its own context, as in the browser
-const wctx = sandbox();
-wctx.postMessage = noop;
-vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
-const WNMA = vm.runInContext('__WNMA', wctx);
+// lane nmapro5 (2026-11-15) removed the inlined Web Worker engine; WNMA is null unless an older page is run (PAGE=)
+const WNMA = X.WORKER_CODE ? (() => { const wctx = sandbox(); wctx.postMessage = noop;
+  vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
+  return vm.runInContext('__WNMA', wctx); })() : null;
 
 const readCsv = f => {
   const [head, ...rows] = fs.readFileSync(path.join(__dirname, f), 'utf8').trim().split(/\r?\n/);
@@ -82,9 +82,9 @@ for (const [key, rows, sc, ref, est] of [['senn_REML', senn, 1, 'plac', 'REML'],
 
 // ---- risk difference ----
 const rd = binary(readCsv('fixtures/nmapro2-rd.csv'));
-const pm = X.FrequentistNMA.calcEffects(rd, 'RD'), pw = WNMA.calcEffects(rd, 'RD');
+const pm = X.FrequentistNMA.calcEffects(rd, 'RD'), pw = WNMA ? WNMA.calcEffects(rd, 'RD') : null;
 out.rd.main = pm.map(s => ({ yi: s.yi, vi: s.vi }));
-out.rd.worker = pw.map(s => ({ yi: s.yi, vi: s.vi }));
+out.rd.worker = pw && pw.map(s => ({ yi: s.yi, vi: s.vi }));
 out.rd.registry = X.reg && typeof X.reg.effectStatsFromCounts === 'function'
   ? rd.map(s => { const st = X.reg.effectStatsFromCounts('RD', s.events1, s.n1, s.events2, s.n2); return st && { yi: st.yi ?? st.logEffect ?? st.estimate, se: st.se, vi: st.vi }; })
   : null;

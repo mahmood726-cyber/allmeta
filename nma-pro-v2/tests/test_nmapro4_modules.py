@@ -182,7 +182,8 @@ def test_mlnmr_multiarm_GLS_and_tau2():
 # ---------------------------------------------------------------- 6. RR continuity correction = metabin default
 def test_rr_rows_equal_metabin_default_both_engines():
     bad = []
-    for eng in ('main', 'worker'):
+    assert V['rr']['worker'] is None  # lane nmapro5: the worker engine is removed (one engine); its rows must be absent
+    for eng in ('main',):
         for i, (p, yi, vi) in enumerate(zip(V['rr'][eng], R['rr']['yi'], R['rr']['vi'])):
             if not (_close(p['yi'], yi, 1e-12, 1e-14) and _close(p['vi'], vi, 1e-12, 1e-14)):
                 bad.append('%s row %d: page %r metabin %r' % (eng, i + 1, (p['yi'], p['vi']), (yi, vi)))
@@ -265,9 +266,11 @@ def test_q_decomposition_two_arm_rows_are_oriented_as_their_label():
 
 
 def test_worker_multiarm_zero_arm_increment_in_all_arms():
+    # lane nmapro5: the worker engine is removed; the main engine's rows (the same assertion) are checked here
     bad = []
     for em in ('OR', 'RR'):
-        r, p = R['zero'][em], V['zero']['worker' + em]
+        assert V['zero']['worker' + em] is None, em
+        r, p = R['zero'][em], V['zero'][em]
         for f in ('rowTE', 'rowSE'):
             for i, (a, b) in enumerate(zip(p[f], r[f])):
                 if not _close(a, b, 1e-12, 1e-14):

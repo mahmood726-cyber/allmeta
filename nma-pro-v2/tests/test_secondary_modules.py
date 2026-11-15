@@ -67,7 +67,8 @@ def test_no_pi_when_df_Q_below_2():
 # ---------------------------------------------------------------- risk difference
 def test_rd_study_variances_equal_metabin():
     want = [s * s for s in R['rd']['seTE']]
-    for engine in ('main', 'worker', 'registry'):
+    assert V['rd']['worker'] is None  # lane nmapro5: the worker engine is removed (one engine); its rows must be absent
+    for engine in ('main', 'registry'):
         got = V['rd'][engine]
         assert got is not None, engine
         bad = ['%s %s: page yi %r vi %r, metabin %r %r' % (engine, R['rd']['study'][i], g['yi'], g['vi'], R['rd']['TE'][i], w)

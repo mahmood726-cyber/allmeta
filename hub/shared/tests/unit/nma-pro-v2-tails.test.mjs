@@ -50,21 +50,12 @@ test('nma-pro-v2: no p-value in the page is formed as 1 - Stats.<cdf>(...)', () 
   assert.equal(hits.length, 0, `${hits.length} sites still compute an upper tail as 1 - CDF`);
 });
 
-test('nma-pro-v2: the inlined Web Worker Stats provides the pnormU its NMA code calls', () => {
+// lane nmapro5 (2026-11-15): the inlined Web Worker (a second, older engine whose result was discarded) is removed,
+// so there is no worker Stats left to check; this asserts it stays gone.
+test('nma-pro-v2: no inlined Web Worker engine (one engine, one Stats)', () => {
   const html = readFileSync(PAGE, 'utf8');
-  const a = html.indexOf('const WORKER_CODE=`'), b = html.indexOf('`;', a);
-  const code = html.slice(a + 'const WORKER_CODE=`'.length, b);
-  const line = code.split(/\r?\n/).find(l => l.startsWith('const Stats={'));
-  const c = { Math }; vm.createContext(c);
-  vm.runInContext(line + ';globalThis.Stats=Stats;', c);
-  if (/Stats\.pnormU\(/.test(code)) assert.equal(typeof c.Stats.pnormU, 'function', 'worker calls Stats.pnormU but does not define it');
-  for (const g of grid.filter(g => g.d === 'normal')) assert.ok(rel(c.Stats.pnormU(g.x), g.p) < 1e-9, `worker pnormU(${g.x}) = ${c.Stats.pnormU(g.x)} vs ${g.p}`);
-  assert.ok(Math.abs(c.Stats.pnormU(-1.9599639845400536) - 0.975) < 1e-12);
-  assert.equal(c.Stats.pnormU(0), 0.5);
-  // z*z overflows to Infinity for finite |z| > ~1.3e154; R pnorm(1e155, lower.tail = FALSE) = 0
-  assert.equal(c.Stats.pnormU(1e155), 0);
-  assert.equal(c.Stats.pnormU(-1e155), 1);
-  assert.equal(c.Stats.pnormU(Number.MAX_VALUE), 0);
+  assert.equal(html.indexOf('const WORKER_CODE=`'), -1, 'WORKER_CODE is back');
+  assert.ok(!/workerCall\(|initWorker\(/.test(html), 'worker plumbing is back');
 });
 
 test('nma-pro-v2: pchisqU stays exact at large df (the old CDF switched to Wilson-Hilferty above df = 100)', () => {
