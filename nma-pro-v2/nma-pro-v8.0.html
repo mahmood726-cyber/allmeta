@@ -296,7 +296,9 @@ ess(x){const n=x.length,m=Stats.mean(x),v=Stats.variance(x);if(v===0)return n;le
 // A reported SE as given (0 is the reference row's SE); the 0.01 fallback only when it is missing or not a number.
 // Until 2026-11-14 these modules used max(0.01, se), so every SE below 0.01 became 0.0100 (and the reference 0.01).
 function seOrMissing(x){const v=parseNumberInput(x);return Number.isFinite(v)&&v>=0?v:Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR)}
-function rdVariance(e1,n1,e2,n2){const z=(e1===0||e1===n1||e2===0||e2===n2)?0.5:0,q1=(e1+z)/(n1+2*z),q2=(e2+z)/(n2+2*z);return q1*(1-q1)/(n1+2*z)+q2*(1-q2)/(n2+2*z)}
+// force: the row belongs to a multi-arm study with a zero cell in SOME arm -> the 0.5 increment goes into this row too
+// (netmeta pairwise(sm = "RD"): metabin's variance with incr in all arms of the study; TE stays the raw p1 - p2)
+function rdVariance(e1,n1,e2,n2,force=false){const z=(force||e1===0||e1===n1||e2===0||e2===n2)?0.5:0,q1=(e1+z)/(n1+2*z),q2=(e2+z)/(n2+2*z);return q1*(1-q1)/(n1+2*z)+q2*(1-q2)/(n2+2*z)}
 const NMA_CONSTANTS={
 Z_95:1.96,                    // z-score for 95% CI
 Z_99:2.576,                   // z-score for 99% CI
@@ -409,13 +411,19 @@ getAll(...ids){return ids.map(id=>this.get(id))}
 };
 
 const Matrix={zeros:(m,n)=>Array(m).fill(null).map(()=>Array(n).fill(0)),identity:n=>Matrix.zeros(n,n).map((r,i)=>{r[i]=1;return r}),
-lu(A){const n=A.length,L=Matrix.zeros(n,n),U=A.map(r=>[...r]),P=Matrix.identity(n);for(let k=0;k<n;k++){let maxV=Math.abs(U[k][k]),maxR=k;for(let i=k+1;i<n;i++)if(Math.abs(U[i][k])>maxV){maxV=Math.abs(U[i][k]);maxR=i}if(maxR!==k){[U[k],U[maxR]]=[U[maxR],U[k]];[L[k],L[maxR]]=[L[maxR],L[k]];[P[k],P[maxR]]=[P[maxR],P[k]]}L[k][k]=1;for(let i=k+1;i<n;i++){if(Math.abs(U[k][k])<1e-14)continue;L[i][k]=U[i][k]/U[k][k];for(let j=k;j<n;j++)U[i][j]-=L[i][k]*U[k][j]}}return{L,U,P}},
+// LU with partial pivoting. A pivot is singular when |pivot| <= n * 64 * eps * max|A_ij| -- RELATIVE to the matrix's
+// own scale, so rescaling A by any c != 0 gives the same decision (Senn 2013 with y, SE x 1e-6 / 1e-7 is the x 1 fit
+// rescaled). A singular pivot THROWS (err.name 'SingularMatrix'). Until 2026-11-15 the test was an absolute
+// |pivot| < 1e-14 and a singular pivot was skipped: an unidentified parameter (a treatment cut off from the reference)
+// came back as estimate 0 with SE 1, and a well-posed fit on a small scale (variances ~1e-14) was silently wrong.
+lu(A){const n=A.length,L=Matrix.zeros(n,n),U=A.map(r=>[...r]),P=Matrix.identity(n);let amax=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const a=Math.abs(U[i][j]);if(a>amax)amax=a}if(!Number.isFinite(amax))throw Object.assign(new Error('Matrix has a non-finite entry'),{name:'SingularMatrix'});const tol=Math.max(1,n)*64*Number.EPSILON*amax;for(let k=0;k<n;k++){let maxV=Math.abs(U[k][k]),maxR=k;for(let i=k+1;i<n;i++)if(Math.abs(U[i][k])>maxV){maxV=Math.abs(U[i][k]);maxR=i}if(maxR!==k){[U[k],U[maxR]]=[U[maxR],U[k]];[L[k],L[maxR]]=[L[maxR],L[k]];[P[k],P[maxR]]=[P[maxR],P[k]]}L[k][k]=1;if(!(maxV>tol)){const err=new Error('Matrix is singular (pivot '+k+' of '+n+' is zero relative to the matrix scale)');err.name='SingularMatrix';err.pivot=k;throw err}for(let i=k+1;i<n;i++){L[i][k]=U[i][k]/U[k][k];for(let j=k;j<n;j++)U[i][j]-=L[i][k]*U[k][j]}}return{L,U,P}},
 multiply(A,B){const m=A.length,n=B[0].length,p=B.length,C=Matrix.zeros(m,n);for(let i=0;i<m;i++)for(let j=0;j<n;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C},
-solve(A,b){const n=A.length,{L,U,P}=Matrix.lu(A),pb=Matrix.multiply(P,b.map(x=>[x])).map(r=>r[0]),y=Array(n).fill(0);for(let i=0;i<n;i++){y[i]=pb[i];for(let j=0;j<i;j++)y[i]-=L[i][j]*y[j]}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=y[i];for(let j=i+1;j<n;j++)x[i]-=U[i][j]*x[j];if(Math.abs(U[i][i])>1e-14)x[i]/=U[i][i]}return x},
+solve(A,b){const n=A.length,{L,U,P}=Matrix.lu(A),pb=Matrix.multiply(P,b.map(x=>[x])).map(r=>r[0]),y=Array(n).fill(0);for(let i=0;i<n;i++){y[i]=pb[i];for(let j=0;j<i;j++)y[i]-=L[i][j]*y[j]}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=y[i];for(let j=i+1;j<n;j++)x[i]-=U[i][j]*x[j];x[i]/=U[i][i]}return x},
 // One LU, then Matrix.solve's own substitution per column. This used to call Matrix.solve per column, i.e. a
 // fresh LU each time (O(n^4)); fitGLS inverts Sigma on every call. (P e_j)_i = P[i][j] exactly, so bit-identical.
-inverse(A){const n=A.length,{L,U,P}=Matrix.lu(A),inv=Matrix.zeros(n,n);for(let j=0;j<n;j++){const y=Array(n).fill(0);for(let i=0;i<n;i++){y[i]=P[i][j];for(let k=0;k<i;k++)y[i]-=L[i][k]*y[k]}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=y[i];for(let k=i+1;k<n;k++)x[i]-=U[i][k]*x[k];if(Math.abs(U[i][i])>1e-14)x[i]/=U[i][i]}for(let i=0;i<n;i++)inv[i][j]=x[i]}return inv},
-cholesky(A){const n=A.length,L=Matrix.zeros(n,n);for(let i=0;i<n;i++){for(let j=0;j<=i;j++){let sum=0;for(let k=0;k<j;k++)sum+=L[i][k]*L[j][k];if(i===j)L[i][j]=Math.sqrt(Math.max(1e-14,A[i][i]-sum));else L[i][j]=(A[i][j]-sum)/L[j][j]}}return L},
+inverse(A){const n=A.length,{L,U,P}=Matrix.lu(A),inv=Matrix.zeros(n,n);for(let j=0;j<n;j++){const y=Array(n).fill(0);for(let i=0;i<n;i++){y[i]=P[i][j];for(let k=0;k<i;k++)y[i]-=L[i][k]*y[k]}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=y[i];for(let k=i+1;k<n;k++)x[i]-=U[i][k]*x[k];x[i]/=U[i][i]}for(let i=0;i<n;i++)inv[i][j]=x[i]}return inv},
+// floor on a pivot RELATIVE to the largest diagonal entry (was an absolute 1e-14: a covariance of variances ~1e-14 lost its structure)
+cholesky(A){const n=A.length,L=Matrix.zeros(n,n);let dmax=0;for(let i=0;i<n;i++)dmax=Math.max(dmax,Math.abs(A[i][i]));const fl=1e-14*(dmax>0?dmax:1);for(let i=0;i<n;i++){for(let j=0;j<=i;j++){let sum=0;for(let k=0;k<j;k++)sum+=L[i][k]*L[j][k];if(i===j)L[i][j]=Math.sqrt(Math.max(fl,A[i][i]-sum));else L[i][j]=(A[i][j]-sum)/L[j][j]}}return L},
 transpose(A){const m=A.length,n=A[0].length,T=Matrix.zeros(n,m);for(let i=0;i<m;i++)for(let j=0;j<n;j++)T[j][i]=A[i][j];return T}};
 
 const AppState={studies:[],reference:null,effectMeasure:'OR',estimator:'REML',analysisType:'frequentist',direction:'lower',smallStudyCorrection:'hksj',predictionIntervals:true,zeroCellCorrection:'haldane',rankingSimulations:2000,userRankingSeed:null,guardian:null,results:null,ranking:null,rankingSeed:null,analysisFingerprint:null,cnmaResults:null,metaRegResults:null,subgroupResults:null,cinemaResults:null,bayesianResults:null,pubBiasResults:null,cstreamResults:null,gradeResults:null,cumulativeResults:null,cvI2Results:null,conformalResults:null,leaveOneOutResults:null,multiverseResults:null,bootstrapRankResults:null,mcidRankResults:null,gflPoolingResults:null,bayesOutlierResults:null,predictivePScoreResults:null,cnmaLooResults:null,cbmBmResults:null,ipdCoxResults:null,robustTResults:null,clusterRobustResults:null,smaaResults:null,fragilityResults:null,rankEntropyResults:null,rankClusterResults:null,influenceDiagResults:null,designInfluenceResults:null,qDecompResults:null,crossDesignResults:null,crossDesignBiasScale:0.35,consensusResults:null,conflictResults:null,parityDivergenceResults:null,decisionBandResults:null,autoRobustnessResults:null,runReproArtifact:null,externalBenchmark:null,externalComparison:null,ipdStudies:null,ipdSource:null,rapidReviewRecords:[],rapidReviewSummary:null,rapidReviewSelectedId:null,rapidReviewQuery:'',rapidReviewEmail:'',rapidReviewMinYear:'',rapidReviewTrialsOnly:false,rapidReviewExpandQuery:true,rapidReviewHelperUrl:'',rapidReviewHelperHealth:null,auditTrail:[],netHeatData:null,contributionMatrix:null,pothResult:null,midThreshold:null,midRankingResult:null,classMap:{},classEffectsEnabled:false,classEffectsModel:'common',classEffectsResult:null,survivalStudies:[],survivalResults:null,survivalParamData:{},worker:null,workerReady:false,_pending:new Map(),_nextId:0};
@@ -450,7 +458,7 @@ analyze(studies){const checks=[];let integrityScore=100,evidenceScore=100,riskSc
 const conn=this.checkConnectivity(studies);if(!conn.isConnected){checks.push({status:'fail',message:'Network disconnected'});integrityScore-=100;recs.push({action:'BLOCK',message:'Fix network'})}else{checks.push({status:'pass',message:`Connected: ${conn.treatments.length} treatments`})}
 if(studies.length<3){checks.push({status:'warn',message:`Only ${studies.length} studies`});integrityScore-=20;riskScore+=15}else{checks.push({status:'pass',message:`${studies.length} studies`})}
 const hasLoops=this.checkLoops(studies,conn.treatments);if(!hasLoops){checks.push({status:'warn',message:'No closed loops'});riskScore+=20;evidenceScore-=15}else{checks.push({status:'pass',message:'Has closed loops'})}
-let maBad=[];try{maBad=FrequentistNMA.checkMultiArm(studies)}catch(e){maBad=[]}maBad.forEach(b=>{checks.push({status:'fail',message:b.message});integrityScore-=100;recs.push({action:'BLOCK',message:b.message})});
+let maBad=[];try{maBad=FrequentistNMA.checkMultiArm(studies)}catch(e){maBad=[]}try{const zc=(typeof AppState!=='undefined'&&AppState)?AppState.zeroCellCorrection:'haldane',em=(typeof AppState!=='undefined'&&AppState)?AppState.effectMeasure:'OR';const zb=FrequentistNMA.zeroCellOptionProblems(studies,em,zc);if(zb.length)maBad.push({study:zb[0],kind:'zeroCellOption',message:`Zero-cell correction "${zc}" is not consistent for the multi-arm stud${zb.length===1?'y':'ies'} ${zb.join(', ')} (one increment per arm is needed): use Haldane 0.5`})}catch(e){}maBad.forEach(b=>{checks.push({status:'fail',message:b.message});integrityScore-=100;recs.push({action:'BLOCK',message:b.message})});
 const rare=this.checkRareEvents(studies);if(rare.hasRare){checks.push({status:'warn',message:`${rare.zeroCount} zero-event studies`});riskScore+=15}else{checks.push({status:'pass',message:'No rare event issues'})}
 integrityScore=Math.max(0,Math.min(100,integrityScore));evidenceScore=Math.max(0,Math.min(100,evidenceScore));riskScore=Math.max(0,Math.min(100,riskScore));
 const healthScore=Math.round((integrityScore*0.4+evidenceScore*0.3+(100-riskScore)*0.3));
@@ -463,10 +471,36 @@ calcGeometryMetrics(studies,connectivity){const{treatments,adj}=connectivity;con
 
 const FrequentistNMA={
 analyze(studies,options={}){const{reference,effectMeasure='OR',estimator='REML',smallStudyCorrection='hksj',predictionIntervals=true,zeroCellCorrection='haldane',mkhFloor=2.0}=options;
-const processed=this.calcEffects(studies,effectMeasure,zeroCellCorrection).filter(s=>s.yi!==null);const matrices=this.buildMatrices(processed,reference,{effectMeasure,zeroCellCorrection});const tau2Result=this.estimateTau2(matrices,estimator);const effects=this.calcTreatmentEffects(matrices,tau2Result.tau2,smallStudyCorrection,mkhFloor);const heterogeneity=this.calcHeterogeneity(matrices,tau2Result.tau2);const tau2CI=this.profileLikelihoodCI(matrices,tau2Result.tau2,estimator);
+this.assertZeroCellOption(studies,effectMeasure,zeroCellCorrection);// a row whose effect is not computable (yi or vi not finite, e.g. counts without n) is left out, as netmeta leaves out
+// "comparisons with missing TE / seTE"; until 2026-11-15 it entered the fit as NaN, which the old LU silently skipped past
+const allRows=this.calcEffects(studies,effectMeasure,zeroCellCorrection);const processed=allRows.filter(s=>s.yi!==null&&Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi)));const notComputable=allRows.filter(s=>s.yi!==null&&!(Number.isFinite(Number(s.yi))&&Number.isFinite(Number(s.vi)))).map(s=>String(s.name??''));this.assertConnected(processed,reference);const matrices=this.buildMatrices(processed,reference,{effectMeasure,zeroCellCorrection});const tau2Result=this.estimateTau2(matrices,estimator);const effects=this.calcTreatmentEffects(matrices,tau2Result.tau2,smallStudyCorrection,mkhFloor);const heterogeneity=this.calcHeterogeneity(matrices,tau2Result.tau2);const tau2CI=this.profileLikelihoodCI(matrices,tau2Result.tau2,estimator);
 if(predictionIntervals)this.addPredictionIntervals(effects,tau2Result.tau2,matrices);const leagueTable=this.buildLeagueTable(effects,matrices.treatments,reference,effectMeasure);const consistency=this.nodeSplitting(processed,matrices,tau2Result.tau2);const consistencySummary=this.summarizeInconsistency(consistency,heterogeneity?.designByTreatment||null);
 const modelSelection=ModelSelection.compareModels({y:matrices.y,v:matrices.v,X:matrices.X,beta:effects.beta,tau2:tau2Result.tau2,n:matrices.n,p:matrices.p});
-return{effects,heterogeneity,leagueTable,consistency,consistencySummary,tau2:tau2Result.tau2,tau:Math.sqrt(tau2Result.tau2),tau2CI,pmCI:this.pauleMandel_CI(matrices,tau2Result.tau2),treatments:matrices.treatments,reference,processed,matrices,modelSelection}},
+return{notComputable,effects,heterogeneity,leagueTable,consistency,consistencySummary,tau2:tau2Result.tau2,tau:Math.sqrt(tau2Result.tau2),tau2CI,pmCI:this.pauleMandel_CI(matrices,tau2Result.tau2),treatments:matrices.treatments,reference,processed,matrices,modelSelection}},
+// Connectivity (netmeta 3.7.0 stops on a disconnected network: "Network consists of k separate sub-networks"). The
+// treatments not reachable from the reference (or, with no reference, from the first treatment) are not identified:
+// throw naming them. Until 2026-11-15 nothing checked this on the engine path (leave-one-out, influence and any
+// sub-network run), and Matrix.solve skipped the zero pivot, so such a treatment got estimate 0 with SE 1.
+components(studies){const adj=new Map();const add=(a,b)=>{if(!adj.has(a))adj.set(a,new Set());adj.get(a).add(b)};(studies||[]).forEach(s=>{const a=String(s.treatment1),b=String(s.treatment2);add(a,b);add(b,a)});const seen=new Set(),comps=[];Array.from(adj.keys()).sort().forEach(t=>{if(seen.has(t))return;const c=[],q=[t];seen.add(t);while(q.length){const u=q.shift();c.push(u);adj.get(u).forEach(v=>{if(!seen.has(v)){seen.add(v);q.push(v)}})}comps.push(c.sort())});return comps},
+assertConnected(studies,reference){const comps=this.components(studies);if(comps.length<=1)return;const ref=reference!=null&&String(reference)!==''?String(reference):null;const main=comps.find(c=>ref!==null&&c.includes(ref))||comps[0];const cut=comps.filter(c=>c!==main).flat();const err=new Error(`Network is disconnected: ${comps.length} separate sub-networks. Not connected to ${ref!==null&&main.includes(ref)?'the reference "'+ref+'"':'"'+main[0]+'"'}: ${cut.map(t=>'"'+t+'"').join(', ')}. Their effects are not identified (netmeta stops on such data); analyse each sub-network separately.`);err.name='DisconnectedNetwork';err.disconnected=cut;err.components=comps;throw err},
+// Units for leave-one-out style analyses. A STUDY is every row sharing a study name (a k-arm study is k(k-1)/2 or
+// k - 1 rows; a row with no name is its own study, as in buildMatrices); a DESIGN is the set of arms of a study
+// (netmeta decomp.design: a 3-arm study A:B:C is design "A:B:C", not three comparisons). Each returns
+// [{key, label, indices}] in first-appearance order. Until 2026-11-15 the leave-one-out, influence and design-influence
+// modules removed one ROW (half a 3-arm study, leaving the other rows as a 2-arm study) or one pairwise comparison.
+studyUnits(studies){const m=new Map();(studies||[]).forEach((s,i)=>{const key=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():`__row_${i}`;if(!m.has(key))m.set(key,{key,label:key.startsWith('__row_')?`Row ${i+1}`:key,indices:[]});m.get(key).indices.push(i)});return Array.from(m.values())},
+designUnits(studies){const arms=new Map();const units=this.studyUnits(studies);units.forEach(u=>{const a=new Set();u.indices.forEach(i=>{a.add(String(studies[i].treatment1).trim());a.add(String(studies[i].treatment2).trim())});arms.set(u.key,Array.from(a).sort().join(':'))});const m=new Map();units.forEach(u=>{const d=arms.get(u.key);if(!m.has(d))m.set(d,{key:d,label:d,indices:[],studies:[]});const g=m.get(d);g.indices.push(...u.indices);g.studies.push(u.label)});return Array.from(m.values())},
+// Refusal reasons for an analysis of a subset (leave-one-out): the reference must still be in the network and the
+// network must stay connected (assertConnected names the cut-off treatments).
+subsetRefusal(remaining,reference){const ts=new Set();remaining.forEach(s=>{ts.add(String(s.treatment1));ts.add(String(s.treatment2))});if(reference!=null&&String(reference)!==''&&!ts.has(String(reference)))return`the reference "${reference}" is in no remaining study`;try{this.assertConnected(remaining,reference)}catch(e){return e.message}return null},
+// Zero-cell options whose increment depends on the PAIR of arms (tacc n1/(n1+n2), reciprocal 1/(n1+n2), sweeting
+// 1/(1+n2/n1)) give one arm a different increment in each of its rows, so a multi-arm study's contrasts stop being
+// consistent (smokingcessation study 25, tacc: TE(A-C) - TE(A-B) - TE(B-C) = 0.078) and the multi-arm covariance no longer
+// describes them. netmeta/meta have no such option for multi-arm data (pairwise() applies one increment to every arm).
+// Refused for a multi-arm study (one study name, >= 2 comparisons) with a zero cell; two-arm studies keep the option.
+// Until 2026-11-15 these ran silently. Returns the offending study names (empty when fine); assertZeroCellOption throws.
+zeroCellOptionProblems(studies,effectMeasure,zeroCellCorrection){if(!['tacc','reciprocal','sweeting'].includes(zeroCellCorrection)||!['OR','RR','HR'].includes(effectMeasure))return[];const by=new Map();(studies||[]).forEach(s=>{const yi=Number(s?.yi),vi=Number(s?.vi),se=Number(s?.se);if(Number.isFinite(yi)&&((Number.isFinite(vi)&&vi>0)||(Number.isFinite(se)&&se>0)))return;const id=s&&s.name!=null&&String(s.name).trim()?String(s.name).trim():null;if(id===null)return;if(!by.has(id))by.set(id,[]);by.get(id).push(s)});const bad=[];by.forEach((rows,id)=>{if(new Set(rows.map(r=>[String(r.treatment1),String(r.treatment2)].sort().join('|'))).size<2)return;if(rows.some(r=>{const e1=r.events1||0,e2=r.events2||0;return e1===0||e2===0||(r.n1-e1)===0||(r.n2-e2)===0}))bad.push(id)});return bad},
+assertZeroCellOption(studies,effectMeasure,zeroCellCorrection){const bad=this.zeroCellOptionProblems(studies,effectMeasure,zeroCellCorrection);if(!bad.length)return;const err=new Error(`Zero-cell correction "${zeroCellCorrection}" cannot be used with the multi-arm stud${bad.length===1?'y':'ies'} ${bad.map(b=>'"'+b+'"').join(', ')}: it adds a different increment to the same arm in each pairwise contrast, so the study's contrasts are no longer consistent (netmeta applies one increment to every arm). Use the Haldane 0.5 correction (as netmeta), or exclude ${bad.length===1?'that study':'those studies'}.`);err.name='ZeroCellOption';err.studies=bad;throw err},
 calcEffects(studies,effectMeasure,zeroCellCorrection='haldane'){
 // A multi-arm study (one study name, >= 2 different comparisons) with a zero cell in ANY arm gets the increment in
 // ALL its arms, as netmeta's pairwise() does; until 2026-11-14 only the rows touching the zero arm were corrected, so
@@ -487,7 +521,8 @@ else cc=0.5}// Default Haldane
 const a=e1+cc,b=(n1-e1)+cc,c=e2+cc,d=(n2-e2)+cc;if(effectMeasure==='OR'||effectMeasure==='HR'){yi=Math.log((a*d)/(b*c));vi=1/a+1/b+1/c+1/d}else{
 // RR as meta::metabin's default (RR.Cochrane = FALSE, the convention netmeta's pairwise() inherits): the increment is
 // added to the events and ONCE to n. Until 2026-11-14 both engines used n + 2*incr (metabin RR.Cochrane = TRUE, RevMan).
-const m1=n1+cc,m2=n2+cc;yi=Math.log((a/m1)/(c/m2));vi=1/a-1/m1+1/c-1/m2}}else if(effectMeasure==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;vi=rdVariance(s.events1||0,s.n1,s.events2||0,s.n2)}else if(effectMeasure==='SMD'){const n1=s.n1,n2=s.n2;if(!s.sd1||!s.sd2||s.sd1<=0||s.sd2<=0){yi=0;vi=1}else{const pooledSD=Math.sqrt(((n1-1)*s.sd1**2+(n2-1)*s.sd2**2)/(n1+n2-2)),d=((s.mean1||0)-(s.mean2||0))/pooledSD,j=1-3/(4*(n1+n2-2)-1);yi=d*j;
+const m1=n1+cc,m2=n2+cc;yi=Math.log((a/m1)/(c/m2));vi=1/a-1/m1+1/c-1/m2}}else if(effectMeasure==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;// until 2026-11-15 only the rows touching the zero arm got the increment (OR/RR/HR had the all-arm rule, RD not)
+vi=rdVariance(s.events1||0,s.n1,s.events2||0,s.n2,!!(s&&s.name!=null&&zeroStudy.has(String(s.name).trim())))}else if(effectMeasure==='SMD'){const n1=s.n1,n2=s.n2;if(!s.sd1||!s.sd2||s.sd1<=0||s.sd2<=0){yi=0;vi=1}else{const pooledSD=Math.sqrt(((n1-1)*s.sd1**2+(n2-1)*s.sd2**2)/(n1+n2-2)),d=((s.mean1||0)-(s.mean2||0))/pooledSD,j=1-3/(4*(n1+n2-2)-1);yi=d*j;
 // Hedges exact variance formula
 const df=n1+n2-2;const c4=1-3/(4*df-1);const exactVar=(n1+n2)/(n1*n2)+(yi*yi)/(2*df)*(1-c4*c4);vi=exactVar}}else{yi=s.yi||0;vi=s.vi||1}return{...s,yi,vi,se:Math.sqrt(vi)}})},
 buildMatrices(studies,reference,options={}){const effectMeasure=options.effectMeasure||'OR';const zeroCellCorrection=options.zeroCellCorrection||'haldane';const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort();const refIdx=treatments.indexOf(reference);if(refIdx>0){treatments.splice(refIdx,1);treatments.unshift(reference)}const n=studies.length,p=treatments.length-1,X=Matrix.zeros(n,p),y=[],v=[];studies.forEach((s,i)=>{y.push(s.yi);const vi0=Number(s.vi);v.push(Number.isFinite(vi0)&&vi0>0?vi0:NMA_CONSTANTS.VARIANCE_FLOOR);const i1=treatments.indexOf(s.treatment1)-1,i2=treatments.indexOf(s.treatment2)-1;if(i1>=0)X[i][i1]=1;if(i2>=0)X[i][i2]=-1});const V=Matrix.zeros(n,n);for(let i=0;i<n;i++)V[i][i]=v[i];
@@ -537,8 +572,9 @@ for(let i=0;i<n;i++)for(let j=0;j<n;j++){
 }
 for(let i=0;i<n;i++)Sigma[i][i]=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,Sigma[i][i]);
 const K=matrices.keep&&matrices.keep.includes(false)?matrices.keep.map((k,i)=>k?i:-1).filter(i=>i>=0):null;
-let SigmaRed=Sigma,Si;if(K){SigmaRed=K.map(a=>K.map(b=>Sigma[a][b]));let SiK;try{SiK=Matrix.inverse(SigmaRed)}catch(e){for(let i=0;i<K.length;i++)SigmaRed[i][i]+=1e-8;SiK=Matrix.inverse(SigmaRed)}Si=Matrix.zeros(n,n);K.forEach((a,ia)=>K.forEach((b,ib)=>{Si[a][b]=SiK[ia][ib]}))}
-else{try{Si=Matrix.inverse(Sigma)}catch(e){for(let i=0;i<n;i++)Sigma[i][i]+=1e-8;Si=Matrix.inverse(Sigma)}}const XtSi=Matrix.zeros(p,n),XtSiX=Matrix.zeros(p,p),XtSiy=Array(p).fill(0);for(let j=0;j<p;j++){for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=X[k][j]*Si[k][i];XtSi[j][i]=s}for(let k=0;k<p;k++){let s=0;for(let i=0;i<n;i++)s+=XtSi[j][i]*X[i][k];XtSiX[j][k]=s}let sy=0;for(let i=0;i<n;i++)sy+=XtSi[j][i]*y[i];XtSiy[j]=sy}const beta=Matrix.solve(XtSiX,XtSiy),vcov=Matrix.inverse(XtSiX),residuals=Array(n).fill(0);for(let i=0;i<n;i++){let fit=0;for(let j=0;j<p;j++)fit+=X[i][j]*beta[j];residuals[i]=y[i]-fit}let Q=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++)Q+=residuals[i]*Si[i][j]*residuals[j];return{beta,vcov,Sigma,SigmaRed,Si,Q,residuals,XtSiX}},
+let SigmaRed=Sigma,Si;if(K){SigmaRed=K.map(a=>K.map(b=>Sigma[a][b]));let SiK;try{SiK=Matrix.inverse(SigmaRed)}catch(e){const rg=1e-8*SigmaRed.reduce((t,r,i)=>t+r[i],0)/K.length;for(let i=0;i<K.length;i++)SigmaRed[i][i]+=rg;SiK=Matrix.inverse(SigmaRed)}Si=Matrix.zeros(n,n);K.forEach((a,ia)=>K.forEach((b,ib)=>{Si[a][b]=SiK[ia][ib]}))}
+else{try{Si=Matrix.inverse(Sigma)}catch(e){// relative ridge (1e-8 x mean variance; was an absolute 1e-8), reachable since Matrix.lu raises on a singular pivot
+const rg=1e-8*Sigma.reduce((t,r,i)=>t+r[i],0)/n;for(let i=0;i<n;i++)Sigma[i][i]+=rg;Si=Matrix.inverse(Sigma)}}const XtSi=Matrix.zeros(p,n),XtSiX=Matrix.zeros(p,p),XtSiy=Array(p).fill(0);for(let j=0;j<p;j++){for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=X[k][j]*Si[k][i];XtSi[j][i]=s}for(let k=0;k<p;k++){let s=0;for(let i=0;i<n;i++)s+=XtSi[j][i]*X[i][k];XtSiX[j][k]=s}let sy=0;for(let i=0;i<n;i++)sy+=XtSi[j][i]*y[i];XtSiy[j]=sy}const beta=Matrix.solve(XtSiX,XtSiy),vcov=Matrix.inverse(XtSiX),residuals=Array(n).fill(0);for(let i=0;i<n;i++){let fit=0;for(let j=0;j<p;j++)fit+=X[i][j]*beta[j];residuals[i]=y[i]-fit}let Q=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++)Q+=residuals[i]*Si[i][j]*residuals[j];return{beta,vcov,Sigma,SigmaRed,Si,Q,residuals,XtSiX}},
 // tau2 for the consistency model fitted by fitGLS: covariance V + tau2*R, R = 1 on the diagonal and
 // 0.5 between contrasts of the same study. DL: generalised moment estimator (Q - df)/tr(P R) at
 // tau2 = 0 (netmeta's DL; P = Si - Si X (X'Si X)^-1 X' Si). PM: generalised Q(tau2) = df, bisection to
@@ -2136,8 +2172,14 @@ const baseEffects=baseline.effects?.effects||{};
 const baseVcov=baseline.effects?.vcov||null;
 const baseTrace=this.traceOf(baseVcov);
 const rows=[];
-studies.forEach((study,idx)=>{
-const remaining=studies.filter((_,i)=>i!==idx);
+// leave one STUDY out (all rows of a multi-arm study together; was one row), refusing a disconnected remainder
+const units=FrequentistNMA.studyUnits(studies);
+if(units.length<5)return{applicable:false,message:'Need at least 5 studies for influence diagnostics'};
+units.forEach((unit,idx)=>{
+const study=studies[unit.indices[0]];const drop=new Set(unit.indices);
+const remaining=studies.filter((_,i)=>!drop.has(i));
+const refusal=FrequentistNMA.subsetRefusal(remaining,reference);
+if(refusal){rows.push({studyIndex:idx+1,studyName:unit.label,nRows:unit.indices.length,comparison:`${study?.treatment1||''} vs ${study?.treatment2||''}`,estimable:false,refused:true,message:'Not estimable without this study: '+refusal});return}
 try{
 const loo=FrequentistNMA.analyze(remaining,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});
 const looRanking=TreatmentRanking.rank(loo.effects,loo.treatments,direction,{seed:Number.isFinite(Number(seed))?Math.floor(Number(seed))+idx*53+17:undefined,nSim:1000});
@@ -2162,9 +2204,9 @@ const relTraceChange=(Number.isFinite(baseTrace)&&Number.isFinite(looTrace)&&Mat
 const frobRatio=this.frobeniusRatio(baseVcov,loo.effects?.vcov||null);
 const score=(0.45*(maxStdShift??0))+(0.25*Math.min(2,Math.abs(tau2Rel)))+(0.2*((meanAbsRankShift??0)/Math.max(1,treatments.length-1)))+(0.1*Math.min(2,Math.abs(relTraceChange??0)));
 const influenceLevel=score>=0.85?'High':score>=0.45?'Moderate':'Low';
-rows.push({studyIndex:idx+1,studyName:String(study?.name||`Study ${idx+1}`),comparison:`${study?.treatment1||''} vs ${study?.treatment2||''}`,topAfter,topChanged:topAfter!=null&&baseTop!=null&&topAfter!==baseTop,maxStdShift,meanAbsShift,meanAbsRankShift,tau2Base,tau2Loo,tau2RelChange:tau2Rel,relTraceChange,frobeniusRatio:frobRatio,influenceScore:score,influenceLevel,estimable:true})
+rows.push({studyIndex:idx+1,studyName:unit.label,nRows:unit.indices.length,comparison:`${study?.treatment1||''} vs ${study?.treatment2||''}`,topAfter,topChanged:topAfter!=null&&baseTop!=null&&topAfter!==baseTop,maxStdShift,meanAbsShift,meanAbsRankShift,tau2Base,tau2Loo,tau2RelChange:tau2Rel,relTraceChange,frobeniusRatio:frobRatio,influenceScore:score,influenceLevel,estimable:true})
 }catch(err){
-rows.push({studyIndex:idx+1,studyName:String(study?.name||`Study ${idx+1}`),comparison:`${study?.treatment1||''} vs ${study?.treatment2||''}`,estimable:false,message:String(err?.message||'Failed leave-one-out fit')})
+rows.push({studyIndex:idx+1,studyName:unit.label,nRows:unit.indices.length,comparison:`${study?.treatment1||''} vs ${study?.treatment2||''}`,estimable:false,message:String(err?.message||'Failed leave-one-out fit')})
 }
 });
 const valid=rows.filter(r=>r.estimable);
@@ -2173,7 +2215,7 @@ const influential=valid.filter(r=>r.influenceLevel==='High');
 const moderate=valid.filter(r=>r.influenceLevel==='Moderate');
 const topFlipCount=valid.filter(r=>r.topChanged).length;
 const worst=[...valid].sort((a,b)=>(b.influenceScore||0)-(a.influenceScore||0))[0]||null;
-return{applicable:true,baseTop,nStudies:studies.length,nEstimable:valid.length,nHighInfluence:influential.length,nModerateInfluence:moderate.length,topFlipCount,worstStudy:worst?.studyName||null,maxInfluenceScore:worst?.influenceScore??null,rows:rows.sort((a,b)=>{if(!a.estimable&&!b.estimable)return 0;if(!a.estimable)return 1;if(!b.estimable)return-1;return(b.influenceScore||0)-(a.influenceScore||0)}),citation:'Network meta-analysis influence diagnostics (Noma et al., Res Synth Methods 2020) adapted for production leave-one-trial stress testing'}
+return{applicable:true,baseTop,nStudies:units.length,nRows:studies.length,nRefused:rows.filter(r=>r.refused).length,nEstimable:valid.length,nHighInfluence:influential.length,nModerateInfluence:moderate.length,topFlipCount,worstStudy:worst?.studyName||null,maxInfluenceScore:worst?.influenceScore??null,rows:rows.sort((a,b)=>{if(!a.estimable&&!b.estimable)return 0;if(!a.estimable)return 1;if(!b.estimable)return-1;return(b.influenceScore||0)-(a.influenceScore||0)}),citation:'Network meta-analysis influence diagnostics (Noma et al., Res Synth Methods 2020) adapted for production leave-one-trial stress testing'}
 }
 };
 
@@ -2201,13 +2243,18 @@ const baseRankBy={};baseRanking.forEach(r=>{baseRankBy[r.treatment]=r.rank});
 const baseTop=baseRanking?.[0]?.treatment||null;
 const baseEffects=baseline.effects?.effects||{};
 const baseTrace=this.traceOf(baseline.effects?.vcov||null);
-const byDesign=new Map();
-studies.forEach((s,idx)=>{const key=this.designKey(s);if(!key)return;if(!byDesign.has(key))byDesign.set(key,[]);byDesign.get(key).push(idx)});
-if(byDesign.size<2)return{applicable:false,message:'Need at least 2 distinct designs (direct comparisons) for design influence diagnostics'};
+// a DESIGN is the set of arms of a study (netmeta decomp.design); was one pairwise comparison (designKey), so a 3-arm
+// study's rows fell into three "designs" and leaving one out removed a third of that study
+const byDesign=new Map();FrequentistNMA.designUnits(studies).forEach(u=>byDesign.set(u.key,u));
+if(byDesign.size<2)return{applicable:false,message:'Need at least 2 distinct designs for design influence diagnostics'};
 const rows=[];
-Array.from(byDesign.entries()).forEach(([design,indices],j)=>{
-const remaining=studies.filter((_,idx)=>!indices.includes(idx));
-if(remaining.length<3){rows.push({design,nRemoved:indices.length,estimable:false,message:'Insufficient studies after exclusion'});return}
+Array.from(byDesign.values()).forEach((unit,j)=>{
+const design=unit.key,indices=unit.indices,drop=new Set(indices);
+const remaining=studies.filter((_,idx)=>!drop.has(idx));
+const nRemaining=FrequentistNMA.studyUnits(remaining).length;
+if(nRemaining<3){rows.push({design,nRemoved:unit.studies.length,nRowsRemoved:indices.length,estimable:false,message:'Insufficient studies after exclusion'});return}
+const refusal=FrequentistNMA.subsetRefusal(remaining,reference);
+if(refusal){rows.push({design,nRemoved:unit.studies.length,nRowsRemoved:indices.length,remainingStudies:nRemaining,estimable:false,refused:true,message:'Not estimable without this design: '+refusal});return}
 try{
 const loo=FrequentistNMA.analyze(remaining,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});
 const looRanking=TreatmentRanking.rank(loo.effects,loo.treatments,direction,{seed:Number.isFinite(Number(seed))?Math.floor(Number(seed))+j*97+31:undefined,nSim:1000});
@@ -2232,9 +2279,9 @@ const relTraceChange=(Number.isFinite(baseTrace)&&Number.isFinite(looTrace)&&Mat
 const topChanged=topAfter!=null&&baseTop!=null&&topAfter!==baseTop;
 const score=(0.4*(maxStdShift??0))+(0.25*Math.min(2,Math.abs(tau2RelChange)))+(0.2*((meanAbsRankShift??0)/Math.max(1,treatments.length-1)))+(0.15*Math.min(2,Math.abs(relTraceChange??0)))+(topChanged?0.2:0);
 const influenceLevel=score>=1?'High':score>=0.55?'Moderate':'Low';
-rows.push({design,nRemoved:indices.length,remainingStudies:remaining.length,topAfter,topChanged,maxStdShift,meanAbsShift,meanAbsRankShift,tau2RelChange,relTraceChange,influenceScore:score,influenceLevel,estimable:true})
+rows.push({design,nRemoved:unit.studies.length,nRowsRemoved:indices.length,remainingStudies:nRemaining,topAfter,topChanged,maxStdShift,meanAbsShift,meanAbsRankShift,tau2Loo,tau2RelChange,relTraceChange,influenceScore:score,influenceLevel,estimable:true})
 }catch(err){
-rows.push({design,nRemoved:indices.length,estimable:false,message:String(err?.message||'Model failed after design exclusion')})
+rows.push({design,nRemoved:unit.studies.length,nRowsRemoved:indices.length,estimable:false,message:String(err?.message||'Model failed after design exclusion')})
 }
 });
 const valid=rows.filter(r=>r.estimable);
@@ -2244,7 +2291,7 @@ const moderateCount=valid.filter(r=>r.influenceLevel==='Moderate').length;
 const topFlipCount=valid.filter(r=>r.topChanged).length;
 const worst=[...valid].sort((a,b)=>(b.influenceScore||0)-(a.influenceScore||0))[0]||null;
 const oValue=Number.isFinite(worst?.influenceScore)?worst.influenceScore:null;
-return{applicable:true,baseTop,nDesigns:byDesign.size,nEvaluated:valid.length,nHighInfluence:highCount,nModerateInfluence:moderateCount,topFlipCount,worstDesign:worst?.design||null,oValue,rows:rows.sort((a,b)=>{if(!a.estimable&&!b.estimable)return 0;if(!a.estimable)return 1;if(!b.estimable)return-1;return(b.influenceScore||0)-(a.influenceScore||0)}),citation:'Design-level influence diagnostics for NMA using leave-one-design-out stress tests (Higgins et al., Res Synth Methods 2012; Noma et al., Res Synth Methods 2020)'}
+return{applicable:true,baseTop,nDesigns:byDesign.size,nRefused:rows.filter(r=>r.refused).length,nEvaluated:valid.length,nHighInfluence:highCount,nModerateInfluence:moderateCount,topFlipCount,worstDesign:worst?.design||null,oValue,rows:rows.sort((a,b)=>{if(!a.estimable&&!b.estimable)return 0;if(!a.estimable)return 1;if(!b.estimable)return-1;return(b.influenceScore||0)-(a.influenceScore||0)}),citation:'Design-level influence diagnostics for NMA using leave-one-design-out stress tests (Higgins et al., Res Synth Methods 2012; Noma et al., Res Synth Methods 2020)'}
 }
 };
 
@@ -2361,11 +2408,12 @@ return{applicable:true,nStudies:weightedStudies.length,biasScale:Math.max(0,Math
 };
 
 const LeaveOneOut={
-analyze(studies,options={}){const{reference,effectMeasure='OR',estimator='REML',smallStudyCorrection='hksj'}=options;if(studies.length<4)return{applicable:false,message:'Need at least 4 studies for leave-one-out analysis'};
+analyze(studies,options={}){const{reference,effectMeasure='OR',estimator='REML',smallStudyCorrection='hksj'}=options;if(FrequentistNMA.studyUnits(studies).length<4)return{applicable:false,message:'Need at least 4 studies for leave-one-out analysis'};
 const fullResults=FrequentistNMA.analyze(studies,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});const fullTau2=fullResults.tau2,fullI2=fullResults.heterogeneity.I2;const fullEffects={};Object.entries(fullResults.effects.effects).forEach(([t,e])=>{fullEffects[t]=e.estimate});
-const looResults=[];studies.forEach((excludedStudy,idx)=>{const remainingStudies=studies.filter((_,i)=>i!==idx);try{const looRes=FrequentistNMA.analyze(remainingStudies,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});const effectChanges={};Object.entries(looRes.effects.effects).forEach(([t,e])=>{if(fullEffects[t]!==undefined){effectChanges[t]={estimate:e.estimate,change:Math.abs(e.estimate-fullEffects[t]),relChange:fullEffects[t]!==0?Math.abs((e.estimate-fullEffects[t])/fullEffects[t]):0}}});
-looResults.push({studyName:excludedStudy.name,studyIndex:idx,tau2:looRes.tau2,tau2Change:Math.abs(looRes.tau2-fullTau2),I2:looRes.heterogeneity.I2,I2Change:Math.abs(looRes.heterogeneity.I2-fullI2),effectChanges,influential:Math.abs(looRes.tau2-fullTau2)>fullTau2*0.2||Math.abs(looRes.heterogeneity.I2-fullI2)>10})}catch(e){looResults.push({studyName:excludedStudy.name,studyIndex:idx,error:true,message:e.message})}});
-const maxTau2Change=Math.max(...looResults.filter(r=>!r.error).map(r=>r.tau2Change));const maxI2Change=Math.max(...looResults.filter(r=>!r.error).map(r=>r.I2Change));const influentialStudies=looResults.filter(r=>r.influential&&!r.error);
+// one STUDY out (every row of a multi-arm study; was one row), refusing a remainder without the reference or disconnected
+const looResults=[];FrequentistNMA.studyUnits(studies).forEach((unit,idx)=>{const excludedStudy={name:unit.label};const drop=new Set(unit.indices);const remainingStudies=studies.filter((_,i)=>!drop.has(i));const refusal=FrequentistNMA.subsetRefusal(remainingStudies,reference);if(refusal){looResults.push({studyName:unit.label,studyIndex:idx,nRows:unit.indices.length,error:true,refused:true,message:'Not estimable without this study: '+refusal});return}try{const looRes=FrequentistNMA.analyze(remainingStudies,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});const effectChanges={};Object.entries(looRes.effects.effects).forEach(([t,e])=>{if(fullEffects[t]!==undefined){effectChanges[t]={estimate:e.estimate,change:Math.abs(e.estimate-fullEffects[t]),relChange:fullEffects[t]!==0?Math.abs((e.estimate-fullEffects[t])/fullEffects[t]):0}}});
+looResults.push({studyName:excludedStudy.name,studyIndex:idx,nRows:unit.indices.length,tau2:looRes.tau2,tau2Change:Math.abs(looRes.tau2-fullTau2),I2:looRes.heterogeneity.I2,I2Change:Math.abs(looRes.heterogeneity.I2-fullI2),effectChanges,influential:Math.abs(looRes.tau2-fullTau2)>fullTau2*0.2||Math.abs(looRes.heterogeneity.I2-fullI2)>10})}catch(e){looResults.push({studyName:excludedStudy.name,studyIndex:idx,error:true,message:e.message})}});
+const okRows=looResults.filter(r=>!r.error);const maxTau2Change=okRows.length?Math.max(...okRows.map(r=>r.tau2Change)):null;const maxI2Change=okRows.length?Math.max(...okRows.map(r=>r.I2Change)):null;const influentialStudies=looResults.filter(r=>r.influential&&!r.error);
 return{applicable:true,fullTau2,fullI2,looResults,maxTau2Change,maxI2Change,influentialStudies,interpretation:`${influentialStudies.length} influential stud${influentialStudies.length===1?'y':'ies'} detected (tau2 change > 20% or I2 change > 10%)`}}};
 
 const DoseResponseNMA={
@@ -9477,7 +9525,7 @@ const idxVi=keyIdx('vi','variance','var');
 const hasNamedSchema=idxStudy>=0&&idxT1>=0&&idxT2>=0&&((idxE1>=0&&idxN1>=0&&idxE2>=0&&idxN2>=0)||(idxYi>=0&&(idxSe>=0||idxVi>=0)));
 const startRow=hasNamedSchema?1:0;
 if(lines.length<=startRow)return{studies:[],errors:['No data rows found'],valid:false};
-const studies=[],errors=[],warnings=[];
+const studies=[],errors=[],warnings=[],dropped=[];
 for(let i=startRow;i<lines.length;i++){
 const rowNum=i+1;const line=lines[i];
 if(!line||line.trim()==='')continue;
@@ -9497,6 +9545,12 @@ continue
 const t1=String(row.treatment1??'').trim();const t2=String(row.treatment2??'').trim();
 const yi=Number(row.yi),se=Number(row.se),vi=Number(row.vi);
 const hasDirectInput=Number.isFinite(yi)&&((Number.isFinite(se)&&se>0)||(Number.isFinite(vi)&&vi>0));
+// A count field that is present but not a number (NA, NaN, '.', blank) is MISSING. netmeta/meta give that comparison TE = NA and leave it
+// out of the network with a warning; until 2026-11-15 the page read NA events as 0 (sanitizeInteger default) and blank events
+// as 0 later (events1 || 0), and NA n as 100. Such a row is dropped here and listed in `dropped` / warnings.
+const isNum=v=>v!==''&&v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(String(v).trim()));
+const countCols=[idxE1,idxN1,idxE2,idxN2];const schemaHasCounts=hasNamedSchema?countCols.some(ix=>ix>=0):true;
+if(!hasDirectInput&&schemaHasCounts){const miss=[['events1',row.events1],['n1',row.n1],['events2',row.events2],['n2',row.n2]].filter(([,v])=>!isNum(v)).map(([k,v])=>`${k}=${String(v??'').trim()===''?'blank':String(v).trim()}`);if(miss.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: missing ${miss.join(', ')} (as netmeta, a comparison with missing data is left out)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:miss,message:msg});warnings.push(msg);continue}}
 const n1=(row.n1!==''&&row.n1!==null&&row.n1!==undefined)?Security.sanitizeInteger(row.n1,100,1,1000000):'';
 const n2=(row.n2!==''&&row.n2!==null&&row.n2!==undefined)?Security.sanitizeInteger(row.n2,100,1,1000000):'';
 const events1=(row.events1!==''&&row.events1!==null&&row.events1!==undefined&&n1!=='')?Security.sanitizeInteger(row.events1,0,0,n1):'';
@@ -9511,7 +9565,7 @@ studies.push(study)
 if(studies.length===0&&errors.length===0)errors.push('No valid studies found in CSV');
 if(errors.length>0)console.warn('CSV import errors:',errors);
 if(warnings.length>0)console.info('CSV import warnings:',warnings);
-return{studies,errors,warnings,valid:errors.length===0}}
+return{studies,errors,warnings,dropped,valid:errors.length===0}}
 
 function importIPDCSV(text){
 const raw=String(text??'').replace(/\r\n?/g,'\n').trim();
@@ -10099,7 +10153,7 @@ let tableHtml='<div id="looTableContainer"><table class="data-table"><thead><tr>
 loo.looResults.forEach(r=>{
 const safeStudy=Security.escapeHtml(r.studyName??'Unknown study');
 if(r.error){
-tableHtml+=`<tr><td>${safeStudy}</td><td colspan="4" class="text-secondary">Error: ${Security.escapeHtml(r.message??'Unknown error')}</td></tr>`
+tableHtml+=`<tr><td>${safeStudy}</td><td colspan="4" class="text-secondary">${r.refused?'Refused':'Error'}: ${Security.escapeHtml(r.message??'Unknown error')}</td></tr>`
 }else{
 const rowCls=r.influential?'font-semibold':'';
 tableHtml+=`<tr class="${rowCls}"><td>${safeStudy}</td><td class="font-mono">${r.tau2.toFixed(4)}</td><td class="font-mono">${r.tau2Change.toFixed(4)}</td><td class="font-mono">${r.I2.toFixed(1)}%</td><td class="font-mono">${r.I2Change.toFixed(1)}%</td></tr>`
@@ -13919,6 +13973,7 @@ const result=importCSV(evt.target.result);
 if(result.errors&&result.errors.length>0){
 Toast.show('CSV Import Errors:\\n'+result.errors.slice(0,5).join('\\n')+(result.errors.length>5?`\\n...and ${result.errors.length-5} more`:''), "warn")
 }
+if(result.dropped&&result.dropped.length>0){Toast.show(`${result.dropped.length} row${result.dropped.length===1?'':'s'} not used (missing counts):\n`+result.dropped.slice(0,5).map(d=>d.message).join('\n')+(result.dropped.length>5?`\n...and ${result.dropped.length-5} more`:''), "warn")}
 if(result.studies&&result.studies.length>0){
 AppState.studies=result.studies;
 renderStudyTable();
