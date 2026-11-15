@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="CINeMA: Confidence In Network Meta-Analysis. Rate six domains per comparison to arrive at High / Moderate / Low / Very low confidence.">
+  <meta name="description" content="CINeMA: Confidence In Network Meta-Analysis. Rate six domains per comparison; see a suggested High / Moderate / Low / Very low summary (the paper's optional rule) and set the final rating yourself.">
   <meta name="color-scheme" content="light dark">
   <title>CINeMA</title>
   <style>
@@ -65,6 +65,11 @@
     button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
                        padding: 0.35rem 0.85rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
     svg { width: 100%; height: auto; display: block; margin-top: 0.7rem; }
+    .note { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+    .note.warn { color: var(--warn); font-weight: 600; }
+    td.final input[type="text"] { margin-top: 0.25rem; }
+    #tbl td select { width: auto; max-width: 8.6rem; }
+    #tbl td.final { min-width: 9rem; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
@@ -73,11 +78,12 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>CINeMA — Confidence in NMA</h1>
-    <p>Rate each pairwise comparison in a network meta-analysis across six CINeMA domains (Nikolakopoulou et al., PLOS Med 2020): within-study bias, reporting bias, indirectness, imprecision, heterogeneity, incoherence. The tool derives a confidence rating from domain downgrades.</p>
+    <p>Rate each pairwise comparison in a network meta-analysis across six CINeMA domains (Nikolakopoulou et al., PLOS Med 2020): within-study bias, reporting bias, indirectness, imprecision, heterogeneity, incoherence. The page shows a <strong>suggested</strong> summary from the paper's optional rule (start at High; drop 1 level per domain with some concerns or suspected reporting bias, 2 per domain with major concerns). The final rating is the reviewer's judgement: where concerns are related, the paper advises against downgrading more than once, so you can set the final rating, with a stated reason.</p>
   </header>
   <main>
     <section class="panel">
       <h2>Comparisons</h2>
+      <div style="overflow-x:auto">
       <table id="tbl">
         <thead>
           <tr>
@@ -88,24 +94,27 @@
             <th>Imprecision</th>
             <th>Heterogeneity</th>
             <th>Incoherence</th>
-            <th>Confidence</th>
+            <th>Suggested (−1/−2 tally)</th>
+            <th>Final rating (reviewer)</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="body"></tbody>
       </table>
+      </div>
       <div style="display:flex; gap:0.5rem; margin-top:0.7rem">
         <button type="button" id="btn-add" class="primary">+ Add comparison</button>
         <button type="button" id="btn-demo" class="secondary">Load demo</button>
+        <button type="button" id="btn-csv" class="secondary">Export CSV</button>
       </div>
     </section>
     <section class="panel">
       <h2>Confidence heatmap</h2>
-      <svg id="heat" viewBox="0 0 600 300" role="img" aria-label="Heatmap of CINeMA confidence ratings per comparison and domain"></svg>
+      <svg id="heat" viewBox="0 0 720 300" role="img" aria-label="Heatmap of CINeMA confidence ratings per comparison and domain"></svg>
     </section>
   </main>
   <footer>
-    Rating rule: the default summary in Nikolakopoulou et al. 2020 (PLOS Med 17:e1003082) — start at High and drop one level for each domain with Some concerns and two levels for each domain with Major concerns (High → Moderate → Low → Very low). The paper asks reviewers to avoid downgrading twice for related concerns (e.g. imprecision and heterogeneity driven by the same wide interval); adjust by hand where that applies. "Unclear" is not a CINeMA level: it marks a domain still to be resolved and does not downgrade. Domain judgements themselves are entered by you; the official CINeMA web app (cinema.ispm.unibe.ch) derives them from the network.
+    Suggested summary: Nikolakopoulou et al. 2020 (PLOS Med 17:e1003082) say reviewers "may then choose" to summarise judgements across the six domains with the four GRADE levels, for example by starting at High and dropping 1 level for each domain with Some concerns and 2 levels for each domain with Major concerns. That optional rule is what the Suggested column shows (floor Very low). Reporting bias has the paper's two descriptions, Undetected and Suspected; the paper gives no numeric mapping for them, so on this page Suspected reporting bias counts as one level (as Some concerns), in line with GRADE's single-level downgrade when publication bias is suspected. Related concerns: the paper asks reviewers to avoid downgrading more than once for related concerns (its example: some concerns for imprecision and heterogeneity and major concerns for incoherence; the tally gives Very low, yet 2 levels are sufficient, i.e. Low). The summary is the reviewer's judgement, so set the Final rating where that applies; an override needs a reason, which is shown in the table and the CSV export. "Unclear" is not a CINeMA level: a comparison with any unresolved domain is shown as Not fully assessed and gets no rating. Domain judgements are entered by you here. In the official CINeMA web app (cinema.ispm.unibe.ch) the reviewer's study-level input on within-study bias and indirectness is combined with the network data and user-defined rules to assign each domain's level, and its Report tab lets users not downgrade, or downgrade by 1 or 2 levels each relative treatment effect; the paper cautions against relying naively on the software's programmed rules.
   </footer>
   <script>
     const DOMAINS = ["within", "reporting", "indirect", "imprecision", "hetero", "incoherence"];
@@ -117,14 +126,45 @@
       hetero: "Heterogeneity",
       incoherence: "Incoherence",
     };
+    // Domain levels: [value, label, levels dropped by the optional summary rule].
+    // Nikolakopoulou 2020 gives 3 levels (no / some / major concerns) to each domain, except
+    // reporting bias, which has 2 descriptions: undetected and suspected. The paper gives no
+    // numeric mapping for those two; this page counts "suspected" as one level (as some concerns).
+    // "Unclear" is NOT a CINeMA level: it marks a domain still to be resolved (downgrade null),
+    // and a comparison with any unresolved domain is "Not fully assessed".
     const LEVELS = [
       ["none", "No concerns", 0],
       ["some", "Some concerns", 1],
       ["major", "Major concerns", 2],
-      // "Unclear" is NOT a CINeMA level (CINeMA uses no / some / major concerns). It is kept
-      // so an unresolved domain can be marked, and it does not downgrade until resolved.
-      ["unclear", "Unclear (unresolved)", 0],
+      ["unclear", "Unclear (unresolved)", null],
     ];
+    const REPORTING_LEVELS = [
+      ["undetected", "Undetected", 0],
+      ["suspected", "Suspected", 1],
+      ["unclear", "Unclear (unresolved)", null],
+    ];
+    function levelsFor(domain) { return domain === "reporting" ? REPORTING_LEVELS : LEVELS; }
+    // Legacy reporting values (pre-2-level page) migrated on read: none -> undetected,
+    // some -> suspected. The old "major" (-2) has no counterpart in the paper's two
+    // descriptions, so it is NOT guessed: it stays invalid and the comparison is Not fully
+    // assessed, with the invalid level named. (The page has no persistence, so legacy values
+    // can only arrive programmatically.)
+    const LEGACY_REPORTING = { none: "undetected", some: "suspected" };
+    function levelOf(domain, value) {
+      const v = domain === "reporting" && Object.prototype.hasOwnProperty.call(LEGACY_REPORTING, value) ? LEGACY_REPORTING[value] : value;
+      return levelsFor(domain).find(x => x[0] === v) || null;
+    }
+    // Levels dropped for one domain; null if unresolved or not a valid level for that domain
+    // (never silently scored 0).
+    function domainDowngrade(domain, value) {
+      const l = levelOf(domain, value);
+      return l ? l[2] : null;
+    }
+    function unresolvedDomains(row) { return DOMAINS.filter(k => domainDowngrade(k, row[k]) === null); }
+    function unresolvedLabel(row, k) {
+      return levelOf(k, row[k]) ? DOMAIN_LABELS[k] : DOMAIN_LABELS[k] + ' (invalid level "' + String(row[k]) + '")';
+    }
+    const RATINGS = [["high", "High"], ["mod", "Moderate"], ["low", "Low"], ["vlow", "Very low"]];
 
     function esc(s) {
       return String(s == null ? "" : s)
@@ -133,44 +173,92 @@
     }
 
     const DEFAULT_ROWS = [
-      { comparison: "A vs B", within: "none", reporting: "none", indirect: "none", imprecision: "none", hetero: "some", incoherence: "none" },
-      { comparison: "A vs C", within: "some", reporting: "none", indirect: "none", imprecision: "some", hetero: "none", incoherence: "none" },
-      { comparison: "B vs C", within: "some", reporting: "some", indirect: "some", imprecision: "major", hetero: "some", incoherence: "some" },
-      { comparison: "A vs D", within: "major", reporting: "some", indirect: "some", imprecision: "major", hetero: "major", incoherence: "unclear" },
+      { comparison: "A vs B", within: "none", reporting: "undetected", indirect: "none", imprecision: "none", hetero: "some", incoherence: "none" },
+      { comparison: "A vs C", within: "some", reporting: "undetected", indirect: "none", imprecision: "some", hetero: "none", incoherence: "none" },
+      { comparison: "B vs C", within: "some", reporting: "suspected", indirect: "some", imprecision: "major", hetero: "some", incoherence: "some" },
+      { comparison: "A vs D", within: "major", reporting: "suspected", indirect: "some", imprecision: "major", hetero: "major", incoherence: "unclear" },
     ];
     let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
 
     // Nikolakopoulou et al. 2020 (PLOS Med 17:e1003082), "Summarising judgments across the
-    // 6 domains": start at High and drop 1 level for each domain with some concerns and 2
-    // levels for each domain with major concerns; floor at Very low. The paper lets reviewers
-    // avoid downgrading twice for related concerns - that judgement stays with the reviewer.
+    // 6 domains": reviewers MAY choose to summarise; "one may start at high confidence and drop
+    // ... 1 step for each domain with some concerns, and by 2 levels for each domain with major
+    // concerns" - an optional rule, shown here as the SUGGESTED rating; floor at Very low. The
+    // paper asks reviewers to avoid downgrading more than once for related concerns, so the
+    // FINAL rating is the reviewer's (override with a required reason).
+    // downgradeScore: tally over the RESOLVED domains only; unresolved ones are reported by
+    // unresolvedDomains / suggestedRating and never shown as a rating.
     function downgradeScore(row) {
       let d = 0;
-      for (const k of DOMAINS) d += LEVELS.find(l => l[0] === row[k])?.[2] ?? 0;
+      for (const k of DOMAINS) d += domainDowngrade(k, row[k]) ?? 0;
       return Math.min(3, d);
     }
     function confidenceFrom(downgrades) {
-      if (downgrades === 0) return ["high", "High"];
-      if (downgrades === 1) return ["mod", "Moderate"];
-      if (downgrades === 2) return ["low", "Low"];
-      return ["vlow", "Very low"];
+      return RATINGS[Math.max(0, Math.min(3, downgrades))].slice();
+    }
+    function suggestedRating(row) {
+      const open = unresolvedDomains(row);
+      if (open.length) return { cls: "unclear", label: "Not fully assessed", complete: false, unresolved: open.map(k => unresolvedLabel(row, k)) };
+      const [cls, label] = confidenceFrom(downgradeScore(row));
+      return { cls, label, complete: true, unresolved: [] };
+    }
+    function finalRating(row) {
+      const s = suggestedRating(row);
+      const reason = String(row.overrideReason == null ? "" : row.overrideReason).trim();
+      // reason is carried only while a reviewer override is actually applied (no stale reason)
+      const base = { suggested: s.label, reason: "" };
+      if (!s.complete) return { ...base, cls: "unclear", label: "Not fully assessed", source: "incomplete" };
+      const o = RATINGS.find(r => r[0] === row.override);
+      if (!o) return { ...base, cls: s.cls, label: s.label, source: "suggested" };
+      if (!reason) return { ...base, cls: "unclear", label: "Reason required", source: "reason-required" };
+      return { ...base, reason, cls: o[0], label: o[1], source: "reviewer" };
+    }
+    function csvCell(v) {
+      let t = String(v == null ? "" : v);
+      if (/^[=+@\t\r]/.test(t)) t = "'" + t;               // formula-injection guard
+      return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    function exportCsv() {
+      const head = ["Comparison", ...DOMAINS.map(d => DOMAIN_LABELS[d]), "Suggested (-1/-2 tally)", "Final rating", "Final set by", "Override reason"];
+      const lines = [head.map(csvCell).join(",")];
+      for (const r of ROWS) {
+        const f = finalRating(r);
+        const lv = d => (levelOf(d, r[d]) || [null, "Invalid: " + r[d]])[1];
+        lines.push([r.comparison, ...DOMAINS.map(lv), f.suggested, f.label, f.source, f.reason].map(csvCell).join(","));
+      }
+      return lines.join("\r\n") + "\r\n";
+    }
+
+    function finalStatusHtml(f) {
+      return `<span class="chip ${f.cls}">${esc(f.label)}</span>${f.source === "reviewer" ? ` <span class="note">(reviewer; suggested ${esc(f.suggested)})</span>` : ""}
+            ${f.source === "reviewer" ? `<div class="note reason">Reason: ${esc(f.reason)}</div>` : ""}
+            ${f.source === "reason-required" ? `<div class="note warn">Override not applied: enter a reason.</div>` : ""}`;
     }
 
     function renderTable() {
       const tb = document.getElementById("body");
       tb.innerHTML = "";
       ROWS.forEach((r, idx) => {
-        const score = downgradeScore(r);
-        const [cls, label] = confidenceFrom(score);
+        const sg = suggestedRating(r);
+        const f = finalRating(r);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><input type="text" data-idx="${idx}" data-key="comparison" value="${esc(r.comparison)}" aria-label="Comparison ${idx + 1} label"></td>
           ${DOMAINS.map(d => `<td>
             <select data-idx="${idx}" data-key="${d}" aria-label="${DOMAIN_LABELS[d]} for comparison ${idx + 1}">
-              ${LEVELS.map(l => `<option value="${l[0]}"${r[d] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
+              ${levelOf(d, r[d]) ? "" : `<option value="${esc(r[d])}" selected>Invalid: ${esc(r[d])}</option>`}
+              ${levelsFor(d).map(l => `<option value="${l[0]}"${levelOf(d, r[d]) === l ? " selected" : ""}>${l[1]}</option>`).join("")}
             </select>
           </td>`).join("")}
-          <td><span class="chip ${cls}">${label}</span></td>
+          <td class="sugg"><span class="chip ${sg.cls}">${sg.label}</span>${sg.complete ? "" : `<div class="note">Unresolved: ${esc(sg.unresolved.join(", "))}</div>`}</td>
+          <td class="final">
+            <div class="final-status">${finalStatusHtml(f)}</div>
+            <div><select data-idx="${idx}" data-key="override" aria-label="Reviewer's final rating for comparison ${idx + 1}">
+              <option value=""${!r.override ? " selected" : ""}>Use suggested</option>
+              ${RATINGS.map(o => `<option value="${o[0]}"${r.override === o[0] ? " selected" : ""}>${o[1]}</option>`).join("")}
+            </select></div>
+            ${r.override ? `<input type="text" data-idx="${idx}" data-key="overrideReason" value="${esc(r.overrideReason || "")}" placeholder="Reason (required)" aria-label="Reason for overriding the suggested rating, comparison ${idx + 1}">` : ""}
+          </td>
           <td><button type="button" class="secondary" data-del="${idx}" aria-label="Remove comparison ${idx + 1}">×</button></td>`;
         tb.appendChild(tr);
       });
@@ -187,9 +275,13 @@
     document.getElementById("body").addEventListener("input", e => {
       const idx = e.target.dataset.idx;
       const key = e.target.dataset.key;
-      if (idx === undefined || key !== "comparison") return;
+      if (idx === undefined || (key !== "comparison" && key !== "overrideReason")) return;
       ROWS[idx][key] = e.target.value;
-      // Don't rerender on every keystroke to preserve focus; just redraw heatmap labels lazily.
+      // Don't rerender the table on every keystroke (keeps focus); update this row's final-rating
+      // status and the heatmap live instead.
+      const st = e.target.closest("tr")?.querySelector(".final-status");
+      if (st) st.innerHTML = finalStatusHtml(finalRating(ROWS[idx]));
+      drawHeat();
     });
     document.getElementById("body").addEventListener("click", e => {
       if (e.target.dataset.del !== undefined) {
@@ -198,7 +290,7 @@
       }
     });
     document.getElementById("btn-add").addEventListener("click", () => {
-      ROWS.push({ comparison: `Comparison ${ROWS.length + 1}`, within: "none", reporting: "none", indirect: "none", imprecision: "none", hetero: "none", incoherence: "none" });
+      ROWS.push({ comparison: `Comparison ${ROWS.length + 1}`, within: "none", reporting: "undetected", indirect: "none", imprecision: "none", hetero: "none", incoherence: "none" });
       renderTable();
     });
     document.getElementById("btn-demo").addEventListener("click", () => {
@@ -206,19 +298,30 @@
       renderTable();
     });
 
+    document.getElementById("btn-csv").addEventListener("click", () => {
+      const blob = new Blob([exportCsv()], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "cinema-ratings.csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
     function drawHeat() {
       const svg = document.getElementById("heat");
-      const W = 600;
-      const padL = 130, padT = 30, padR = 110;
-      const nCols = DOMAINS.length + 1;  // + confidence
+      const W = 720;
+      const padL = 130, padT = 30, padR = 30;
+      const nCols = DOMAINS.length + 2;  // + suggested + final
       const cellW = (W - padL - padR) / nCols;
       const cellH = 26;
       const H = padT + ROWS.length * cellH + 30;
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       const __svgParts = [""];
 
-      const levelColor = { none: "var(--none)", some: "var(--some)", major: "var(--major)", unclear: "var(--unclear)" };
-      const confColor = { high: "var(--high)", mod: "var(--mod)", low: "var(--low)", vlow: "var(--vlow)" };
+      // colour by levels dropped, so reporting bias (undetected / suspected) maps like no / some concerns
+      const dropColor = d => (d === null ? "var(--unclear)" : ["var(--none)", "var(--some)", "var(--major)"][d]);
+      const confColor = { high: "var(--high)", mod: "var(--mod)", low: "var(--low)", vlow: "var(--vlow)", unclear: "var(--unclear)" };
+      const short = l => (l === "Not fully assessed" ? "Not assessed" : l === "Reason required" ? "Reason?" : l);
 
       // headers
       DOMAINS.forEach((d, i) => {
@@ -226,20 +329,21 @@
         __svgParts.push(`<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" transform="rotate(-20 ${x} ${padT - 6})">${DOMAIN_LABELS[d]}</text>`);
       });
       const xConf = padL + DOMAINS.length * cellW + cellW / 2;
-      __svgParts.push(`<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`);
+      __svgParts.push(`<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Suggested</text>`);
+      __svgParts.push(`<text x="${xConf + cellW}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Final</text>`);
 
       ROWS.forEach((r, i) => {
         const y = padT + i * cellH;
         __svgParts.push(`<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc(r.comparison)}</text>`);
         DOMAINS.forEach((d, j) => {
           const x = padL + j * cellW;
-          __svgParts.push(`<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${levelColor[r[d]] || "var(--border)"}" opacity="0.85"/>`);
+          __svgParts.push(`<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${dropColor(domainDowngrade(d, r[d]))}" opacity="0.85"/>`);
         });
-        const score = downgradeScore(r);
-        const [cls, label] = confidenceFrom(score);
-        const xc = padL + DOMAINS.length * cellW;
-        __svgParts.push(`<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${confColor[cls]}" opacity="0.85"/>`);
-        __svgParts.push(`<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`);
+        [suggestedRating(r), finalRating(r)].forEach((rt, m) => {
+          const xc = padL + (DOMAINS.length + m) * cellW;
+          __svgParts.push(`<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${confColor[rt.cls]}" opacity="0.85"/>`);
+          __svgParts.push(`<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="10" fill="white" font-weight="600">${short(rt.label)}</text>`);
+        });
       });
       svg.innerHTML = __svgParts.join("");
 

@@ -854,7 +854,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Network Meta-Analysis",
-    summary: "Confidence In Network Meta-Analysis: rate six domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence) per comparison; derives High / Moderate / Low / Very low. Heatmap view.",
+    summary: "Confidence In Network Meta-Analysis: rate six domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence) per comparison; shows a suggested High / Moderate / Low / Very low summary (the paper's optional -1/-2 rule) beside the reviewer's final rating. Heatmap view.",
     note: "Nikolakopoulou 2020.",
     tags: ["cinema", "nma", "confidence", "certainty"]
   },
