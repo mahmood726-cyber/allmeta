@@ -37,7 +37,7 @@ window.Toast = { show: (m, l) => shown.push([String(m), l || 'info']) };
 window.switchTab = (t) => switched.push(t);
 window.showLoading = () => {}; window.hideLoading = () => {};
 const realToast = window.Toast.show, realSwitch = window.switchTab;
-window.refuses = async () => { window.Toast.show('Need =3 studies', 'warn'); };
+window.refuses = async () => { window.Toast.show('Need ≥3 studies', 'warn'); };
 window.fails = async () => { window.Toast.show('Publication bias analysis failed: boom', 'warn'); };
 window.throws = async () => { throw new Error('kaput'); };
 window.quiet = async () => { window.Toast.show('done', 'info'); window.switchTab('pubbias'); };
@@ -63,7 +63,7 @@ def test_focus_side_effects_still_silenced():
 
 
 def test_refusal_reaches_the_user():
-    assert any('Need =3 studies' in m and l == 'warn' for m, l in R['shown']), R['shown']
+    assert any('Need ≥3 studies' in m and l == 'warn' for m, l in R['shown']), R['shown']
 
 
 def test_runner_failure_toast_reaches_the_user():
