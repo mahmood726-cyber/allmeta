@@ -49,8 +49,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Network MA",
-    summary: "Combine RCT NMA + IPD trial-level + observational evidence under a unified bias model. Per-contrast design-bias δ_design + bias variance σ²_design estimated by method of moments against the RCT anchor.",
-    note: "References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. 2017 'GetReal in NMA' (Res Synth Methods 8:23-39).",
+    summary: "Combine RCT NMA + IPD trial-level + observational evidence under a unified bias model. Per-contrast design-bias δ_design + bias variance σ²_design estimated by method of moments against the RCT anchor. Under this fixed-offset model the bias-adjusted non-RCT rows carry no information about the pooled effect when σ² = 0 (the synthesis then equals the RCT anchor, with the anchor's SE).",
+    note: "References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. 'GetReal in network meta-analysis' (Res Synth Methods 2016;7:236-263); Efthimiou et al. 2017 (Stat Med 36:1210-1226).",
     tags: ["cross-network", "ipd", "observational", "bias-corrected", "synthesis", "welton"]
   },
   {
@@ -62,8 +62,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Living Evidence",
-    summary: "Joint Bayesian hierarchical model decomposing each effect into outcome mean μ_o + study RE δ_i + time period γ_t + optional RoB shift. Variational EM, browser-tractable. The unifying frame for multi-outcome × multi-snapshot living-evidence syntheses.",
-    note: "Variational EM converges in 50-200 iterations. Closed-form analytic posterior at fixed variance components.",
+    summary: "Joint hierarchical (mixed-effects) model decomposing each effect into outcome mean μ_o + study RE δ_i + time period γ_t + optional RoB shift, fitted by maximum likelihood (EM, polished by a profile-likelihood search over τ²), browser-tractable. The unifying frame for multi-outcome × multi-snapshot living-evidence syntheses.",
+    note: "Estimates, SEs (GLS covariance), τ² and log-likelihood equal metafor::rma.mv(yi, vi, mods = ~ 0 + outcome + factor(time), random = ~ 1 | study, method = 'ML') (lane audit7); CIs use the normal quantile, as rma.mv does by default.",
     tags: ["bayesian", "hierarchical", "multi-outcome", "time-varying", "rob", "variational-em"]
   },
   {
@@ -89,7 +89,7 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Pairwise MA",
     summary: "Empirical Bayes shrinkage of subgroup-specific effect estimates toward the overall pooled effect. Personalised prediction: returns the EB posterior for a patient's subgroup label, or falls back to overall when the subgroup wasn't observed.",
-    note: "References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Morris 1983 posterior variance; James-Stein / EB classics.",
+    note: "Paule-Mandel τ² (shared/ma-core.js) within and across subgroups, then BLUP shrinkage: shrunk estimates, SEs and 95% intervals equal metafor::blup of rma(method = 'PM') on the subgroup pools (lane audit7). The interval treats the between-subgroup variance as known, so with few subgroups it is optimistic. References: Kent et al. 2020 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).",
     tags: ["personalised", "subgroup", "shrinkage", "empirical-bayes", "path", "hte"]
   },
   {
@@ -115,7 +115,7 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Living Evidence",
     summary: "Living-evidence pooling with time-varying RoB. Each snapshot uses each study's RoB AS RATED ON or before that date, so the pool's drift reflects BOTH new studies AND updated judgements on existing ones — the two reasons a living systematic review's bottom line moves.",
-    note: "Default RoB → bias mapping: low=0, some=0.25, high=0.5. Pairs naturally with the EvidenceOS living-evidence cron + GH Actions update.",
+    note: "Default RoB → bias mapping: low=0, some=0.25, high=0.5 — this app's own sensitivity heuristic, not a published or validated mapping; override per project. Pairs naturally with the EvidenceOS living-evidence cron + GH Actions update.",
     tags: ["living-evidence", "time-varying-rob", "snapshots", "drift", "rob2", "sensitivity"]
   },
   {
@@ -140,8 +140,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Network MA",
-    summary: "Multi-arm × multi-outcome network meta-analysis with joint random-effects pooling. Σ_per_study = Σ_RE^outcomes ⊗ G_arm (G_arm has 1 on diag, 0.5 off — the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ.",
-    note: "Reference: Achana et al. 2014 §3.2 Res Synth Methods 5:35-49. Handles missing outcomes per study; borrows strength across correlated outcomes.",
+    summary: "Multi-arm × multi-outcome network meta-analysis with joint random-effects pooling. Σ_per_study = Σ_RE^outcomes ⊗ G_arm (G_arm has 1 on diag, 0.5 off — the multi-arm shared-control correction for the between-study part). β̂ via GLS with block-diagonal Σ. Only contrast SEs are entered, so the within-study covariance of a multi-arm trial's contrasts is not modelled and their SEs are optimistic (disclosed in-app with a netmeta comparison).",
+    note: "After Achana et al., BMC Med Res Methodol 2014;14:92, as a frequentist GLS approximation. Handles missing outcomes per study; borrows strength across correlated outcomes.",
     tags: ["nma", "multi-outcome", "multi-arm", "achana", "kronecker", "borrowing"]
   },
   {
@@ -153,8 +153,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Pairwise MA",
-    summary: "Bivariate (K=2) random-effects meta-analysis with REML estimation of the 2×2 between-study covariance Σ_RE = (τ₁, τ₂, ρ_between). Borrows strength across correlated outcomes — studies that report only one outcome still contribute to the joint pooled estimate via ρ_between. Side-by-side comparison with separate univariate REML shows the CI tightening.",
-    note: "Reference: Riley 2007 (Biostatistics); Jackson, Riley & White 2011 (Stat Med); Achana 2014 §3.1 (Res Synth Methods). Roadmap: K ≥ 3 and network multi-outcome.",
+    summary: "Bivariate (K=2) random-effects meta-analysis with REML estimation of the 2×2 between-study covariance Σ_RE = (τ₁, τ₂, ρ_between). Borrows strength across correlated outcomes — studies that report only one outcome still contribute to the joint pooled estimate via ρ_between. Side-by-side comparison with separate univariate REML shows the CI tightening. When both τ are 0, ρ_between is not identified and is reported as such (not as a number).",
+    note: "Reference: Riley 2007 (Biostatistics); Jackson, Riley & White 2011 (Stat Med); Achana 2014 (BMC Med Res Methodol 14:92). The page fits K = 2; for multi-outcome networks see Multi-outcome NMA.",
     tags: ["multivariate", "bivariate", "multi-outcome", "borrowing-of-strength", "reml", "achana"]
   },
   {
@@ -292,8 +292,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "R / WASM",
-    summary: "One-stop recipe for installing R + the allmeta CRAN stack locally, including Stan / JAGS back-ends for real MCMC (gemtc, multinma, rstan, cmdstanr, brms, bayesmeta). Reproduces every browser app in native R.",
-    note: "For the 10% of tasks that need local compute.",
+    summary: "One-stop recipe for installing R + the R packages allmeta uses (CRAN, plus cmdstanr), including JAGS (gemtc) and Stan (rstan, cmdstanr, brms, multinma) back-ends for real MCMC. For re-running allmeta analyses in native R.",
+    note: "For tasks that need local compute (MCMC, very large networks, custom priors).",
     tags: ["r", "install", "stan", "jags", "local", "reproducibility"]
   },
   {
@@ -598,7 +598,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Trial Design",
-    summary: "Minimum clinically important difference via distribution-based (0.5·SD, 1·SEM, SDC) and anchor-based (Juniper) methods, plus a non-inferiority margin derived from active-comparator effect and preservation fraction.",
+    summary: "Minimum clinically important difference via distribution-based (0.5·SD, 1·SEM, SDC = 1.96·√2·SEM per de Vet 2006) and anchor-based (Juniper) methods, plus a non-inferiority margin M2 = (1 − preserved fraction) × M1 from the active-comparator effect M1.",
     note: "Triangulate multiple methods; MCID depends on context.",
     tags: ["mcid", "non-inferiority", "ni-margin", "responder"]
   },
@@ -854,7 +854,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Network Meta-Analysis",
-    summary: "Confidence In Network Meta-Analysis: rate six domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence) per comparison; derives High / Moderate / Low / Very low. Heatmap view.",
+    summary: "Confidence In Network Meta-Analysis: rate six domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence) per comparison; shows a suggested High / Moderate / Low / Very low summary (the paper's optional -1/-2 rule) beside the reviewer's final rating. Heatmap view.",
     note: "Nikolakopoulou 2020.",
     tags: ["cinema", "nma", "confidence", "certainty"]
   },
@@ -867,8 +867,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Diagnostic Test Accuracy",
-    summary: "Bivariate random-effects DTA meta-analysis on logit(Se) and logit(1-Sp), with summary operating point and an HSROC curve derived from the mean linear predictor. Approximates Reitsma via IGLS.",
-    note: "For rigorous estimates use R's mada; this is a browser-native sketch.",
+    summary: "Bivariate random-effects DTA meta-analysis on logit(Se) and logit(1-Sp), with summary operating point and an HSROC curve derived from the mean linear predictor. For k ≥ 4, a maximum-likelihood Reitsma fit (IGLS start + BFGS) matching mada::reitsma(method = 'ml'), with SROC AUC = mada::AUC and exact Clopper-Pearson per-study CIs; for k = 3 (or a failed ML fit) the page shows, and says it shows, a univariate DerSimonian-Laird fit per margin, which is not mada's model.",
+    note: "For k = 3, use R's mada (mada::reitsma fits k = 3; this page does not).",
     tags: ["hsroc", "sroc", "bivariate", "dta", "reitsma"]
   },
   {
@@ -1307,7 +1307,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Standalone forest plot from pasted (label, estimate, SE) studies. Fixed-effect and Paule-Mandel random-effects pooling with I\u00b2 and \u03c4\u00b2.",
+    summary: "Standalone forest plot from pasted (label, estimate, SE) studies. Fixed-effect and Paule-Mandel random-effects pooling (modified Hartung-Knapp CI, variance floor 1 = metafor test='adhoc') with I\u00b2 and \u03c4\u00b2.",
     note: "Single-file HTML, offline, no dependencies. SVG / PNG / JSON export.",
     tags: ["forest-plot", "meta-analysis", "pooling"]
   },
@@ -1322,7 +1322,7 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Evidence Synthesis",
     summary: "Funnel plot with 95% and 99% pseudo-CI limits plus Egger's regression test for small-study effects (p-value via incomplete-beta t-distribution).",
-    note: "Validated against scipy / statsmodels OLS. Low-k warning below 10 studies.",
+    note: "Egger p checked against R lm(yi/sei ~ 1/sei) in a unit test (lane audit4). Low-k warning below 10 studies.",
     tags: ["funnel-plot", "publication-bias", "egger"]
   },
   {
@@ -1644,8 +1644,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Render the synthesis on the bus as a premium, journal-grade article and print it to PDF — a browser port of the Synthēsis paper standard (synthesis-paper-spec/metapaper): Palatino typesetting, a washed structured abstract with a brand left-border, a red key-finding pull-quote, a house-rules forest figure (precision-sized study squares, one red pooled diamond), a booktabs study table, running heads, a page-of-page footer, and a CC-BY / how-to-cite block. Truth-first: every figure and number is read from ma-studies / ma-pooled; nothing is invented, and an empty bus renders a clearly-labelled demo.",
-    note: "Reads the cross-tool buses (pooled estimate verbatim from ma-pooled; never re-pooled). Fully offline; figures are inline SVG, no CDN.",
+    summary: "Render the synthesis on the bus as a premium, journal-grade article and print it to PDF — a browser port of the Synthēsis paper standard (synthesis-paper-spec/metapaper): Palatino typesetting, a washed structured abstract with a brand left-border, a red key-finding pull-quote, a house-rules forest figure (precision-sized study squares, one red pooled diamond), a booktabs study table, running heads, a page-of-page footer, and a CC-BY / how-to-cite block. Studies are read from ma-studies and the pooled estimate verbatim from ma-pooled; if no producer estimate is on the bus, the page pools here (REML, Hartung-Knapp CI with variance floor) and says so. An empty bus renders a demonstration with illustrative numbers, not trial results.",
+    note: "Reads the cross-tool buses (a producer's pooled estimate is shown verbatim, never re-pooled; leave-one-out and cumulative panels are recomputed here and labelled). Fully offline; figures are inline SVG, no CDN.",
     tags: ["pdf", "manuscript", "journal", "typesetting", "forest", "reporting", "synthesis", "ma-pooled-v1", "ma-studies-v1", "offline"]
   },
   {

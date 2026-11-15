@@ -1,10 +1,14 @@
 import {test,expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
+import {loadComplete} from './load-complete.mjs';
 const corpus=JSON.parse(readFileSync(new URL('../../../limit-ma/validate/plus/corpus.json',import.meta.url),'utf8'));
 const options={threshold:0.2,maxDiffPixelRatio:0.005,animations:'disabled',caret:'hide'};
 test.use({viewport:{width:1280,height:900},deviceScaleFactor:1,reducedMotion:'reduce',colorScheme:'light'});
 test.beforeEach(async({page})=>{
- await page.goto('/limit-ma/index.html',{waitUntil:'domcontentloaded'});
+ // A request the local server did not deliver (no HTTP response) is reloaded and named in the log
+ // (load-complete.mjs); HTTP errors and script errors are not retried, and every wait and assertion below
+ // is unchanged.
+ await loadComplete(page,'/limit-ma/index.html',async()=>await page.evaluate(()=>typeof AlmLimitPlusReady!=='undefined'));
  await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
  await page.evaluate(()=>document.fonts.ready);
 });

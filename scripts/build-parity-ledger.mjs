@@ -154,7 +154,7 @@ const allRows = rows.concat(pyRows);
 // list is curated; the drift guard below auto-drops any app that has since
 // gained a spec or per-app Python R-parity test.
 const UNCOVERED_NUMERICAL = [
-  { app: 'everything-model', reason: 'Bespoke variational-EM Bayesian hierarchical model (outcome x time x RoB) — no standard R package equivalent to check against.' },
+  { app: 'everything-model', reason: 'Joint outcome x time x RoB mixed model fitted by ML (EM + profile-likelihood polish); unit-tested against metafor::rma.mv(method="ML") (lane audit7) but not yet through this ledger.' },
   { app: 'cross-network', reason: 'Unified NMA + IPD + observational bias-adjustment model — bespoke; no packaged R oracle.' },
   { app: 'cross-design', reason: 'RCT + observational power-prior / Welton design-bias synthesis — closed-form, no packaged R oracle (formula-checked only).' },
   { app: 'sequential-ma', reason: 'Adaptive alpha-spending sequential MA — boundaries verified analytically; the tsa app IS R-parity tested for the shared TSA core.' },

@@ -1,6 +1,6 @@
 # Forest Plot Viewer
 
-Interactive forest plot for pairwise meta-analysis. Paste study-level effect sizes and standard errors; the app pools via fixed/random effects (DerSimonian-Ladd or REML) and renders a publication-quality forest plot with heterogeneity statistics (I², τ², Q).
+Interactive forest plot for pairwise meta-analysis. Paste study-level effect sizes and standard errors; the app pools via fixed effect and Paule-Mandel random effects (modified Hartung-Knapp CI with variance floor 1, = metafor `test="adhoc"`) and renders a publication-quality forest plot with heterogeneity statistics (I², τ², Q).
 
 ## Tests
 

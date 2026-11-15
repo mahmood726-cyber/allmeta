@@ -60,7 +60,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Local AI setup</h1>
-    <p>Run an LLM on your own machine via <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>, then allmeta apps can call it for structured extraction (PICO elements, effect sizes, 2×2 tables from abstracts, GRADE justifications). Everything stays on your device — the model runs locally; the browser just speaks HTTP to <code>127.0.0.1:11434</code>.</p>
+    <p>Run an LLM on your own machine via <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>, then allmeta apps can call it for structured extraction (PICO elements, effect sizes, 2×2 tables from abstracts). Everything stays on your device — the model runs locally; the browser just speaks HTTP to <code>127.0.0.1:11434</code>.</p>
   </header>
   <main id="main-content">
     <section>
@@ -116,6 +116,7 @@ ollama pull gpt-oss:20b       # ~13 GB, best reasoning if you have the RAM</pre>
         <tbody>
           <tr><td><a href="../pico/">PICO Formulator</a></td><td>Paste an abstract → fill P/I/C/O fields automatically. <span class="pill">wired</span></td></tr>
           <tr><td><a href="../effect-size-converter/">Effect-Size Converter</a></td><td>Paste a results paragraph → extract the primary effect + SE. <span class="pill">wired</span></td></tr>
+          <tr><td><a href="../rct-extractor/">RCT Extractor</a></td><td>Optional LLM layer: extract every effect estimate in an RCT passage, with 2×2 counts where reported. <span class="pill">wired</span></td></tr>
         </tbody>
       </table>
       <p>Adding it to another app is a one-liner — each app includes <code>../shared/localllm.js</code> and calls <code>LocalLLM.attachPanel()</code>.</p>
@@ -125,7 +126,7 @@ ollama pull gpt-oss:20b       # ~13 GB, best reasoning if you have the RAM</pre>
       <h2>Privacy model</h2>
       <ul>
         <li>Ollama runs on your computer. The model weights live on your disk; inference happens on your CPU or GPU.</li>
-        <li>This page's JavaScript calls <code>http://127.0.0.1:11434/api/generate</code>. That request is loopback — it never reaches your router, let alone the internet.</li>
+        <li>This page only calls <code>GET http://127.0.0.1:11434/api/tags</code>; the apps above call <code>/api/tags</code> and <code>/api/generate</code> on the same address. These requests are loopback — they never reach your router, let alone the internet.</li>
         <li>No telemetry in allmeta. The only external request the hub makes is the initial load (HTML/CSS/JS from GitHub Pages). Browser DevTools → Network tab will confirm.</li>
         <li>The <code>OLLAMA_ORIGINS</code> setting is the gate — only the origins you list can call your Ollama instance.</li>
       </ul>
