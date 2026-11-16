@@ -1,2 +1,4 @@
-# Pinned exact-enumeration corpus and references: hashed as LF bytes; never convert line endings.
+# Pinned exact-enumeration corpus and references: MANIFEST-exact.json records SHA-256 and byte counts of the
+# bytes as committed, so never convert line endings. corpus.json is LF; reference-r.json and reference-metafor.json
+# are one line each ending in CRLF (as R wrote them on Windows), and their pinned hashes cover that CR.
 *.json -text

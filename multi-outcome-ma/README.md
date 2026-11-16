@@ -16,7 +16,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/multi-outcome-ma/
 
 ## Method papers
 
-- Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. Biostatistics. 2007;8(3):441-451. doi:10.1093/biostatistics/kxl018
+- Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. Biostatistics. 2007;8(3):441-451. doi:10.1093/biostatistics/kxm023
 
 ## Cite as
 
