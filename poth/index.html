@@ -55,6 +55,9 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/poth.js"></script>
+
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -99,7 +102,7 @@
         var v = NUM.test(f[0]) ? Number(f[0].replace(/\s*%$/, "")) : NaN;
         if (!isFinite(v) || v < 0) { errs.push("line " + (i + 1)); return; }
         if (v > 1 || /%$/.test(f[0])) anyPct = true;
-        rows.push({ v: v, line: i + 1, label: f[1] || ("T" + (rows.length + 1)) });
+        rows.push({ v: v, line: i + 1, tok: f[0], label: f[1] || ("T" + (rows.length + 1)) });
       });
       // percent auto-detect: if any value > 1, treat all as 0–100.
       if (anyPct) rows.forEach(function (r) { r.v = r.v / 100; });
@@ -117,6 +120,7 @@
     function run() {
       var p = parse(document.getElementById("data").value);
       var out = document.getElementById("out");
+      if (window.AlmRCheck) window.AlmRCheck.set(null);
       if (p.errs.length) {
         out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name.</p>";
         return;
@@ -126,6 +130,8 @@
         return;
       }
       var r = window.AlmPOTH.poth(p.rows.map(function (x) { return x.v; }));
+      if (window.AlmRCheck) window.AlmRCheck.set({ tok: p.rows.map(function (x) { return x.tok; }), labels: p.rows.map(function (x) { return x.label; }),
+        page: { n: r.n, pct: p.pct, meanSucra: r.meanSucra, poth: r.poth, sucra: p.rows.map(function (x) { return x.v; }) } });
       var b = band(r.poth);
       var sorted = p.rows.slice().sort(function (a, c) { return c.v - a.v; });
       var maxV = sorted[0].v || 1;
