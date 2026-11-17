@@ -90,6 +90,15 @@ const C1 = {
   "transportability": { A: click("#btn-example"), verify: "#btn-webr", B: set("#f-target", "0.9") + click("#btn-run"), show: ["#r-status", "#r-out"] },
   "transported-nma": { A: click("#btn-example"), verify: "#btn-webr", B: click("#f-higher") + click("#btn-run"), show: ["#r-status", "#r-out"] },
   "spec-collapse": { A: click("#btn-example"), verify: "#btn-webr", B: set("#scheme", "reml_only") + click("#btn-run"), show: ["#r-status", "#r-out"] },
+  // merged later (#630 pa8, #631 pa2)
+  "bayesian-ma": { A: click("#btn-example"), verify: "#btn-r-webr", B: set("#f-mu0", "0.7"), show: ["#r-check-status", "#r-check-out"] },
+  "bayesian-mcmc": { A: set("#iter", "600") + set("#burn", "100") + click("#btn-run"), waitA: 5000, verify: "#btn-r-webr", B: click("#btn-run"), waitB: 5000, show: ["#r-check-status", "#r-check-out"] },
+  "bma-tau-priors": { A: click("#btn-run"), waitA: 1500, verify: "#btn-r-webr", B: set("#src", ["A, 0.30, 0.012", "B, 0.12, 0.020", "C, 0.55, 0.018", "D, -0.08, 0.025"].join(String.fromCharCode(10))) + click("#btn-run"), waitB: 1500, show: ["#r-check-status", "#r-check-out"] },
+  "robma": { A: "0", waitA: 1500, verify: "#btn-r-webr", B: set("#f-data", ["A, 0.30, 0.12", "B, 0.12, 0.20", "C, 0.55, 0.18", "D, -0.08, 0.25"].join(String.fromCharCode(10))), waitB: 1500, show: ["#r-check-status", "#r-check-out"] },
+  "poth": { A: click("#btn-example"), verify: "#btn-verify-r", B: set("#data", ["0.9, A", "0.5, B", "0.1, C"].join(String.fromCharCode(10))), show: ["#rcheck-status", "#rcheck-verdict", "#rcheck-out"] },
+  "nma-meta-reg": { A: click("#btn-run"), waitA: 1500, verify: "#btn-verify-r", B: set("#f-method", "ML") + click("#btn-run"), waitB: 1500, show: ["#rcheck-status", "#rcheck-verdict", "#rcheck-out"] },
+  "multiplicative-ma": { A: click("#btn-example"), verify: "#btn-verify-r", B: set("#scale", "exp"), show: ["#rcheck-status", "#rcheck-verdict", "#rcheck-out"] },
+  "multiplicative-nma": { A: click("#btn-example"), verify: "#btn-verify-r", B: set("#scale", "exp"), show: ["#rcheck-status", "#rcheck-verdict", "#rcheck-out"] },
   // HTA: B keeps only the comparator, so the ICER cell is not rewritten (no comparison) while the costs change.
   "HTA": {
     A: "app.project = app.createDemoProject(); app.runBaseCase();", verify: "#btn-verify-r",
@@ -101,7 +110,7 @@ async function race(app, rerun) {
   const c = C1[app];
   const page = await open(app);
   if (c.wait) await page.waitForTimeout(c.wait);
-  await page.evaluate(c.A); await page.waitForTimeout(300);
+  await page.evaluate(c.A); await page.waitForTimeout(c.waitA || 300);
   await page.evaluate(() => {
     window.__pending = [];
     window.AlmWebR = window.AlmWebR || {};
@@ -109,7 +118,7 @@ async function race(app, rerun) {
   });
   await page.evaluate(click(c.verify));
   await page.waitForFunction(() => window.__pending.length > 0, null, { timeout: 10000 });
-  if (rerun) { await page.evaluate(c.B); await page.waitForTimeout(400); }
+  if (rerun) { await page.evaluate(c.B); await page.waitForTimeout(c.waitB || 400); }
   await page.evaluate((stdout) => window.__pending[0].res({ ok: true, stdout, versions: { R: "R version 4.5.1", webR: "0.5.5", metafor: "4.8-0", lme4: "2.0-1" } }), FAKE_R);
   await page.waitForTimeout(400);
   const shown = await page.evaluate((sels) => sels.map((s) => { const e = document.querySelector(s); return e && !e.hidden ? e.textContent : ""; }).join(" | "), c.show);
@@ -140,6 +149,18 @@ test("class 2, rmst-ma: a failed fit leaves nothing for the R check (no stale an
   assert.strictEqual(await page.evaluate(() => window.__almRmstRState()), null, "the previous analysis is still offered to the R check");
   await page.evaluate(click("#rcheck-dl"));
   assert.match(await page.evaluate(() => document.getElementById("rcheck-status").textContent), /Nothing to check/);
+  await page.close();
+});
+
+test("class 2, bayesian-ma: a failed tau^2 fit leaves nothing for the R check (no stale analysis)", { skip: SKIP }, async () => {
+  const page = await open("bayesian-ma");
+  const errs = []; page.on("pageerror", (e) => errs.push(e.message));
+  await page.evaluate(click("#btn-example")); await page.waitForTimeout(300);
+  assert.ok(await page.evaluate(() => !!window.__almRCheckInputs()), "example analysis not recorded");
+  await page.evaluate(set("#f-data", ["A, 1e308, 1", "B, -1e308, 1"].join(String.fromCharCode(10))));
+  await page.waitForTimeout(300);
+  assert.ok(errs.some((m) => /bracketed/.test(m)), "expected the Paule-Mandel fit to fail for these inputs: " + errs.join("; "));
+  assert.strictEqual(await page.evaluate(() => window.__almRCheckInputs()), null, "the previous analysis is still offered to the R check");
   await page.close();
 });
 
@@ -189,6 +210,48 @@ for (const [name, act] of C4) {
     await page.close();
     const v = lastVerdict(runR(s));
     assert.match(v, /^NOT CHECKED\b/, "verdict without any estimate compared: " + v);
+  });
+}
+
+// 3 (apps merged later, #630): the chk() cap of 5e-4 is half a unit of 3 decimals, but these pages show 4
+// decimals (tau^2, mu, SE, CrI) and Bayes factors as exp(log BF) to 2 decimals. Plant an error in the script's
+// page value that changes the displayed digits; R must flag it.
+const J = (rows) => rows.join(String.fromCharCode(10));
+const BIG = J(["A, 120, 6", "B, 165, 7", "C, 90, 5", "D, 140, 8", "E, 105, 6"]);   // raw-unit effects: tau^2 ~ 700
+const C3B = [
+  { app: "bayesian-ma", A: set("#f-data", BIG) + set("#f-tau0", "1000"), gen: "window.__almBayesMARScript()", field: "tau2", delta: 2e-4, d: 4, label: /^tau\^2 \(plug-in\)/m },
+  { app: "bma-tau-priors", A: set("#src", J(["A, 120, 36", "B, 165, 49", "C, 90, 25", "D, 140, 64", "E, 105, 36"])) + click("#btn-run"), gen: "window.__almBMARScript()", field: "mu", delta: 1e-4, d: 4, label: /^BMA mu/m },
+  { app: "robma", A: set("#f-data", J(["A, 0.9, 0.10", "B, 1.1, 0.12", "C, 0.8, 0.09", "D, 1.0, 0.11", "E, 0.95, 0.10", "F, 1.05, 0.13"])), gen: "window.__almRoBMARScript()", field: "logBFe", exp: true, label: /^log BF10 \(effect\)/m },
+];
+for (const c of C3B) {
+  test(`class 3, ${c.app}: a page error that changes the displayed ${c.field} is reported`, { skip: SKIP_R }, async () => {
+    const page = await open(c.app);
+    await page.evaluate(c.A); await page.waitForTimeout(1500);
+    const s = await page.evaluate(c.gen);
+    await page.close();
+    assert.ok(s, "no script");
+    const m = new RegExp("(page <- list\\([\\s\\S]*?\\b" + c.field + " = )([-0-9.eE+]+)").exec(s);
+    assert.ok(m, "page value " + c.field + " not found in the script");
+    const v = +m[2];
+    let planted, shownA, shownB;
+    if (c.exp) {   // BF shown as exp(log BF) to 2 decimals (below 1e21)
+      planted = v + 0.02 / Math.exp(v); shownA = Math.exp(v).toFixed(2); shownB = Math.exp(planted).toFixed(2);
+    } else { planted = v + c.delta; shownA = v.toFixed(c.d); shownB = planted.toFixed(c.d); }
+    assert.notStrictEqual(shownA, shownB, "precondition: the planted error changes the displayed value");
+    assert.ok(Math.abs(planted - v) < 5e-4, "precondition: the planted error is inside the old 5e-4 cap");
+    const bad = s.slice(0, m.index) + m[1] + String(planted) + s.slice(m.index + m[0].length);
+    const out = runR(bad);
+    const line = out.split(/\r?\n/).find((l) => c.label.test(l)) || "";
+    assert.match(line, /DIFFERS/, `planted ${shownA} -> ${shownB} passed:\n${line}`);
+  });
+  test(`kept MATCH, ${c.app}: the same data, unplanted`, { skip: SKIP_R }, async () => {
+    const page = await open(c.app);
+    await page.evaluate(c.A); await page.waitForTimeout(1500);
+    const s = await page.evaluate(c.gen);
+    await page.close();
+    const out = runR(s);
+    const mm = /^MATCH (\d+)\/(\d+)/.exec(lastVerdict(out));
+    assert.ok(mm && mm[1] === mm[2], "expected MATCH n/n:\n" + out);
   });
 }
 

@@ -392,6 +392,9 @@
     window.__almRCheckInputs = function () { return _rcheck; };
     window._almLastBayes = function () { return _lastPost; };
     function render() {
+      // Clear first: if this render fails (e.g. the Paule-Mandel tau^2 cannot be bracketed and throws),
+      // the R check must not be offered the previous analysis as if it were the current one.
+      _lastPost = null; _rcheck = null;
       const state = readState();
       const parsed = parseStudies(state.data);
       const mu0 = parseFloat(state.mu0);
