@@ -17,8 +17,8 @@
   var $ = function (id) { return document.getElementById(id); };
   function rnum(x) { return (x == null || !isFinite(x)) ? "NA" : String(Number(x)); }   // shortest round-trip decimal (exact)
   function rstr(s) { return JSON.stringify(String(s)); }   // JSON string escapes are valid R string escapes
-  function rvecN(a) { return "c(" + a.map(rnum).join(", ") + ")"; }
-  function rvecS(a) { return "c(" + a.map(rstr).join(", ") + ")"; }
+  function rvecN(a) { return a.length ? "c(" + a.map(rnum).join(", ") + ")" : "numeric(0)"; }   // c() would be NULL
+  function rvecS(a) { return a.length ? "c(" + a.map(rstr).join(", ") + ")" : "character(0)"; }
 
   var COMPARE_R = [
     "## ---- comparison (tolerance 1e-6 relative to max(1,|page|): tighter than the page's 4-decimal display) ----",

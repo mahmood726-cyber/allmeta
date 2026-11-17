@@ -17,7 +17,7 @@
   var $ = function (id) { return document.getElementById(id); };
   function rnum(x) { return (x == null || !isFinite(x)) ? "NA" : String(Number(x)); }   // shortest round-trip decimal (exact)
   function rstr(s) { return JSON.stringify(String(s)); }
-  function rvecN(a) { return "c(" + a.map(rnum).join(", ") + ")"; }
+  function rvecN(a) { return a.length ? "c(" + a.map(rnum).join(", ") + ")" : "numeric(0)"; }   // c() would be NULL
   function pts(name, a) { return name + " <- data.frame(t = " + rvecN(a.map(function (p) { return p.t; })) + ", s = " + rvecN(a.map(function (p) { return p.s; })) + ")"; }
 
   var R_BODY = [
@@ -48,18 +48,23 @@
     "  d[k] <- dk; cz[k] <- ck; nRisk <- nRisk - dk - ck",
     "}",
     "if (is.finite(totEvents)) {   # re-split events / censored within each interval to hit the reported total",
-    "  need <- min(max(0, jsround(totEvents)), N0) - sum(d); k <- 2",
+    "  # intervals the heuristic cannot define (NaN, survival already 0) hold no subjects: leave them out of the",
+    "  # total and never re-split them, so they cannot turn need into NaN and overwrite the intervals that are defined",
+    "  need <- min(max(0, jsround(totEvents)), N0) - sum(d[is.finite(d)]); k <- 2",
     "  while (k <= K && !isTRUE(need == 0)) {",
+    "    if (!is.finite(d[k]) || !is.finite(cz[k])) { k <- k + 1; next }",
     "    if (isTRUE(need > 0)) { x <- min(need, cz[k]); d[k] <- d[k] + x; cz[k] <- cz[k] - x; need <- need - x }",
-    "    else { x <- min(-need, d[k]); d[k] <- d[k] - x; cz[k] <- cz[k] + x; need <- need + x }",
+    "    else if (isTRUE(need < 0)) { x <- min(-need, d[k]); d[k] <- d[k] - x; cz[k] <- cz[k] + x; need <- need + x }",
     "    k <- k + 1 } }",
-    "time <- c(); event <- c()",
+    "time <- numeric(0); event <- numeric(0)",
     "for (k in seq_len(K)[-1]) { tm <- (curve$t[k - 1] + curve$t[k]) / 2",
     "  time <- c(time, rep(tm, nrows(d[k]) + nrows(cz[k]))); event <- c(event, rep(1, nrows(d[k])), rep(0, nrows(cz[k]))) }",
     "if (isTRUE(nRisk > 0)) { time <- c(time, rep(curve$t[K], nRisk)); event <- c(event, rep(0, nRisk)) }",
     "ipd <- data.frame(time = time, event = event)",
     "## ---- 3. K-M summaries of R's IPD ----",
-    "if (requireNamespace(\"survival\", quietly = TRUE)) {",
+    "if (nrow(ipd) == 0) {",
+    "  kmN <- 0; kmEv <- 0; kmMed <- NA_real_; kmWhat <- \"no subjects reconstructed (survfit not called)\"",
+    "} else if (requireNamespace(\"survival\", quietly = TRUE)) {",
     "  sf <- survival::survfit(survival::Surv(time, event) ~ 1, data = ipd)",
     "  kmN <- sf$n; kmEv <- sum(sf$n.event); kmMed <- unname(summary(sf)$table[\"median\"])",
     "  kmWhat <- paste(\"survival\", as.character(packageVersion(\"survival\")), \"survfit()\")",
@@ -81,8 +86,9 @@
     "cellDiff <- sum(vapply(cells, function(z) (if (z %in% names(tabP)) tabP[[z]] else 0) != (if (z %in% names(tabR)) tabR[[z]] else 0), logical(1)))",
     ".add(\"IPD (time,event) cells differing\", 0, cellDiff, est = FALSE)",
     ".add(\"IPD rows (page IPD vs R IPD)\", nrow(pageIPD), nrow(ipd), est = FALSE)",
-    ".add(\"Reconstructed N\", page$n, kmN)",
-    ".add(\"Total events\", page$events, kmEv)",
+    "anything <- page$n > 0 || kmN > 0   # N = 0 on both sides: nothing was reconstructed, so nothing is checked",
+    ".add(\"Reconstructed N\", page$n, kmN, est = anything)",
+    ".add(\"Total events\", page$events, kmEv, est = anything)",
     ".add(\"Median survival\", page$median, kmMed)",
     ".d <- abs(.p - .r)",
     ".ok <- (!is.na(.d) & .d <= 1e-6 * pmax(1, abs(.p))) | (is.na(.p) & is.na(.r))",

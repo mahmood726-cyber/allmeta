@@ -134,3 +134,52 @@ def test_curve_reaching_zero_before_the_last_point_runs_and_matches(pg, tmp_path
     p, txt = download(pg, tmp_path, "zero.R")
     last, full = run_r(p)
     assert_match(last, full)
+
+
+def _km_inputs(pg, curve, risk, tot="", source="digitized", anchors=None):
+    nl = chr(10)
+    pg.select_option("#curve-source", source)
+    if anchors is not None:
+        pg.fill("#anchors", nl.join(anchors))
+    pg.fill("#tot-events", tot)
+    pg.fill("#curve", nl.join(curve))
+    pg.fill("#risk", nl.join(risk))
+
+
+def _r_value(full, quantity):
+    for ln in full.splitlines():
+        if ln.startswith(quantity):
+            return float(ln.split("R=")[1].split()[0])
+    raise AssertionError(f"{quantity} not in R output:\n{full}")
+
+
+def test_zero_survival_with_reported_total_events_finishes_and_reconstructs(pg, tmp_path):
+    # Requirement: with a finite total-events target, an interval the heuristic cannot define (0/0 once
+    # survival is 0) must not wipe the intervals that are defined. R must finish with a verdict and keep the
+    # 100 subjects, re-split to the reported 95 events. Whether the verdict is MATCH depends on the page
+    # doing the same (at the time of writing it shows N 0: a page defect, reported, not defended here).
+    _km_inputs(pg, ["0, 1.0", "6, 0.4", "12, 0.0", "18, 0.0"], ["0, 100", "6, 40", "12, 5", "18, 0"], tot="95")
+    p, txt = download(pg, tmp_path, "zero95.R")
+    last, full = run_r(p)
+    assert last.startswith(("MATCH", "MISMATCH")), full
+    assert _r_value(full, "Reconstructed N") == 100, full
+    assert _r_value(full, "Total events") == 95, full
+
+
+def test_fusion_with_no_anchors_runs_and_matches(pg, tmp_path):
+    # Requirement: an empty input list must stay a typed empty vector in R (numeric(0), not NULL).
+    _km_inputs(pg, ["0, 1.00", "6, 0.8", "12, 0.6", "24, 0.4"], ["0, 100", "12, 60", "24, 30"],
+               source="fusion", anchors=[])
+    p, txt = download(pg, tmp_path, "fusion-empty.R")
+    assert "numeric(0)" in txt
+    last, full = run_r(p)
+    assert_match(last, full)
+
+
+def test_nobody_at_risk_is_not_checked(pg, tmp_path):
+    # Requirement: with 0 at risk nothing is reconstructed on either side; that is NOT CHECKED, not an error
+    # and not MATCH.
+    _km_inputs(pg, ["0, 1.00", "6, 0.8", "12, 0.6"], ["0, 0", "6, 0", "12, 0"])
+    p, txt = download(pg, tmp_path, "nobody.R")
+    last, full = run_r(p)
+    assert last.startswith("NOT CHECKED: no estimate"), full
