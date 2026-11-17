@@ -2613,114 +2613,90 @@ function animStep() {
 // Phase 3: R Code Export (RBesT equivalent)
 // ============================================================
 function exportRCode() {
+  // Quick-mode export (the RBesT-model mode replaces this function further down and exports gMAP code).
+  // The quick mode shows a frequentist normal approximation, so the script recomputes THAT, from the studies
+  // and settings this result was derived from, and prints every displayed quantity beside the page's value.
+  // (It used to fit RBesT gMAP, a different model from the one on screen, and then stopped with an error in
+  // decision2S(pc = postmix(...)); the live user path showed both, 17 Nov 2026.)
   if (!mapResult) { alert('Please derive the MAP prior first.'); return; }
   const r = mapResult;
   const isBin = r.type === 'binary';
-
-  let code = '# =====================================================\n';
-  code += '# MAP Prior Derivation -- RBesT Equivalent R Code\n';
-  code += '# Generated: ' + new Date().toISOString() + '\n';
-  code += '# =====================================================\n\n';
-  code += 'library(RBesT)\n';
-  code += 'library(ggplot2)\n\n';
-
-  code += '# Historical data\n';
+  const num = v => (Number.isFinite(v) ? String(Object.is(v, -0) ? 0 : v) : 'NA'); // shortest round-trip form
+  const vec = a => 'c(' + a.map(num).join(', ') + ')';
+  const L = [];
+  L.push('# MAPriors -- quick normal approximation (NOT the RBesT model)');
+  L.push('# Generated: ' + new Date().toISOString());
+  L.push('# Recomputes the numbers this page displays in "Quick normal approximation" mode from the same studies');
+  L.push('# and settings, and prints each next to the page value. The pool is metafor rma(method = "REML") on');
+  L.push('# ' + (isBin ? 'logit event rates (0.5 added to the events of a study with 0 or all events)' : 'study means with variance sd^2 / n') + ';');
+  L.push('# the predictive variance (tau^2 + SE^2), the ESS and the robust-mixture (Morita-type) ESS are the page\'s');
+  L.push('# published formulas, written here in base R. For the RBesT-model prior switch Method to "RBesT model"');
+  L.push('# and export again (that script needs RBesT).');
+  L.push('suppressPackageStartupMessages(library(metafor))');
+  L.push('');
   if (isBin) {
-    code += 'data_hist <- data.frame(\n';
-    code += '  trial = c(' + studies.map(s => '"' + s.trial.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"').join(', ') + '),\n';
-    code += '  r     = c(' + studies.map(s => s.events).join(', ') + '),\n';
-    code += '  n     = c(' + studies.map(s => s.n).join(', ') + ')\n';
-    code += ')\n\n';
-    code += '# Fit MAP prior (Beta-Binomial hierarchical model)\n';
-    code += 'map_mcmc <- gMAP(\n';
-    code += '  cbind(r, n - r) ~ 1 | trial,\n';
-    code += '  data = data_hist,\n';
-    code += '  family = binomial,\n';
-    code += '  tau.dist = "HalfNormal",\n';
-    code += '  tau.prior = 1,\n';
-    code += '  beta.prior = 2\n';
-    code += ')\n\n';
-    code += '# Derive MAP prior (mixture of Beta distributions)\n';
-    code += 'map_prior <- automixfit(map_mcmc)\n';
-    code += 'print(map_prior)\n\n';
-    code += '# Robustify with vague component (weight = ' + ((1 - r.w) * 100).toFixed(0) + '%)\n';
-    code += 'robust_prior <- robustify(map_prior, weight = ' + (1 - r.w).toFixed(2) + ', mean = 0.5)\n';
-    code += 'print(robust_prior)\n\n';
+    L.push('r <- ' + vec(studies.map(s => s.events)) + '   # events');
+    L.push('n <- ' + vec(studies.map(s => s.n)) + '   # patients');
+    L.push('e <- ifelse(r == 0, 0.5, ifelse(r == n, n - 0.5, r)); p <- e / n');
+    L.push('yi <- log(p / (1 - p)); vi <- 1 / (n * p * (1 - p))');
   } else {
-    code += 'data_hist <- data.frame(\n';
-    code += '  trial = c(' + studies.map(s => '"' + s.trial.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"').join(', ') + '),\n';
-    code += '  y     = c(' + studies.map(s => s.mean).join(', ') + '),\n';
-    code += '  se    = c(' + studies.map(s => (s.sd / Math.sqrt(s.n)).toFixed(4)).join(', ') + ')\n';
-    code += ')\n\n';
-    code += '# Fit MAP prior (Normal hierarchical model)\n';
-    code += 'map_mcmc <- gMAP(\n';
-    code += '  y | se ~ 1 | trial,\n';
-    code += '  data = data_hist,\n';
-    code += '  family = gaussian,\n';
-    code += '  tau.dist = "HalfNormal",\n';
-    code += '  tau.prior = 1\n';
-    code += ')\n\n';
-    code += '# Derive MAP prior (mixture of normals)\n';
-    code += 'map_prior <- automixfit(map_mcmc)\n';
-    code += 'print(map_prior)\n\n';
-    code += '# Robustify with vague component (weight = ' + ((1 - r.w) * 100).toFixed(0) + '%)\n';
-    const grandSD = Math.sqrt(r.vi.reduce((s, v) => s + v, 0) / r.k) * 10;
-    code += 'robust_prior <- robustify(map_prior, weight = ' + (1 - r.w).toFixed(2) + ', mean = ' + r.map_mu.toFixed(2) + ', sigma = ' + grandSD.toFixed(2) + ')\n';
-    code += 'print(robust_prior)\n\n';
+    L.push('m  <- ' + vec(studies.map(s => s.mean)) + '   # means');
+    L.push('sd <- ' + vec(studies.map(s => s.sd)) + '   # SDs');
+    L.push('n  <- ' + vec(studies.map(s => s.n)) + '   # patients');
+    L.push('yi <- m; vi <- sd^2 / n');
   }
-
-  code += '# Effective Sample Size\n';
-  code += 'cat("ESS (MAP):", ess(map_prior), "\\n")\n';
-  code += 'cat("ESS (Robust MAP):", ess(robust_prior), "\\n")\n\n';
-
-  code += '# Visualization\n';
-  code += 'plot(robust_prior) + ggtitle("Robust MAP Prior")\n\n';
-
-  code += '# ---- Operating Characteristics (optional) ----\n';
+  L.push('w <- ' + num(r.w) + '   # informative (MAP) weight = 1 - vague weight');
+  L.push('conf <- ' + num(r.confLevel));
+  L.push('k <- length(yi)');
+  L.push('fit <- rma(yi, vi, method = "REML", control = list(threshold = 1e-12, maxiter = 1000))');
+  L.push('mu <- as.numeric(fit$b); se_mu <- fit$se; tau2 <- fit$tau2');
+  L.push('Q <- fit$QE; I2 <- if (Q > k - 1) max(0, (Q - (k - 1)) / Q * 100) else 0');
+  L.push('map_var <- tau2 + se_mu^2; map_se <- sqrt(map_var)');
   if (isBin) {
-    code += '# Design parameters\n';
-    code += 'n_ctrl <- 50   # control arm sample size\n';
-    code += 'n_trt  <- 50   # treatment arm sample size\n\n';
-    code += '# Decision rule: P(treatment rate < control rate | data) > 0.975\n';
-    code += 'decision <- decision2S(\n';
-    code += '  pc = postmix(robust_prior, r = 0, n = 0),  # placeholder\n';
-    code += '  qc = 0.975,\n';
-    code += '  lower.tail = TRUE\n';
-    code += ')\n\n';
-    code += '# OC at various true control rates\n';
-    code += 'oc_result <- oc2S(\n';
-    code += '  robust_prior,\n';
-    code += '  n2 = n_ctrl,\n';
-    code += '  decision = decision\n';
-    code += ')\n';
-    code += 'print(oc_result)\n';
+    L.push('vague_mu <- 0; vague_var <- 100                 # vague component N(0, 10^2) on the logit scale');
+    L.push('p_hat <- 1 / (1 + exp(-mu)); info <- p_hat * (1 - p_hat)   # per-patient information on the logit scale');
   } else {
-    code += '# OC simulation for continuous endpoints:\n';
-    code += '# Use postmix() and oc2S() analogously for normal priors\n';
+    L.push('vague_mu <- 0; vague_var <- (sqrt(mean(vi)) * 10)^2');
+    L.push('info <- 1 / mean(sd^2)                         # per-patient information');
   }
-
-  code += '\n# ---- Commensurate Prior (Hobbs 2011) ----\n';
-  const tauComm = parseInt(document.getElementById('tauCommSlider').value) / 100;
-  code += '# tau_comm = ' + tauComm.toFixed(2) + '\n';
-  code += '# Commensurate prior: theta_new ~ N(MAP_mean, tau_comm^2)\n';
-  code += 'tau_comm <- ' + tauComm.toFixed(2) + '\n';
-  code += 'comm_prior_mean <- ' + r.map_mu.toFixed(4) + '\n';
-  code += 'comm_prior_var  <- tau_comm^2\n';
-  code += 'cat("Commensurate ESS:", 1 / (comm_prior_var * ';
-  if (isBin) {
-    code += r.p_hat.toFixed(4) + ' * (1 - ' + r.p_hat.toFixed(4) + ')';
-  } else {
-    const avg_vi = r.vi.reduce((a, b) => a + b, 0) / r.k;
-    code += '1/' + avg_vi.toFixed(4);
-  }
-  code += '), "\\n")\n';
-
-  // Download
+  L.push('# Robust MAP: w * N(mu, map_var) + (1 - w) * N(vague_mu, vague_var); precision = -d2 log f at its mode');
+  L.push('morita <- function(m1, v1, w, m2, v2) {');
+  L.push('  s1 <- sqrt(v1); s2 <- sqrt(v2); x <- m1');
+  L.push('  for (i in 1:30) {');
+  L.push('    f1 <- w * dnorm(x, m1, s1); f2 <- (1 - w) * dnorm(x, m2, s2)');
+  L.push('    if (f1 + f2 < 1e-300) break');
+  L.push('    fp <- -f1 * (x - m1) / v1 - f2 * (x - m2) / v2');
+  L.push('    wfpp <- -f1 / v1 + f1 * (x - m1)^2 / v1^2 - f2 / v2 + f2 * (x - m2)^2 / v2^2');
+  L.push('    if (abs(wfpp) < 1e-300) break');
+  L.push('    step <- fp / wfpp; x <- x - step');
+  L.push('    if (abs(step) < 1e-12) break');
+  L.push('  }');
+  L.push('  f1 <- w * dnorm(x, m1, s1); f2 <- (1 - w) * dnorm(x, m2, s2); f <- f1 + f2');
+  L.push('  if (f < 1e-300) return(1 / v1)');
+  L.push('  fpp <- f1 * ((x - m1)^2 / v1^2 - 1 / v1) + f2 * ((x - m2)^2 / v2^2 - 1 / v2)');
+  L.push('  fp <- -f1 * (x - m1) / v1 - f2 * (x - m2) / v2');
+  L.push('  max(0, -fpp / f + (fp / f)^2)');
+  L.push('}');
+  L.push('ess_map <- (1 / map_var) / info');
+  L.push('ess_robust <- morita(mu, map_var, w, vague_mu, vague_var) / info');
+  L.push('z <- qnorm(1 - (1 - conf) / 2)');
+  L.push('R <- c(mu = mu, se_mu = se_mu, tau = sqrt(tau2), I2 = I2, map_se = map_se,');
+  L.push('       map_lower = mu - z * map_se, map_upper = mu + z * map_se,' + (isBin ? ' p_hat = p_hat,' : '') + ' ess_map = ess_map, ess_robust = ess_robust)');
+  const lower = isBin ? r.map_lower_logit : r.map_lower, upper = isBin ? r.map_upper_logit : r.map_upper;
+  L.push('# Values this page computed (full precision) when the script was generated');
+  L.push('page <- c(mu = ' + num(r.mu) + ', se_mu = ' + num(r.se_mu) + ', tau = ' + num(r.tau) + ', I2 = ' + num(r.I2) + ', map_se = ' + num(r.map_se) + ',');
+  L.push('          map_lower = ' + num(lower) + ', map_upper = ' + num(upper) + ',' + (isBin ? ' p_hat = ' + num(r.p_hat) + ',' : '') + ' ess_map = ' + num(r.ess_map) + ', ess_robust = ' + num(r.ess_robust) + ')');
+  L.push('# Tolerance 1e-6 relative (absolute below 1): finer than every number the page displays');
+  L.push('tol <- 1e-6 * pmax(1, abs(page)); d <- abs(R - page); ok <- is.finite(d) & d <= tol');
+  L.push('print(data.frame(page = page, R = R, abs_diff = d, match = ok), digits = 10)');
+  L.push('cat(sprintf("metafor %s, %s\n", packageVersion("metafor"), R.version.string))');
+  L.push('if (all(ok)) cat(sprintf("MATCH %d/%d\n", sum(ok), length(ok))) else cat(sprintf("MISMATCH %d/%d match; differ: %s\n", sum(ok), length(ok), paste(names(page)[!ok], collapse = ", ")))');
+  const code = L.join('\n') + '\n';
   const blob = new Blob([code], { type: 'text/plain;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'map_prior_rbest.R';
+  a.download = 'map_prior_quick_approximation.R';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -2957,7 +2933,7 @@ async function runWebRValidation() {
 library(metafor)
 yi <- c(${yiStr})
 vi <- c(${viStr})
-res_reml <- rma(yi, vi, method="REML")
+res_reml <- rma(yi, vi, method="REML", control=list(threshold=1e-10, maxiter=1000))  # to convergence, like the page (default threshold 1e-5 stops short)
 res_dl <- rma(yi, vi, method="DL")
 pred <- predict(res_reml, level=${100 * confLevel})
 pi_lb <- if (!is.null(pred$pi.lb)) pred$pi.lb else pred$cr.lb

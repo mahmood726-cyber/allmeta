@@ -105,5 +105,17 @@ function likeForLike(s) {
     assert.strictEqual(s.app.rcode.filter(c => /library\(metafor\)/.test(c)).length, 0, 'R REML run with k = 1');
     assert.ok(/at least two studies/i.test(s.html), 'no k=1 message: ' + s.html.slice(0, 200));
   });
+  await test('W6 BCG control arms (metadat dat.bcg cpos / cpos+cneg), model mode: every JS value shown equals the R value shown, to the 6 decimals displayed', async () => {
+    // R used metafor's default REML stopping rule (threshold 1e-5), so on this data R's tau2 stopped 1.4e-7 short of
+    // the optimum the page reaches and the shown prediction bound read -7.421286 (page) against -7.421285 (R): a match
+    // by the 1e-4 tolerance but a visible disagreement. R must be run to convergence, like the page.
+    const BCG = [[11, 139], [29, 303], [11, 220], [248, 12867], [47, 5808], [372, 1451], [10, 629], [499, 88391], [45, 7277], [65, 1665], [141, 27338], [3, 2341], [29, 17854]]
+      .map(([events, n], i) => ({ trial: 'BCG' + (i + 1), events, n }));
+    const s = await scenario('binary', 'model', BCG); likeForLike(s);
+    const shown = [...s.html.matchAll(/<tr>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>/g)];
+    assert.ok(shown.length >= 9, 'comparison rows not found');
+    const differ = shown.filter(m => m[2].trim() !== m[3].trim()).map(m => m[1] + ': ' + m[2] + ' vs ' + m[3]);
+    assert.deepStrictEqual(differ, [], 'displayed JS and R values differ: ' + differ.join('; '));
+  });
   console.log(`${passed}/${total} PASS`); process.exitCode = passed === total ? 0 : 1;
 })();
