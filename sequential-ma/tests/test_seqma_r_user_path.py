@@ -84,6 +84,20 @@ def test_planted_difference_is_reported_as_mismatch(tmp_path):
     assert "look 2 boundary" in [l[:22].strip() for l in out.splitlines() if l.rstrip().endswith("MISMATCH")]
 
 
+def test_look_past_full_information_with_futility_reports_instead_of_crashing(tmp_path):
+    """agy review of PR #625: t = (0.5, 1.2) with futility made the R script stop with an R error (the inflation
+    search started at R = 0.9, found no root, and NA reached `if`). Requirement: the script always finishes with a
+    verdict line, and never calls the comparison a MATCH for a futility boundary it could not compute."""
+    rows = [{"kind": "tz", "t": 0.5, "z": 1.0}, {"kind": "tz", "t": 1.2, "z": 2.0}]
+    res = _node_script([{"rows": rows, "alpha": 0.05, "family": "OBF", "futility": True}], tmp_path)[0]
+    out = _rscript(tmp_path / "case0.R")
+    last = out.strip().splitlines()[-1]
+    assert re.match(r"^(MATCH \d+/\d+|MATCH \d+/\d+, NOT CHECKED \d+|MISMATCH \d+/\d+ agree(, NOT CHECKED \d+)?)$", last), out
+    if all(l["futility_boundary"] is None for l in res["looks"]):
+        # the page shows no futility boundary although futility was requested: R must not pass that silently
+        assert not re.match(r"^MATCH \d+/\d+$", last), out
+
+
 # ---- the user path in a real browser ------------------------------------------------------------------------------
 
 def _playwright_dir():

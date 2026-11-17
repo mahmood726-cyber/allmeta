@@ -3,7 +3,8 @@
  * buildRScript(state) returns a self-contained R script that recomputes, from the inputs the page analysed, every
  * number the "Per-look decisions" table displays (t, z, alpha spent, alpha boundary, futility boundary, decision) and
  * the overall decision, prints each next to the page's value with the absolute difference, and ends with
- * "MATCH n/n" or "MISMATCH k/n" computed from those comparisons.
+ * "MATCH n/n" or "MISMATCH k/n" computed from those comparisons (", NOT CHECKED m" is appended when R cannot solve
+ * the futility design for the looks; those quantities are then listed, never counted as agreeing).
  *
  * The R side is independent of the page's JavaScript: spending functions are the published Lan-DeMets forms written
  * in base R, and every group-sequential probability is computed by recursive numerical integration written in
@@ -128,7 +129,9 @@
     "  incb <- diff(c(0, cumb)); I <- tt * R; za <- rep(-Inf, Kd); s <- NULL",
     "  for (k in seq_len(Kd)) {",
     "    if (incb[k] > 0) za[k] <- if (k == 1) theta * sqrt(I[1]) + qnorm(incb[1]) else",
-    "      uniroot(function(cc) gs_cross(s, I[k], cc, theta, FALSE) - incb[k], c(-40, 40), tol = 1e-12)$root",
+    "      tryCatch(uniroot(function(cc) gs_cross(s, I[k], cc, theta, FALSE) - incb[k], c(-40, 40), tol = 1e-12)$root,",
+    "               error = function(e) NA_real_)",
+    "    if (is.na(za[k])) return(rep(NA_real_, Kd))   # this beta increment cannot be spent at this R: no design",
     "    if (k < Kd) {",
     "      st <- gstep(if (k > 1) I[k - 1] else NA, I[k], I[k + 1])",
     "      s <- if (k == 1) gs_start(I[1], theta, za[1], eff[1], st) else gs_advance(s, I[k], theta, za[k], eff[k], st)",
@@ -136,13 +139,28 @@
     "  }",
     "  za",
     "}",
-    "inflation <- function(tt, eff, theta, rm) {   # first sign change at or above R = 0.9 (grid 0.02), then a root",
+    "# Inflation R: the first sign change of g at or above R = 0.9 on a 0.02 grid (the page's search), then a root.",
+    "# When the design ends past full information (t > 1) the root can lie below 0.9, so if there is none above,",
+    "# the grid is searched downwards from 0.9 to 0.02 as well. Grid points where the design cannot be solved are",
+    "# skipped; NA means no inflation factor was found.",
+    "inflation <- function(tt, eff, theta, rm) {",
     "  g <- function(R) eff[length(tt)] - beta_bounds(tt, eff, theta, R, rm)[length(tt)]",
-    "  a <- 0.9; ga <- g(a)",
-    "  for (bb in seq(0.92, 10, by = 0.02)) { gb <- g(bb); if ((ga > 0) != (gb > 0)) return(uniroot(g, c(a, bb), tol = 1e-12)$root); a <- bb; ga <- gb }",
-    "  NA",
+    "  scan <- function(grid) {",
+    "    a <- NA; ga <- NA",
+    "    for (bb in grid) {",
+    "      gb <- g(bb)",
+    "      if (is.na(gb)) { a <- NA; ga <- NA; next }",
+    "      if (gb == 0) return(bb)",
+    "      if (!is.na(ga) && (ga > 0) != (gb > 0)) return(uniroot(g, sort(c(a, bb)), tol = 1e-12)$root)",
+    "      a <- bb; ga <- gb",
+    "    }",
+    "    NA",
+    "  }",
+    "  R <- scan(seq(0.9, 10, by = 0.02))",
+    "  if (is.na(R)) R <- scan(seq(0.9, 0.02, by = -0.02))",
+    "  R",
     "}",
-    "fut <- rep(NA_real_, K)",
+    "fut <- rep(NA_real_, K); fut_checked <- TRUE",
     "if (futility) {",
     "  theta <- qnorm(1 - alpha / 2) + qnorm(1 - beta)",
     "  if (t[K] < 1) {                            # design needs its final analysis at t = 1",
@@ -150,10 +168,14 @@
     "  } else {                                   # the design ends at the first look with t >= 1",
     "    kEnd <- which(t >= 1)[1]; td <- t[1:kEnd]; ed <- bound[1:kEnd]",
     "  }",
-    "  R <- inflation(td, ed, theta, 0); za <- beta_bounds(td, ed, theta, R, 0)",
-    "  rm <- sum(za < 0)",
-    "  if (rm > 0) { R <- inflation(td, ed, theta, rm); za <- beta_bounds(td, ed, theta, R, rm) }",
-    "  for (k in seq_len(min(K, length(td)))) if (is.finite(za[k]) && za[k] > 0) fut[k] <- za[k]",
+    "  R <- inflation(td, ed, theta, 0); za <- if (is.na(R)) NA else beta_bounds(td, ed, theta, R, 0)",
+    "  rm <- if (is.na(R)) 0 else sum(za < 0)",
+    "  if (rm > 0) { R <- inflation(td, ed, theta, rm); if (!is.na(R)) za <- beta_bounds(td, ed, theta, R, rm) }",
+    "  if (is.na(R) || anyNA(za)) {",
+    "    fut_checked <- FALSE",
+    "    cat(\"NOTE: R found no futility design (inflation factor) for these looks, so the futility boundaries and the\\n\",",
+    "        \"      decisions that depend on them are NOT CHECKED. Futility was requested; check what the page shows.\\n\")",
+    "  } else for (k in seq_len(min(K, length(td)))) if (is.finite(za[k]) && za[k] > 0) fut[k] <- za[k]",
     "}",
     "decision <- character(K); taken <- NA",
     "for (k in 1:K) {",
@@ -166,7 +188,8 @@
     "",
     "## Comparison. Tolerances: t, Z 1e-12 (arithmetic); alpha spent 1e-9 (closed form); boundaries 1e-6",
     "## (the paper's exact-reference tolerance; the page shows 3 decimals); decisions exact.",
-    "n_ok <- 0; n_all <- 0",
+    "n_ok <- 0; n_all <- 0; n_nc <- 0",
+    "notchk <- function(name, page) { cat(sprintf(\"%-22s page %-20s R %-20s NOT CHECKED\\n\", name, format(page, digits = 10), \"-\")); n_nc <<- n_nc + 1 }",
     "cmp <- function(name, page, r, tol) {",
     "  same <- (is.na(page) && is.na(r)) || (!is.na(page) && !is.na(r) && ((is.infinite(page) && page == r) || (is.finite(page) && is.finite(r) && abs(page - r) <= tol)))",
     "  d <- if (!is.na(page) && !is.na(r) && is.finite(page) && is.finite(r)) abs(page - r) else if (same) 0 else NA",
@@ -185,12 +208,14 @@
     "  cmp(sprintf(\"look %d z\", k), page_z[k], z[k], 1e-12)",
     "  cmp(sprintf(\"look %d alpha spent\", k), page_spent[k], spent[k], 1e-9)",
     "  cmp(sprintf(\"look %d boundary\", k), page_bound[k], bound[k], 1e-6)",
-    "  if (futility) cmp(sprintf(\"look %d futility\", k), page_fut[k], fut[k], 1e-6)",
-    "  cmps(sprintf(\"look %d decision\", k), page_decision[k], decision[k])",
+    "  if (futility && fut_checked) cmp(sprintf(\"look %d futility\", k), page_fut[k], fut[k], 1e-6)",
+    "  if (futility && !fut_checked) notchk(sprintf(\"look %d futility\", k), page_fut[k])",
+    "  if (fut_checked) cmps(sprintf(\"look %d decision\", k), page_decision[k], decision[k]) else notchk(sprintf(\"look %d decision\", k), page_decision[k])",
     "}",
-    "cmps(\"overall decision\", page_overall, overall)",
+    "if (fut_checked) cmps(\"overall decision\", page_overall, overall) else notchk(\"overall decision\", page_overall)",
     "cat(sprintf(\"%s | base R only\\n\", R.version$version.string))",
-    "cat(if (n_ok == n_all) sprintf(\"MATCH %d/%d\\n\", n_ok, n_all) else sprintf(\"MISMATCH %d/%d agree\\n\", n_ok, n_all))",
+    "nc <- if (n_nc > 0) sprintf(\", NOT CHECKED %d\", n_nc) else \"\"",
+    "cat(if (n_ok == n_all) sprintf(\"MATCH %d/%d%s\\n\", n_ok, n_all, nc) else sprintf(\"MISMATCH %d/%d agree%s\\n\", n_ok, n_all, nc))",
   ].join("\n");
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -220,8 +245,8 @@
           out.innerHTML = '<strong style="color:#a02929">' + esc(pk ? "The R package " + pk[1] + " is not available in WebR, so the in-browser check cannot run. Use Download R script and run it in R." : "WebR error: " + res.error) + "</strong>";
           return;
         }
-        var line = (/^(MATCH \d+\/\d+|MISMATCH .*)$/m.exec(res.stdout) || [null, "no MATCH line (R output incomplete)"])[1];
-        var good = /^MATCH /.test(line);
+        var line = (/^(MATCH \d+\/\d+(?:, NOT CHECKED \d+)?|MISMATCH .*)$/m.exec(res.stdout) || [null, "no MATCH line (R output incomplete)"])[1];
+        var good = /^MATCH \d+\/\d+$/.test(line);   // a NOT CHECKED part is never shown as a pass
         status.textContent = "R finished: " + line + ". Versions: R " + res.versions.R + "; webR " + res.versions.webR +
           (opts.packages || []).map(function (p) { return "; " + p + " " + res.versions[p]; }).join("");
         out.innerHTML = '<div style="margin:0 0 0.5rem;padding:0.4rem 0.6rem;border-radius:6px;font-weight:600;' +
