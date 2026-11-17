@@ -222,7 +222,8 @@ class RCodeExporter {
 
         // Create data frame
         code += `# Study data\n`;
-        code += this._generateDataFrame(data);
+        // netmeta() reads treat1/treat2 for every contrast, so the data frame must carry them.
+        code += this._generateDataFrame(data, { treatments: pkg === 'netmeta' });
         code += `\n`;
 
         // Run analysis
@@ -360,9 +361,33 @@ class RCodeExporter {
 `;
     }
 
-    _generateDataFrame(data) {
+    /**
+     * A JS value as an R string literal. Labels are user text, so every string written into R goes
+     * through here: backslash, double quote and control characters are escaped, so a label can
+     * neither break the script nor close the literal and run code.
+     */
+    _rString(value) {
+        return '"' + String(value).replace(/[\\"\u0000-\u001f\u007f]/g, (c) => {
+            if (c === '\\') return '\\\\';
+            if (c === '"') return '\\"';
+            if (c === '\n') return '\\n';
+            if (c === '\r') return '\\r';
+            if (c === '\t') return '\\t';
+            return '\\u{' + c.charCodeAt(0).toString(16) + '}';
+        }) + '"';
+    }
+
+    _generateDataFrame(data, { treatments = false } = {}) {
         let code = `study_data <- data.frame(\n`;
-        code += `  study = c(${data.map(d => `"${d.study}"`).join(', ')}),\n`;
+        code += `  study = c(${data.map(d => this._rString(d.study)).join(', ')}),\n`;
+        if (treatments) {
+            const missing = data.filter(d => d.treat1 == null || d.treat2 == null || d.treat1 === '' || d.treat2 === '');
+            if (missing.length) {
+                throw new Error(`netmeta export needs treat1 and treat2 on every row (${missing.length} of ${data.length} rows lack them)`);
+            }
+            code += `  treat1 = c(${data.map(d => this._rString(d.treat1)).join(', ')}),\n`;
+            code += `  treat2 = c(${data.map(d => this._rString(d.treat2)).join(', ')}),\n`;
+        }
         code += `  yi = c(${data.map(d => d.effect).join(', ')}),\n`;
         code += `  vi = c(${data.map(d => d.variance).join(', ')})\n`;
         code += `)\n`;
@@ -371,7 +396,7 @@ class RCodeExporter {
 
     _generateMetaforCode(data, method) {
         return `# Random-effects meta-analysis
-result <- rma(yi = yi, vi = vi, data = study_data, method = "${method}")
+result <- rma(yi = yi, vi = vi, data = study_data, method = ${this._rString(method)})
 summary(result)
 `;
     }
