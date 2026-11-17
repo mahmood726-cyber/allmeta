@@ -1659,6 +1659,15 @@
                         <div class="chart-container">
                             <canvas id="trace-chart"></canvas>
                         </div>
+
+                        <h3 style="margin: 24px 0 8px;">Check in R</h3>
+                        <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 8px;">Re-runs this model in R from the page's current inputs and compares every number above and the trace (base R, the page's documented conventions; plus a heemod trace check where heemod is installed). It prints MATCH n/n or MISMATCH.</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" id="btn-r-script">Download R script</button>
+                            <button class="btn btn-secondary" id="btn-verify-r">Verify in R</button>
+                        </div>
+                        <p id="r-check-status" role="status" aria-live="polite" style="font-size: 0.85rem; margin: 8px 0;"></p>
+                        <pre id="r-check-output" style="white-space: pre-wrap; font-size: 0.75rem; max-height: 28rem; overflow: auto; margin: 0;"></pre>
                     </div>
                 </section>
 
@@ -4543,6 +4552,8 @@
     <script src="src/utils/workerPool.js"></script>
     <script src="src/utils/taskScheduler.js"></script>
     <script src="src/utils/newEngineExports.js"></script>
+    <script src="../shared/webr-runner.js"></script>
+    <script src="src/utils/rCheck.js"></script>
     <script>
         // Helper functions for calibration UI
         function addCalibrationParam() {

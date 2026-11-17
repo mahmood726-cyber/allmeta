@@ -54,6 +54,9 @@
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/multiplicative-nma.js"></script>
+
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -176,6 +179,7 @@
       var stats = document.getElementById("stats");
       var verdict = document.getElementById("verdict");
       var forest = document.getElementById("forest");
+      if (window.AlmRCheck) window.AlmRCheck.set(null);
       syncReferenceOptions(p.treatments);
       if (p.treatments.length < 2 || p.rows.length < 1) {
         out.innerHTML = "<tr><td colspan='4'>Enter a connected network of ≥2 treatments" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
@@ -197,6 +201,7 @@
       var ratio = document.getElementById("scale").value === "exp";
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
       var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
+      if (window.AlmRCheck) window.AlmRCheck.set({ rows: p.rows.slice(), treatments: treatments.slice(), exp: ratio, page: res });
 
       var html = "", forestRows = [];
       treatments.forEach(function (t) {

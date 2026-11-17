@@ -38067,7 +38067,9 @@ function runAnalysis() {
 
  // Get study variable for validation
 
- const studyVarForValidation = APP.config.studyVar || document.getElementById('varStudy').value;
+ // The drop-down is what this run will analyse (APP.config.studyVar is only refreshed from it below, so it can
+ // still name the PREVIOUS data's column, e.g. an example's study_id after the user uploads their own file).
+ const studyVarForValidation = document.getElementById('varStudy').value || APP.config.studyVar;
 
 
 

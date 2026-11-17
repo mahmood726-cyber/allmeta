@@ -88,7 +88,7 @@
       <button type="button" id="btn-run" class="primary" style="width:100%">Run MCMC</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
-        <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
+        <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Open the WebR Validator on the analysed studies: it re-fits a FREQUENTIST metafor pool, which is not this page&#39;s Bayesian model, so it does not check the posterior. To check the posterior in R use &quot;Verify this analysis in R (WebR)&quot;." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R (frequentist pool)</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
       </div>
       <div class="status" id="status">Ready.</div>
     </section>
@@ -270,7 +270,7 @@
           const s = document.getElementById(id);
           if (s) s.innerHTML = "";
         });
-        _lastMCMC = null;
+        _lastMCMC = null; _rcheck = null;
         return;
       }
 
@@ -323,6 +323,9 @@
           `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`,
         ].join("");
         document.getElementById("body").innerHTML = html;
+        // What the R check (r-check.js) recomputes: this run's inputs, its seed and every displayed summary.
+        _rcheck = { rows: rows.map(r => ({ label: r.label, te: r.te, se: r.se })), iter: iter, burn: burn, tauPrior: tauPrior,
+          chains: chainsN, seed: base, page: { mu: sMu, tau: sTau, pred: sPred, rhatMu: rMu, rhatTau: rTau, essMu: essMu, essTau: essTau } };
         _lastMCMC = { _schema: "bayesian-mcmc-results-v1", k: rows.length, chains: chainsN,
           iter: iter, burn: burn,
           mu_mean: sMu.mean, mu_sd: sMu.sd, mu_cri_lo: sMu.lo, mu_cri_hi: sMu.hi,
@@ -411,13 +414,15 @@
     // posterior summaries validated vs R bayesmeta (exact, deterministic)
     var _lastMCMC = null;
     window.__almLastMCMC = function () { return _lastMCMC; };
+    var _rcheck = null;
+    window.__almRCheckInputs = function () { return _rcheck; };
     // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
     window.__almValidatorStudies = function () {
-      // Only when the page shows a result (run() refuses k < 3).
-      const rows = parse(document.getElementById("src").value);
-      return (rows.length < 3 || !_lastMCMC) ? [] : rows.map(r => ({ label: r.label, est: r.te, se: r.se }));
+      // Only when the page shows a result (run() refuses k < 3), and the rows THAT run analysed:
+      // re-reading the textarea sent unrun edits while the table showed the earlier run (lane pa8).
+      return (!_lastMCMC || !_rcheck) ? [] : _rcheck.rows.map(r => ({ label: r.label, est: r.te, se: r.se }));
     };
     // within a Monte-Carlo band; R-hat/ESS are sanity-checked.
     window.__almMCMC = function (rowsIn, o) {
@@ -505,5 +510,7 @@
 })();
 </script>
 <script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"bayesian-mcmc",getResults:function(){var f=window.__almLastMCMC;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
 </body>
 </html>

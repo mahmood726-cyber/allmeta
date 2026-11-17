@@ -110,6 +110,13 @@
         <p>Each of the 36 specs (3 τ² estimators × 2 CI methods × 3 outlier rules × {raw, trim-and-fill}) yields a pooled effect θ̂ₛ and variance Vₛ via the audited <code>ma-core</code> / <code>trimfill</code>. The <strong>naive IV-RE pool</strong> takes variance 1/Σ(1/Vₛ) — collapsing by ~S. The <strong>weighted-likelihood</strong> summary is the mixture Σ pₛ · t-density(θ̂ₛ, Vₛ, kₛ−1); by the law of total variance its variance is mean-within + between-spec, so it is never narrower than the average single spec. Interval via numeric quantile inversion of the mixture CDF.</p>
       </details>
     </section>
+    <section class="panel" id="r-panel" aria-label="Check in R">
+        <h2>Check in R</h2>
+        <p class="hint">Recompute every number shown above in R, from the inputs currently analysed: download a self-contained script for desktop R, or run the same script here in WebR (in-browser R, pinned and SHA-256 verified; the first run downloads the R bundle, then it is cached). Needs the metafor package. Both print each value next to R's and end with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" id="btn-rscript">Download R script</button><button type="button" id="btn-webr">Verify in R (WebR)</button></div>
+        <p id="r-status" class="hint" role="status" aria-live="polite"></p>
+        <pre id="r-out" hidden style="max-height:24rem;overflow:auto;white-space:pre;font-size:.72rem;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;margin:0"></pre>
+    </section>
   </main>
   <footer>
     Port of the Spec-Collapse Atlas weighted-likelihood aggregator (externally validated vs metafor across 473 Cochrane reviews; Pages: <code>mahmood726-cyber.github.io/spec-collapse-atlas</code>). Method after Wagenmakers-style likelihood combination; the IV-RE-collapse caution follows the project's <code>advanced-stats</code> rule. Per-spec pooling and trim-and-fill use the audited <code>shared/ma-core.js</code> and <code>shared/trimfill.js</code>; the aggregators are in <code>shared/spec-collapse.js</code> and cross-checked against the Python engine in <code>tests/test_spec_collapse.py</code>. Computed client-side; data stays in your browser.
@@ -141,6 +148,7 @@
     }
 
     function run() {
+      window.__lastSpec = null;   // cleared unless this run succeeds (R check reads it)
       var p = parse(document.getElementById("data").value);
       var specsEl = document.getElementById("specs");
       var banner = document.getElementById("banner");
@@ -151,6 +159,7 @@
       }
       var scheme = document.getElementById("scheme").value;
       var out = window.AlmSpecCollapse.analyze(p.studies, { scheme: scheme });
+      window.__lastSpec = { input: { studies: p.studies, scheme: scheme }, result: out };   // read by the R check
       var conc = out.concordance, naive = out.naive, wl = out.weighted;
 
       // false-robustness banner
@@ -182,6 +191,8 @@
     document.getElementById("data").value = EXAMPLE;
     run();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-verify.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

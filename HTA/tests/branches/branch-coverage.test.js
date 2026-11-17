@@ -1537,15 +1537,19 @@ describe('RCodeExporter branches', () => {
         expect(code).toContain('rma(');
     });
 
+    // Rewritten 17 Nov 2026: the old rows had no treatments, so this test asserted an export whose netmeta()
+    // call referenced treat1/treat2 columns absent from its data frame. netmeta needs both treatments per row.
     test('exportMetaAnalysis with netmeta package', () => {
         const data = [
-            { study: 'A', effect: 0.5, variance: 0.1 },
-            { study: 'B', effect: 0.3, variance: 0.2 }
+            { study: 'A', treat1: 'x', treat2: 'y', effect: 0.5, variance: 0.1 },
+            { study: 'B', treat1: 'x', treat2: 'z', effect: 0.3, variance: 0.2 }
         ];
         const code = exporter.exportMetaAnalysis(data, { package: 'netmeta' });
         expect(code).toContain('library(netmeta)');
         expect(code).toContain('library(meta)');
+        expect(code).toContain('treat1 = c("x", "x")');
         expect(code).toContain('netmeta(');
+        expect(() => exporter.exportMetaAnalysis([{ study: 'A', effect: 0.5, variance: 0.1 }], { package: 'netmeta' })).toThrow(/treat1/);
     });
 
     test('exportMarkovModel includes params with and without distributions', () => {
