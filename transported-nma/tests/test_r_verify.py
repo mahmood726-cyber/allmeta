@@ -48,7 +48,7 @@ def test_script_carries_the_current_inputs_not_the_example():
     assert '"S1"' not in p and "0.62" not in p
     # tau^2 must not come from rma(method = "PM") on this no-intercept contrast design: metafor
     # mean-centres yi for its Q/PM, valid only with an intercept (QE 11.32 vs the true 1.91 on the example)
-    assert 'intercept = FALSE, method = "PM"' not in p and "uniroot(function(t) Qgen(t, sei) - df" in p
+    assert 'intercept = FALSE, method = "PM"' not in p and "uniroot(function(t) Qgen(t, X, y, sei) - df" in p
     for txt in s.values():
         assert "MATCH %d/%d" in txt and "MISMATCH" in txt and "MATCH 1" not in txt
 
@@ -87,3 +87,36 @@ def test_script_runs_in_fresh_r_and_matches(case):
     last = [l for l in r.stdout.splitlines() if l.startswith(("MATCH", "MISMATCH"))]
     assert last and re.fullmatch(r"MATCH (\d+)/\1", last[-1]), r.stdout
     assert int(last[-1].split()[1].split("/")[0]) >= MIN_CHECKS
+
+
+# Entropy balancing that cannot converge: with a constant or a collinear covariate the Hessian is exactly
+# singular, the page stops at the uniform weights (converged=false) and still shows a full result, so the
+# R script must reproduce that result, not abort in solve() before printing any check (review of PR #628).
+GEN_SINGULAR = GEN.split("const out = {")[0] + r"""
+const con = [["S1","A","B",0.20,0.10],["S2","A","C",0.55,0.12],["S3","B","C",0.30,0.11],["S4","A","C",0.62,0.13],["S5","B","C",0.18,0.12],["S6","A","B",0.34,0.10]];
+const res = {
+  constant: mk(con, [["study","age","sex"],["S1",52,0.5],["S2",55,0.5],["S3",58,0.5],["S4",71,0.5],["S5",74,0.5],["S6",76,0.5]], { age: 65, sex: 0.5 }, ["B","A","C"], true),
+  collinear: mk(con, [["study","age","age2"],["S1",52,104],["S2",55,110],["S3",58,116],["S4",71,142],["S5",74,148],["S6",76,152]], { age: 65, age2: 130 }, ["B","A","C"], true),
+};
+const out = {};
+for (const k in res) { if (!res[k].result.ok || res[k].result.transport.converged) throw new Error(k + ": expected a page result that did not converge"); out[k] = R.buildScript(res[k]); }
+console.log(JSON.stringify(out));
+"""
+
+
+@pytest.mark.skipif(not HAVE_R, reason="Rscript not found (set RSCRIPT)")
+@pytest.mark.parametrize("case", ["constant", "collinear"])
+def test_singular_entropy_balancing_reproduces_the_page_instead_of_crashing(case):
+    if not _has_metafor():
+        pytest.skip("metafor not installed for this Rscript (set R_LIBS)")
+    r = subprocess.run([NODE, "-e", GEN_SINGULAR], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.returncode == 0, r.stdout + r.stderr
+    s = json.loads(r.stdout.strip().splitlines()[-1])[case]
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "check.R"
+        f.write_text(s, encoding="utf-8")
+        rr = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300)
+    assert rr.returncode == 0, rr.stdout + rr.stderr
+    assert "entropy balancing converged: FALSE" in rr.stdout
+    last = [l for l in rr.stdout.splitlines() if l.startswith(("MATCH", "MISMATCH"))]
+    assert last and re.fullmatch(r"MATCH (\d+)/\1", last[-1]), rr.stdout

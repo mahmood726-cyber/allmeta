@@ -102,11 +102,12 @@
     "chk(\"HKSJ q (floored)\", page$q, q)",
     "chk(\"k\", page$k, k, 0)",
     "chk(\"unmeasured-modifier shift to the null\", page$bias_to_null, bias)",
-    "if (log_scale) {   # the page shows these back-transformed",
-    "  chk(\"exp(transported effect)\", exp(page$trans_est), exp(tr[[\"est\"]]), TOL * max(1, exp(tr[[\"est\"]])))",
-    "  chk(\"exp(transported CI lower)\", exp(page$trans_lo), exp(tr[[\"lo\"]]), TOL * max(1, exp(tr[[\"lo\"]])))",
-    "  chk(\"exp(transported CI upper)\", exp(page$trans_hi), exp(tr[[\"hi\"]]), TOL * max(1, exp(tr[[\"hi\"]])))",
-    "  chk(\"transport shift (ratio)\", exp(page$shift), exp(shift), TOL * max(1, exp(shift)))",
+    "if (log_scale) {   # the page shows these back-transformed, to 3 decimals",
+    "  XT <- function(v) min(5e-4, TOL * max(1, exp(v)))   # relative 1e-6, never looser than half the displayed 3rd decimal",
+    "  chk(\"exp(transported effect)\", exp(page$trans_est), exp(tr[[\"est\"]]), XT(tr[[\"est\"]]))",
+    "  chk(\"exp(transported CI lower)\", exp(page$trans_lo), exp(tr[[\"lo\"]]), XT(tr[[\"lo\"]]))",
+    "  chk(\"exp(transported CI upper)\", exp(page$trans_hi), exp(tr[[\"hi\"]]), XT(tr[[\"hi\"]]))",
+    "  chk(\"transport shift (ratio)\", exp(page$shift), exp(shift), XT(shift))",
     "}",
     "cat(if (.bad == 0L) sprintf(\"MATCH %d/%d\\n\", .n, .n) else sprintf(\"MISMATCH %d of %d checks differ\\n\", .bad, .n))"
   ].join("\n");

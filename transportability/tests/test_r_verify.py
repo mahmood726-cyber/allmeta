@@ -79,3 +79,31 @@ def test_script_runs_in_fresh_r_and_matches(case):
     last = [l for l in r.stdout.splitlines() if l.startswith(("MATCH", "MISMATCH"))]
     assert last and re.fullmatch(r"MATCH (\d+)/\1", last[-1]), r.stdout
     assert int(last[-1].split()[1].split("/")[0]) >= MIN_CHECKS
+
+
+@pytest.mark.skipif(not HAVE_R, reason="Rscript not found (set RSCRIPT)")
+def test_back_transformed_checks_are_no_looser_than_the_displayed_3_decimals():
+    # On the log scale the page shows exp(v).toFixed(3): a page value off by 6e-4 on that scale is a visible
+    # error, so the check must flag it even when exp(v) > 500, where a relative 1e-6 tolerance would let it
+    # through (review of PR #628). The analysis-scale shift here (9.7e-7) is inside the 1e-6 analysis check,
+    # so only the back-transformed check can catch it.
+    if not _has_metafor():
+        pytest.skip("metafor not installed for this Rscript (set R_LIBS)")
+    js = GEN.split("const out = {")[0] + r"""
+const snap = mk([["a",5.2,0.3,10],["b",5.5,0.3,12],["c",5.9,0.35,14],["d",6.0,0.3,16],["e",6.3,0.4,18]], 15, true, "x");
+const hi = snap.result.transported.ciHi;                       // exp(hi) = 619.2
+snap.result = JSON.parse(JSON.stringify(snap.result));
+snap.result.transported.ciHi = Math.log(Math.exp(hi) + 6e-4);  // 6e-4 off on the displayed scale
+console.log(JSON.stringify({ s: R.buildScript(snap) }));
+"""
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.returncode == 0, r.stdout + r.stderr
+    s = json.loads(r.stdout.strip().splitlines()[-1])["s"]
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "check.R"
+        f.write_text(s, encoding="utf-8")
+        rr = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300)
+    assert rr.returncode == 0, rr.stdout + rr.stderr
+    assert re.search(r"transported 95% CI upper .* ok", rr.stdout), rr.stdout          # analysis scale: within 1e-6
+    assert re.search(r"exp\(transported CI upper\) .*MISMATCH", rr.stdout), rr.stdout
+    assert rr.stdout.strip().splitlines()[-1].startswith("MISMATCH 1 of"), rr.stdout

@@ -81,3 +81,49 @@ def test_script_runs_in_fresh_r_and_matches(case):
     last = [l for l in r.stdout.splitlines() if l.startswith(("MATCH", "MISMATCH"))]
     assert last and re.fullmatch(r"MATCH (\d+)/\1", last[-1]), r.stdout
     assert int(last[-1].split()[1].split("/")[0]) >= 10
+
+
+@pytest.mark.skipif(not HAVE_R, reason="Rscript not found (set RSCRIPT)")
+def test_replayed_generator_stays_exact_beyond_2_pow_53_over_the_weyl_constant():
+    # The script's vectorised mulberry32 must equal the page's generator for every draw a run can need.
+    # (1:n) * 0x6D2B79F5 passes 2^53 at n = 4,917,759 (e.g. 100,000 iterations x 25 uncertain cells), where a
+    # plain double product loses low bits and the replay silently diverges (review of PR #628).
+    js = ("const r = require('./shared/benefit-risk-v1.js')._mulberry32(12345), want = [4917000, 4917759, 4999999, 5200000], o = {};"
+          "for (let i = 1; i <= 5200000; i++) { const v = r(); if (want.includes(i)) o[i] = v; } console.log(JSON.stringify(o));")
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=120, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    page = json.loads(r.stdout)
+    src = _scripts()["default"].splitlines()
+    a = next(i for i, l in enumerate(src) if l.startswith("M32 <- "))
+    b = next(i for i, l in enumerate(src) if l.startswith("unc <- "))
+    rcode = "\n".join(src[a:b]) + '\nu <- mulberry32(12345, 5200000); cat(sprintf("%.17g", u[c(4917000, 4917759, 4999999, 5200000)]), sep = "\\n")\n'
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "gen.R"
+        f.write_text(rcode, encoding="utf-8")
+        rr = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300)
+    assert rr.returncode == 0, rr.stdout + rr.stderr
+    got = [float(x) for x in rr.stdout.split()]
+    assert got == [page[k] for k in ("4917000", "4917759", "4999999", "5200000")]
+
+
+@pytest.mark.skipif(not HAVE_R, reason="Rscript not found (set RSCRIPT)")
+def test_labels_outside_the_bmp_round_trip_into_r():
+    # rstr() escapes a non-BMP character as a UTF-16 surrogate pair ("\ud83d\udc8a"); R's parser (desktop 4.6.0
+    # and WebR's 4.5.1) joins the pair into one code point, so the label survives and the script still runs.
+    js = GEN.split("const out = {")[0] + r"""
+const snap = mk([["wl","Weight loss","benefit",0.6],["na","Nausea","harm",0.4]],
+  [["Drug \u{1F48A}","wl",17.8,0.7],["Drug \u{1F48A}","na",24,2],["Other","wl",12.4,0.6],["Other","na",20,2]], 2000, 1);
+console.log(JSON.stringify({ s: R.buildScript(snap) }));
+"""
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.returncode == 0, r.stdout + r.stderr
+    s = json.loads(r.stdout.strip().splitlines()[-1])["s"]
+    assert r'"Drug \ud83d\udc8a"' in s
+    s += 'cat("LABEL", utf8ToInt(trt[1]), "\\n")\n'
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "check.R"
+        f.write_text(s, encoding="utf-8")
+        rr = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300)
+    assert rr.returncode == 0, rr.stdout + rr.stderr
+    assert re.search(r"^MATCH (\d+)/\1$", rr.stdout, re.M), rr.stdout
+    assert "LABEL 68 114 117 103 32 128138" in rr.stdout

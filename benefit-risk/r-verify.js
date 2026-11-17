@@ -103,7 +103,7 @@
     "imul <- function(a, b) (a %% 65536 * b + ((a %/% 65536) * (b %% 65536)) %% 65536 * 65536) %% M32",
     "or_lo <- function(a, m) (a %/% 65536) * 65536 + bitwOr(a %% 65536, m)",
     "mulberry32 <- function(seed, n) {",
-    "  a <- (seed %% M32 + ((1:n) * 1831565813) %% M32) %% M32  # state after each call",
+    "  a <- (seed %% M32 + imul(1:n, 1831565813)) %% M32  # state after each call; split product stays exact past 2^53",
     "  t <- imul(xr(a, a %/% 32768), or_lo(a, 1))               # imul(a ^ a>>>15, 1 | a)",
     "  t <- xr((t + imul(xr(t, t %/% 128), or_lo(t, 61))) %% M32, t)",
     "  xr(t, t %/% 16384) / M32",
