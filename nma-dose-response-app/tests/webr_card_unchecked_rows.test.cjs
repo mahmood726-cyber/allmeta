@@ -17,7 +17,7 @@ function grab(name) {
   throw new Error('unbalanced ' + name);
 }
 const ctx = vm.createContext({ Math, isFinite, Number, String });
-vm.runInContext(['esc', 'fmtNum', 'buildComparisonTable', 'checkMatch'].map(grab).join('\n'), ctx);
+vm.runInContext(['esc', 'isNum', 'fmtNum', 'buildComparisonTable', 'checkMatch'].map(grab).join('\n'), ctx);
 let failed = 0;
 const check = (n, ok, d) => { console.log((ok ? 'PASS ' : 'FAIL ') + n + (ok ? '' : '  [' + d + ']')); if (!ok) failed++; };
 const R = { effect: 0.5496, se: 0.1474, tau2: 0.0437, I2: 67.15, Q: 6.0884, Qp: 0.0476, ci_lb: 0.2608, ci_ub: 0.8384, k: 3 };
@@ -35,4 +35,12 @@ ctx.APP2 = Object.assign({}, APP, { tau2: NaN });
 check('checkMatch false when a page value is missing (NaN tau2)', vm.runInContext('checkMatch(R, APP2)', ctx) === false, 'returned true');
 ctx.APP3 = Object.assign({}, APP, { Q: 6.2 });
 check('checkMatch false when a value differs', vm.runInContext('checkMatch(R, APP3)', ctx) === false, 'returned true');
+// A null page value is not a number: the global isFinite(null) is true and Math.abs(0 - null) is 0, so a null
+// against an R value of 0 used to draw a tick and count towards VALIDATED (agy review of #632, confirmed by pa10).
+const R0 = Object.assign({}, R, { tau2: 0 });
+ctx.R0 = R0; ctx.APPN = Object.assign({}, APP, { tau2: null });
+const tn = vm.runInContext('buildComparisonTable(R0, APPN)', ctx);
+const tauRow = [...tn.matchAll(/<tr style="border-bottom[^>]*>([\s\S]*?)<\/tr>/g)].map(m => m[1]).find(r => /tau-squared/.test(r));
+check('a null page tau2 against R tau2 = 0 carries no tick', tauRow && !/&#x2713;/.test(tauRow), tauRow);
+check('checkMatch false when a page value is null and R is 0', vm.runInContext('checkMatch(R0, APPN)', ctx) === false, 'returned true');
 console.log(failed ? failed + ' FAILED' : 'ALL PASS'); process.exitCode = failed ? 1 : 0;
