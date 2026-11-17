@@ -55,6 +55,7 @@
     <table><thead><tr><th>Trial</th><th>RMST diff</th><th>SE</th><th>95% CI</th><th>weight</th></tr></thead><tbody id="res-body"></tbody></table>
     <h2 style="margin-top:1rem">Forest</h2>
     <div id="forest-host"></div>
+    <div id="rcheck-mount" style="margin-top:1rem"></div>
     <div id="alm-export-mount" style="margin-top:1rem"></div>
   </section>
 </main>
@@ -69,6 +70,8 @@
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
     var _last = null;
+    var _rstate = null; // inputs + displayed numbers for the R check (r-check.js)
+    window.__almRmstRState = function () { return _rstate; };
     window._almLastRMST = function () { return _last; };
 
     function parse(text) {
@@ -87,7 +90,7 @@
       var rows = parse(document.getElementById("f-data").value);
       var method = document.getElementById("f-method").value;
       var head = document.getElementById("headline"), body = document.getElementById("res-body");
-      if (rows.length < 2) { head.textContent = "Enter at least 2 trials."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return; }
+      if (rows.length < 2) { head.textContent = "Enter at least 2 trials."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; _rstate = null; return; }
       var r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
       var w = rows.map(function (s) { return 1 / (s.v + r.tau2); }), sw = w.reduce(function (a, b) { return a + b; }, 0);
       head.innerHTML = "k = " + rows.length + " · pooled RMST difference = <strong>" + fmt(r.mu) + "</strong> [" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]"
@@ -97,6 +100,8 @@
         return "<tr><td>" + esc(s.label) + "</td><td>" + fmt(s.diff) + "</td><td>" + fmt(s.se) + "</td><td>[" + fmt(s.diff - Z975 * s.se) + ", " + fmt(s.diff + Z975 * s.se) + "]</td><td>" + fmt(100 * w[i] / sw, 1) + "%</td></tr>";
       }).join("") + "<tr style='font-weight:600;background:var(--accent-soft)'><td>Pooled</td><td>" + fmt(r.mu) + "</td><td>" + fmt(r.se) + "</td><td>[" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]</td><td>100%</td></tr>";
       document.getElementById("forest-host").innerHTML = forest(rows, r);
+      _rstate = { method: method, rows: rows.map(function (s) { return { label: s.label, diff: s.diff, se: s.se }; }),
+        page: { mu: r.mu, se: r.se, ciLo: r.ciLo, ciHi: r.ciHi, tau2: r.tau2, I2: r.I2, piLo: r.piLo, piHi: r.piHi, weights: w.map(function (x) { return 100 * x / sw; }) } };
       _last = { _schema: "rmst-ma-results-v1", k: rows.length, method: method, mu: r.mu, se: r.se, ciLo: r.ciLo, ciHi: r.ciHi, tau2: r.tau2, I2: r.I2, piLo: r.piLo, piHi: r.piHi, studies: rows.map(function (s) { return { label: s.label, diff: s.diff, se: s.se }; }) };
     }
 
@@ -126,11 +131,14 @@
     document.getElementById("f-method").addEventListener("change", run);
     run();
     (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
+      rdy(function () { if (window.AlmRmstRCheck) AlmRmstRCheck.attach({ mount: "#rcheck-mount", filename: "rmst-ma-r-check.R", getState: function () { return _rstate; } }); });
       rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "rmst-ma-results", getResults: function () { return _almLastRMST() || {}; } }); });
     })();
   })();
 </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
 </body>
 </html>
