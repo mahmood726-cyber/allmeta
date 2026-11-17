@@ -206,7 +206,8 @@
     if (window.AlmSeqRCheck) AlmSeqRCheck.attach({ verifyBtn: "#btn-verify-in-r", downloadBtn: "#btn-r-script",
       filename: "sequential-ma-check.R", packages: [],
       // Re-render from the current input first, so R checks exactly the table on screen.
-      getState: function () { run(); return lastState; } });
+      getState: function () { run(); return lastState; },
+      current: function () { return lastState; } });
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("f-family").addEventListener("change", run);
     document.getElementById("f-alpha").addEventListener("input", run);

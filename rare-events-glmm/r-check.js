@@ -105,7 +105,9 @@
   }
 
   // attach({ getState, mount }) — getState() returns the buildScript state or null.
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   function attach(opts) {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var host = document.querySelector(opts.mount);
     if (!host) return false;
     var bs = "padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer;font:inherit";
@@ -126,10 +128,13 @@
       var st = opts.getState();
       if (!st) { status.textContent = "Nothing to check: fit the GLMM first (at least 2 valid studies)."; return; }
       if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { status.textContent = "WebR runner (../shared/webr-runner.js) did not load; use Download R script instead."; return; }
-      var script = buildScript(st), btn = host.querySelector("#rcheck-webr");
+      var script = buildScript(st), btn = host.querySelector("#rcheck-webr"), my = ++verifyGen;
       btn.disabled = true; out.style.display = "none"; out.textContent = "";
       global.AlmWebR.runR({ script: script, packages: opts.packages || ["metafor"], onStatus: function (s) { status.textContent = s; } }).then(function (r) {
-        btn.disabled = false; out.style.display = "block";
+        btn.disabled = false;
+        // R answered for the analysis it was given (st); if the page has moved on, never show that answer beside the new one.
+        if (my !== verifyGen || opts.getState() !== st) { out.textContent = ""; status.textContent = STALE; return; }
+        out.style.display = "block";
         if (!r.ok) { status.textContent = "WebR failed: " + r.error; out.textContent = "WebR error: " + r.error; return; }
         var last = r.stdout.trim().split(/\r?\n/).pop();
         var v = r.versions || {};

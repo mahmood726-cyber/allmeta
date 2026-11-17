@@ -299,6 +299,7 @@
     // R user path: re-render from the current inputs, then hand R exactly those inputs and the table on screen.
     if (window.AlmPowerRCheck) AlmPowerRCheck.attach({ verifyBtn: "#btn-verify-in-r", downloadBtn: "#btn-r-script",
       filename: "powerma-check.R", packages: [],
+      current: function () { return _lastPowerMA; },
       getState: function () {
         _lastPowerMA = null; run();
         if (!_lastPowerMA) return null;

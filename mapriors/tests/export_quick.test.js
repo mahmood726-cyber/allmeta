@@ -130,4 +130,21 @@ test('Q7 studies changed after the result WITHOUT sync(): the script still carri
   assert.ok(countLines.length === 2 && !/\bNA\b/.test(countLines.join(' ')), 'NA or no counts in exported script: ' + countLines.join(' | '));
   checkRuns({ code: app2.blobs[0] }, 'studies replaced after the result');
 });
+// Q8/Q9: the tolerance must never be looser than half a unit of what the page shows. The MAP prior mean is shown to
+// 3 decimals; a relative 1e-6 alone exceeds 5e-4 once |mean| > 500 (here ~3000: 0.003), so a page error that changes
+// the displayed mean would pass. Means of this size are ordinary (e.g. a cost or a lab value).
+const LARGE = [[3010.2, 410, 120], [2950.7, 395, 98], [3102.4, 430, 150], [2988.1, 402, 85], [3055.9, 415, 210]]
+  .map(([mean, sd, n], i) => ({ trial: 'L' + (i + 1), mean, sd, n }));
+test('Q8 large means: a page mean wrong in the 3rd shown decimal is reported as MISMATCH', () => {
+  const s = exportQuick('continuous', LARGE);
+  const mu = s.mr.mu, planted = mu + 0.0008;
+  assert.notStrictEqual(mu.toFixed(3), planted.toFixed(3), 'precondition: the planted error changes the displayed mean');
+  const bad = s.code.replace(/(page <- c\(mu = )([-0-9.eE+]+)/, (_m, a) => a + String(planted));
+  assert.notStrictEqual(bad, s.code, 'could not plant a wrong page mean');
+  const r = runR(bad);
+  assert.ok(/^MISMATCH/m.test(r.stdout) && !/^MATCH \d+\/\d+/m.test(r.stdout), 'mean ' + mu.toFixed(3) + ' shown as ' + planted.toFixed(3) + ' passed:\n' + r.stdout.slice(-900));
+});
+test('Q9 large means, unplanted: MATCH n/n (the tighter cap costs no true agreement)', () => {
+  checkRuns(exportQuick('continuous', LARGE), 'large continuous means');
+});
 console.log(`${passed}/${total} PASS`); process.exitCode = passed === total ? 0 : 1;

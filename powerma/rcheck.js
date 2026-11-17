@@ -87,7 +87,10 @@
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
   // getState(): re-renders the page from its current inputs and returns the state it displays (or null).
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
+  // opts.current(): the page's record of its latest analysis (a new object on every run, null after a refusal).
   function attach(opts) {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var vb = document.querySelector(opts.verifyBtn), db = document.querySelector(opts.downloadBtn);
     if (db) db.addEventListener("click", function () {
       var st = opts.getState();
@@ -104,7 +107,12 @@
       var status = document.getElementById("alm-webr-status"), out = document.getElementById("alm-webr-output");
       if (!st) { status.textContent = "Nothing to check."; out.textContent = "The inputs do not give a sample size."; return; }
       status.textContent = "Booting WebR (first use downloads about 30 MB)...";
-      AlmWebR.runR({ script: buildRScript(st), packages: opts.packages, onStatus: function (s) { status.textContent = s; } }).then(function (res) {
+      var my = ++verifyGen, snap = opts.current();
+      AlmWebR.runR({ script: buildRScript(st), packages: opts.packages, onStatus: function (s) { if (my === verifyGen) status.textContent = s; } }).then(function (res) {
+        // R answered for the analysis it was given; if the page has moved on (the modal does not trap focus, so the
+        // inputs behind it stay editable), never show that answer beside the new analysis.
+        if (my !== verifyGen) return;   // a newer Verify owns the panel
+        if (opts.current() !== snap) { status.textContent = STALE; out.textContent = ""; return; }
         if (!res.ok) {
           var pk = /Package not in pinned repository: (\S+)/.exec(res.error || "");
           status.textContent = "R did not run.";

@@ -102,18 +102,23 @@
     return txt;
   }
 
+  var verifyGen = 0;
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   async function verify() {
     var out = document.getElementById("rcheck-out"), st = document.getElementById("rcheck-status");
     var btn = document.getElementById("btn-rverify");
     var set = function (t) { if (st) st.textContent = t; };
-    var script;
-    try { script = buildScript(current()); } catch (e) { set(e.message); return; }
+    var script, snap = current();
+    try { script = buildScript(snap); } catch (e) { set(e.message); return; }
+    var my = ++verifyGen;   // a later Verify, or a re-run of the analysis, makes this run's answer stale
     if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { set("WebR runner (../shared/webr-runner.js) did not load; use Download R script."); return; }
     if (btn) btn.disabled = true;
     out.textContent = "";
     set("Starting WebR (first run downloads R, about a minute)... Note: package ReplicationSuccess is not in the pinned WebR repository; its optional cross-check is reported as NOT CHECKED, the base-R closed forms are checked.");
     var res = await global.AlmWebR.runR({ script: script, packages: [], onStatus: function (t) { set(t); } });
     if (btn) btn.disabled = false;
+    // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+    if (my !== verifyGen || current() !== snap) { out.textContent = ""; set(STALE); return; }
     if (!res.ok) { set("WebR failed: " + res.error); return; }
     out.textContent = res.stdout;
     var last = (res.stdout.match(/^(MATCH|MISMATCH).*$/m) || ["(no MATCH line in R output)"])[0];

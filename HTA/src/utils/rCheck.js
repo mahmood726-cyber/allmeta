@@ -521,10 +521,12 @@ cat(if (n_ok == n_all) sprintf("MATCH %d/%d\n", n_ok, n_all) else sprintf("MISMA
             const my = ++token, st = el('r-check-status'), out = el('r-check-output'), btn = el('btn-verify-r');
             out.textContent = ''; btn.disabled = true;
             try {
-                const script = current();
+                const script = current(), snap = global.app.results;
                 if (!global.AlmWebR || typeof global.AlmWebR.runR !== 'function') throw new Error('WebR runner (shared/webr-runner.js) did not load.');
                 const res = await global.AlmWebR.runR({ packages: [], script, onStatus: (m) => { if (my === token) st.textContent = m; } });
-                if (my !== token) return;
+                // R answered for the run it was given. A new base-case run replaces app.results even when it
+                // leaves the ICER cell untouched (no comparison), so check the run itself, not only that cell.
+                if (my !== token || global.app.results !== snap) { st.textContent = 'R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.'; return; }
                 if (!res.ok) throw new Error(res.error);
                 const last = res.stdout.trim().split('\n').pop() || '';
                 st.textContent = 'WebR ' + res.versions.webR + ' · ' + res.versions.R + ' — base-R checks: ' + last

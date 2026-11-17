@@ -113,7 +113,9 @@
   ].join("\n");
 
   // ---------------- UI (browser only) ----------------
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   function mount() {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var doc = global.document; if (!doc) return;
     var $ = function (id) { return doc.getElementById(id); };
     function snapshot() {
@@ -130,13 +132,15 @@
       status.textContent = "Downloaded transportability-check.R - run it with Rscript (needs metafor); it ends with MATCH n/n or MISMATCH.";
     });
     $("btn-webr").addEventListener("click", function () {
-      var s = snapshot(), btn = $("btn-webr");
+      var s = snapshot(), btn = $("btn-webr"), my = ++verifyGen, run = global.__lastTransport;   // run() replaces it on every analysis
       if (!s) { status.textContent = "Run the analysis first."; return; }
       if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { status.textContent = "WebR runner (../shared/webr-runner.js) did not load - use Download R script."; return; }
       btn.disabled = true; out.hidden = true;
       var t0 = Date.now();
       global.AlmWebR.runR({ script: buildScript(s), packages: ["metafor"], onStatus: function (m) { status.textContent = m; } }).then(function (r) {
         btn.disabled = false;
+        // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+        if (my !== verifyGen || global.__lastTransport !== run) { out.hidden = true; out.textContent = ""; status.textContent = STALE; return; }
         if (!r.ok) { status.textContent = "WebR could not run the check: " + r.error + " - use Download R script."; return; }
         out.textContent = r.stdout; out.hidden = false;
         var last = r.stdout.split(/\r?\n/).filter(function (l) { return /^(MATCH|MISMATCH)/.test(l); }).pop() || "no MATCH/MISMATCH line in R output";
