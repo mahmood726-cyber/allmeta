@@ -65,7 +65,7 @@ predict_fit <- function(f, d) {
   if (is.null(f)) return(rep(0, length(d)))
   switch(f$model,
     emax = f$e0 + f$emax * d / (f$ed50 + d),
-    hill = { pw <- d^f$hill; dn <- f$ed50^f$hill + pw; ifelse(is.finite(dn) & dn != 0, f$e0 + f$emax * pw / dn, f$e0) },
+    hill = ifelse(d > 0, f$e0 + f$emax / (1 + (f$ed50 / d)^f$hill), f$e0),   # overflow-safe form of e0 + emax d^h / (ed50^h + d^h), as fit_hill searches it
     log_linear = f$e0 + f$slope * log(d + f$shift),
     rcs = as.vector(rcs_basis(d, f$knots, f$includeIntercept) %*% f$betas),
     fp = as.vector(fp_design(d + f$shift, f$powers, f$includeIntercept) %*% f$betas))

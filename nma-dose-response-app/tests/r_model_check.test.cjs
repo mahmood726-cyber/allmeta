@@ -90,12 +90,29 @@ test('the R verdict can fail: one page Target moved by 0.001 is a MISMATCH', asy
   assert.match(r.verdict, /^MISMATCH 1 of \d+ quantities differ$/, r.out);
 });
 
+// agy review of #633 (MAJOR): the sigmoid Emax prediction must not overflow. 2000^100 is Inf in double precision, so
+// e0 + emax d^h / (ed50^h + d^h) fell back to e0 (0) where the curve is e0 + emax (1); fit_hill's own search uses the
+// overflow-safe form, so the fitted and the reported SSE disagreed. The values are the curve's, not a page number.
+test('R engine: sigmoid Emax prediction at d^h beyond double range equals e0 + emax / (1 + (ed50 / d)^h)', async () => {
+  const { script } = await pageScript(null);
+  const engine = script.slice(script.indexOf('fmt_page <- function'), script.indexOf('\ncat("R:"'));
+  const r = runR(engine + '\nf <- list(model = "hill", e0 = 0, emax = 1, ed50 = 750, hill = 100)\n' +
+    'v <- predict_fit(f, c(0, 500, 1000, 2000))\nref <- c(0, 1 / (1 + (750 / c(500, 1000, 2000))^100))\n' +
+    'cat(if (isTRUE(all.equal(v, ref, tolerance = 1e-12))) "MATCH 1/1" else paste("MISMATCH", paste(v, collapse = " ")), "\\n")\n');
+  assert.match(r.verdict, /^MATCH 1\/1/, r.out);
+});
+
 // Requirement: the default example and a pasted data set in the default Auto (AICc) mode agree with R.
 // They do not today, and R is right (held patch, not committed because it changes displayed numbers):
 //  * a saturated sigmoid Emax fit (n = k = 3) ends at SSE ~1e-32 instead of 0, passes computeAIC's sse <= 0 guard
 //    and wins the AICc choice in sweep 2, which moves the study offsets (default example: AIC of DrugA -48.11 vs -49.41);
 //  * a treatment with no positive dose (Placebo) keeps an arbitrary Emax / sigmoid Emax emax, which enters the
 //    AICc-weighted model average and the reference curve (default example: Placebo AUC MA 0.003 vs -0.000).
+// R cannot be made to agree by copying the page's exact-zero rule (agy review of #633, BLOCKER, refuted by running it):
+// with R's SSE read literally, R picks sigmoid Emax for DrugA and DrugB (AIC about -210) and the default example is
+// MISMATCH 45 of 92 instead of 10 of 92; and the page itself flips with its random stream (fitNetwork on the default
+// example with seed 7 instead of 42 picks sigmoid Emax for DrugB, AIC -213.37 instead of -33.40). The winner is
+// decided by rounding noise, so these stay todo until the held patch lands.
 test('default example, Auto (AICc): Rscript prints MATCH', { todo: 'held patch: saturated-fit AIC and unidentified emax (lane pa11)' }, async () => {
   const { script } = await pageScript(null);
   const r = runR(script);
