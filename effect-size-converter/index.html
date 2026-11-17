@@ -65,6 +65,10 @@
     .note.err strong { color: var(--err); }
     .plot-wrap { margin-top: 1rem; }
     svg { width: 100%; height: auto; display: block; }
+    .rcheck-verdict { font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
+    .rcheck-verdict.ok { background: var(--ok-soft); border-left-color: var(--ok); }
+    .rcheck-out { background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem;
+                  font-size: 0.74rem; max-height: 24rem; overflow: auto; white-space: pre; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
     .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
@@ -240,6 +244,17 @@
           <label style="font-size:0.85rem"><input id="ev-rare" type="checkbox"> rare outcome</label>
         </div>
         <p id="ev-out" style="margin-top:0.6rem;font-size:0.95rem" role="status" aria-live="polite"></p>
+      </div>
+      <div class="plot-wrap" style="margin-top:1rem">
+        <h2>Check these numbers in R</h2>
+        <p class="hint" style="margin:0 0 0.5rem">One R script, written from the inputs behind the table above, recomputes every converted value, SE and CI (metafor escalc and the published formulas in base R) and the E-value widget (EValue), and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
+          <button type="button" id="btn-verify-r" class="primary">Verify in R</button>
+          <button type="button" id="btn-download-r" class="primary">Download R script</button>
+        </div>
+        <p id="rcheck-status" class="hint" role="status" aria-live="polite" style="margin:0.4rem 0"></p>
+        <p id="rcheck-verdict" class="note rcheck-verdict" hidden></p>
+        <pre id="rcheck-out" class="rcheck-out" hidden></pre>
       </div>
       <!-- axis-controls mount: numeric axis range for the SMD representation plot -->
       <div id="alm-axis-mount" style="margin-top:0.75rem;"></div>
@@ -610,6 +625,10 @@
       const se = parseFloat(document.getElementById("in-se").value);
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
+      // The inputs behind the table about to be shown (read as convert() reads them); r-check.js writes its R script from these.
+      const analysed = { type, est, se, p0, sd, kind: document.getElementById("in-smd-kind").value,
+        n1: Number(document.getElementById("der-n1").value), n2: Number(document.getElementById("der-n2").value) };
+      window.__escAnalysed = function () { return analysed; };
       if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return false; }
       if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return false; }
       if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return false; }
@@ -938,6 +957,7 @@
     }
   })();
   </script>
+<script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
 <script>
