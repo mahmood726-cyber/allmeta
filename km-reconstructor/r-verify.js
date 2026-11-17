@@ -33,26 +33,30 @@
     "curve <- switch(source, registry = anchors, fusion = fuse(digitized, anchors), digitized)",
     "## ---- 2. the page's reconstruction heuristic, in base R ----",
     "jsround <- function(x) floor(x + 0.5)",
+    "# JavaScript semantics where survival reaches 0 (0/0 = NaN): Math.max(0, NaN) is NaN, a comparison with NaN is false,",
+    "# and a loop over NaN subjects adds no rows -- so the page and this script agree on such inputs instead of R stopping",
+    "jsmax0 <- function(x) if (is.na(x)) NaN else max(0, x)",
+    "nrows <- function(x) if (is.finite(x) && x > 0) x else 0",
     "K <- nrow(curve); nr <- nrow(risk); N0 <- risk$n[1]; d <- numeric(K); cz <- numeric(K); nRisk <- N0",
     "for (k in seq_len(K)[-1]) {",
     "  tk <- curve$t[k]; idx <- 1",
     "  if (nr > 1) for (j in 1:(nr - 1)) if (tk >= risk$t[j] && tk < risk$t[j + 1]) idx <- j",
     "  if (tk >= risk$t[nr]) idx <- nr",
     "  targetN <- if (idx >= nr) risk$n[nr] else risk$n[idx] + (tk - risk$t[idx]) / (risk$t[idx + 1] - risk$t[idx]) * (risk$n[idx + 1] - risk$n[idx])",
-    "  dk <- max(0, jsround(nRisk * (1 - curve$s[k] / curve$s[k - 1]))); if (dk > nRisk) dk <- nRisk",
-    "  ck <- max(0, jsround(nRisk - dk - targetN)); if (dk + ck > nRisk) ck <- max(0, nRisk - dk)",
+    "  dk <- jsmax0(jsround(nRisk * (1 - curve$s[k] / curve$s[k - 1]))); if (isTRUE(dk > nRisk)) dk <- nRisk",
+    "  ck <- jsmax0(jsround(nRisk - dk - targetN)); if (isTRUE(dk + ck > nRisk)) ck <- jsmax0(nRisk - dk)",
     "  d[k] <- dk; cz[k] <- ck; nRisk <- nRisk - dk - ck",
     "}",
     "if (is.finite(totEvents)) {   # re-split events / censored within each interval to hit the reported total",
     "  need <- min(max(0, jsround(totEvents)), N0) - sum(d); k <- 2",
-    "  while (k <= K && need != 0) {",
-    "    if (need > 0) { x <- min(need, cz[k]); d[k] <- d[k] + x; cz[k] <- cz[k] - x; need <- need - x }",
+    "  while (k <= K && !isTRUE(need == 0)) {",
+    "    if (isTRUE(need > 0)) { x <- min(need, cz[k]); d[k] <- d[k] + x; cz[k] <- cz[k] - x; need <- need - x }",
     "    else { x <- min(-need, d[k]); d[k] <- d[k] - x; cz[k] <- cz[k] + x; need <- need + x }",
     "    k <- k + 1 } }",
     "time <- c(); event <- c()",
     "for (k in seq_len(K)[-1]) { tm <- (curve$t[k - 1] + curve$t[k]) / 2",
-    "  time <- c(time, rep(tm, d[k] + cz[k])); event <- c(event, rep(1, d[k]), rep(0, cz[k])) }",
-    "if (nRisk > 0) { time <- c(time, rep(curve$t[K], nRisk)); event <- c(event, rep(0, nRisk)) }",
+    "  time <- c(time, rep(tm, nrows(d[k]) + nrows(cz[k]))); event <- c(event, rep(1, nrows(d[k])), rep(0, nrows(cz[k]))) }",
+    "if (isTRUE(nRisk > 0)) { time <- c(time, rep(curve$t[K], nRisk)); event <- c(event, rep(0, nRisk)) }",
     "ipd <- data.frame(time = time, event = event)",
     "## ---- 3. K-M summaries of R's IPD ----",
     "if (requireNamespace(\"survival\", quietly = TRUE)) {",
@@ -141,6 +145,7 @@
     });
     $("rv-run").addEventListener("click", async function () {
       var btn = $("rv-run"), out = $("rv-out"), status = $("rv-status"), script;
+      out.hidden = true; out.textContent = "";   // never leave an earlier verdict on screen
       try { rerun(); script = buildScript(); } catch (e) { status.textContent = e.message; return; }
       if (!window.AlmWebR || !AlmWebR.runR) { status.textContent = "WebR runner (../shared/webr-runner.js) did not load; use Download R script instead."; return; }
       btn.disabled = true; out.hidden = true; status.textContent = "Starting WebR...";

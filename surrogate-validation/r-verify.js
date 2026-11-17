@@ -108,6 +108,7 @@
     });
     $("rv-run").addEventListener("click", async function () {
       var btn = $("rv-run"), out = $("rv-out"), status = $("rv-status"), script;
+      out.hidden = true; out.textContent = "";   // never leave an earlier verdict on screen
       try { revalidate(); script = buildScript(); } catch (e) { status.textContent = e.message; return; }
       if (!window.AlmWebR || !AlmWebR.runR) { status.textContent = "WebR runner (../shared/webr-runner.js) did not load; use Download R script instead."; return; }
       btn.disabled = true; out.hidden = true; status.textContent = "Starting WebR...";

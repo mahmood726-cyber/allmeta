@@ -119,10 +119,13 @@
     "    }",
     "    V <- matrix(b$v[1], m - 1, m - 1); diag(V) <- b$v[1] + b$v[-1]; Vb[[length(Vb) + 1]] <- V",
     "  }",
+    "  # a disconnected interval leaves X rank-deficient: rma.mv would silently drop a coefficient; refuse, as the page and netmeta do",
+    "  if (qr(X)$rank < length(nonref)) stop(\"network is disconnected in this interval; not estimated (the page refuses it too)\")",
     "  dd <- data.frame(yi = yi, comp = comp, sid = sid)",
     "  f <- rma.mv(yi, bldiag(Vb), mods = X, intercept = FALSE, random = ~ comp | sid, struct = \"CS\", rho = 0.5,",
     "              method = method, data = dd)",
-    "  list(ref = ref, trt = nonref, logHR = as.numeric(coef(f)), se = sqrt(diag(vcov(f))), tau2 = f$tau2)",
+    "  if (length(coef(f)) != length(nonref)) stop(\"rma.mv dropped a coefficient; not estimated\")",
+    "  list(ref = ref, trt = nonref, logHR = setNames(as.numeric(coef(f)), nonref), se = setNames(sqrt(diag(vcov(f))), nonref), tau2 = f$tau2)",
     "}",
     "R <- list()",
     "for (iv in names(page)) {",
@@ -179,6 +182,7 @@
     });
     $("rv-run").addEventListener("click", async function () {
       var btn = $("rv-run"), out = $("rv-out"), status = $("rv-status");
+      out.hidden = true; out.textContent = "";   // never leave an earlier verdict on screen
       var script;
       try { refit(); script = buildScript(); } catch (e) { status.textContent = e.message; return; }
       if (!window.AlmWebR || !AlmWebR.runR) { status.textContent = "WebR runner (../shared/webr-runner.js) did not load; use Download R script instead."; return; }

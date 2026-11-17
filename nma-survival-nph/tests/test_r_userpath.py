@@ -170,24 +170,67 @@ def test_failed_fit_refuses_stale_script(pg, bad):
     assert "no current result" in pg.text_content("#rv-status").lower()
 
 
-def test_treatment_label_cannot_break_out_of_an_r_comment(pg):
-    # Requirement: user text never reaches the script outside a quoted R string. The reference label is
-    # written into a comment line; a line break inside it must not start a new line of R code.
+
+
+NL, BS = chr(10), chr(92)
+DISCONNECTED = NL.join(["T9, A, 1, 3, 100", "T9, B, 1, 4, 100", "T8, C, 1, 3, 100", "T8, D, 1, 5, 100"])
+
+
+def payload_ran(full):
+    # the payload prints a line that is exactly PWN; a label echoed in the comparison table is not that
+    return any(ln.strip() == "PWN" for ln in full.splitlines())
+
+
+def test_treatment_label_cannot_break_out_of_an_r_comment(pg, tmp_path):
+    # Requirement: user text never reaches the script outside a quoted R string. A line break cannot come
+    # through #data (rows split on line breaks), so it is planted in the snapshot directly; the generated
+    # script must still parse in R and must never execute the payload.
     pg.fill("#data", PASTED)
     pg.click("#run")
     txt = pg.evaluate("""() => { const s = window.__almNphLast; s.rows[0].treatment = 'Aa' + String.fromCharCode(10) + 'cat("PWN")';
                                  return AlmNphRVerify.buildScript(); }""")
     assert not any(line.lstrip().startswith('cat("PWN")') for line in txt.splitlines()), txt[:1500]
+    p = tmp_path / "newline-label.R"
+    p.write_text(txt, encoding="utf-8")
+    last, full = run_r(p)
+    assert not payload_ran(full), full
+
+
+def test_quote_and_backslash_labels_typed_by_the_user_stay_data(pg, tmp_path):
+    # Requirement: labels typed into #data that contain a double quote, a backslash or an R statement are
+    # carried as data: the script parses, the payload never runs, and the check still MATCHes.
+    q = 'A"); cat("PWN' + BS + 'n"); #'
+    bs = "B" + BS + "x" + BS
+    rows = NL.join([f"S1, {q}, 1, 30, 1000", f"S1, {bs}, 1, 20, 1000", f"S2, {q}, 1, 25, 900",
+                    "S2, C, 1, 18, 900", f"S3, {bs}, 1, 22, 800", "S3, C, 1, 19, 800"])
+    pg.fill("#data", rows)
+    pg.select_option("#model", "fe")
+    p, txt = download(pg, tmp_path, "quote-labels.R")
+    last, full = run_r(p)
+    assert not payload_ran(full), full
+    assert_match(last, full)
 
 
 def test_nothing_estimated_is_not_checked_never_match(pg, tmp_path):
     # Requirement: MATCH means at least one estimate was computed on both sides and agreed. A disconnected
     # network gives no estimate on the page, and netmeta refuses it too; agreement on that refusal alone
     # is not a check, so the verdict must be NOT CHECKED, never MATCH.
-    pg.fill("#data", "T9, A, 1, 3, 100\nT9, B, 1, 4, 100\nT8, C, 1, 3, 100\nT8, D, 1, 5, 100")
+    pg.fill("#data", DISCONNECTED)
     pg.select_option("#model", "fe")
     p, txt = download(pg, tmp_path, "disconnected.R")
     assert '"T8"' in txt
     last, full = run_r(p)
     assert last.startswith("NOT CHECKED: no estimate"), full
     assert "MATCH" not in last, full
+
+
+@pytest.mark.parametrize("method", ["REML", "ML"])
+def test_disconnected_network_under_reml_ml_is_not_checked(pg, tmp_path, method):
+    # Requirement: the page refuses a disconnected interval under every estimator; R must refuse it too
+    # (netmeta does; metafor::rma.mv would silently drop a coefficient), so the verdict is NOT CHECKED.
+    pg.fill("#data", DISCONNECTED)
+    pg.select_option("#model", "re")
+    pg.select_option("#tau-method", method)
+    p, txt = download(pg, tmp_path, f"disconnected-{method}.R")
+    last, full = run_r(p)
+    assert last.startswith("NOT CHECKED: no estimate"), full

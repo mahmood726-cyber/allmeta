@@ -120,3 +120,17 @@ def test_fusion_with_total_events_script_matches(pg, tmp_path):
     assert 'source <- "fusion"' in txt and "totEvents <- 180" in txt
     last, full = run_r(p)
     assert_match(last, full)
+
+
+def test_curve_reaching_zero_before_the_last_point_runs_and_matches(pg, tmp_path):
+    # Requirement: the script must finish with a verdict on any input the page accepts. Here survival hits
+    # 0 at t=12 and stays there, so the page computes 0/0 at t=18. The page still shows N 100, 100 events
+    # and median 3.0, and R must reproduce that rather than stop with an error.
+    nl = chr(10)
+    pg.select_option("#curve-source", "digitized")
+    pg.fill("#tot-events", "")
+    pg.fill("#curve", nl.join(["0, 1.0", "6, 0.4", "12, 0.0", "18, 0.0"]))
+    pg.fill("#risk", nl.join(["0, 100", "6, 40", "12, 5", "18, 0"]))
+    p, txt = download(pg, tmp_path, "zero.R")
+    last, full = run_r(p)
+    assert_match(last, full)

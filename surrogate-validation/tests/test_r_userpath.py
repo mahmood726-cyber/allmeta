@@ -111,3 +111,17 @@ def test_invalid_input_refuses_stale_script(pg):
     pg.wait_for_timeout(1500)
     assert not got
     assert "no current result" in pg.text_content("#rv-status").lower()
+
+
+def test_refused_verify_hides_the_previous_r_output(pg):
+    # Requirement: when Verify in R is refused (no current result), no earlier R verdict may stay on screen.
+    # The earlier WebR output is planted directly so the test does not need to boot WebR (minutes); the
+    # live-like run in the lane report shows the same state reached through a real WebR run.
+    pg.click("#btn-example")
+    pg.evaluate("""() => { const o = document.getElementById("rv-out"); o.textContent = "MATCH 19/19"; o.hidden = false; }""")
+    pg.fill("#f-data", chr(10).join(["T9, 1, 0.1, 0.1", "T8, 2, 0.2, 0.1"]))
+    pg.click("#rv-run")
+    pg.wait_for_timeout(500)
+    assert "no current result" in pg.text_content("#rv-status").lower()
+    assert pg.evaluate("() => document.getElementById('rv-out').hidden")
+    assert "MATCH" not in pg.text_content("#rv-out")
