@@ -8,12 +8,12 @@
   "use strict";
   var FILENAME = "poth-check.R", PKGS = [], PKG_NOTE = "base R (the POTH closed form)";
   // ---- shared by this page's two R paths (download + in-page WebR); app-local copy ----
-  var state = null, busy = false;
-  function rnum(x) { return (typeof x === "number" && isFinite(x)) ? String(x) : "NA"; }
+  var state = null, busy = false, gen = 0;   // gen: bumped on every set(), so a late R result can be recognised as stale
+  function rnum(x) { return typeof x !== "number" || isNaN(x) ? "NA" : isFinite(x) ? String(x) : (x > 0 ? "Inf" : "-Inf"); }
   function rstr(s) { return JSON.stringify(String(s)); }
   function rvec(a, f) { return "c(" + a.map(f || rnum).join(", ") + ")"; }
   var HEAD = [
-    "options(warn = 1)",
+    "options(warn = 1, width = 250)",
     "cat(R.version.string, \"\n\")",
     ".chk <- data.frame(quantity = character(), page = numeric(), R = numeric(), tol = numeric(), stringsAsFactors = FALSE)",
     "# chk(): one displayed quantity -- the page's full-precision value, R's value, and the absolute tolerance.",
@@ -23,7 +23,8 @@
     "}"
   ];
   var FOOT = [
-    ".chk$abs_diff <- abs(.chk$page - .chk$R)",
+    "# identical infinities (e.g. a log-likelihood at Q = 0) agree; anything else infinite does not",
+    ".chk$abs_diff <- ifelse(is.infinite(.chk$page) & .chk$page == .chk$R & !is.na(.chk$R), 0, abs(.chk$page - .chk$R))",
     ".chk$ok <- !is.na(.chk$abs_diff) & .chk$abs_diff <= .chk$tol",
     "print(.chk, digits = 10, row.names = FALSE)",
     ".n <- nrow(.chk); .m <- sum(.chk$ok)",
@@ -63,11 +64,11 @@
     if (!ok) setStatus("Run an analysis first: there is nothing to check in R yet.");
   }
   function set(s) {
-    state = s || null;
+    state = s || null; gen++;
     if (typeof document === "undefined") return;
     var o = el("rcheck-out"), v = el("rcheck-verdict");
-    if (o && !busy) { o.style.display = "none"; o.textContent = ""; }
-    if (v && !busy) v.textContent = "";
+    if (o) { o.style.display = "none"; o.textContent = ""; }
+    if (v) v.textContent = busy ? "The inputs changed while R was running; the result will be discarded. Press Verify in R again for the current analysis." : "";
     if (!busy) setStatus("");
     refresh();
   }
@@ -89,8 +90,15 @@
       return;
     }
     busy = true; refresh(); v.textContent = ""; o.style.display = "none";
+    var g0 = gen, stale = function () { return gen !== g0; };
     try {
-      var r = await global.AlmWebR.runR({ script: txt, packages: PKGS, onStatus: setStatus });
+      var r = await global.AlmWebR.runR({ script: txt, packages: PKGS, onStatus: function (t) { if (!stale()) setStatus(t); } });
+      if (stale()) {
+        // R ran on an analysis the page no longer shows: never report its verdict next to the current one.
+        v.textContent = "R finished on an earlier analysis: the inputs changed while R was running, so that result was discarded. Press Verify in R again.";
+        setStatus("");
+        return;
+      }
       if (!r.ok) {
         var missing = /Package not in pinned repository: (\S+)/.exec(r.error || "");
         v.textContent = missing

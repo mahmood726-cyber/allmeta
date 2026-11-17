@@ -150,3 +150,73 @@ def test_r_script_matches_page(browser, tmp_path, app):
     assert m and m.group(1) == m.group(2) and int(m.group(2)) > 0, r.stdout[-3000:]
     r, v = run_r(planted, tmp_path, app + "-planted")
     assert v and v[-1].startswith("MISMATCH "), "a wrong page value was not caught: " + (v[-1] if v else r.stdout[-2000:])
+
+
+# ---- PR #631 review findings -------------------------------------------------------------------------
+RACE_DATA = {
+    "poth": "0.9, A\n0.5, B\n0.1, C",
+    "multiplicative-ma": "0.5, 0.2\n0.7, 0.3\n0.2, 0.25",
+    "multiplicative-nma": "A, B, 0.3, 0.2\nA, C, 0.6, 0.2\nB, C, 0.2, 0.3\nA, B, 0.4, 0.25",
+    "nma-meta-reg": ("S1, A, B, -0.3, 0.1, 50\nS2, A, B, -0.2, 0.1, 60\nS3, A, C, -0.4, 0.1, 55\n"
+                     "S4, A, C, -0.5, 0.12, 65\nS5, B, C, -0.1, 0.1, 58\nS6, A, B, -0.35, 0.1, 52\nS7, A, C, -0.45, 0.1, 61"),
+}
+
+
+@pytest.mark.parametrize("app", list(CASES))
+@pytest.mark.parametrize("second", ["rerun", "invalid"])
+def test_webr_result_of_a_superseded_analysis_is_not_shown(browser, app, second):
+    """Finding 1 (MAJOR): R started on analysis A must not report its verdict next to analysis B (or next to
+    an input error) when it finishes after the user re-ran the page. WebR is mocked so the timing is exact."""
+    br, base = browser
+    pg = br.new_page()
+    try:
+        pg.goto(base + app + "/", wait_until="load", timeout=120000)
+        pg.click("#btn-run")
+        pg.evaluate("""() => { window.AlmWebR.runR = function () { return new Promise(r => { window.__resolve = r; }); }; }""")
+        pg.click("#btn-verify-r")
+        pg.wait_for_function("() => !!window.__resolve")
+        new = RACE_DATA[app] if second == "rerun" else "not, a, number"
+        pg.evaluate("""d => { const ta = [...document.querySelectorAll('textarea')].sort((a, b) => b.clientHeight - a.clientHeight)[0];
+            ta.value = d; ta.dispatchEvent(new Event('input', { bubbles: true })); }""", new)
+        pg.click("#btn-run")
+        pg.evaluate("""() => window.__resolve({ ok: true, stdout: ['output of analysis A', 'MATCH 7/7'].join(String.fromCharCode(10)), versions: { R: 'R x' } })""")
+        pg.wait_for_timeout(300)
+        verdict = pg.text_content("#rcheck-verdict")
+        out = pg.text_content("#rcheck-out")
+        assert "MATCH 7/7" not in verdict and "analysis A" not in out, (verdict, out)
+        assert "changed" in verdict, verdict   # the user is told why there is no verdict
+        if second == "rerun":
+            assert not pg.is_disabled("#btn-verify-r")
+    finally:
+        pg.close()
+
+
+EXP_DATA = {
+    "multiplicative-ma": ("-7.1, 0.3\n-6.9, 0.25\n-7.3, 0.4\n-6.8, 0.35\n-7.0, 0.3", [("#scale", "exp")], "metafor"),
+    # |log effect| > 13.1 is where the old 1e-9 * exp(|x|) became looser than the 3-dp display
+    "multiplicative-nma": ("A, B, -14.1, 0.3\nA, B, -13.9, 0.25\nA, C, -14.3, 0.4\nB, C, -0.2, 0.35\nA, C, -14.0, 0.3",
+                           [("#scale", "exp")], "netmeta"),
+}
+
+
+@pytest.mark.parametrize("app", list(EXP_DATA))
+def test_exponentiated_checks_are_not_looser_than_the_display(browser, tmp_path, app):
+    """Finding 2 (MAJOR): on the exp scale a ratio of ~0.001 is shown to 3 dp. A page value off by 9e-4
+    (0.001 shown as 0.002) must fail its row, whatever the log effect; and (finding 3) every displayed
+    exponentiated estimate and limit has its own row."""
+    br, base = browser
+    data, settings, pkg = EXP_DATA[app]
+    if not r_has(pkg):
+        pytest.skip(f"R package {pkg} not installed")
+    pg, script = page_script(br, base, app, data, settings)
+    pg.close()
+    rows = re.findall(r'chk\("(exp [^"]+)", ([-0-9.e+]+), ', script)
+    if app == "multiplicative-ma":
+        assert sorted(q for q, _ in rows) == sorted("exp %s %s" % (m, w) for m in ("FE", "PM", "UWLS")
+                                                    for w in ("estimate", "CI lower", "CI upper"))
+    r, v = run_r(script, tmp_path, app + "-exp")
+    assert v and re.match(r"^MATCH (\d+)/\1$", v[-1]), r.stdout[-3000:]
+    for q, val in rows:
+        planted = script.replace('chk("%s", %s, ' % (q, val), 'chk("%s", %r, ' % (q, float(val) + 9e-4), 1)
+        r, v = run_r(planted, tmp_path, app + "-exp-planted")
+        assert v and v[-1].startswith("MISMATCH "), f"{q} off by 9e-4 (a different 3-dp display) still gives {v}"
