@@ -37,12 +37,16 @@
     "## ---- comparison helpers ----",
     ".n <- 0L; .ok <- 0L; .skipped <- character(0)",
     "fmtv <- function(x) if (length(x) != 1 || is.na(x)) \"NA\" else sprintf(\"%.10g\", x)",
-    "check <- function(label, r, page) {",
-    "  # |R - page| <= 1e-9 * max(1, |page|): tighter than the 3 decimals shown",
+    "# Half a unit of what the page shows. The table's fmt(): toFixed(3), but toExponential(2) (3 significant",
+    "# digits) when |x| >= 1000 or 0 < |x| < 1e-3; the E-value widget: toFixed(3).",
+    "shown_half <- function(x) if (is.na(x) || x == 0 || (abs(x) < 1000 && abs(x) >= 1e-3)) 5e-4 else 0.5 * 10^(floor(log10(abs(x))) - 2)",
+    "check <- function(label, r, page, half = Inf) {",
+    "  # |R - page| <= min(half, 1e-9 * max(1, |page|)): never looser than half a unit of the digits shown",
+    "  # (a relative 1e-9 alone is looser for a tiny RD shown as 1.00e-07, or an E-value of 2e7 shown to 3 decimals)",
     "  if (length(r) != 1) r <- NA_real_",
     "  both_na <- is.na(r) && is.na(page)",
     "  d <- if (both_na) 0 else abs(r - page)",
-    "  ok <- both_na || (!is.na(d) && d <= 1e-9 * max(1, abs(page)))",
+    "  ok <- both_na || (!is.na(d) && d <= min(half, 1e-9 * max(1, abs(page))))",
     "  .n <<- .n + 1L; if (ok) .ok <<- .ok + 1L",
     "  cat(sprintf(\"%-46s R %-16s page %-16s |diff| %-8s %s\\n\", label, fmtv(r), fmtv(page),",
     "              if (both_na) \"-\" else sprintf(\"%.1e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
@@ -252,8 +256,8 @@
       L.push("  r <- with(inp, convert(type, est, se, p0, sd, kind, n1, n2))");
       L.push("  check(\"rows shown (same scales, same order; 1 = yes)\", as.numeric(identical(r$scale, page$scale)), 1)");
       L.push("  for (i in seq_len(min(nrow(r), nrow(page)))) if (r$scale[i] == page$scale[i]) {");
-      L.push("    check(paste(page$scale[i], \"point\"), r$point[i], page$point[i]); check(paste(page$scale[i], \"SE\"), r$se[i], page$se[i])");
-      L.push("    check(paste(page$scale[i], \"CI lower\"), r$lo[i], page$lo[i]); check(paste(page$scale[i], \"CI upper\"), r$hi[i], page$hi[i])");
+      L.push("    check(paste(page$scale[i], \"point\"), r$point[i], page$point[i], shown_half(page$point[i])); check(paste(page$scale[i], \"SE\"), r$se[i], page$se[i], shown_half(page$se[i]))");
+      L.push("    check(paste(page$scale[i], \"CI lower\"), r$lo[i], page$lo[i], shown_half(page$lo[i])); check(paste(page$scale[i], \"CI upper\"), r$hi[i], page$hi[i], shown_half(page$hi[i]))");
       L.push("  }");
       L.push("}");
     } else {
@@ -281,7 +285,7 @@
       L.push("    m <- q(do.call(f, a)); e <- m[2, 2:3]; e <- e[!is.na(e)]");
       L.push("    R <- c(e_point = m[2, 1], e_ci = if (length(e)) e[[1]] else NA, rr = m[1, 1])");
       L.push("  }");
-      L.push("  for (k in names(ev_page)) check(ev_lab[[k]], unname(R[[k]]), unname(ev_page[[k]]))");
+      L.push("  for (k in names(ev_page)) check(ev_lab[[k]], unname(R[[k]]), unname(ev_page[[k]]), 5e-4)   # the widget shows 3 decimals");
       L.push("})");
     }
     L.push("finish()");
@@ -326,10 +330,17 @@
       .then(function (r) { if (!r.ok) throw new Error("WebR package list unavailable (HTTP " + r.status + ")"); return r.json(); })
       .then(function (m) { return (m.packages || []).map(function (p) { return p.package; }); });
   }
+  // Identity of what the script was built from: run/render replace these objects on every new analysis.
+  function snapshot() {
+    return [typeof window.__escAnalysed === "function" ? window.__escAnalysed() : null, window.__almResultRows,
+      typeof window.__almLastEValue === "function" ? window.__almLastEValue() : null];
+  }
+  function sameSnapshot(a, b) { return a.length === b.length && a.every(function (x, i) { return x === b[i]; }); }
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   var busy = false;
   function verify() {
     if (busy) return;
-    var script;
+    var script, snap = snapshot();
     try { script = buildScript(); } catch (e) { setStatus(e.message); return; }
     busy = true; el("btn-verify-r").disabled = true;
     var out = el("rcheck-out"); out.hidden = true; out.textContent = ""; showVerdict(null);
@@ -347,6 +358,8 @@
         return W.runR({ script: script, packages: use, onStatus: setStatus });
       }).then(function (res) {
         if (!res.ok) throw new Error(res.error || "WebR failed");
+        // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+        if (!sameSnapshot(snap, snapshot())) { out.textContent = ""; showVerdict(null); setStatus(STALE); return; }
         out.hidden = false; out.textContent = res.stdout;
         showVerdict(verdictOf(res.stdout) || "MISMATCH (R printed no verdict line)");
         setStatus((res.versions && res.versions.R || "R") + " in WebR " + (res.versions && res.versions.webR || "") +

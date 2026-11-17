@@ -21,10 +21,12 @@
     "## page's displayed precision (3-4 decimals). A quantity the page shows as undefined (\"--\") matches",
     "## only an undefined R value of the same kind (NA/NaN with NA/NaN, Inf with the same signed Inf).",
     ".res <- data.frame(quantity = character(0), ok = logical(0), stringsAsFactors = FALSE)",
-    "chk <- function(q, r, page, tol = 1e-6) {",
+    "## half: half a unit of the digits the page shows for this quantity (default 5e-4 = 3 decimals); the cap",
+    "## is never looser than the display, also for values shown to 4 decimals or as exp(log value).",
+    "chk <- function(q, r, page, tol = 1e-6, half = 5e-4) {",
     "  r <- as.numeric(r); page <- as.numeric(page)",
     "  if (!is.finite(page) || !is.finite(r)) { ok <- (is.na(page) && is.na(r)) || identical(page, r); d <- NA_real_ }",
-    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), 5e-4) }",
+    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), half) }",
     "  cat(sprintf(\"%-36s R = %-18.12g page = %-18.12g |diff| = %-9s %s\\n\", q, r, page,",
     "              if (is.na(d)) \"-\" else sprintf(\"%.2e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
     "  .res[nrow(.res) + 1, ] <<- list(q, ok); invisible(ok) }",
@@ -33,7 +35,9 @@
     ""
   ].join("\n");
 
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   function attachRCheck(cfg) {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var mount = document.querySelector(cfg.mount);
     if (!mount) return;
     var box = document.createElement("div");
@@ -64,10 +68,14 @@
       var inp = current(); if (!inp) return;
       if (!window.AlmWebR || typeof window.AlmWebR.runR !== "function") { st.textContent = "WebR runner (shared/webr-runner.js) did not load; use Download R script."; return; }
       var btn = this; btn.disabled = true; out.hidden = false;
+      var my = ++verifyGen, snap = inp.page;   // the page's result object: replaced on every new analysis
       out.textContent = (cfg.webrNote ? cfg.webrNote(inp) + "\n" : "") + "Starting WebR...\n";
       var pk = cfg.packages(inp);
       var res = await window.AlmWebR.runR({ script: cfg.buildScript(inp), packages: pk, onStatus: function (s) { st.textContent = s; out.textContent += s + "\n"; } });
       btn.disabled = false;
+      // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+      var now = cfg.getInputs();
+      if (my !== verifyGen || !now || now.page !== snap) { st.textContent = STALE; out.textContent = STALE + "\n"; return; }
       if (!res.ok) { st.textContent = "R did not run: " + res.error; out.textContent += "R did not run: " + res.error + "\n"; return; }
       var v = res.versions || {};
       out.textContent += "---- R output (verbatim) ----\n" + res.stdout + "\n---- versions: " + Object.keys(v).map(function (k) { return k + " " + v[k]; }).join("; ") + "\n";
@@ -131,13 +139,17 @@
     L.push("");
     L.push(ORACLE_R);
     L.push("cat(\"robma R check:\", length(yi), \"studies; models H0FE H1FE H0RE H1RE\\n\")");
-    L.push("for (j in 1:4) chk(paste(\"log marginal lik.\", names(lml)[j]), lml[[j]], page$logml[j])");
+    L.push("## The page shows the marginal likelihoods as exp(log value) to 4 significant digits and each BF as");
+    L.push("## exp(log BF) to 2 decimals (4 significant digits from 1e21 up): half a displayed unit, on the log scale.");
+    L.push("half_sig4 <- function(L) { l10 <- L / log(10); 5e-4 / 10^(l10 - floor(l10)) }");
+    L.push("half_bf <- function(L) if (!is.finite(L)) 5e-4 else if (L >= log(1e21)) half_sig4(L) else 0.005 / exp(L)");
+    L.push("for (j in 1:4) chk(paste(\"log marginal lik.\", names(lml)[j]), lml[[j]], page$logml[j], half = half_sig4(page$logml[j]))");
     L.push("for (j in 1:4) chk(paste(\"posterior prob.\", names(lml)[j]), post[[j]], page$post[j])");
-    L.push("chk(\"log BF10 (effect)\", logBFe, page$logBFe)");
-    L.push("chk(\"log BF (heterogeneity)\", logBFh, page$logBFh)");
+    L.push("chk(\"log BF10 (effect)\", logBFe, page$logBFe, half = half_bf(page$logBFe))");
+    L.push("chk(\"log BF (heterogeneity)\", logBFh, page$logBFh, half = half_bf(page$logBFh))");
     L.push("chk(\"P(effect)\", post[[\"H1FE\"]] + post[[\"H1RE\"]], page$pEff)");
     L.push("chk(\"P(tau > 0)\", post[[\"H0RE\"]] + post[[\"H1RE\"]], page$pHet)");
-    L.push("chk(\"model-averaged effect\", post[[\"H1FE\"]] * mH1FE + post[[\"H1RE\"]] * mH1RE, page$muMA)");
+    L.push("chk(\"model-averaged effect\", post[[\"H1FE\"]] * mH1FE + post[[\"H1RE\"]] * mH1RE, page$muMA, half = 5e-5)   # shown to 4 decimals");
     L.push("cat(sprintf(\"BF10 = %.2f, BF(heterogeneity) = %.2f (as displayed: exp of the log BFs)\\n\", exp(logBFe), exp(logBFh)))");
     L.push("cat(\"R:\", R.version.string, \"\\n\")");
     L.push("finish()");

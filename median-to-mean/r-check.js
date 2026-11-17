@@ -17,7 +17,9 @@
 (function () {
   "use strict";
 
-  var TOL_NOTE = "|R - page| <= 1e-9 * max(1, |page|): tighter than the 3 decimals shown";
+  // A relative 1e-9 alone is LOOSER than the 3 decimals shown once |value| > 5e5 (a mean of 3e6 would pass an
+  // error of 0.002), so the tolerance is capped at half a unit of the displayed 3rd decimal.
+  var TOL_NOTE = "|R - page| <= min(5e-4, 1e-9 * max(1, |page|)): never looser than half a unit of the 3 decimals shown";
   // Packages the script can use; the in-page run passes to WebR only those in its pinned repository.
   var OPTIONAL_PACKAGES = ["metaBLUE"];
 
@@ -32,14 +34,15 @@
   // Comparison helpers, identical in every script this page writes.
   var R_HELPERS = [
     "## ---- comparison helpers ----",
-    ".n <- 0L; .ok <- 0L; .skipped <- character(0)",
+    ".n <- 0L; .ok <- 0L; .nest <- 0L; .skipped <- character(0)",
     "fmtv <- function(x) if (is.na(x)) \"NA\" else sprintf(\"%.10g\", x)",
-    "check <- function(label, r, page) {",
+    "check <- function(label, r, page, est = TRUE) {   # est = FALSE: a count or a refusal flag, not an estimate",
     "  # " + TOL_NOTE,
     "  both_na <- is.na(r) && is.na(page)",
     "  d <- if (both_na) 0 else abs(r - page)",
-    "  ok <- both_na || (!is.na(d) && d <= 1e-9 * max(1, abs(page)))",
+    "  ok <- both_na || (!is.na(d) && d <= min(5e-4, 1e-9 * max(1, abs(page))))",
     "  .n <<- .n + 1L; if (ok) .ok <<- .ok + 1L",
+    "  if (est && !is.na(r) && !is.na(page)) .nest <<- .nest + 1L   # an estimate actually compared",
     "  cat(sprintf(\"%-46s R %-16s page %-16s |diff| %-8s %s\\n\", label, fmtv(r), fmtv(page),",
     "              if (both_na) \"-\" else sprintf(\"%.1e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
     "}",
@@ -49,9 +52,10 @@
     "}",
     "finish <- function() {",
     "  extra <- if (length(.skipped)) sprintf(\" (%d more NOT CHECKED: see above)\", length(.skipped)) else \"\"",
-    "  if (.n == 0L) cat(\"MISMATCH (nothing could be checked)\\n\")",
-    "  else if (.ok == .n) cat(sprintf(\"MATCH %d/%d%s\\n\", .ok, .n, extra))",
-    "  else cat(sprintf(\"MISMATCH (%d of %d quantities agree)%s\\n\", .ok, .n, extra))",
+    "  if (.ok < .n) cat(sprintf(\"MISMATCH (%d of %d quantities agree)%s\\n\", .ok, .n, extra))",
+    "  # agreeing refusals, row counts and dashes are not a check of any number: never call that a MATCH",
+    "  else if (.nest == 0L) cat(sprintf(\"NOT CHECKED (no estimate was compared: the page shows none for these inputs)%s\\n\", extra))",
+    "  else cat(sprintf(\"MATCH %d/%d%s\\n\", .ok, .n, extra))",
     "}",
   ].join("\n");
 
@@ -99,14 +103,14 @@
     L.push("## ---- recompute and compare ----");
     L.push("cat(sprintf(\"R %s; scenario %s, n = %s\\n\", getRversion(), inp$scenario, fmtv(inp$n)))");
     L.push("valid_n <- is.finite(inp$n) && inp$n >= 2 && inp$n == round(inp$n)  # the page refuses any other n");
-    L.push("check(\"refuses the sample size (1 = yes)\", as.numeric(!valid_n), as.numeric(page_refused))");
+    L.push("check(\"refuses the sample size (1 = yes)\", as.numeric(!valid_n), as.numeric(page_refused), est = FALSE)");
     L.push("if (valid_n) with(inp, {");
     L.push("  w <- wan(scenario, n, a, q1, m, q3, b); lm <- luo_mean(scenario, n, a, q1, m, q3, b); ss <- shi_sd(scenario, n, a, q1, m, q3, b)");
     L.push("  r <- data.frame(source = c(\"Wan 2014\", \"Luo 2018 mean + Wan SD\", if (!is.null(ss)) \"Luo 2018 mean + Shi 2020 SD\"),");
     L.push("                  mean = c(w$mean, lm, if (!is.null(ss)) lm), sd = c(w$sd, w$sd, ss), stringsAsFactors = FALSE)");
-    L.push("  check(\"number of rows shown\", nrow(r), nrow(page))");
+    L.push("  check(\"number of rows shown\", nrow(r), nrow(page), est = FALSE)");
     L.push("  for (i in seq_len(min(nrow(r), nrow(page)))) {");
-    L.push("    if (r$source[i] != page$source[i]) { check(paste(\"row\", i, \"label matches\"), 0, 1); next }");
+    L.push("    if (r$source[i] != page$source[i]) { check(paste(\"row\", i, \"label matches\"), 0, 1, est = FALSE); next }");
     L.push("    check(paste(r$source[i], \"mean\"), r$mean[i], page$mean[i])");
     L.push("    check(paste(r$source[i], \"SD\"), r$sd[i], page$sd[i])");
     L.push("  }");
@@ -141,7 +145,7 @@
   function el(id) { return document.getElementById(id); }
   function setStatus(s) { var e = el("rcheck-status"); if (e) e.textContent = s; }
   function verdictOf(text) {
-    var lines = String(text).split(/\r?\n/).filter(function (l) { return /^(MATCH|MISMATCH)\b/.test(l); });
+    var lines = String(text).split(/\r?\n/).filter(function (l) { return /^(MATCH|MISMATCH|NOT CHECKED)\b/.test(l); });
     return lines.length ? lines[lines.length - 1] : null;
   }
   function showVerdict(v) {
@@ -175,10 +179,17 @@
       .then(function (r) { if (!r.ok) throw new Error("WebR package list unavailable (HTTP " + r.status + ")"); return r.json(); })
       .then(function (m) { return (m.packages || []).map(function (p) { return p.package; }); });
   }
+  // Identity of what the script was built from: run/render replace these objects on every new analysis.
+  function snapshot() {
+    return [typeof window.__almM2MInputs === "function" ? window.__almM2MInputs() : null,
+      typeof window.__almLastM2M === "function" ? window.__almLastM2M() : null];
+  }
+  function sameSnapshot(a, b) { return a.length === b.length && a.every(function (x, i) { return x === b[i]; }); }
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   var busy = false;
   function verify() {
     if (busy) return;
-    var script;
+    var script, snap = snapshot();
     try { script = buildScript(); } catch (e) { setStatus(e.message); return; }
     busy = true; el("btn-verify-r").disabled = true;
     var out = el("rcheck-out"); out.hidden = false; out.textContent = ""; showVerdict(null);
@@ -190,6 +201,8 @@
         return W.runR({ script: script, packages: use, onStatus: setStatus });
       }).then(function (res) {
         if (!res.ok) throw new Error(res.error || "WebR failed");
+        // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+        if (!sameSnapshot(snap, snapshot())) { out.textContent = ""; showVerdict(null); setStatus(STALE); return; }
         out.textContent = res.stdout;
         var v = verdictOf(res.stdout);
         showVerdict(v || "MISMATCH (R printed no verdict line)");

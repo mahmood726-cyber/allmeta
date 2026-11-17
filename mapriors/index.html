@@ -2691,8 +2691,12 @@ function exportRCode() {
   L.push('# Values this page computed (full precision) when the script was generated');
   L.push('page <- c(mu = ' + num(r.mu) + ', se_mu = ' + num(r.se_mu) + ', tau = ' + num(r.tau) + ', I2 = ' + num(r.I2) + ', map_se = ' + num(r.map_se) + ',');
   L.push('          map_lower = ' + num(lower) + ', map_upper = ' + num(upper) + ',' + (isBin ? ' p_hat = ' + num(r.p_hat) + ',' : '') + ' ess_map = ' + num(r.ess_map) + ', ess_robust = ' + num(r.ess_robust) + ')');
-  L.push('# Tolerance 1e-6 relative (absolute below 1): finer than every number the page displays');
-  L.push('tol <- 1e-6 * pmax(1, abs(page)); d <- abs(R - page); ok <- is.finite(d) & d <= tol');
+  // A relative 1e-6 alone is looser than the shown digits for large values (a mean of 3000 shown to 3 decimals
+  // would pass an error of 0.003), so each tolerance is capped at half a unit of what the page shows for it.
+  L.push('# Tolerance: 1e-6 relative (absolute below 1), capped at half a unit of the decimals the page shows for that');
+  L.push('# quantity (mean 3, tau and MAP SE 4, I2 1 (in %), prior mean as a probability 1 (in %), ESS 1); never looser than the display');
+  L.push('half <- c(mu = 5e-4, se_mu = Inf, tau = 5e-5, I2 = 5e-2, map_se = 5e-5, map_lower = Inf, map_upper = Inf, p_hat = 5e-4, ess_map = 5e-2, ess_robust = 5e-2)');
+  L.push('tol <- pmin(half[names(page)], 1e-6 * pmax(1, abs(page))); d <- abs(R - page); ok <- is.finite(d) & d <= tol');
   L.push('print(data.frame(page = page, R = R, abs_diff = d, match = ok), digits = 10)');
   L.push('cat(sprintf("metafor %s, %s\\n", packageVersion("metafor"), R.version.string))');
   L.push('if (all(ok)) cat(sprintf("MATCH %d/%d\\n", sum(ok), length(ok))) else cat(sprintf("MISMATCH %d/%d match; differ: %s\\n", sum(ok), length(ok), paste(names(page)[!ok], collapse = ", ")))');

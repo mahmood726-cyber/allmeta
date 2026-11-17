@@ -122,7 +122,11 @@ def test_refused_sample_size_is_checked_as_a_refusal(page, tmp_path):
     script = page.evaluate("window.__almM2MRScript()")
     assert "page_refused <- TRUE" in script
     lines = _run_r(script, tmp_path, "refused.R")
-    assert lines[-1].startswith("MATCH 1/1"), lines[-1]
+    # R must agree that the input is refused (that line is "ok") ...
+    assert any(l.startswith("refuses the sample size (1 = yes)") and l.rstrip().endswith("ok") for l in lines), lines
+    # ... but agreeing on a refusal compares no estimate, so the verdict is NOT CHECKED, never MATCH.
+    # (This assertion used to require "MATCH 1/1", i.e. it defended a MATCH computed from a refusal alone.)
+    assert lines[-1].startswith("NOT CHECKED"), lines[-1]
 
 
 def test_planted_wrong_page_value_gives_mismatch(page, tmp_path):

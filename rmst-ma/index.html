@@ -87,6 +87,9 @@
     }
 
     function run() {
+      // Clear first: if this run fails (e.g. the pooling throws), neither the R check nor the export may
+      // offer the previous analysis as if it were the current one.
+      _last = null; _rstate = null;
       var rows = parse(document.getElementById("f-data").value);
       var method = document.getElementById("f-method").value;
       var head = document.getElementById("headline"), body = document.getElementById("res-body");

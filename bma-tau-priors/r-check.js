@@ -21,10 +21,12 @@
     "## page's displayed precision (3-4 decimals). A quantity the page shows as undefined (\"--\") matches",
     "## only an undefined R value of the same kind (NA/NaN with NA/NaN, Inf with the same signed Inf).",
     ".res <- data.frame(quantity = character(0), ok = logical(0), stringsAsFactors = FALSE)",
-    "chk <- function(q, r, page, tol = 1e-6) {",
+    "## half: half a unit of the digits the page shows for this quantity (default 5e-4 = 3 decimals); the cap",
+    "## is never looser than the display, also for values shown to 4 decimals or as exp(log value).",
+    "chk <- function(q, r, page, tol = 1e-6, half = 5e-4) {",
     "  r <- as.numeric(r); page <- as.numeric(page)",
     "  if (!is.finite(page) || !is.finite(r)) { ok <- (is.na(page) && is.na(r)) || identical(page, r); d <- NA_real_ }",
-    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), 5e-4) }",
+    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), half) }",
     "  cat(sprintf(\"%-36s R = %-18.12g page = %-18.12g |diff| = %-9s %s\\n\", q, r, page,",
     "              if (is.na(d)) \"-\" else sprintf(\"%.2e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
     "  .res[nrow(.res) + 1, ] <<- list(q, ok); invisible(ok) }",
@@ -33,7 +35,9 @@
     ""
   ].join("\n");
 
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   function attachRCheck(cfg) {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var mount = document.querySelector(cfg.mount);
     if (!mount) return;
     var box = document.createElement("div");
@@ -64,10 +68,14 @@
       var inp = current(); if (!inp) return;
       if (!window.AlmWebR || typeof window.AlmWebR.runR !== "function") { st.textContent = "WebR runner (shared/webr-runner.js) did not load; use Download R script."; return; }
       var btn = this; btn.disabled = true; out.hidden = false;
+      var my = ++verifyGen, snap = inp.page;   // the page's result object: replaced on every new analysis
       out.textContent = (cfg.webrNote ? cfg.webrNote(inp) + "\n" : "") + "Starting WebR...\n";
       var pk = cfg.packages(inp);
       var res = await window.AlmWebR.runR({ script: cfg.buildScript(inp), packages: pk, onStatus: function (s) { st.textContent = s; out.textContent += s + "\n"; } });
       btn.disabled = false;
+      // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+      var now = cfg.getInputs();
+      if (my !== verifyGen || !now || now.page !== snap) { st.textContent = STALE; out.textContent = STALE + "\n"; return; }
       if (!res.ok) { st.textContent = "R did not run: " + res.error; out.textContent += "R did not run: " + res.error + "\n"; return; }
       var v = res.versions || {};
       out.textContent += "---- R output (verbatim) ----\n" + res.stdout + "\n---- versions: " + Object.keys(v).map(function (k) { return k + " " + v[k]; }).join("; ") + "\n";
@@ -159,13 +167,13 @@
     L.push("chk(\"models\", length(fits), page$n_models, 0)");
     L.push("for (j in seq_along(fits)) { stopifnot(fits[[j]]$name == page$name[j])");
     L.push("  chk(paste(fits[[j]]$name, \"weight\"), w[j], page$weight[j])");
-    L.push("  chk(paste(fits[[j]]$name, \"mu\"), fits[[j]]$mu, page$mu_m[j])");
-    L.push("  chk(paste(fits[[j]]$name, \"SE\"), fits[[j]]$sd, page$se_m[j])");
-    L.push("  chk(paste(fits[[j]]$name, \"tau^2 mode\"), fits[[j]]$mode2, page$mode2[j]) }");
-    L.push("chk(\"BMA mu\", mu_bma, page$mu)");
-    L.push("chk(\"BMA SE (post)\", se_bma, page$se)");
-    L.push("chk(\"95% CrI low (2.5% quantile)\", qroot(0.025), page$lo)");
-    L.push("chk(\"95% CrI hi (97.5% quantile)\", qroot(0.975), page$hi)");
+    L.push("  chk(paste(fits[[j]]$name, \"mu\"), fits[[j]]$mu, page$mu_m[j], half = 5e-5)   # mu, SE, tau^2 mode, CrI: shown to 4 decimals");
+    L.push("  chk(paste(fits[[j]]$name, \"SE\"), fits[[j]]$sd, page$se_m[j], half = 5e-5)");
+    L.push("  chk(paste(fits[[j]]$name, \"tau^2 mode\"), fits[[j]]$mode2, page$mode2[j], half = 5e-5) }");
+    L.push("chk(\"BMA mu\", mu_bma, page$mu, half = 5e-5)");
+    L.push("chk(\"BMA SE (post)\", se_bma, page$se, half = 5e-5)");
+    L.push("chk(\"95% CrI low (2.5% quantile)\", qroot(0.025), page$lo, half = 5e-5)");
+    L.push("chk(\"95% CrI hi (97.5% quantile)\", qroot(0.975), page$hi, half = 5e-5)");
     L.push("## Descriptive, not counted above: the per-prior posterior mean of mu from bayesmeta's own tau posterior");
     L.push("## (the P47 pack's reference construction), when bayesmeta is installed.");
     L.push("if (requireNamespace(\"bayesmeta\", quietly = TRUE)) {");

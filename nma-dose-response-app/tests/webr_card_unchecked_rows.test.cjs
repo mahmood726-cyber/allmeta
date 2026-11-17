@@ -17,7 +17,7 @@ function grab(name) {
   throw new Error('unbalanced ' + name);
 }
 const ctx = vm.createContext({ Math, isFinite, Number, String });
-vm.runInContext(['esc', 'fmtNum', 'buildComparisonTable', 'checkMatch'].map(grab).join('\n'), ctx);
+vm.runInContext(['esc', 'fmtNum', 'webrTol', 'buildComparisonTable', 'checkMatch'].map(grab).join('\n'), ctx);
 let failed = 0;
 const check = (n, ok, d) => { console.log((ok ? 'PASS ' : 'FAIL ') + n + (ok ? '' : '  [' + d + ']')); if (!ok) failed++; };
 const R = { effect: 0.5496, se: 0.1474, tau2: 0.0437, I2: 67.15, Q: 6.0884, Qp: 0.0476, ci_lb: 0.2608, ci_ub: 0.8384, k: 3 };

@@ -22,10 +22,12 @@
     "## page's displayed precision (3-4 decimals). A quantity the page shows as undefined (\"--\") matches",
     "## only an undefined R value of the same kind (NA/NaN with NA/NaN, Inf with the same signed Inf).",
     ".res <- data.frame(quantity = character(0), ok = logical(0), stringsAsFactors = FALSE)",
-    "chk <- function(q, r, page, tol = 1e-6) {",
+    "## half: half a unit of the digits the page shows for this quantity (default 5e-4 = 3 decimals); the cap",
+    "## is never looser than the display, also for values shown to 4 decimals or as exp(log value).",
+    "chk <- function(q, r, page, tol = 1e-6, half = 5e-4) {",
     "  r <- as.numeric(r); page <- as.numeric(page)",
     "  if (!is.finite(page) || !is.finite(r)) { ok <- (is.na(page) && is.na(r)) || identical(page, r); d <- NA_real_ }",
-    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), 5e-4) }",
+    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), half) }",
     "  cat(sprintf(\"%-36s R = %-18.12g page = %-18.12g |diff| = %-9s %s\\n\", q, r, page,",
     "              if (is.na(d)) \"-\" else sprintf(\"%.2e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
     "  .res[nrow(.res) + 1, ] <<- list(q, ok); invisible(ok) }",
@@ -34,7 +36,9 @@
     ""
   ].join("\n");
 
+  var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   function attachRCheck(cfg) {
+    var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var mount = document.querySelector(cfg.mount);
     if (!mount) return;
     var box = document.createElement("div");
@@ -65,10 +69,14 @@
       var inp = current(); if (!inp) return;
       if (!window.AlmWebR || typeof window.AlmWebR.runR !== "function") { st.textContent = "WebR runner (shared/webr-runner.js) did not load; use Download R script."; return; }
       var btn = this; btn.disabled = true; out.hidden = false;
+      var my = ++verifyGen, snap = inp.page;   // the page's result object: replaced on every new analysis
       out.textContent = (cfg.webrNote ? cfg.webrNote(inp) + "\n" : "") + "Starting WebR...\n";
       var pk = cfg.packages(inp);
       var res = await window.AlmWebR.runR({ script: cfg.buildScript(inp), packages: pk, onStatus: function (s) { st.textContent = s; out.textContent += s + "\n"; } });
       btn.disabled = false;
+      // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
+      var now = cfg.getInputs();
+      if (my !== verifyGen || !now || now.page !== snap) { st.textContent = STALE; out.textContent = STALE + "\n"; return; }
       if (!res.ok) { st.textContent = "R did not run: " + res.error; out.textContent += "R did not run: " + res.error + "\n"; return; }
       var v = res.versions || {};
       out.textContent += "---- R output (verbatim) ----\n" + res.stdout + "\n---- versions: " + Object.keys(v).map(function (k) { return k + " " + v[k]; }).join("; ") + "\n";
@@ -109,7 +117,7 @@
     L.push("z <- qnorm(0.975)");
     L.push("cat(\"bayesian-ma R check:\", k, \"studies; tau^2 strategy\", tau_method, \"\\n\")");
     L.push("chk(\"k\", k, page$k, 0)");
-    L.push("chk(\"tau^2 (plug-in)\", tau2, page$tau2)");
+    L.push("chk(\"tau^2 (plug-in)\", tau2, page$tau2, half = 5e-5)   # shown to 4 decimals");
     L.push("chk(\"posterior mean\", post_mu, page$mu)");
     L.push("chk(\"95% CrI lower\", post_mu - z * post_sd, page$lo)");
     L.push("chk(\"95% CrI upper\", post_mu + z * post_sd, page$hi)");

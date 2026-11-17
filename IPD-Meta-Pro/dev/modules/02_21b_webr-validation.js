@@ -81,6 +81,7 @@
       var overallTotalCount   = 0;
       var overallSkipCount    = 0;
       var overallROnlyCount   = 0;
+      var overallNotCheckedCount = 0;   // scenarios R ran but the page gave no value to compare: never a pass
       var allTierResults      = {};
       var lastMethod  = (typeof APP !== 'undefined' && APP && APP.config) ? (APP.config.reMethod  || 'REML') : 'REML';
       var lastK       = (typeof APP !== 'undefined' && APP && APP.results && APP.results.studies) ? APP.results.studies.length : null;
@@ -165,6 +166,10 @@
 
           // Run R code
           try {
+            // The JavaScript values of the SAME analysis the R code was just built from: read them now, before
+            // awaiting R. (They used to be read after R returned, so an analysis re-run while R was busy was
+            // compared with R's answer for the earlier one.)
+            var jsValues = sc.getJSValues ? sc.getJSValues() : null;
             var proxy  = await webRInstance.evalR(rCode);
             var rRaw;
             try {
@@ -173,9 +178,6 @@
               if (proxy && typeof proxy.destroy === 'function') { try { await proxy.destroy(); } catch(_){} }
             }
             var rValues = extractRValues(rRaw);
-
-            // Get JS values
-            var jsValues = sc.getJSValues ? sc.getJSValues() : null;
 
             // Compare
             var rows = compareResults(
@@ -188,10 +190,11 @@
             // Count pass/R-only per scenario
             var comparedRows = rows.filter(function(r) { return r.pass !== null; });
             var rOnlyRows    = rows.filter(function(r) { return r.pass === null; });
-            var scenarioPass = comparedRows.length === 0 || comparedRows.every(function(r) { return r.pass === true; });
+            // Nothing compared (the page's JavaScript gave no value, e.g. it refused the scenario) is NOT CHECKED, not a pass.
+            var scenarioPass = comparedRows.length > 0 && comparedRows.every(function(r) { return r.pass === true; });
 
-            overallTotalCount++;
-            if (scenarioPass) overallPassCount++;
+            if (comparedRows.length === 0) overallNotCheckedCount++;
+            else { overallTotalCount++; if (scenarioPass) overallPassCount++; }
             overallROnlyCount += rOnlyRows.length;
 
             tierResults.push({
@@ -216,8 +219,9 @@
 
       // (e) Render all results
       var overallText = overallTotalCount === 0
-        ? 'No scenarios ran'
+        ? (overallNotCheckedCount > 0 ? 'Nothing compared: ' + overallNotCheckedCount + ' NOT CHECKED' : 'No scenarios ran')
         : (overallPassCount + '/' + overallTotalCount + ' PASS' +
+           (overallNotCheckedCount > 0 ? ', ' + overallNotCheckedCount + ' NOT CHECKED' : '') +
            (overallSkipCount  > 0 ? ', ' + overallSkipCount  + ' skipped'  : '') +
            (overallROnlyCount > 0 ? ' (' + (overallTotalCount - overallROnlyCount) + ' verified, ' + overallROnlyCount + ' R-only)' : ''));
 
@@ -1917,6 +1921,7 @@
     var passCount    = 0;
     var totalCount   = 0;
     var skippedCount = 0;
+    var notCheckedCount = 0;   // R ran, the page gave nothing to compare: listed, never counted as a pass
     var bodyHtml     = '';
 
     scenarioResults.forEach(function(sr) {
@@ -1960,13 +1965,14 @@
       var rows       = sr.rows || [];
       var comparedRows = rows.filter(function(r) { return r.pass !== null; });
       var rOnlyRows    = rows.filter(function(r) { return r.pass === null; });
-      var scenarioPass = comparedRows.length === 0 ? true : comparedRows.every(function(r) { return r.pass === true; });
+      var notChecked   = comparedRows.length === 0;   // every row R-only: nothing was compared
+      var scenarioPass = !notChecked && comparedRows.every(function(r) { return r.pass === true; });
 
-      totalCount++;
-      if (scenarioPass) passCount++;
+      if (notChecked) notCheckedCount++;
+      else { totalCount++; if (scenarioPass) passCount++; }
 
-      var statusCls  = scenarioPass ? 'webr-tier-pass' : 'webr-tier-fail';
-      var statusText = scenarioPass ? 'PASS' : 'FAIL';
+      var statusCls  = notChecked ? 'webr-tier-skip' : scenarioPass ? 'webr-tier-pass' : 'webr-tier-fail';
+      var statusText = notChecked ? 'NOT CHECKED' : scenarioPass ? 'PASS' : 'FAIL';
       var rOnlyNote  = rOnlyRows.length > 0
         ? ' <span style="font-size:11px;color:var(--text-secondary);">+' + rOnlyRows.length + ' R-only</span>'
         : '';
@@ -2032,9 +2038,11 @@
 
     // Tier header
     var tierPass = (totalCount > 0) ? (passCount === totalCount) : true;
-    var tierBadgeCls  = skippedCount === scenarioResults.length ? 'webr-tier-skip' :
+    var noneCompared  = totalCount === 0 && notCheckedCount > 0;
+    var tierBadgeCls  = (skippedCount === scenarioResults.length || noneCompared) ? 'webr-tier-skip' :
                         tierPass ? 'webr-tier-pass' : 'webr-tier-fail';
     var tierBadgeTxt  = skippedCount === scenarioResults.length ? 'SKIPPED' :
+                        noneCompared ? 'NOT CHECKED' :
                         tierPass ? (passCount + '/' + totalCount + ' PASS') :
                                    (passCount + '/' + totalCount + ' FAIL');
 
@@ -2043,6 +2051,7 @@
         escapeHtml(tierLabel),
         ' <span class="webr-tier-badge ' + tierBadgeCls + '">' + escapeHtml(tierBadgeTxt) + '</span>',
         skippedCount > 0 ? ' <span style="font-size:11px;color:var(--text-secondary);">' + skippedCount + ' skipped</span>' : '',
+        notCheckedCount > 0 ? ' <span style="font-size:11px;color:var(--text-secondary);">' + notCheckedCount + ' NOT CHECKED (nothing to compare)</span>' : '',
       '</div>',
       bodyHtml
     ].join('');
