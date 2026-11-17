@@ -77,6 +77,8 @@
     function bfWord(bf) { return bf > 100 ? "extreme" : bf > 10 ? "strong" : bf > 3 ? "moderate" : bf > 1 ? "weak" : "favours null"; }
     var _last = null, _yi = [], _sei = [];
     window._almLastRoBMA = function () { return _last; };
+    // What the R check (r-check.js) recomputes: the effects and SEs analysed and the displayed result.
+    window.__almRCheckInputs = function () { return _last ? { yi: _yi.slice(), sei: _sei.slice(), page: _last } : null; };
 
     function parse(text) {
       _yi = []; _sei = [];
@@ -115,6 +117,8 @@
     run();
   })();
 </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

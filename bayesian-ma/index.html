@@ -158,7 +158,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Open the WebR Validator on these studies: it re-fits a FREQUENTIST metafor pool (Paule-Mandel), which checks only the plug-in τ² shown here, not the posterior. To check the posterior in R use &quot;Verify this analysis in R (WebR)&quot; below." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R (frequentist pool)</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <button type="button" id="btn-reset">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
@@ -388,6 +388,8 @@
     }
 
     var _lastPost = null;
+    var _rcheck = null;
+    window.__almRCheckInputs = function () { return _rcheck; };
     window._almLastBayes = function () { return _lastPost; };
     function render() {
       const state = readState();
@@ -405,6 +407,11 @@
       if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
         const post = posterior(parsed.studies, mu0, tau0, t.tau2);
         _lastPost = { mu: post.mu, lo: post.lo, hi: post.hi, k: parsed.studies.length };
+        // What the R check (r-check.js) recomputes: the inputs analysed and every displayed number.
+        _rcheck = { studies: parsed.studies.map(x => ({ label: x.label, est: x.est, se: x.se })),
+          mu0, tau0, tauMethod: state.tauMethod, tau2Manual: parseFloat(state.tau2Manual),
+          threshold: parseFloat(state.threshold), rope: parseFloat(state.rope),
+          page: { k: parsed.studies.length, tau2: t.tau2, mu: post.mu, lo: post.lo, hi: post.hi, pLess: null, pInside: null } };
         parts.push(statCard("Posterior mean", fmt(post.mu, 3)));
         parts.push(statCard("95% CrI (τ²-conditional)", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
         if (parsed.studies.length < 10 && t.tau2 > 0) {
@@ -413,16 +420,18 @@
         const threshold = parseFloat(state.threshold);
         if (isFinite(threshold)) {
           const pLess = normCDF((threshold - post.mu) / post.sd);
+          _rcheck.page.pLess = pLess;
           parts.push(statCard("P(θ < " + fmt(threshold, 2) + ")", fmt(pLess, 3)));
         }
         const rope = parseFloat(state.rope);
         if (isFinite(rope) && rope > 0) {
           const pInside = normCDF((rope - post.mu) / post.sd) - normCDF((-rope - post.mu) / post.sd);
+          _rcheck.page.pInside = pInside;
           parts.push(statCard("P(|θ| < " + fmt(rope, 2) + ")", fmt(pInside, 3)));
         }
         svg = buildSvg(state, parsed.studies, post, mu0, tau0);
       } else {
-        _lastPost = null;
+        _lastPost = null; _rcheck = null;
         svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies and a valid prior (τ₀ > 0).</text></svg>";
       }
 
@@ -600,6 +609,8 @@
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
 <script>
