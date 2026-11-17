@@ -52,6 +52,12 @@
             border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
     .note strong { color: var(--warn); }
     #interp { font-size: 0.92rem; margin: 0.4rem 0 0.8rem; }
+    .rcheck-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .rcheck-hint { color: var(--muted); font-size: 0.8rem; margin: 0.4rem 0; }
+    .rcheck-verdict { font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
+    .rcheck-verdict.ok { background: var(--accent-soft); border-left-color: var(--accent); }
+    .rcheck-out { background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem;
+                  font-size: 0.74rem; max-height: 24rem; overflow: auto; white-space: pre; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
@@ -108,6 +114,15 @@
       <p id="interp"></p>
       <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
       <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale"></svg>
+      <h2 style="margin-top:1rem">Check these numbers in R</h2>
+      <p class="rcheck-hint">One R script, written from the inputs above, recomputes every number in the table with the R package EValue and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+      <div class="rcheck-row">
+        <button type="button" id="btn-verify-r" class="primary">Verify in R</button>
+        <button type="button" id="btn-download-r" class="primary">Download R script</button>
+      </div>
+      <p id="rcheck-status" class="rcheck-hint" role="status" aria-live="polite"></p>
+      <p id="rcheck-verdict" class="note rcheck-verdict" hidden></p>
+      <pre id="rcheck-out" class="rcheck-out" hidden></pre>
     </section>
   </main>
   <footer>
@@ -286,6 +301,7 @@
     });
     run();
   </script>
+<script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

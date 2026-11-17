@@ -49,6 +49,12 @@
             border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
     .note strong { color: var(--warn); }
     svg { width: 100%; height: auto; display: block; }
+    .rcheck-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .rcheck-hint { color: var(--muted); font-size: 0.8rem; margin: 0.4rem 0; }
+    .rcheck-verdict { font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
+    .rcheck-verdict.ok { background: var(--accent-soft); border-left-color: var(--accent); }
+    .rcheck-out { background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem;
+                  font-size: 0.74rem; max-height: 24rem; overflow: auto; white-space: pre; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
@@ -100,6 +106,15 @@
       </table>
       <h2 style="margin-top:1rem">Estimate comparison</h2>
       <svg id="plot" viewBox="0 0 600 220" role="img" aria-label="Forest-style plot comparing mean estimates from Wan/Luo/Shi"></svg>
+      <h2 style="margin-top:1rem">Check these numbers in R</h2>
+      <p class="rcheck-hint">One R script, written from the inputs behind the table above, recomputes every mean and SD shown (published Wan/Luo/Shi formulas in base R; metaBLUE when installed) and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+      <div class="rcheck-row">
+        <button type="button" id="btn-verify-r" class="primary">Verify in R</button>
+        <button type="button" id="btn-download-r" class="primary">Download R script</button>
+      </div>
+      <p id="rcheck-status" class="rcheck-hint" role="status" aria-live="polite"></p>
+      <p id="rcheck-verdict" class="note rcheck-verdict" hidden></p>
+      <pre id="rcheck-out" class="rcheck-out" hidden></pre>
     </section>
   </main>
   <footer>
@@ -205,6 +220,8 @@
       const m = parseFloat(document.getElementById("m").value);
       const q3 = parseFloat(document.getElementById("q3").value);
       const b = parseFloat(document.getElementById("b").value);
+      // The inputs behind the table now shown; r-check.js writes its R script from these.
+      _lastM2MInputs = { scenario: scenario, n: n, a: a, q1: q1, m: m, q3: q3, b: b };
 
       // Validation
       const warnSlot = document.getElementById("warn-slot");
@@ -243,8 +260,9 @@
       _lastM2M = { _schema: "median-to-mean-results-v1", scenario: scenario, n: n,
         estimates: rows.map(r => ({ source: r.source, mean: r.mean, sd: r.sd })) };
     }
-    var _lastM2M = null;
+    var _lastM2M = null, _lastM2MInputs = null;
     window.__almLastM2M = function () { return _lastM2M; };
+    window.__almM2MInputs = function () { return _lastM2MInputs; };
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
@@ -331,6 +349,7 @@
     document.getElementById("scenario").addEventListener("change", runCalc);
     runCalc();
   </script>
+<script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
