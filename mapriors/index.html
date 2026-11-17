@@ -1107,7 +1107,8 @@ function deriveMAPBinary(w, confLevel) {
     ess_map, ess_robust,
     // Meta
     k, Q, I2: Q > (k-1) ? Math.max(0, (Q-(k-1))/Q*100) : 0,
-    w, confLevel, yi, vi
+    w, confLevel, yi, vi,
+    studies: studies.map(s => ({ ...s }))   // the inputs of THIS result (the table can be edited afterwards)
   };
 }
 
@@ -1176,7 +1177,8 @@ function deriveMAPContinuous(w, confLevel) {
     robust_lower: robust_mu - z*robust_se, robust_upper: robust_mu + z*robust_se,
     ess_map, ess_robust,
     k, Q, I2: Q>(k-1) ? Math.max(0,(Q-(k-1))/Q*100) : 0,
-    w, confLevel, yi, vi
+    w, confLevel, yi, vi,
+    studies: studies.map(s => ({ ...s }))   // the inputs of THIS result (the table can be edited afterwards)
   };
 }
 
@@ -2621,6 +2623,9 @@ function exportRCode() {
   if (!mapResult) { alert('Please derive the MAP prior first.'); return; }
   const r = mapResult;
   const isBin = r.type === 'binary';
+  // The studies this result was derived from, not the editable table (an edit made after Derive is not analysed yet).
+  const S = r.studies;
+  if (!Array.isArray(S) || S.length !== r.k) { alert('Derive the MAP prior again before exporting: the analysed studies are not available.'); return; }
   const num = v => (Number.isFinite(v) ? String(Object.is(v, -0) ? 0 : v) : 'NA'); // shortest round-trip form
   const vec = a => 'c(' + a.map(num).join(', ') + ')';
   const L = [];
@@ -2635,14 +2640,14 @@ function exportRCode() {
   L.push('suppressPackageStartupMessages(library(metafor))');
   L.push('');
   if (isBin) {
-    L.push('r <- ' + vec(studies.map(s => s.events)) + '   # events');
-    L.push('n <- ' + vec(studies.map(s => s.n)) + '   # patients');
+    L.push('r <- ' + vec(S.map(s => s.events)) + '   # events');
+    L.push('n <- ' + vec(S.map(s => s.n)) + '   # patients');
     L.push('e <- ifelse(r == 0, 0.5, ifelse(r == n, n - 0.5, r)); p <- e / n');
     L.push('yi <- log(p / (1 - p)); vi <- 1 / (n * p * (1 - p))');
   } else {
-    L.push('m  <- ' + vec(studies.map(s => s.mean)) + '   # means');
-    L.push('sd <- ' + vec(studies.map(s => s.sd)) + '   # SDs');
-    L.push('n  <- ' + vec(studies.map(s => s.n)) + '   # patients');
+    L.push('m  <- ' + vec(S.map(s => s.mean)) + '   # means');
+    L.push('sd <- ' + vec(S.map(s => s.sd)) + '   # SDs');
+    L.push('n  <- ' + vec(S.map(s => s.n)) + '   # patients');
     L.push('yi <- m; vi <- sd^2 / n');
   }
   L.push('w <- ' + num(r.w) + '   # informative (MAP) weight = 1 - vague weight');
@@ -2689,8 +2694,8 @@ function exportRCode() {
   L.push('# Tolerance 1e-6 relative (absolute below 1): finer than every number the page displays');
   L.push('tol <- 1e-6 * pmax(1, abs(page)); d <- abs(R - page); ok <- is.finite(d) & d <= tol');
   L.push('print(data.frame(page = page, R = R, abs_diff = d, match = ok), digits = 10)');
-  L.push('cat(sprintf("metafor %s, %s\n", packageVersion("metafor"), R.version.string))');
-  L.push('if (all(ok)) cat(sprintf("MATCH %d/%d\n", sum(ok), length(ok))) else cat(sprintf("MISMATCH %d/%d match; differ: %s\n", sum(ok), length(ok), paste(names(page)[!ok], collapse = ", ")))');
+  L.push('cat(sprintf("metafor %s, %s\\n", packageVersion("metafor"), R.version.string))');
+  L.push('if (all(ok)) cat(sprintf("MATCH %d/%d\\n", sum(ok), length(ok))) else cat(sprintf("MISMATCH %d/%d match; differ: %s\\n", sum(ok), length(ok), paste(names(page)[!ok], collapse = ", ")))');
   const code = L.join('\n') + '\n';
   const blob = new Blob([code], { type: 'text/plain;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

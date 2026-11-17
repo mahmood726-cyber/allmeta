@@ -110,4 +110,24 @@ test('Q6 an edit to the study table after Derive invalidates the result, so Expo
     assert.ok(app.alerts.some(m => /derive the MAP prior first/i.test(m)), type + ': no "derive first" message: ' + app.alerts.join(' | '));
   }
 });
+test('Q7 studies changed after the result WITHOUT sync(): the script still carries the ANALYSED studies and prints MATCH', () => {
+  // Defense in depth (agy review of #632): Q6 covers every UI edit (sync() clears the result). This covers any other
+  // path that changes `studies` while a result is shown: the export must use the result's own snapshot of its inputs.
+  const app = load({ endpointType: 'binary', engineMode: 'quick', wSlider: '20', confLevel: '0.95', tauCommSlider: '50' });
+  app.sandbox.__data = CROHNS.map(s => Object.assign({}, s)); app.run('studies = __data; runMAP();');
+  app.run('studies[0].events = 40; studies[1].n = 300; studies.push({ trial: "new", events: 5, n: 50 });');
+  app.run('exportRCode()');
+  assert.strictEqual(app.blobs.length, 1, 'no script exported');
+  const code = app.blobs[0];
+  assert.ok(code.includes('c(15, 22, 18, 25, 12, 30, 20, 28)') && code.includes('c(80, 120, 95, 150, 70, 175, 110, 160)'), 'script does not carry the analysed counts');
+  checkRuns({ code }, 'studies changed after the result (binary)');
+  // replaced by continuous records while the binary result is shown: still the analysed binary studies, no NA
+  const app2 = load({ endpointType: 'binary', engineMode: 'quick', wSlider: '20', confLevel: '0.95', tauCommSlider: '50' });
+  app2.sandbox.__data = CROHNS.map(s => Object.assign({}, s)); app2.run('studies = __data; runMAP();');
+  app2.sandbox.__c = PASTED; app2.run('studies = __c;');
+  app2.run('exportRCode()');
+  const countLines = app2.blobs[0].split(/\r?\n/).filter(l => /^(r|n) <- /.test(l));
+  assert.ok(countLines.length === 2 && !/\bNA\b/.test(countLines.join(' ')), 'NA or no counts in exported script: ' + countLines.join(' | '));
+  checkRuns({ code: app2.blobs[0] }, 'studies replaced after the result');
+});
 console.log(`${passed}/${total} PASS`); process.exitCode = passed === total ? 0 : 1;
