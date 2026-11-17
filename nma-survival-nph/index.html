@@ -113,6 +113,7 @@
       }
 
       function run() {
+        window.__almNphLast = null;   // a failed fit must not leave the previous analysis for r-verify.js
         var rows = parse($("data").value);
         var note = $("note"); note.hidden = true; note.textContent = "";
         if (rows.length < 2) { note.hidden = false; note.textContent = "Need at least two arm rows."; $("out").textContent = ""; return; }
@@ -123,6 +124,7 @@
         if ($("cc-to") && $("cc-to").value === "only0") fitOpts.ccTo = "only0";
         try { res = window.AlmNmaSurvivalNPH.fit(rows, fitOpts); }
         catch (e) { note.hidden = false; note.textContent = "Error: " + e.message; $("out").textContent = ""; return; }
+        window.__almNphLast = { rows: rows, opts: fitOpts, res: res };   // read by r-verify.js (R script / WebR check)
         var out = $("out"); out.textContent = "";
         res.intervalIds.forEach(function (iv) {
           var block = res.intervals[iv];
@@ -158,6 +160,8 @@
       run();
     })();
   </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-verify.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

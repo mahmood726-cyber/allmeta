@@ -281,6 +281,7 @@
       el.innerHTML = "<strong>Reconstruction tier " + t.tier + " — " + t.label + ":</strong> " + t.verdict;
     }
     function run() {
+      window.__almKmLast = null;
       const eff = effectiveCurve();
       const curve = eff.curve.map(p => ({ t: p.t, s: p.s }));
       const risk = parseRisk(document.getElementById("risk").value);
@@ -289,10 +290,16 @@
       if (curve.length < 2 || risk.length < 1) return;
       const { ipd, stages } = reconstruct(curve, risk, Number.isFinite(te) ? te : NaN);
       IPD = ipd;
+      // read by r-verify.js (R script / WebR check): the parsed inputs this reconstruction used, and its outputs
+      window.__almKmLast = { source: eff.src, digitized: parseCurve(document.getElementById("curve").value),
+        anchors: window.AlmKmFusion ? AlmKmFusion.parsePoints(document.getElementById("anchors").value) : [],
+        risk: risk, totEvents: Number.isFinite(te) ? te : null, ipd: ipd.slice(),
+        n: ipd.length, events: ipd.filter(r => r.event === 1).length, median: null };
       document.getElementById("c-n").textContent = ipd.length;
       document.getElementById("c-ev").textContent = ipd.filter(r => r.event === 1).length;
       const km = kmFromIPD(ipd);
       document.getElementById("c-median").textContent = fmt(medianSurvival(km), 1);
+      window.__almKmLast.median = medianSurvival(km);
       drawKM(curve, km);
       const tierInfo = window.AlmKmFusion ? AlmKmFusion.tier({ curveSource: eff.src, hasAtRisk: risk.length >= 2 }) : null;
       _lastKM = { _schema: "km-reconstructor-results-v1", n_reconstructed: ipd.length,
@@ -394,6 +401,8 @@
     });
     run();
   </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-verify.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
