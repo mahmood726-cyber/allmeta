@@ -222,7 +222,8 @@ class RCodeExporter {
 
         // Create data frame
         code += `# Study data\n`;
-        code += this._generateDataFrame(data);
+        // netmeta() reads treat1/treat2 for every contrast, so the data frame must carry them.
+        code += this._generateDataFrame(data, { treatments: pkg === 'netmeta' });
         code += `\n`;
 
         // Run analysis
@@ -360,9 +361,17 @@ class RCodeExporter {
 `;
     }
 
-    _generateDataFrame(data) {
+    _generateDataFrame(data, { treatments = false } = {}) {
         let code = `study_data <- data.frame(\n`;
         code += `  study = c(${data.map(d => `"${d.study}"`).join(', ')}),\n`;
+        if (treatments) {
+            const missing = data.filter(d => d.treat1 == null || d.treat2 == null || d.treat1 === '' || d.treat2 === '');
+            if (missing.length) {
+                throw new Error(`netmeta export needs treat1 and treat2 on every row (${missing.length} of ${data.length} rows lack them)`);
+            }
+            code += `  treat1 = c(${data.map(d => `"${d.treat1}"`).join(', ')}),\n`;
+            code += `  treat2 = c(${data.map(d => `"${d.treat2}"`).join(', ')}),\n`;
+        }
         code += `  yi = c(${data.map(d => d.effect).join(', ')}),\n`;
         code += `  vi = c(${data.map(d => d.variance).join(', ')})\n`;
         code += `)\n`;
