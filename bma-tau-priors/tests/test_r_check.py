@@ -1,17 +1,22 @@
-"""R user path (lane pa8, 2026-11-17): "Download R script" + in-page "Verify in R (WebR)".
+"""R user path (lane pa8, 2026-11-17; rewritten after review of PR #630): the page's own R check.
 
-Requirement: the page offers an R script, generated from the inputs it analysed (not the example,
-not the saved bus), that recomputes every number it displays and prints an honest "MATCH n/n" (or
-"MISMATCH m/n") -- and the in-page WebR button runs that same script with shared/webr-runner.js.
-Before this lane the page had no such path (live check, 17 Nov 2026).
+Requirement: the page offers "Download R script", generated from the inputs it analysed (not the
+example, not the saved bus), that recomputes every number it DISPLAYS and prints an honest
+"MATCH n/n" or "MISMATCH m/n" -- and "Verify this analysis in R (WebR)" runs that same script in
+the browser with the unchanged shared/webr-runner.js. Before this lane the page had no such path.
 
-The browser + R tests need: ALM_PLAYWRIGHT (path to playwright-core), ALM_CHROME (a Chrome/Chromium
-executable), node on PATH and Rscript on PATH (the root conftest.py adds R's bin dir). Without them
-they SKIP, which is not a pass.
+These tests use the real buttons in headless Chrome, read the numbers from the DOM, run the
+downloaded file in Rscript, and check that R's values round to exactly what the page shows. They
+also check that a wrong page value is reported as MISMATCH, that the button refuses when there is
+no result, and that the WebR button prints MATCH.
+
+They need ALM_PLAYWRIGHT (path to playwright-core), ALM_CHROME (a Chrome executable), node and
+Rscript on PATH (the root conftest.py adds R's bin dir). Without them they SKIP -- not a pass.
 """
 import functools
 import http.server
 import json
+import math
 import os
 import random
 import re
@@ -31,28 +36,8 @@ SRC = (APP_DIR / "index.html").read_text(encoding="utf-8")
 RCHECK = (APP_DIR / "r-check.js").read_text(encoding="utf-8")
 DRIVER = HERE / "r_check_driver.cjs"
 
-# ---- per-app configuration (filled in for this page) ----
-HOOK = "window.__almBMARScript()"
-DEFAULT_ACTIONS = [{"waitFor": "window.__almRCheckInputs && window.__almRCheckInputs()"}]
-PASTED_ACTIONS = [{"fill": "#src", "value": "Aronson1948, -0.8893, 0.325585\nFerguson1949, -1.5854, 0.194581\nRosenthal1960, -1.3481, 0.415368\nHart1977, -1.4416, 0.020010\nFrimodt-Moller1973, -0.2175, 0.051210\nStein1953, -0.7861, 0.006906\nVandiviere1973, -1.6209, 0.223017"}, {"click": "#btn-run"}, {"waitFor": "window.__almRCheckInputs() && window.__almRCheckInputs().rows.length===7"}]
-PASTED_TOKENS = ['"Ferguson1949"', '-1.5854', '0.194581']     # strings the generated script must contain after the paste
 
-
-def test_page_loads_the_unchanged_runner_and_the_app_local_check():
-    assert '<script src="../shared/webr-runner.js"></script>' in SRC
-    assert '<script src="r-check.js"></script>' in SRC
-    assert "window.__almRCheckInputs = function" in SRC
-    assert 'id="btn-r-script"' in RCHECK and 'id="btn-r-webr"' in RCHECK
-    assert "AlmWebR.runR" in RCHECK
-
-
-def test_verdict_is_computed_not_hard_coded():
-    # The MATCH line is printed by R from the per-quantity comparisons, never as a literal pass.
-    assert 'sprintf(\\"MATCH %d/%d' in RCHECK
-    assert not re.search(r'cat\(\\"MATCH', RCHECK)
-    assert "tol = 1e-6" in RCHECK
-
-
+# ---------------------------------------------------------------- harness
 def _need(cond, why):
     if not cond:
         pytest.skip(why)
@@ -70,65 +55,189 @@ def server():
         except OSError:
             continue
     assert httpd is not None, "no free port in 18000-18999"
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
     yield "http://127.0.0.1:%d/%s/" % (httpd.server_address[1], APP)
     httpd.shutdown()
 
 
-def _script_for(url, actions, tmp_path, name):
+def drive(url, actions, webr=False, refuse=False, dom=None):
     _need(shutil.which("node"), "node not on PATH")
     _need(os.environ.get("ALM_PLAYWRIGHT") and os.environ.get("ALM_CHROME"), "ALM_PLAYWRIGHT / ALM_CHROME not set")
-    r = subprocess.run(["node", str(DRIVER), url, json.dumps(actions), "window.__almRCheckInputs() && " + HOOK],
-                       capture_output=True, text=True, encoding="utf-8", timeout=900)
+    r = subprocess.run(["node", str(DRIVER), url, json.dumps(actions), dom or DOM_EXPR,
+                        json.dumps({"webr": webr, "refuse": refuse})],
+                       capture_output=True, text=True, encoding="utf-8", timeout=1500)
     assert r.returncode == 0, r.stderr
-    out = json.loads(r.stdout)
-    assert out["script"], "the page produced no R script"
-    p = tmp_path / (name + ".R")
-    p.write_text(out["script"], encoding="utf-8")
-    return p, out["script"]
+    return json.loads(r.stdout)
 
 
-def _run_r(path):
+def run_r(script, tmp_path, name):
     rs = shutil.which("Rscript")
     _need(rs, "Rscript not on PATH")
-    r = subprocess.run([rs, "--vanilla", str(path)], capture_output=True, text=True, encoding="utf-8", timeout=900)
+    p = tmp_path / (name + ".R")
+    p.write_text(script, encoding="utf-8")
+    r = subprocess.run([rs, "--vanilla", str(p)], capture_output=True, text=True, encoding="utf-8", timeout=900)
     return r.returncode, r.stdout + r.stderr
 
 
-def _assert_match(rc, out):
+LINE = re.compile(r"^(.+?)\s+R = (\S+)\s+page = (\S+)\s+\|diff\| = \S+\s+(ok|DIFFERS)$", re.M)
+_SPECIAL = {"NA": float("nan"), "NaN": float("nan"), "Inf": math.inf, "-Inf": -math.inf}
+
+
+def r_values(out):
+    """{quantity: R value} from the script's per-quantity lines."""
+    return {m.group(1).strip(): _SPECIAL[m.group(2)] if m.group(2) in _SPECIAL else float(m.group(2))
+            for m in LINE.finditer(out)}
+
+
+def assert_match(rc, out):
     assert rc == 0, out
     m = re.search(r"^MATCH (\d+)/(\d+)$", out, re.M)
     assert m and m.group(1) == m.group(2) and int(m.group(1)) > 0, out
     assert "MISMATCH" not in out and "DIFFERS" not in out, out
+    assert len(LINE.findall(out)) == int(m.group(1)), out
+    return int(m.group(1))
 
 
-def test_default_example_script_runs_in_R_and_matches(server, tmp_path):
-    p, _ = _script_for(server, DEFAULT_ACTIONS, tmp_path, "default")
-    _assert_match(*_run_r(p))
+def fmt(x, d):
+    """JS Number.prototype.toFixed for the values these pages show ("—" when not finite)."""
+    if x is None or not math.isfinite(x):
+        return "—"
+    return "%.*f" % (d, x)
 
 
-def test_pasted_data_reaches_the_script_and_matches(server, tmp_path):
-    p, code = _script_for(server, PASTED_ACTIONS, tmp_path, "pasted")
+def check_dom_against_r(dom, R):
+    bad, n = DOM_CHECK(dom, R)
+    assert not bad, bad
+    assert n >= MIN_DOM_CHECKS, (n, dom)
+    return n
+
+
+# ---------------------------------------------------------------- per-app configuration
+PASTED = ("Aronson1948, -0.8893, 0.325585\nFergu\"son\\1949, -1.5854, 0.194581\nRosenthal1960, -1.3481, 0.415368\n"
+          "Hart1977, -1.4416, 0.020010\nFrimodt-Moller1973, -0.2175, 0.051210\nStein1953, -0.7861, 0.006906\n"
+          "Vandiviere1973, -1.6209, 0.223017")
+WAIT = {"waitFor": "window.__almRCheckInputs && window.__almRCheckInputs()"}
+DEFAULT_ACTIONS = [WAIT]
+PASTED_ACTIONS = [WAIT, {"fill": "#src", "value": PASTED}, {"click": "#btn-run"},
+                  {"waitFor": "window.__almRCheckInputs() && window.__almRCheckInputs().rows.length === 7"}]
+PASTED_TOKENS = ['"Fergu\\"son\\\\1949"', "-1.5854", "0.194581"]
+REFUSE_ACTIONS = [WAIT, {"fill": "#src", "value": ""}, {"click": "#btn-run"}, {"wait": 500}]
+DOM_EXPR = ("({ cards: [...document.querySelectorAll('#summary-card .card')].filter(c => c.querySelector('.k')).map(c => [c.querySelector('.k').textContent, c.querySelector('.v').textContent]),"
+            " rows: [...document.querySelectorAll('#per-model tr')].map(tr => [...tr.cells].map(c => c.textContent.trim())) })")
+MIN_DOM_CHECKS = 30
+CARDS = {"μ̂ (BMA)": ("BMA mu", 4), "SE (post)": ("BMA SE (post)", 4), "95 % CrI low": ("95% CrI low (2.5% quantile)", 4),
+         "95 % CrI hi": ("95% CrI hi (97.5% quantile)", 4), "k (studies)": ("k (studies)", 0), "Models": ("models", 0)}
+
+
+def DOM_CHECK(dom, R):
+    """Averaged-posterior cards and the per-prior table (weight 3 dp, mu/SE/tau^2 mode 4 dp) vs R."""
+    bad, n = [], 0
+    for k, v in dom["cards"]:
+        if k in CARDS:
+            q, d = CARDS[k]
+            exp = str(int(R[q])) if d == 0 else fmt(R[q], d)
+            n += 1
+            if v != exp:
+                bad.append((k, v, exp))
+    for row in dom["rows"]:
+        name = row[0]
+        for got, q, d in ((row[1], " weight", 3), (row[2], " mu", 4), (row[3], " SE", 4), (row[4], " tau^2 mode", 4)):
+            exp = fmt(R[name + q], d)
+            n += 1
+            if got != exp:
+                bad.append((name + q, got, exp))
+    return bad, n
+
+
+EDIT_WITHOUT_RUN = [WAIT, {"fill": "#src", "value": "X, 1.5, 0.01\nY, 1.6, 0.01\nZ, 1.7, 0.01"}, {"wait": 500}]
+BIG_TAU = [WAIT, {"fill": "#src", "value": "Study 1, -2, 4\nStudy 2, -30, 4\nStudy 3, -60, 4"}, {"click": "#btn-run"},
+           {"waitFor": "window.__almRCheckInputs() && window.__almRCheckInputs().rows.length === 3"}]
+
+
+def test_validator_handoff_and_script_use_the_analysed_rows_not_unrun_edits(server):
+    # Codex finding, reproduced before the fix: after editing the textarea WITHOUT pressing Run BMA,
+    # "Verify in R" handed the validator X, Y, Z while the page still showed the 5-study result.
+    res = drive(server, EDIT_WITHOUT_RUN, dom="JSON.stringify({ v: window.__almValidatorStudies(), a: window.__almRCheckInputs().rows })")
+    got = json.loads(res["dom"])
+    assert [s["label"] for s in got["v"]] == [r["label"] for r in got["a"]] and "X" not in [s["label"] for s in got["v"]], got
+    assert res["downloaded"] and '"X"' not in res["script"] and '"Trial 1"' in res["script"]
+
+
+def test_tau2_mode_above_100_is_found_as_the_page_finds_it(server, tmp_path):
+    # Review of PR #630, reproduced: invGamma tau^2 mode 394.567 on the page, R's search stopped at
+    # 100 (MISMATCH 29/30). The page widens its search when the maximum is at an end; R must too.
+    res = drive(server, BIG_TAU)
+    rc, out = run_r(res["script"], tmp_path, "bigtau")
+    assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(out))
+    assert r_values(out)["invGamma(0.1, 0.1) tau^2 mode"] > 100
+
+
+
+# ---------------------------------------------------------------- tests
+def test_page_loads_the_unchanged_runner_and_the_app_local_check():
+    assert '<script src="../shared/webr-runner.js"></script>' in SRC
+    assert '<script src="r-check.js"></script>' in SRC
+    assert "window.__almRCheckInputs = function" in SRC
+
+
+def test_default_example_download_button_runs_in_R_and_agrees_with_the_display(server, tmp_path):
+    res = drive(server, DEFAULT_ACTIONS)
+    assert res["downloaded"], res["status"]
+    rc, out = run_r(res["script"], tmp_path, "default")
+    assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(out))
+
+
+def test_pasted_data_reaches_the_downloaded_script_and_agrees_with_the_display(server, tmp_path):
+    res = drive(server, PASTED_ACTIONS)
+    assert res["downloaded"], res["status"]
     for tok in PASTED_TOKENS:
-        assert tok in code, tok
-    _assert_match(*_run_r(p))
+        assert tok in res["script"], tok
+    rc, out = run_r(res["script"], tmp_path, "pasted")
+    assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(out))
 
 
-EDIT_WITHOUT_RUN = [{"waitFor": "window.__almRCheckInputs && window.__almRCheckInputs()"}, {"fill": "#src", "value": "X, 1.5, 0.01\nY, 1.6, 0.01\nZ, 1.7, 0.01"}, {"wait": 500}]
+def test_a_wrong_page_value_is_reported_as_MISMATCH(server, tmp_path):
+    # The verdict is computed by R from the comparisons: change one page value in the downloaded
+    # script and the same script must say MISMATCH and mark exactly that quantity DIFFERS.
+    res = drive(server, DEFAULT_ACTIONS)
+    m = re.search(r"^(page <- list\(\w+ = (?:c\()?)(-?[0-9][0-9.e+-]*)", res["script"], re.M)
+    assert m, res["script"][:2000]
+    bad = res["script"][:m.start(2)] + repr(float(m.group(2)) + 0.01) + res["script"][m.end(2):]
+    rc, out = run_r(bad, tmp_path, "perturbed")
+    assert rc == 0, out
+    assert re.search(r"^MISMATCH (\d+)/(\d+) agree$", out, re.M), out
+    assert out.count("DIFFERS") == 1, out
 
 
-def test_validator_handoff_sends_the_analysed_rows_not_unrun_edits(server):
-    # Codex finding (2026-11-17), reproduced by execution before the fix: after the user edits the
-    # textarea WITHOUT re-running, "Verify in R" handed the validator the edited rows while the page
-    # still displayed the earlier run's result. The hand-off must be the analysed snapshot.
-    _need(shutil.which("node"), "node not on PATH")
-    _need(os.environ.get("ALM_PLAYWRIGHT") and os.environ.get("ALM_CHROME"), "ALM_PLAYWRIGHT / ALM_CHROME not set")
-    hook = "JSON.stringify({v: window.__almValidatorStudies(), a: window.__almRCheckInputs()})"
-    r = subprocess.run(["node", str(DRIVER), server, json.dumps(EDIT_WITHOUT_RUN), hook],
-                       capture_output=True, text=True, encoding="utf-8", timeout=900)
-    assert r.returncode == 0, r.stderr
-    got = json.loads(json.loads(r.stdout)["script"])
-    analysed = got["a"]["rows"]
-    assert [s["label"] for s in got["v"]] == [x["label"] for x in analysed], got["v"]
-    assert "X" not in [s["label"] for s in got["v"]]
+def test_buttons_refuse_when_the_page_shows_no_result(server):
+    res = drive(server, REFUSE_ACTIONS, refuse=True)
+    assert not res["downloaded"], "a script was downloaded for an input the page does not analyse"
+    assert res["status"].startswith("Nothing to check"), res["status"]
+
+
+def test_webr_button_runs_the_same_check_in_the_browser(server, tmp_path):
+    res = drive(server, DEFAULT_ACTIONS, webr=True)
+    m = re.search(r"^MATCH (\d+)/(\d+)$", res["webr"] or "", re.M)
+    assert res["status"].startswith("R says: MATCH"), (res["status"], res["webr"])
+    assert m and m.group(1) == m.group(2), res["webr"]
+    rc, out = run_r(res["script"], tmp_path, "webr-default")
+    assert int(m.group(1)) == assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(res["webr"]))
+
+
+def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_display(tmp_path):
+    # Review of PR #630: chk() counted NaN vs Inf and -Inf vs Inf as agreeing, and its relative tolerance
+    # was looser than 3 decimals once |page| > 1000. The helpers shipped in r-check.js are run here.
+    helpers = re.search(r"var R_HELPERS = \[(.*?)\]\.join", RCHECK, re.S).group(1)
+    rsrc = "\n".join(json.loads("[" + helpers.rstrip().rstrip(",") + "]"))
+    cases = ("chk('nan-vs-inf', NaN, Inf); chk('minf-vs-inf', -Inf, Inf); chk('big', 2000.0015, 2000);"
+             "chk('na-vs-nan', NA, NaN); chk('inf-vs-inf', Inf, Inf); chk('close', 2000.0001, 2000); finish()")
+    rc, out = run_r(rsrc + "\n" + cases + "\n", tmp_path, "chk")
+    assert rc == 0, out
+    verdict = {m.group(1).strip(): m.group(4) for m in LINE.finditer(out)}
+    assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
+                       "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
+    assert "MISMATCH 3/6 agree" in out, out
