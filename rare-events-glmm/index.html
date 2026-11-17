@@ -96,6 +96,7 @@ Trial 8, 1, 210, 3, 215</textarea>
         <thead><tr><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">Method</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">OR</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">95% CI</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">τ²</th></tr></thead>
         <tbody></tbody>
       </table>
+      <div id="rcheck-mount"></div>
     </section>
   
       <div id="alm-flow-mount" aria-live="polite"></div>
@@ -161,7 +162,10 @@ Trial 8, 1, 210, 3, 215</textarea>
       return { OR: Math.exp(mu), OR_lo: Math.exp(mu - Z * se), OR_hi: Math.exp(mu + Z * se), tau2: tau2 };
     }
 
+    var _rstate = null; // inputs + displayed numbers for the R check (r-check.js)
+    window.__almRareRState = function () { return _rstate; };
     function run() {
+      _rstate = null;
       window.__almLastRareEventsGLMM = null;
       document.querySelector("#compare tbody").innerHTML = "";
       var rows = parse(document.getElementById("src").value);
@@ -172,7 +176,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       }
       var modelEl = document.getElementById("f-model");
       var model = modelEl ? modelEl.value : "UM.FS";
-      if (model === "UM.RS") { renderUMRS(rows); return; }
+      if (model === "UM.RS") { renderUMRS(rows); _rstate = { model: model, rows: rows, page: null }; return; }
       var glmm = model === "CM.EL"
         ? AlmRareEventsGLMM.fitConditionalExact(rows)
         : model === "CM.AL"
@@ -198,6 +202,9 @@ Trial 8, 1, 210, 3, 215</textarea>
         '<tr><td>IV pool + 0.5 CC</td><td>' + fmt(iv.OR, 3) + '</td><td>' + fmt(iv.OR_lo, 3) + ', ' + fmt(iv.OR_hi, 3) + '</td><td>' + fmt(iv.tau2, 4) + '</td></tr>';
 
       window.__almLastRareEventsGLMM = function () { return { glmm: glmm, iv: iv }; };
+      _rstate = { model: model, rows: rows, page: { OR: glmm.OR, OR_lo: glmm.OR_lo, OR_hi: glmm.OR_hi, theta: glmm.theta, tau2: glmm.tau2, k: glmm.k,
+        zero: rows.filter(function (r) { return r.events_T === 0 || r.events_C === 0; }).length,
+        iv: { OR: iv.OR, OR_lo: iv.OR_lo, OR_hi: iv.OR_hi, tau2: iv.tau2 } } };
     }
 
     // UM.RS (random study intercepts) is fit by metafor via glmer's Laplace
@@ -251,6 +258,11 @@ Trial 8, 1, 210, 3, 215</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
+<script>
+  if (window.AlmRareGlmmRCheck) AlmRareGlmmRCheck.attach({ mount: "#rcheck-mount", filename: "rare-events-glmm-r-check.R", packages: ["metafor", "lme4"], getState: function () { return window.__almRareRState(); } });
+</script>
 
 <script>
 (function () {

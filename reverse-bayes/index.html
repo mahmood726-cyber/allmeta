@@ -101,6 +101,14 @@
       </table>
       <div class="note" id="note" hidden></div>
     </section>
+    <section class="panel" id="rcheck-panel" aria-label="Check in R">
+      <h2>Check in R</h2>
+      <p class="hint">Both controls use the inputs of the analysis shown above. The R script recomputes every displayed quantity from the published closed forms (Matthews 2018; Held 2019) in base R, prints each next to the page's value with an honest MATCH/MISMATCH line, and also cross-checks with ReplicationSuccess when it is installed. <em>Verify in R</em> runs the same script in this browser with WebR (ReplicationSuccess is not available there).</p>
+      <button type="button" id="btn-rscript">Download R script</button>
+      <button type="button" id="btn-rverify">Verify in R (WebR)</button>
+      <p id="rcheck-status" class="hint" aria-live="polite"></p>
+      <pre id="rcheck-out" style="white-space:pre-wrap;font-size:0.75rem;overflow-x:auto"></pre>
+    </section>
   </main>
   <footer>
     <p><strong>Method.</strong> Sceptical prior N(0, τ<sub>s</sub>²) with τ<sub>s</sub>² = z<sub>α</sub>²s⁴/(θ̂² − z<sub>α</sub>²s²), defined when |θ̂| &gt; z<sub>α</sub>s (Matthews R, <em>R Soc Open Sci</em> 2018;5:171047). Intrinsic-credibility limit |z| ≥ √2·z<sub>α</sub> (two-sided p ≈ 0.0056 at α=0.05; Held L, <em>R Soc Open Sci</em> 2019;6:181534). Normal approximation on the analysis scale; all closed-form, fully offline. Engine: <code>shared/reverse-bayes.js</code> (node/pytest-verified).</p>
@@ -130,6 +138,8 @@
         }
         var r = window.AlmReverseBayes.analyze(theta, s, { alpha: alpha });
         if (r.error) return refuse(r.error);
+        // Inputs and result of the analysis now on screen, for the R check (rcheck.js).
+        window._almLastRevBayes = { scale: scale, est: est, lo: lo, hi: hi, alpha: alpha, theta: theta, s: s, r: r };
 
         $("tbl").hidden = false;
         $("rz").textContent = fmt(r.z, 3) + "  (p = " + r.pObs.toPrecision(3) + ")";
@@ -160,6 +170,7 @@
 
       // Every refusal clears the previous analysis: no stale statement or table stays on screen.
       function refuse(html) {
+        window._almLastRevBayes = null;
         setVerdict("warn", html);
         $("tbl").hidden = true; $("statement").textContent = "";
       }
@@ -174,5 +185,7 @@
       run();
     })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
 </body>
 </html>
