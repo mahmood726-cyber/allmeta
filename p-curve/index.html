@@ -138,6 +138,16 @@
       <h2 style="margin-top:0.5rem">p-curve distribution (significant p only)</h2>
       <svg id="plot" viewBox="0 0 600 250" role="img" aria-label="Observed and expected p-curve distribution"></svg>
     </section>
+    <section class="panel" id="rcheck-panel">
+      <h2>Check in R</h2>
+      <p class="hint">Both controls use the inputs of the analysis shown above. The R script recomputes every displayed quantity (base-R p-curve formulas; puniform 0.2.8 for p-uniform) and prints each next to the page's value with an honest MATCH/MISMATCH line. <em>Verify in R</em> runs the same script in this browser with WebR; puniform is not available in WebR, so there the five p-uniform quantities are reported as not checked.</p>
+      <div class="actions">
+        <button type="button" id="btn-rscript">Download R script</button>
+        <button type="button" id="btn-rverify">Verify in R (WebR)</button>
+      </div>
+      <p id="rcheck-status" class="hint" aria-live="polite"></p>
+      <pre id="rcheck-out" style="white-space:pre-wrap;font-size:0.75rem;overflow-x:auto"></pre>
+    </section>
   </main>
   <footer>
     <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. Simonsohn U, Simmons JP, Nelson LD. Better p-curves. <em>J Exp Psychol Gen</em> 2015;144:1146-1152. <strong>Methods:</strong> inputs are two-sided <em>p</em>-values; 0&nbsp;&lt;&nbsp;<em>p</em>&nbsp;&lt;&nbsp;.05 are used. Right skew is tested by <abbr data-gloss="Fisher">Fisher's method</abbr> on pp&nbsp;=&nbsp;<em>p</em>/.05 (the 2014 paper) and by <abbr data-gloss="Stouffer">Stouffer's method</abbr> <code>Z = &Sigma;&Phi;&#8315;&sup1;(pp)/&radic;k</code> on pp&nbsp;=&nbsp;20<em>p</em> (full) and 40<em>p</em> (half, <em>p</em>&lt;.025), as in the p-curve app 4.x. Flatness is the 33%-power test of the app 4.x: the non-centrality giving 1/3 two-sided power at &alpha;=.05 (normal for <em>z</em>; non-central <em>t</em> at the common df), pp33 conditional on <em>p</em>&lt;.05 (full) or <em>p</em>&lt;.025 (half), combined by Stouffer; a small flatness <em>p</em> means the curve is <em>flatter</em> than 33% power. pp-values are bounded to [2.2&times;10&#8315;&sup1;&#8310;, 1&minus;2.2&times;10&#8315;&sup1;&#8310;] as in the app 4.x. Binomial tests and the power estimate of the app 4.x are not computed. <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309 &mdash; computed as puniform 0.2.8 <code>puniform(yi = z, vi = 1, side = "right", method = "P")</code> with z = &Phi;&#8315;&sup1;(1 &minus; <em>p</em>/2) (estimate, Irwin-Hall 95% CI, test of no effect; &delta; in z-units). Normal, <em>t</em> and non-central <em>t</em> distributions are ports of the R nmath algorithms. (A legacy binomial pp&le;0.5 screen is retained in the exported JSON only, for schema back-compat, and is not shown.)
@@ -841,5 +851,7 @@
   });
 })();
 </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="rcheck.js"></script>
 </body>
 </html>
