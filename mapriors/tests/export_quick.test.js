@@ -93,4 +93,21 @@ test('Q5 a wrong page value is reported as MISMATCH (the check can fail)', () =>
   const r = runR(bad);
   assert.ok(/^MISMATCH/m.test(r.stdout) && !/^MATCH \d+\/\d+/m.test(r.stdout), 'planted wrong ESS not reported as MISMATCH:\n' + r.stdout.slice(-800));
 });
+test('Q6 an edit to the study table after Derive invalidates the result, so Export cannot pair new data with old results', () => {
+  // agy review of #632 (MAJOR) asked whether exportRCode can pair edited-but-unrun `studies` with the stale mapResult.
+  // On the page every edit reaches `studies` only through sync() (table input, add/remove row, Clear All, CSV/JSON
+  // import, endpoint change), and sync() sets mapResult = null and hides the results, so Export refuses until Derive
+  // is pressed again (confirmed in real Chrome, 17 Nov 2026: edit a cell, Export -> "Please derive the MAP prior first.").
+  // This test keeps that invariant: if sync() ever stops clearing the result, the stale pairing becomes reachable.
+  for (const [type, data] of [['binary', CROHNS], ['continuous', PASTED]]) {
+    const app = load({ endpointType: type, engineMode: 'quick', wSlider: '20', confLevel: '0.95', tauCommSlider: '50' });
+    app.sandbox.__data = data.map(s => Object.assign({}, s)); app.run('studies = __data; runMAP();');
+    assert.ok(app.run('!!mapResult'), 'precondition: derived');
+    app.run('sync()');   // what every table edit calls
+    assert.strictEqual(app.run('mapResult'), null, type + ': sync() after an edit did not clear the displayed result');
+    app.run('exportRCode()');
+    assert.strictEqual(app.blobs.length, 0, type + ': a script was exported for a result that no longer matches the table');
+    assert.ok(app.alerts.some(m => /derive the MAP prior first/i.test(m)), type + ': no "derive first" message: ' + app.alerts.join(' | '));
+  }
+});
 console.log(`${passed}/${total} PASS`); process.exitCode = passed === total ? 0 : 1;
