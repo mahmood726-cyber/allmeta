@@ -178,3 +178,16 @@ def test_treatment_label_cannot_break_out_of_an_r_comment(pg):
     txt = pg.evaluate("""() => { const s = window.__almNphLast; s.rows[0].treatment = 'Aa' + String.fromCharCode(10) + 'cat("PWN")';
                                  return AlmNphRVerify.buildScript(); }""")
     assert not any(line.lstrip().startswith('cat("PWN")') for line in txt.splitlines()), txt[:1500]
+
+
+def test_nothing_estimated_is_not_checked_never_match(pg, tmp_path):
+    # Requirement: MATCH means at least one estimate was computed on both sides and agreed. A disconnected
+    # network gives no estimate on the page, and netmeta refuses it too; agreement on that refusal alone
+    # is not a check, so the verdict must be NOT CHECKED, never MATCH.
+    pg.fill("#data", "T9, A, 1, 3, 100\nT9, B, 1, 4, 100\nT8, C, 1, 3, 100\nT8, D, 1, 5, 100")
+    pg.select_option("#model", "fe")
+    p, txt = download(pg, tmp_path, "disconnected.R")
+    assert '"T8"' in txt
+    last, full = run_r(p)
+    assert last.startswith("NOT CHECKED: no estimate"), full
+    assert "MATCH" not in last, full

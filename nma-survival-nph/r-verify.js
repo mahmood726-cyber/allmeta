@@ -10,7 +10,7 @@
  * treatment, tau^2 per interval under random effects, and the inverse-variance pooled log-HR and
  * SE) from the arm-level rows, with netmeta (common effect, DerSimonian-Laird) or metafor::rma.mv
  * (REML / ML with the full multi-arm sampling covariance, rho = 0.5 — the model the page fits),
- * prints each value next to the page's, and ends with an honest MATCH n/n or MISMATCH line.
+ * prints each value next to the page's, and ends with an honest verdict line: MATCH n/n, MISMATCH, or NOT CHECKED (nothing estimated).
  */
 (function () {
   "use strict";
@@ -22,13 +22,15 @@
 
   var COMPARE_R = [
     "## ---- comparison (tolerance 1e-6 relative to max(1,|page|): tighter than the page's 4-decimal display) ----",
-    ".q <- character(0); .p <- numeric(0); .r <- numeric(0)",
-    ".add <- function(q, page, r) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_) }",
+    ".q <- character(0); .p <- numeric(0); .r <- numeric(0); .e <- logical(0)",
+    "# est = FALSE marks a flag or count (fitted?, refused?, rows differing): agreement on it alone is not a check",
+    ".add <- function(q, page, r, est = TRUE) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_); .e <<- c(.e, est) }",
     "COMPARE_HERE",
     ".d <- abs(.p - .r)",
     ".ok <- (!is.na(.d) & .d <= 1e-6 * pmax(1, abs(.p))) | (is.na(.p) & is.na(.r))",
     "for (i in seq_along(.q)) cat(sprintf(\"%-34s page=%15.10f  R=%15.10f  |diff|=%9.2e  %s\\n\", .q[i], .p[i], .r[i], .d[i], if (.ok[i]) \"ok\" else \"DIFFERENT\"))",
-    "cat(sprintf(\"%s %d/%d\\n\", if (length(.q) > 0 && all(.ok)) \"MATCH\" else \"MISMATCH\", sum(.ok), length(.q)))"
+    ".nEst <- sum(.e & !is.na(.p) & !is.na(.r))   # estimates computed on BOTH sides and compared",
+    "cat(if (length(.q) > 0 && !all(.ok)) sprintf(\"MISMATCH %d/%d\\n\", sum(.ok), length(.q)) else if (.nEst == 0) \"NOT CHECKED: no estimate (no interval could be estimated, e.g. a disconnected network; netmeta also refuses)\\n\" else sprintf(\"MATCH %d/%d\\n\", sum(.ok), length(.q)))"
   ].join("\n");
 
   function buildScript() {
@@ -137,18 +139,18 @@
   var R_COMPARE_BODY = [
     "for (iv in names(page)) {",
     "  pg <- page[[iv]]; r <- R[[iv]]",
-    "  .add(paste0(\"interval \", iv, \" fitted (1=yes)\"), as.numeric(!is.null(pg)), as.numeric(!is.null(r)))",
+    "  .add(paste0(\"interval \", iv, \" fitted (1=yes)\"), as.numeric(!is.null(pg)), as.numeric(!is.null(r)), est = FALSE)",
     "  if (is.null(pg) || is.null(r)) next",
     "  for (k in seq_along(pg$trt)) { t <- pg$trt[k]; m <- match(t, r$trt)",
     "    .add(paste0(\"iv\", iv, \" \", t, \" vs \", pg$ref, \" logHR\"), pg$logHR[k], if (is.na(m)) NA_real_ else r$logHR[m])",
     "    .add(paste0(\"iv\", iv, \" \", t, \" vs \", pg$ref, \" SE\"), pg$se[k], if (is.na(m)) NA_real_ else r$se[m]) }",
-    "  if (length(setdiff(r$trt, pg$trt))) .add(paste0(\"iv\", iv, \" treatments only in R\"), 0, length(setdiff(r$trt, pg$trt)))",
+    "  if (length(setdiff(r$trt, pg$trt))) .add(paste0(\"iv\", iv, \" treatments only in R\"), 0, length(setdiff(r$trt, pg$trt)), est = FALSE)",
     "  if (model == \"re\") .add(paste0(\"iv\", iv, \" tau2 (\", method, \")\"), pg$tau2, r$tau2)",
     "}",
     "for (k in seq_along(pagePooled$trt)) { t <- pagePooled$trt[k]",
     "  .add(paste0(\"pooled \", t, \" logHR\"), pagePooled$logHR[k], if (is.na(sw[t])) NA_real_ else swy[t] / sw[t])",
     "  .add(paste0(\"pooled \", t, \" SE\"), pagePooled$se[k], if (is.na(sw[t])) NA_real_ else sqrt(1 / sw[t])) }",
-    "if (length(setdiff(names(sw), pagePooled$trt))) .add(\"pooled treatments only in R\", 0, length(setdiff(names(sw), pagePooled$trt)))",
+    "if (length(setdiff(names(sw), pagePooled$trt))) .add(\"pooled treatments only in R\", 0, length(setdiff(names(sw), pagePooled$trt)), est = FALSE)",
     "cat(R.version.string, \"| netmeta\", as.character(packageVersion(\"netmeta\")), \"| metafor\", as.character(packageVersion(\"metafor\")), \"\\n\")"
   ].join("\n");
 
@@ -187,7 +189,7 @@
         out.textContent = r.stdout; out.hidden = false;
         var lines = r.stdout.trim().split(/\r?\n/), last = lines[lines.length - 1] || "";
         var ver = Object.keys(r.versions).map(function (k) { return k + " " + r.versions[k]; }).join("; ");
-        status.textContent = (/^(MATCH|MISMATCH)\b/.test(last) ? last : "No MATCH/MISMATCH line in R output") + "  —  " + ver;
+        status.textContent = (/^(MATCH|MISMATCH|NOT CHECKED)\b/.test(last) ? last : "No MATCH/MISMATCH/NOT CHECKED line in R output") + "  —  " + ver;
       } catch (e) { status.textContent = "WebR error: " + (e.message || e); }
       finally { btn.disabled = false; }
     });

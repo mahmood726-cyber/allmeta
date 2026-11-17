@@ -3,7 +3,7 @@
  * "Download R script" and "Verify in R (WebR)" run ONE script, generated from the trials the page
  * has just analysed (the page re-validates first, so script and display agree). It recomputes every
  * displayed number from those trials and prints each next to the page's value, ending in an honest
- * MATCH n/n or MISMATCH line. WebR runs it through the unchanged ../shared/webr-runner.js.
+ * verdict line: MATCH n/n, MISMATCH, or NOT CHECKED (nothing estimated). WebR runs it through the unchanged ../shared/webr-runner.js.
  *   slope, intercept, Q, df, I^2 : metafor::rma(method = "FE")   (the page's metafor oracle)
  *   naive and leave-one-out R^2  : weighted lm(f ~ s, weights = 1/SE^2) in base R. The pack's oracle,
  *                                  Surrogate::TrialLevelMA with weights 1/SE^2, computes the same weighted R^2,
@@ -36,13 +36,14 @@
     "ste <- if (is.na(slope) || abs(slope) <= 1e-12) NA_real_ else -intercept / slope",
     "loo <- sapply(seq_len(k), function(i) wlsR2(d[-i, ]))",
     "## ---- comparison (tolerance 1e-6 relative to max(1,|page|): tighter than the page's 2-3 decimal display) ----",
-    ".q <- character(0); .p <- numeric(0); .r <- numeric(0)",
-    ".add <- function(q, page, r) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_) }",
-    ".add(\"trials analysed (k)\", page$k, k)",
+    ".q <- character(0); .p <- numeric(0); .r <- numeric(0); .e <- logical(0)",
+    "# est = FALSE marks a flag or count (fitted?, refused?, rows differing): agreement on it alone is not a check",
+    ".add <- function(q, page, r, est = TRUE) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_); .e <<- c(.e, est) }",
+    ".add(\"trials analysed (k)\", page$k, k, est = FALSE)",
     ".add(\"slope\", page$slope, slope); .add(\"intercept\", page$intercept, intercept)",
-    ".add(\"Q (final effects)\", page$Q, Q); .add(\"df\", page$df, df); .add(\"I2 (final)\", page$i2, I2)",
+    ".add(\"Q (final effects)\", page$Q, Q); .add(\"df\", page$df, df, est = FALSE); .add(\"I2 (final)\", page$i2, I2)",
     ".add(\"naive R2\", page$r2_naive, r2n); .add(\"Pearson r\", page$pearson, pear)",
-    ".add(\"adjusted R2 refused (1=yes)\", as.numeric(page$refused), as.numeric(refused))",
+    ".add(\"adjusted R2 refused (1=yes)\", as.numeric(page$refused), as.numeric(refused), est = FALSE)",
     ".add(\"adjusted R2\", page$r2_adj, r2adj); .add(\"STE\", page$ste, ste)",
     "for (i in seq_len(k)) .add(paste0(\"LOO R2 without \", d$label[i]), page$loo[i], loo[i])",
     ".add(\"LOO R2 min\", page$loo_min, if (all(is.na(loo))) NA_real_ else min(loo, na.rm = TRUE))",
@@ -51,7 +52,8 @@
     ".ok <- (!is.na(.d) & .d <= 1e-6 * pmax(1, abs(.p))) | (is.na(.p) & is.na(.r))",
     "for (i in seq_along(.q)) cat(sprintf(\"%-30s page=%15.10f  R=%15.10f  |diff|=%9.2e  %s\\n\", .q[i], .p[i], .r[i], .d[i], if (.ok[i]) \"ok\" else \"DIFFERENT\"))",
     "cat(R.version.string, \"| metafor\", as.character(packageVersion(\"metafor\")), \"\\n\")",
-    "cat(sprintf(\"%s %d/%d\\n\", if (length(.q) > 0 && all(.ok)) \"MATCH\" else \"MISMATCH\", sum(.ok), length(.q)))"
+    ".nEst <- sum(.e & !is.na(.p) & !is.na(.r))   # estimates computed on BOTH sides and compared",
+    "cat(if (length(.q) > 0 && !all(.ok)) sprintf(\"MISMATCH %d/%d\\n\", sum(.ok), length(.q)) else if (.nEst == 0) \"NOT CHECKED: no estimate (nothing was estimated from these trials)\\n\" else sprintf(\"MATCH %d/%d\\n\", sum(.ok), length(.q)))"
   ].join("\n");
 
   function buildScript() {
@@ -115,7 +117,7 @@
         out.textContent = r.stdout; out.hidden = false;
         var lines = r.stdout.trim().split(/\r?\n/), last = lines[lines.length - 1] || "";
         var ver = Object.keys(r.versions).map(function (k) { return k + " " + r.versions[k]; }).join("; ");
-        status.textContent = (/^(MATCH|MISMATCH)\b/.test(last) ? last : "No MATCH/MISMATCH line in R output") + "  —  " + ver +
+        status.textContent = (/^(MATCH|MISMATCH|NOT CHECKED)\b/.test(last) ? last : "No MATCH/MISMATCH/NOT CHECKED line in R output") + "  —  " + ver +
           "  (Surrogate, the pack's R² oracle, is not in the WebR bundle: R² values are computed with base-R weighted lm)";
       } catch (e) { status.textContent = "WebR error: " + (e.message || e); }
       finally { btn.disabled = false; }

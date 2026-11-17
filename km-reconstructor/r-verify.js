@@ -68,14 +68,15 @@
     "  kmN <- nrow(ipd); kmEv <- sum(ipd$event); kmWhat <- \"base-R product-limit (survival unavailable)\"",
     "}",
     "## ---- comparison (exact for counts; tolerance 1e-6 for the median: tighter than the page's 1-decimal display) ----",
-    ".q <- character(0); .p <- numeric(0); .r <- numeric(0)",
-    ".add <- function(q, page, r) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_) }",
+    ".q <- character(0); .p <- numeric(0); .r <- numeric(0); .e <- logical(0)",
+    "# est = FALSE marks a flag or count (fitted?, refused?, rows differing): agreement on it alone is not a check",
+    ".add <- function(q, page, r, est = TRUE) { .q <<- c(.q, q); .p <<- c(.p, page); .r <<- c(.r, if (length(r) == 1) r else NA_real_); .e <<- c(.e, est) }",
     "key <- function(t, e) paste(format(t, digits = 15), e)",
     "tabP <- table(key(pageIPD$time, pageIPD$event)); tabR <- table(key(ipd$time, ipd$event))",
     "cells <- union(names(tabP), names(tabR))",
     "cellDiff <- sum(vapply(cells, function(z) (if (z %in% names(tabP)) tabP[[z]] else 0) != (if (z %in% names(tabR)) tabR[[z]] else 0), logical(1)))",
-    ".add(\"IPD (time,event) cells differing\", 0, cellDiff)",
-    ".add(\"IPD rows (page IPD vs R IPD)\", nrow(pageIPD), nrow(ipd))",
+    ".add(\"IPD (time,event) cells differing\", 0, cellDiff, est = FALSE)",
+    ".add(\"IPD rows (page IPD vs R IPD)\", nrow(pageIPD), nrow(ipd), est = FALSE)",
     ".add(\"Reconstructed N\", page$n, kmN)",
     ".add(\"Total events\", page$events, kmEv)",
     ".add(\"Median survival\", page$median, kmMed)",
@@ -83,7 +84,8 @@
     ".ok <- (!is.na(.d) & .d <= 1e-6 * pmax(1, abs(.p))) | (is.na(.p) & is.na(.r))",
     "for (i in seq_along(.q)) cat(sprintf(\"%-34s page=%12.6f  R=%12.6f  |diff|=%9.2e  %s\\n\", .q[i], .p[i], .r[i], .d[i], if (.ok[i]) \"ok\" else \"DIFFERENT\"))",
     "cat(R.version.string, \"|\", kmWhat, \"\\n\")",
-    "cat(sprintf(\"%s %d/%d\\n\", if (length(.q) > 0 && all(.ok)) \"MATCH\" else \"MISMATCH\", sum(.ok), length(.q)))"
+    ".nEst <- sum(.e & !is.na(.p) & !is.na(.r))   # estimates computed on BOTH sides and compared",
+    "cat(if (length(.q) > 0 && !all(.ok)) sprintf(\"MISMATCH %d/%d\\n\", sum(.ok), length(.q)) else if (.nEst == 0) \"NOT CHECKED: no estimate (nothing was reconstructed from these inputs)\\n\" else sprintf(\"MATCH %d/%d\\n\", sum(.ok), length(.q)))"
   ].join("\n");
 
   function buildScript() {
@@ -149,7 +151,7 @@
         out.textContent = r.stdout; out.hidden = false;
         var lines = r.stdout.trim().split(/\r?\n/), last = lines[lines.length - 1] || "";
         var ver = Object.keys(r.versions).map(function (k) { return k + " " + r.versions[k]; }).join("; ");
-        status.textContent = (/^(MATCH|MISMATCH)\b/.test(last) ? last : "No MATCH/MISMATCH line in R output") + "  —  " + ver +
+        status.textContent = (/^(MATCH|MISMATCH|NOT CHECKED)\b/.test(last) ? last : "No MATCH/MISMATCH/NOT CHECKED line in R output") + "  —  " + ver +
           (/NOTE: package survival is not available/.test(r.stdout) ? "  (package survival is not available in WebR: K-M summaries use base R here; the downloadable script uses survival::survfit)" : "");
       } catch (e) { status.textContent = "WebR error: " + (e.message || e); }
       finally { btn.disabled = false; }
