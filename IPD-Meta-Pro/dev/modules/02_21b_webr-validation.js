@@ -166,6 +166,10 @@
 
           // Run R code
           try {
+            // The JavaScript values of the SAME analysis the R code was just built from: read them now, before
+            // awaiting R. (They used to be read after R returned, so an analysis re-run while R was busy was
+            // compared with R's answer for the earlier one.)
+            var jsValues = sc.getJSValues ? sc.getJSValues() : null;
             var proxy  = await webRInstance.evalR(rCode);
             var rRaw;
             try {
@@ -174,9 +178,6 @@
               if (proxy && typeof proxy.destroy === 'function') { try { await proxy.destroy(); } catch(_){} }
             }
             var rValues = extractRValues(rRaw);
-
-            // Get JS values
-            var jsValues = sc.getJSValues ? sc.getJSValues() : null;
 
             // Compare
             var rows = compareResults(
