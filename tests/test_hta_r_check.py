@@ -65,13 +65,17 @@ def _run_r(script, tmp_path):
 
 
 USER = json.loads((HTA / "tests" / "fixtures" / "r_check_user_model.json").read_text(encoding="utf-8"))
+# Exact decimal ties (QALYs 2.0625 shown to 3 dp; JS toFixed gives 2.063, R sprintf 2.062) and a strategy
+# label that tries to close its R string and run code.
+TIE = json.loads((HTA / "tests" / "fixtures" / "r_check_tie_model.json").read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("arg", [{"demo": True}, {"project": USER}], ids=["demo", "user-model"])
+@pytest.mark.parametrize("arg", [{"demo": True}, {"project": USER}, {"project": TIE}], ids=["demo", "user-model", "tie-and-hostile-label"])
 def test_script_matches_page_in_fresh_r(arg, tmp_path):
     out = _run_r(_script(arg), tmp_path)
     m = re.fullmatch(r"MATCH (\d+)/(\d+)", out.strip().splitlines()[-1])
     assert m and m.group(1) == m.group(2) and int(m.group(2)) >= 14, out
+    assert "INJECTED" not in out
 
 
 def test_demo_numbers_are_the_displayed_ones(tmp_path):

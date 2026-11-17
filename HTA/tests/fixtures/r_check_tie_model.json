@@ -1,0 +1,8 @@
+{"model": {"type": "markov_cohort"},
+ "settings": {"time_horizon": 3, "cycle_length": 1, "discount_rate_costs": 0, "discount_rate_qalys": 0, "half_cycle_correction": "start", "starting_age": 50},
+ "parameters": {"u": {"value": 0.6875}, "c": {"value": 1000.25}},
+ "states": {"well": {"label": "Well", "initial_probability": 1, "cost": "c", "utility": "u"},
+            "dead": {"label": "Dead", "type": "absorbing", "initial_probability": 0, "cost": 0, "utility": 0}},
+ "transitions": {"ww": {"from": "well", "to": "well", "probability": 1}, "dd": {"from": "dead", "to": "dead", "probability": 1}},
+ "strategies": {"new": {"label": "New \"drug\"), cat(\"INJECTED\"), c(\"x", "parameter_overrides": {}},
+                "old": {"label": "Old", "is_comparator": true, "parameter_overrides": {"u": 0.5, "c": 500}}}}

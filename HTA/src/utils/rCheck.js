@@ -283,7 +283,7 @@
 .js_pow <- function(a, b) if (is.nan(b) || (abs(a) == 1 && is.infinite(b))) NaN else a^b
 .js_and <- function(a, b) if (.truthy(a)) as.numeric(.truthy(b)) else 0
 .js_or <- function(a, b) if (.truthy(a)) 1 else as.numeric(.truthy(b))
-.js_round <- function(x) floor(x + 0.5)
+.js_round <- function(x) { if (!is.finite(x)) return(x); r <- floor(x); if (x - r >= 0.5) r + 1 else r }   # Math.round, exact (floor(x + 0.5) is not)
 .js_min <- function(...) { x <- c(...); if (any(is.nan(x))) NaN else min(x) }
 .js_max <- function(...) { x <- c(...); if (any(is.nan(x))) NaN else max(x) }
 .rate_to_prob <- function(rate, time = 1) 1 - exp(-rate * time)
@@ -432,11 +432,28 @@ for (sid in names(R)) {
   chk(paste0(sid, ": trace (", nrow(rr$trace), " x ", ncol(rr$trace), ") max"), "page trace", "R trace", okt && dmax <= 1e-9, if (is.finite(dmax)) dmax else NA)
 }
 si <- page$shown_int; sc <- page$shown_comp
-js_round <- function(x) floor(x + 0.5)
+js_round <- .js_round
+# The page shows QALYs with (x).toFixed(3): the exact binary value rounded, an exact tie going AWAY from
+# zero ((2.0625).toFixed(3) = "2.063"); R's sprintf rounds an exact tie to even ("2.062"). Round the page's way.
+js_to_fixed <- function(x, d) {
+  if (is.na(x)) return("NaN")
+  if (is.infinite(x)) return(if (x > 0) "Infinity" else "-Infinity")
+  s <- if (x < 0) "-" else ""; a <- abs(x)
+  t <- sprintf(paste0("%.", d + 1, "f"), a)
+  tie <- substring(t, nchar(t)) == "5" && sprintf(paste0("%.", d + 40, "f"), a) == paste0(t, strrep("0", 39))
+  if (!tie) return(paste0(s, sprintf(paste0("%.", d, "f"), a)))
+  ch <- strsplit(substr(t, 1, nchar(t) - 1), "")[[1]]; i <- length(ch); carry <- TRUE
+  while (carry && i >= 1) {
+    if (ch[i] == ".") { i <- i - 1; next }
+    if (ch[i] == "9") { ch[i] <- "0"; i <- i - 1 } else { ch[i] <- as.character(as.integer(ch[i]) + 1L); carry <- FALSE }
+  }
+  u <- paste0(if (carry) "1" else "", paste(ch, collapse = ""))
+  paste0(s, sub("\\.$", "", u))
+}
 chk("shown: Total Costs (Intervention)", page$text$costs_int, js_round(R[[si]]$total_costs), isTRUE(page$num$costs_int == js_round(R[[si]]$total_costs)))
 chk("shown: Total Costs (Comparator)", page$text$costs_comp, js_round(R[[sc]]$total_costs), isTRUE(page$num$costs_comp == js_round(R[[sc]]$total_costs)))
-chk("shown: Total QALYs (Intervention)", page$text$qalys_int, sprintf("%.3f", R[[si]]$total_qalys), page$text$qalys_int == sprintf("%.3f", R[[si]]$total_qalys))
-chk("shown: Total QALYs (Comparator)", page$text$qalys_comp, sprintf("%.3f", R[[sc]]$total_qalys), page$text$qalys_comp == sprintf("%.3f", R[[sc]]$total_qalys))
+chk("shown: Total QALYs (Intervention)", page$text$qalys_int, js_to_fixed(R[[si]]$total_qalys, 3), page$text$qalys_int == js_to_fixed(R[[si]]$total_qalys, 3))
+chk("shown: Total QALYs (Comparator)", page$text$qalys_comp, js_to_fixed(R[[sc]]$total_qalys, 3), page$text$qalys_comp == js_to_fixed(R[[sc]]$total_qalys, 3))
 chk("ICER: strategy vs comparator", paste(page$icer_strategy, "vs", page$comparator), paste(icer_id, "vs", comp_id), page$icer_strategy == icer_id && page$comparator == comp_id)
 chk("ICER: dominance", page$dominance, dom, page$dominance == dom)
 if (!is.na(icer) || !is.na(page$icer)) {

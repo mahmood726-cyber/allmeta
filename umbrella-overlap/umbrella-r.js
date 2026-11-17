@@ -107,7 +107,8 @@
     L.push("chk(\"citations (N)\", page$n_citations, N, page$n_citations == N, abs(page$n_citations - N))");
     L.push("chk(\"studies cited by >1 review\", page$n_shared, length(shared), page$n_shared == length(shared), abs(page$n_shared - length(shared)))");
     L.push("chk(\"CCA (full precision)\", format(page$cca, digits = 15), format(cca, digits = 15), abs(page$cca - cca) <= 1e-12, abs(page$cca - cca))");
-    L.push("chk(\"CCA % as displayed (1 dp)\", page$cca_pct_shown, sprintf(\"%.1f\", 100 * cca), page$cca_pct_shown == sprintf(\"%.1f\", 100 * cca))");
+    L.push(R_JS_TO_FIXED);
+    L.push("chk(\"CCA % as displayed (1 dp)\", page$cca_pct_shown, js_to_fixed(100 * cca, 1), page$cca_pct_shown == js_to_fixed(100 * cca, 1))");
     L.push("chk(\"groove\", page$groove, groove, page$groove == groove)");
     L.push("chk(\"review labels\", paste(page$labels, collapse = \" | \"), paste(labels, collapse = \" | \"), identical(page$labels, labels))");
     L.push("if (identical(dim(page$matrix), dim(M))) {");
@@ -125,7 +126,27 @@
     return L.join("\n") + "\n";
   }
 
-  var api = { buildScript: buildScript, rStr: rStr };
+  // The page shows (x).toFixed(d): the exact binary value rounded, an exact tie going AWAY from zero
+  // ((6.25).toFixed(1) = "6.3"). R's sprintf rounds an exact tie to even ("6.2"), so the script
+  // rounds the page's way. sprintf is exact on the binary value, so only true ties need handling.
+  var R_JS_TO_FIXED = String.raw`# JavaScript Number.prototype.toFixed(d), which the page uses to display the value
+js_to_fixed <- function(x, d) {
+  if (is.na(x)) return("NaN")
+  if (is.infinite(x)) return(if (x > 0) "Infinity" else "-Infinity")
+  s <- if (x < 0) "-" else ""; a <- abs(x)
+  t <- sprintf(paste0("%.", d + 1, "f"), a)
+  tie <- substring(t, nchar(t)) == "5" && sprintf(paste0("%.", d + 40, "f"), a) == paste0(t, strrep("0", 39))
+  if (!tie) return(paste0(s, sprintf(paste0("%.", d, "f"), a)))
+  ch <- strsplit(substr(t, 1, nchar(t) - 1), "")[[1]]; i <- length(ch); carry <- TRUE
+  while (carry && i >= 1) {
+    if (ch[i] == ".") { i <- i - 1; next }
+    if (ch[i] == "9") { ch[i] <- "0"; i <- i - 1 } else { ch[i] <- as.character(as.integer(ch[i]) + 1L); carry <- FALSE }
+  }
+  u <- paste0(if (carry) "1" else "", paste(ch, collapse = ""))
+  paste0(s, sub("\\.$", "", u))
+}`;
+
+  var api = { buildScript: buildScript, rStr: rStr, R_JS_TO_FIXED: R_JS_TO_FIXED };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmUmbrellaR = api;
 })(typeof window !== "undefined" ? window : globalThis);

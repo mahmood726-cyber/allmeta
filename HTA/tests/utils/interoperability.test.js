@@ -412,6 +412,18 @@ describe('RCodeExporter', () => {
             expect(() => exporter.exportMetaAnalysis(mockData, { package: 'netmeta' })).toThrow(/treat1/);
         });
 
+        // Labels are user text: every string written into R must be an escaped R literal, so a quote or
+        // backslash cannot break the script and `C"), cat("x"), c("D` cannot run code.
+        test('study and treatment labels are written as escaped R string literals', () => {
+            const code = exporter.exportMetaAnalysis([
+                { study: 'C"), cat("x"), c("D', treat1: 'Drug "A"', treat2: 'Drug\\B', effect: 0.1, variance: 0.04 },
+                { study: 'line\nbreak', treat1: 'tab\there', treat2: 'B', effect: 0.2, variance: 0.04 }
+            ], { package: 'netmeta' });
+            expect(code).toContain('study = c("C\\"), cat(\\"x\\"), c(\\"D", "line\\nbreak")');
+            expect(code).toContain('treat1 = c("Drug \\"A\\"", "tab\\there")');
+            expect(code).toContain('treat2 = c("Drug\\\\B", "B")');
+        });
+
         test('respects method option (DL)', () => {
             const code = exporter.exportMetaAnalysis(mockData, { method: 'DL' });
             expect(code).toContain('method = "DL"');
