@@ -113,6 +113,7 @@
       }
 
       function run() {
+        window.__almNphLast = null;   // a failed fit must not leave the previous analysis for r-verify.js
         var rows = parse($("data").value);
         var note = $("note"); note.hidden = true; note.textContent = "";
         if (rows.length < 2) { note.hidden = false; note.textContent = "Need at least two arm rows."; $("out").textContent = ""; return; }

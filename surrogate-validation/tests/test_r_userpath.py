@@ -98,3 +98,16 @@ def test_pasted_data_script_carries_inputs_and_matches(pg, tmp_path):
     assert "refused = FALSE" in txt
     last, full = run_r(p)
     assert_match(last, full)
+
+
+def test_invalid_input_refuses_stale_script(pg):
+    # Requirement: after the input stops producing a result (here < 3 trials), neither control may build a
+    # script from the previous analysis.
+    pg.click("#btn-example")
+    pg.fill("#f-data", "T9, 1, 0.1, 0.1\nT8, 2, 0.2, 0.1")
+    got = []
+    pg.once("download", lambda d: got.append(d))
+    pg.click("#rv-download")
+    pg.wait_for_timeout(1500)
+    assert not got
+    assert "no current result" in pg.text_content("#rv-status").lower()

@@ -56,7 +56,7 @@
 
   function buildScript() {
     var r = window.__lastSurrogate, pairs = window.__lastSurrogatePairs;
-    if (!r || !pairs) throw new Error("No analysis on the page yet: enter trials and press Validate (or Load example).");
+    if (!r || !pairs) throw new Error("No current result on the page (fewer than 3 valid trials): fix the trials and press Validate. No R script was made.");
     var L = [];
     L.push("# R check of the allmeta Surrogate validation page (surrogate-validation).");
     L.push("# Generated " + new Date().toISOString() + " from " + location.href.split("#")[0] + ".");

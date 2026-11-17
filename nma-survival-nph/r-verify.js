@@ -33,7 +33,7 @@
 
   function buildScript() {
     var st = window.__almNphLast;
-    if (!st || !st.res) throw new Error("No analysis on the page yet: press Fit first.");
+    if (!st || !st.res) throw new Error("No current result on the page (no data, or the last Fit failed): fix the input and press Fit. No R script was made.");
     var rows = st.rows, o = st.opts, res = st.res;
     var method = o.method || "DL";
     var model = o.model === "re" ? "re" : "fe";
@@ -48,7 +48,7 @@
     L.push("# is a contrast; each interval is its own NMA. Common effect and DerSimonian-Laird: netmeta::netmeta().");
     L.push("# REML / ML: metafor::rma.mv() with the full multi-arm sampling covariance and between-study covariance tau^2/2");
     L.push("# (struct = \"CS\", rho = 0.5) -- netmeta's own REML/ML uses a diagonal covariance for multi-arm studies.");
-    L.push("# Pooled = inverse-variance average of the interval log-HRs, over intervals whose reference is " + globalRef + ".");
+    L.push("# Pooled = inverse-variance average of the interval log-HRs, over intervals whose reference is globalRef (below).");
     L.push("suppressPackageStartupMessages({ library(netmeta); library(metafor) })");
     L.push("rows <- data.frame(");
     L.push("  study     = " + rvecS(rows.map(function (r) { return r.study; })) + ",");

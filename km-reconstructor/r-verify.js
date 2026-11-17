@@ -88,7 +88,7 @@
 
   function buildScript() {
     var st = window.__almKmLast;
-    if (!st) throw new Error("No reconstruction on the page yet: enter a curve and an at-risk table, then press Reconstruct.");
+    if (!st) throw new Error("No current result on the page (the curve or at-risk table is unusable): fix the input and press Reconstruct. No R script was made.");
     var L = [];
     L.push("# R check of the allmeta Kaplan-Meier IPD Reconstructor page (km-reconstructor).");
     L.push("# Generated " + new Date().toISOString() + " from " + location.href.split("#")[0] + ".");

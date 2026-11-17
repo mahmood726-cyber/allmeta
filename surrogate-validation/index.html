@@ -134,7 +134,7 @@
     }
 
     function run() {
-      window.__lastSurrogate = null;
+      window.__lastSurrogate = null; window.__lastSurrogatePairs = null;   // no stale input for r-verify.js
       var pairs = parse($("f-data").value);
       var host = $("result");
       if (pairs.length < 3) { host.innerHTML = '<p class="hint">Need ≥3 trials with (surrogate, final, SE).</p>'; $("plot").innerHTML = ""; return; }

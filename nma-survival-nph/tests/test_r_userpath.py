@@ -143,3 +143,38 @@ def test_heterogeneous_random_effects_script_matches(pg, tmp_path, method):
     last, full = run_r(p)
     assert_match(last, full)
     assert "tau2" in full
+
+
+def no_download(pg):
+    """Click Download R script and return the status text; fail if a script is produced."""
+    got = []
+    pg.once("download", lambda d: got.append(d))
+    pg.click("#rv-download")
+    pg.wait_for_timeout(1500)
+    assert not got, "a script was downloaded although the page shows no result for the current input"
+    return pg.text_content("#rv-status")
+
+
+@pytest.mark.parametrize("bad", ["", "T9, A, 1, 3, 0\nT9, B, 1, 4, 0"], ids=["empty", "zero-person-time"])
+def test_failed_fit_refuses_stale_script(pg, bad):
+    # Requirement: the R check describes the CURRENT input. After a fit fails, the page shows an error and no
+    # table, so neither control may produce a script built from the previous (successful) analysis.
+    pg.fill("#data", PASTED)
+    pg.select_option("#model", "fe")
+    pg.click("#run")
+    pg.fill("#data", bad)
+    pg.click("#run")
+    assert pg.text_content("#out") == ""
+    assert "no current result" in no_download(pg).lower()
+    pg.click("#rv-run")
+    assert "no current result" in pg.text_content("#rv-status").lower()
+
+
+def test_treatment_label_cannot_break_out_of_an_r_comment(pg):
+    # Requirement: user text never reaches the script outside a quoted R string. The reference label is
+    # written into a comment line; a line break inside it must not start a new line of R code.
+    pg.fill("#data", PASTED)
+    pg.click("#run")
+    txt = pg.evaluate("""() => { const s = window.__almNphLast; s.rows[0].treatment = 'Aa' + String.fromCharCode(10) + 'cat("PWN")';
+                                 return AlmNphRVerify.buildScript(); }""")
+    assert not any(line.lstrip().startswith('cat("PWN")') for line in txt.splitlines()), txt[:1500]
