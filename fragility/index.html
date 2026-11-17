@@ -90,6 +90,7 @@
       </table>
       <h2 style="margin-top:0.5rem">Modifications applied</h2>
       <ol id="mods"></ol>
+      <div id="rcheck-mount"></div>
       <div class="note"><strong>Read with care:</strong> the fragility index is a transparency metric, not a significance test. It is defined for a statistically significant pooled result (a non-significant result reports no FI here). Greedy event changes are a worst-case device — they do not represent a plausible data-generating process.</div>
     </section>
   </main>
@@ -137,7 +138,10 @@
     function fmt(x, d) { return (x == null || !isFinite(x)) ? "—" : (+x).toFixed(d == null ? 3 : d); }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
+    var _rstate = null; // inputs + displayed numbers for the R check (r-check.js)
+    window.__almFragilityRState = function () { return _rstate; };
     function run() {
+      _rstate = null;
       var measure = document.getElementById("measure").value;
       var p = parse(document.getElementById("data").value);
       var tbody = document.getElementById("tbody");
@@ -150,6 +154,9 @@
       var r = window.AlmFragility.fragility(p.studies, { measure: measure });
       var ratio = (measure !== "RD");
       var tx = function (v) { return v == null ? null : ratio ? Math.exp(v) : v; };
+      if (r.pooled && r.pooled.est != null && p.studies.length >= 2) _rstate = { measure: measure, studies: p.studies, labels: p.labels,
+        page: { est: tx(r.pooled.est), lo: tx(r.pooled.lo), hi: tx(r.pooled.hi), sig: (r.pooled.hi < 0) || (r.pooled.lo > 0),
+                FI: Number.isFinite(r.FI) ? r.FI : null, FQ: Number.isFinite(r.FQ) ? r.FQ : null, dir: r.dir, mods: r.modifications || [] } };
       var pooled = r.pooled
         ? "<code>" + fmt(tx(r.pooled.est)) + "</code> (95% CI <code>" + fmt(tx(r.pooled.lo)) + "</code>–<code>" + fmt(tx(r.pooled.hi)) + "</code>)"
         : "—";
@@ -181,6 +188,11 @@
     document.getElementById("data").value = EXAMPLE;
     run();
   </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
+<script>
+  if (window.AlmFragilityRCheck) AlmFragilityRCheck.attach({ mount: "#rcheck-mount", filename: "fragility-r-check.R", getState: function () { return window.__almFragilityRState(); } });
+</script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>
