@@ -388,13 +388,40 @@ describe('RCodeExporter', () => {
             expect(code).toContain('funnel(result)');
         });
 
-        test('generates netmeta code when package is netmeta', () => {
-            const code = exporter.exportMetaAnalysis(mockData, { package: 'netmeta' });
+        // Requirement (rewritten 17 Nov 2026): netmeta() needs each contrast's two treatments. This test used to
+        // pass rows without treatments and only checked that the text "netmeta(" appeared, so it defended an
+        // export whose script referenced treat1/treat2 columns that the data frame never contained (R error:
+        // object 'treat1' not found).
+        test('netmeta export writes treat1/treat2 columns that the netmeta() call uses', () => {
+            const nmaData = [
+                { study: 'S1', treat1: 'A', treat2: 'B', effect: 0.5, variance: 0.04 },
+                { study: 'S2', treat1: 'A', treat2: 'C', effect: 0.3, variance: 0.09 },
+                { study: 'S3', treat1: 'B', treat2: 'C', effect: -0.2, variance: 0.06 }
+            ];
+            const code = exporter.exportMetaAnalysis(nmaData, { package: 'netmeta' });
 
             expect(code).toContain('library(netmeta)');
             expect(code).toContain('library(meta)');
+            expect(code).toContain('treat1 = c("A", "A", "B")');
+            expect(code).toContain('treat2 = c("B", "C", "C")');
             expect(code).toContain('netmeta(');
             expect(code).toContain('netgraph(result)');
+        });
+
+        test('netmeta export refuses rows without treatments instead of writing a broken script', () => {
+            expect(() => exporter.exportMetaAnalysis(mockData, { package: 'netmeta' })).toThrow(/treat1/);
+        });
+
+        // Labels are user text: every string written into R must be an escaped R literal, so a quote or
+        // backslash cannot break the script and `C"), cat("x"), c("D` cannot run code.
+        test('study and treatment labels are written as escaped R string literals', () => {
+            const code = exporter.exportMetaAnalysis([
+                { study: 'C"), cat("x"), c("D', treat1: 'Drug "A"', treat2: 'Drug\\B', effect: 0.1, variance: 0.04 },
+                { study: 'line\nbreak', treat1: 'tab\there', treat2: 'B', effect: 0.2, variance: 0.04 }
+            ], { package: 'netmeta' });
+            expect(code).toContain('study = c("C\\"), cat(\\"x\\"), c(\\"D", "line\\nbreak")');
+            expect(code).toContain('treat1 = c("Drug \\"A\\"", "tab\\there")');
+            expect(code).toContain('treat2 = c("Drug\\\\B", "B")');
         });
 
         test('respects method option (DL)', () => {

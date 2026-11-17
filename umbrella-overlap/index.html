@@ -46,6 +46,7 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/umbrella-overlap-v1.js"></script>
+  <script src="umbrella-r.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
@@ -58,6 +59,8 @@
   <div class="toolbar">
     <button type="button" id="btn-run" class="primary">Compute CCA</button>
     <button type="button" id="btn-example">Load example</button>
+    <button type="button" id="btn-r-script" disabled title="Download a base-R script that re-parses your current input and recomputes every number shown (closed-form Pieper 2014 CCA); it prints MATCH n/n or MISMATCH.">Download R script</button>
+    <button type="button" id="btn-verify-r" disabled title="Run the same R script here in your browser with WebR (local bundle, about 30 MB on first use).">Verify in R</button>
   </div>
 
   <main class="layout">
@@ -78,6 +81,11 @@
         <h2>Pairwise shared studies</h2>
         <div id="matrix"></div>
       </section>
+      <section class="panel" id="r-panel" hidden>
+        <h2>R check</h2>
+        <p class="hint" id="r-status" role="status" aria-live="polite"></p>
+        <pre id="r-output" style="white-space:pre-wrap;font:ui-monospace,Menlo,monospace;font-size:.74rem;margin:0;max-height:28rem;overflow:auto"></pre>
+      </section>
       <section class="panel">
         <h2>Caveats</h2>
         <div class="assum"><strong>CCA needs the FULL list of primary studies each review cites</strong> (matched on a consistent id), not just counts — a missed match understates overlap. CCA is for the whole umbrella; per-outcome overlap can differ. High overlap doesn't invalidate the umbrella — it means any quantitative pool across the reviews must use a non-overlapping subset (or a citation-matrix correction), and the narrative should note the shared evidence base.</div>
@@ -88,6 +96,7 @@
   <p class="footer-note">CCA = (N − r) / (r·c − r) where N = total citations across reviews, r = unique primary studies, c = reviews (Pieper et&nbsp;al., <em>J Clin Epidemiol</em> 2014). Grooves: &lt;5% slight, &lt;10% moderate, &lt;15% high, ≥15% very high. Method integrated from the UmbrellaEngine project. Everything runs on your device.</p>
 
   <script src="../shared/toast.js"></script>
+  <script src="../shared/webr-runner.js"></script>
   <script>
   (function () {
     "use strict";
@@ -99,7 +108,8 @@
     function parse(text) { return window.AlmUmbrellaOverlap.parseReviews(text); }
     function grooveClass(g) { return "g-" + (g === "Very High" ? "Very" : g); }
 
-    function run() {
+    function run() { compute(); syncR(); }
+    function compute() {
       window.__lastUmbrella = null;
       var revs = parse($("f-data").value);
       var host = $("result");
@@ -133,6 +143,37 @@
       run();
       toast("Example loaded — 4 overlapping reviews; CCA quantifies the double-counting.");
     }
+
+    // ---- R check: the same base-R script is downloadable and runs in-page via WebR ----
+    var rToken = 0;
+    function rScript() { return window.AlmUmbrellaR.buildScript($("f-data").value, window.__lastUmbrella); }
+    function syncR() {
+      var ready = !!(window.__lastUmbrella && window.__lastUmbrella.ok);
+      $("btn-r-script").disabled = !ready; $("btn-verify-r").disabled = !ready;
+      rToken++;  // any input change makes a running/finished R check stale
+      if (!$("r-panel").hidden) { $("r-status").textContent = "Input changed since the last R check — press Verify in R again."; $("r-output").textContent = ""; }
+    }
+    $("btn-r-script").addEventListener("click", function () {
+      if (!(window.__lastUmbrella && window.__lastUmbrella.ok)) return;
+      var url = URL.createObjectURL(new Blob([rScript()], { type: "text/plain" }));
+      var a = document.createElement("a"); a.href = url; a.download = "umbrella-cca-check.R";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    });
+    $("btn-verify-r").addEventListener("click", async function () {
+      if (!(window.__lastUmbrella && window.__lastUmbrella.ok)) return;
+      var token = ++rToken, panel = $("r-panel"), st = $("r-status"), outEl = $("r-output");
+      panel.hidden = false; outEl.textContent = ""; $("btn-verify-r").disabled = true;
+      try {
+        if (!window.AlmWebR || typeof window.AlmWebR.runR !== "function") throw new Error("WebR runner (shared/webr-runner.js) did not load.");
+        var res = await window.AlmWebR.runR({ packages: [], script: rScript(), onStatus: function (m) { if (token === rToken) st.textContent = m; } });
+        if (token !== rToken) return;
+        if (!res.ok) throw new Error(res.error);
+        var last = (res.stdout.trim().split(/\r?\n/).pop() || "");
+        st.textContent = "WebR " + res.versions.webR + " · " + res.versions.R + " — " + last;
+        outEl.textContent = res.stdout;
+      } catch (e) { if (token === rToken) { st.textContent = "R check could not run: " + (e.message || e); } }
+      finally { $("btn-verify-r").disabled = !(window.__lastUmbrella && window.__lastUmbrella.ok); }
+    });
 
     $("btn-run").addEventListener("click", run);
     $("btn-example").addEventListener("click", loadExample);
