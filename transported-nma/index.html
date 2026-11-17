@@ -111,6 +111,13 @@
         <h2>Caveats — what transport does and does not fix</h2>
         <div class="assum"><strong>Transport corrects only for the modifiers you supply.</strong> Unmeasured effect modifiers and modifier × treatment interactions are not corrected. Entropy balancing matches the target moments <em>exactly</em> when the target lies inside the studies' covariate range; outside it, it <strong>extrapolates</strong> — watch the effective sample size (ESS) and the achieved-vs-target gap. The variance-inflation reweighting is an aggregate-data approximation to a full IPD network meta-regression (conservative for down-weighted studies). A reordered ranking is a hypothesis about the target population, not a definitive result — read the source league alongside it.</div>
       </section>
+      <section class="panel" id="r-panel" aria-label="Check in R">
+        <h2>Check in R</h2>
+        <p class="hint">Recompute every number shown above in R, from the inputs currently analysed: download a self-contained script for desktop R, or run the same script here in WebR (in-browser R, pinned and SHA-256 verified; the first run downloads the R bundle, then it is cached). Needs the metafor package. Both print each value next to R's and end with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" id="btn-rscript">Download R script</button><button type="button" id="btn-webr">Verify in R (WebR)</button></div>
+        <p id="r-status" class="hint" role="status" aria-live="polite"></p>
+        <pre id="r-out" hidden style="max-height:24rem;overflow:auto;white-space:pre;font-size:.72rem;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;margin:0"></pre>
+      </section>
     </section>
   </main>
 
@@ -186,7 +193,7 @@
     }
 
     function run() {
-      window.__lastTNMA = null;
+      window.__lastTNMA = null; window.__lastTNMAInput = null;   // both cleared unless this run succeeds (R check reads them)
       var pc = parseContrasts($("f-contrasts").value);
       var host = $("result");
       $("rank-panel").hidden = true; $("league-panel").hidden = true;
@@ -210,6 +217,7 @@
       });
       if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
       window.__lastTNMA = r;
+      window.__lastTNMAInput = { studies: pcov.studies, rows: pc.rows, treatments: trts, target: target, higherIsBetter: $("f-higher").checked };
 
       var cls = r.caution ? "warn" : "ok";
       var ach = r.transport.covariates.map(function (c) { return esc(c) + " " + fmt(r.transport.achieved[c], 2) + "→" + fmt(r.transport.target[c], 2); }).join(", ");
@@ -273,6 +281,8 @@
     window.__almTransportedNMA = { run: function () { run(); return window.__lastTNMA || null; } };
   })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-verify.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>
