@@ -1,0 +1,36 @@
+{
+ "version": "0.1",
+ "metadata": {"id": "user_hiv_mono_comb", "name": "HIV mono vs combination (user model)"},
+ "settings": {"time_horizon": 20, "cycle_length": 1, "discount_rate_costs": 0.06, "discount_rate_qalys": 0.015,
+              "half_cycle_correction": "trapezoidal", "currency": "GBP", "starting_age": 40},
+ "model": {"type": "markov_cohort"},
+ "parameters": {
+  "rr": {"value": 0.509}, "is_comb": {"value": 0},
+  "cost_zido": {"value": 2278}, "cost_lami": {"value": 2086},
+  "drug_cost": {"value": "cost_zido + is_comb * cost_lami"},
+  "p_ad": {"value": "if(is_comb == 1, 0.010 * rr, 0.010) * exp(0.02 * cycle)"},
+  "u_a": {"value": "max(0.5, 0.9 - 0.005 * age ^ 0.5)"}
+ },
+ "states": {
+  "A": {"label": "CD4 200-500", "initial_probability": 1, "cost": "2756 + drug_cost", "utility": "u_a"},
+  "B": {"label": "CD4 <200", "initial_probability": 0, "cost": "3052 + drug_cost", "utility": 0.8},
+  "C": {"label": "AIDS", "initial_probability": 0, "cost": "9007 + drug_cost", "utility": 0.6},
+  "D": {"label": "Death", "type": "absorbing", "initial_probability": 0, "cost": 0, "utility": 0}
+ },
+ "transitions": {
+  "AA": {"from": "A", "to": "A", "probability": "complement"},
+  "AB": {"from": "A", "to": "B", "probability": ".202 * if(is_comb == 1, rr, 1)"},
+  "AC": {"from": "A", "to": "C", "probability": ".067 * if(is_comb == 1, rr, 1)"},
+  "AD": {"from": "A", "to": "D", "probability": "p_ad"},
+  "BB": {"from": "B", "to": "B", "probability": "C"},
+  "BC": {"from": "B", "to": "C", "probability": ".407 * if(is_comb == 1, rr, 1)"},
+  "BD": {"from": "B", "to": "D", "probability": ".012 * if(is_comb == 1, rr, 1)"},
+  "CC": {"from": "C", "to": "C", "probability": "complement"},
+  "CD": {"from": "C", "to": "D", "probability": ".250 * if(is_comb == 1, rr, 1)"},
+  "DD": {"from": "D", "to": "D", "probability": 1}
+ },
+ "strategies": {
+  "mono": {"label": "Monotherapy", "is_comparator": true, "parameter_overrides": {"is_comb": 0}},
+  "comb": {"label": "Combination", "parameter_overrides": {"is_comb": 1}}
+ }
+}
