@@ -51,6 +51,8 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/nma-meta-regression.js"></script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -205,6 +207,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
 
     function run() {
       window.__almLastNmaMetaReg = function () { return null; };
+      if (window.AlmRCheck) window.AlmRCheck.set(null);
       ["#beta tbody", "#gamma tbody", "#pred tbody"].forEach(function (selector) {
         document.querySelector(selector).innerHTML = "";
       });
@@ -275,6 +278,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
 
       drawPredictionPlot(fit.predictions, treatments, treatments[0]);
       window.__almLastNmaMetaReg = function () { return fit; };
+      if (window.AlmRCheck) window.AlmRCheck.set({ rows: rows.slice(), treatments: treatments.slice(), method: fit.method, page: fit });
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
