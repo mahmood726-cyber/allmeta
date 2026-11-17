@@ -162,3 +162,14 @@ def test_refused_input_writes_no_script(page):
     _set(page, point="2", lo="2.5", hi="3")  # CI excludes the estimate: the page refuses
     with pytest.raises(Exception, match="nothing to check"):
         page.evaluate("window.__almEValueRScript()")
+
+
+@pytest.mark.parametrize("cells,tv", [(("20", "80", "40", "60"), ""), (("40", "60", "20", "80"), "0.3")])
+def test_risk_difference_at_or_below_true_value_writes_no_script(page, cells, tv):
+    """Review r627 finding 1 (refuted by execution): the page refuses an RD at or below the true
+    value (EValue requires relabelling), so no bias factor is shown and no script is written."""
+    _fresh(page)
+    _set(page, measure="RD", n11=cells[0], n10=cells[1], n01=cells[2], n00=cells[3], truev=tv)
+    assert page.locator("#tbody").inner_text().startswith("Analysis refused")
+    with pytest.raises(Exception, match="nothing to check"):
+        page.evaluate("window.__almEValueRScript()")

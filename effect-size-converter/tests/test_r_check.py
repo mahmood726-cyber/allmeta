@@ -172,3 +172,37 @@ def test_without_evalue_e_value_lines_are_reported_not_checked(page, tmp_path):
     lines = _run_r(script, tmp_path, "noev.R")
     assert lines[-1] == "MATCH 13/13 (2 more NOT CHECKED: see above)", lines[-1]
     assert sum("NOT CHECKED (package EValue is not installed)" in l for l in lines) == 2
+
+
+@needs_evalue
+@pytest.mark.parametrize("field,value", [("ctx-sd", "10"), ("der-n1", "40")])
+def test_csv_import_then_edited_context_is_not_claimed_as_the_import(page, tmp_path, field, value):
+    """Review r627 finding 4: after a CSV import, editing the pooled SD or a group size (with g/SE
+    unchanged) changes the table; the script must check the table as shown, not assert the import."""
+    _fresh(page)
+    page.fill("#alm-csv-mount textarea", CSV)
+    page.click("#alm-csv-mount [data-action=parse-paste]")
+    page.wait_for_timeout(600)
+    page.fill("#" + field, value)
+    page.click("#btn-convert")
+    script = page.evaluate("window.__escRScript()")
+    assert ("sd = 10," if field == "ctx-sd" else "n1 = 40,") in script
+    lines = _run_r(script, tmp_path, "csv_edited.R")
+    assert not any("DIFFERS" in l for l in lines), [l for l in lines if "DIFFERS" in l]
+    _counts(lines[-1])
+
+
+@needs_evalue
+def test_ratio_ci_on_log_scale_option_is_rederived_on_the_log_scale(page, tmp_path):
+    """Review r627 finding 2 (refuted by execution): "CI is on: log scale" means ratio-scale bounds that
+    the page log-transforms (deriveSE uses log(hi) - log(lo)), so R's log(hi) - log(lo) is the same rule."""
+    _fresh(page)
+    page.select_option("#in-type", "OR")
+    page.fill("#in-est", "0.75"); page.select_option("#der-scale", "log")
+    page.fill("#der-lo", "0.6"); page.fill("#der-hi", "0.95")
+    page.click("#btn-derive")
+    script = page.evaluate("window.__escRScript()")
+    assert 'check("SE derived from the 95% CI", (log(ci[["hi"]]) - log(ci[["lo"]])) / (2 * z), inp$se)' in script
+    lines = _run_r(script, tmp_path, "logci.R")
+    assert any(l.startswith("SE derived from the 95% CI") and l.endswith("ok") for l in lines)
+    _counts(lines[-1])

@@ -152,7 +152,9 @@
     if (a.type === "SMD" && a.kind === "g" && lastCsvRow) {
       try {
         var r = lastCsvRow, s = E.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1), Number(r.m2), Number(r.sd2), Number(r.n2));
-        if (s.g === a.est && s.se === a.se)
+        // The import is the input only while every field it set is unchanged (g, SE, pooled SD, n1, n2);
+        // after a later edit the table is checked as shown, without claiming the import.
+        if (s.g === a.est && s.se === a.se && s.pooledSd === a.sd && Number(r.n1) === a.n1 && Number(r.n2) === a.n2)
           return { kind: "csv", m1: Number(r.m1), sd1: Number(r.sd1), n1: Number(r.n1), m2: Number(r.m2), sd2: Number(r.sd2), n2: Number(r.n2), pooledSd: s.pooledSd };
       } catch (_) { /* not derived from this row */ }
     }
