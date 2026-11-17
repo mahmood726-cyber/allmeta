@@ -68,7 +68,10 @@ jobs:
           #       without Rscript it prints SKIPPED and exits 2 by design (a check that did not run is
           #       not a pass), which node --test reports as a failure. This job has no R. Run it where
           #       R is installed: RSCRIPT=<path to Rscript> node <file>.
-          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs "
+          #   IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs  NEEDS system Chrome + playwright-core:
+          #       without them it prints SKIPPED and exits 2 by the same rule. This job has no system
+          #       Chrome. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs "
           files=()
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
