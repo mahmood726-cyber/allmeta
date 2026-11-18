@@ -27,7 +27,15 @@ check('precondition: the panel has reference and current scenarios', refIds.leng
 
 const ANALYSIS = { studies: [{ effect: 0.30, variance: 0.04 }, { effect: 0.50, variance: 0.05 }, { effect: 0.42, variance: 0.03 }, { effect: 0.10, variance: 0.06 }],
   pooled: { effect: 0.3634, se: 0.0965, ci_lower: 0.1743, ci_upper: 0.5525, tau2: 0, I2: 0, Q: 2.25 } };
-function setAnalysis(a) { run('APP.results = ' + (a ? JSON.stringify(a) : 'null') + '; APP.config = Object.assign(APP.config || {}, { reMethod: "REML", useHKSJ: false, confLevel: 0.95 });'); }
+// The post-run state runAnalysis() actually produces: it sets APP.results, APP.lastResults = APP.results
+// and APP.analysisSettings = {...APP.config} together (and Clear data nulls all three). Setting
+// APP.results alone is a state no page path produces from a run -- the R script rightly marks it
+// NOT CHECKED (settings unknown); that case is asserted separately below, not used as the fixture.
+function setAnalysis(a) {
+  run('APP.config = Object.assign(APP.config || {}, { reMethod: "REML", useHKSJ: false, confLevel: 0.95 });' +
+    (a ? 'APP.results = ' + JSON.stringify(a) + '; APP.lastResults = APP.results; APP.analysisSettings = Object.assign({}, APP.config);'
+       : 'APP.results = null; APP.lastResults = null; APP.analysisSettings = null;'));
+}
 
 // (a) panel's last run was the reference benchmark; a current analysis is now loaded
 internals.setLastResults({ mode: 'reference' });
@@ -51,6 +59,20 @@ s = gen();
 check('(minor) ref_pi is checked with a 2-study analysis loaded', /why  = NULL,/.test(block(s, 'ref_pi')), (/why  = (.*),/.exec(block(s, 'ref_pi')) || [])[1]);
 check('(minor) control: the 2-study analysis\' own PI (cur_pi) is still refused for k<3',
   /why  = "(No R code generated[^"]*|Need k>=3 for prediction interval\.)",/.test(block(s, 'cur_pi')), (/why  = (.*),/.exec(block(s, 'cur_pi')) || [])[1]);
+
+// APP.results without the settings it was computed under (undo / loaded session): the current
+// analysis is listed, but every current quantity is NOT CHECKED rather than paired with guessed settings
+internals.setLastResults(null);
+run('APP.results = ' + JSON.stringify(ANALYSIS) + '; APP.lastResults = null; APP.analysisSettings = null;');
+s = gen(); ids = check_ids(s);
+check('unrecorded settings: current scenarios listed', curIds.every((id) => ids.includes(id)), ids.join(' '));
+check('unrecorded settings: every current scenario is NOT CHECKED', curIds.every((id) => /why  = "[^"]+",/.test(block(s, id))),
+  curIds.filter((id) => !/why  = "[^"]+",/.test(block(s, id))).join(' '));
+// cur_frailty is refused earlier ("No R code generated"): the fixture has no patient-level data
+const unknownWhy = /why  = "Not checked: the settings these page results were computed under are not recorded/;
+check('unrecorded settings: ... the pooled-analysis ones because the settings are not recorded',
+  curIds.filter((id) => id !== 'cur_frailty').every((id) => unknownWhy.test(block(s, id))), (/why  = (.*),/.exec(block(s, 'cur_primary')) || [])[1]);
+check('unrecorded settings: reference benchmarks still checked', refIds.every((id) => ids.includes(id)) && /why  = NULL,/.test(block(s, 'ref_dl')));
 
 // control: with no panel run at all, the same selection
 internals.setLastResults(null);

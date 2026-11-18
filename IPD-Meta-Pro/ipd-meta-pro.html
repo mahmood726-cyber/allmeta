@@ -77484,7 +77484,7 @@ function displayValidationResults(results) {
   };
 
   // ─── Task 6: generateRScript ──────────────────────────────────────────────
-  var generateRScript = function() {
+  var generateRScriptForEmbeddedAnalysis = function() {
     var hasResults = !!(typeof APP !== 'undefined' && APP && APP.results);
     var method   = (hasResults && APP.config && APP.config.reMethod)   ? APP.config.reMethod   : 'REML';
     var confLevel = (hasResults && APP.config && APP.config.confLevel != null)
@@ -77737,6 +77737,53 @@ function displayValidationResults(results) {
     return lines.join('\n');
   };
 
+  // ─── The settings of the analysis the script embeds ───────────────────────
+  // runAnalysis() writes the form into APP.config BEFORE it can refuse a run, and sets APP.results
+  // together with APP.analysisSettings only when the run succeeds. After a refused rerun APP.config
+  // therefore holds settings that were never analysed, while APP.results still holds the last
+  // successful analysis (Codex review of PR #635: REML page values were exported next to
+  // rma(method="DL", test="adhoc")). Every getter the script uses reads APP.config, so the script is
+  // generated with APP.config set to the saved settings for this one synchronous pass, then restored.
+  // The panel's own runs are not affected.
+  var RCHECK_SETTING_KEYS = ['reMethod', 'useHKSJ', 'confLevel', 'outcomeType', 'effectMeasure', 'studyVar', 'treatmentVar', 'timeVar', 'eventVar'];
+  function rCheckSettingsNote(cfg, saved) {
+    var diff = RCHECK_SETTING_KEYS.filter(function(k) { return saved[k] !== cfg[k]; });
+    if (!diff.length) return null;
+    return diff.map(function(k) { return k + ': analysed ' + JSON.stringify(saved[k]) + ', form ' + JSON.stringify(cfg[k]); }).join('; ');
+  }
+  // The saved settings belong to APP.results only while APP.results is still the object that run
+  // produced: runAnalysis() sets APP.lastResults = APP.results next to APP.analysisSettings, and
+  // Clear data nulls both. Undo/redo and a loaded session replace APP.results (and APP.config) without
+  // recording the settings those results were computed under (their snapshots hold only data, config,
+  // results); the check then cannot know them and marks every current-analysis quantity NOT CHECKED
+  // rather than pair them with guessed R settings. The validation-suite runner that analyses each
+  // example restores the user's APP.results together with its lastResults / analysisSettings.
+  var rCheckCurrentUnknownWhy = null;
+  var generateRScript = function() {
+    var hasCurrent = !!(typeof APP !== 'undefined' && APP && APP.results);
+    var hasSaved = hasCurrent && !!(APP.analysisSettings && typeof APP.analysisSettings === 'object' && APP.lastResults === APP.results);
+    if (!hasSaved) {
+      rCheckCurrentUnknownWhy = hasCurrent
+        ? 'the settings these page results were computed under are not recorded (restored by undo or from a saved session); re-run the analysis on the page and export again'
+        : null;
+      try { return generateRScriptForEmbeddedAnalysis(); } finally { rCheckCurrentUnknownWhy = null; }
+    }
+    var cfg = APP.config;
+    var note = rCheckSettingsNote(cfg || {}, APP.analysisSettings);
+    APP.config = Object.assign({}, APP.analysisSettings);
+    try {
+      var script = generateRScriptForEmbeddedAnalysis();
+    } finally {
+      APP.config = cfg;
+    }
+    if (note) {
+      script = script.replace('\n', '\n# NOTE: this script checks the last SUCCESSFUL analysis, run with the settings saved with it,\n' +
+        '# not the settings now on the form (' + note.replace(/[\r\n]/g, ' ') + ').\n' +
+        '# Re-run the analysis on the page and export again to check the form\'s settings.\n');
+    }
+    return script;
+  };
+
   // ─── Page-vs-R check appended to the user-facing R script ─────────────────
   // The script used to print only R's own output, so a user could check it only by reading numbers
   // by eye. This appends, for every quantity the WebR panel compares, the page's value, R's value,
@@ -77867,6 +77914,7 @@ function displayValidationResults(results) {
           : 'No R code generated (data not available or insufficient studies).';
       }
       else if ((sc.id === 'ref_pi' || sc.id === 'cur_pi') && rCheckPiStudies(sc) < 3) why = 'Need k>=3 for prediction interval.';
+      if (!why && sc.source === 'current' && rCheckCurrentUnknownWhy) why = 'Not checked: ' + rCheckCurrentUnknownWhy + '.';
       var jsErr = null;
       if (!why) {
         try { js = sc.getJSValues ? sc.getJSValues() : null; } catch (e) { jsErr = (e && e.message) || String(e); }
@@ -90137,7 +90185,11 @@ function runBeyondR40(method) {
                         data: APP.data,
                         variables: APP.variables,
                         results: APP.results,
-                        config: Object.assign({}, APP.config || {})
+                        config: Object.assign({}, APP.config || {}),
+                        // runAnalysis() below replaces these with each example's; restored with
+                        // APP.results so the R script still knows the settings of the user's analysis
+                        lastResults: APP.lastResults,
+                        analysisSettings: APP.analysisSettings
                     };
                     const priorRun = APP.beyondR40LastRun || null;
                     const startedAt = new Date().toISOString();
@@ -90187,6 +90239,8 @@ function runBeyondR40(method) {
                     APP.data = priorState.data;
                     APP.variables = priorState.variables;
                     APP.results = priorState.results;
+                    APP.lastResults = priorState.lastResults;
+                    APP.analysisSettings = priorState.analysisSettings;
                     APP.config = Object.assign({}, priorState.config || {});
                     if (APP.data && APP.data.length && typeof displayData === 'function') {
                         displayData();

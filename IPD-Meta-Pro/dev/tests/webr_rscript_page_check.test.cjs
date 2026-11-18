@@ -7,7 +7,10 @@
 // Checked here, on the page's own examples (binary, then continuous = the user changes the data):
 //   1. the script embeds the CURRENT analysis' values (not the previous dataset's);
 //   2. it runs in fresh Rscript and prints MATCH n/n, with every NOT CHECKED row excluded from n;
-//   3. a planted defect (one page value perturbed by 0.01) makes it print MISMATCH, naming the row.
+//   3. a planted defect (one page value perturbed by 0.01) makes it print MISMATCH, naming the row;
+//   4. a refused rerun (Codex review of PR #635): binary example analysed with REML, HKSJ off, then
+//      DL + HKSJ + treatment "age" (refused) -> the script still pairs the REML page values with the
+//      REML R code they came from (MATCH n/n), not with rma(method="DL", test="adhoc").
 //   node dev/tests/webr_rscript_page_check.test.cjs [path/to/ipd-meta-pro.html]
 // Needs system Chrome + playwright-core (PLAYWRIGHT_CORE=<dir>/playwright-core) and Rscript with
 // metafor (RSCRIPT=<path>). Without them it prints SKIPPED and exits 2: a check that did not run is
@@ -93,6 +96,41 @@ const lit = (x) => String(x);
       console.log('    ' + ex + ' Rscript: ' + r.last + '  (' + nNc + ' NOT CHECKED)');
       prev = P;
     }
+
+    // 4. refused rerun: the page keeps the last successful analysis; the form now holds settings that
+    //    were never analysed. The script must check the analysis it embeds, with its own settings.
+    await page.evaluate(() => { window.loadExampleData('binary'); });
+    await page.waitForTimeout(3000);
+    await page.evaluate(() => {
+      document.getElementById('reMethod').value = 'REML';
+      document.getElementById('useHKSJ').checked = false;
+      return window.runAnalysis();
+    });
+    await page.waitForFunction(() => APP.results && APP.analysisSettings && APP.analysisSettings.reMethod === 'REML' && APP.lastResults === APP.results, null, { timeout: 120000 });
+    const ok = await page.evaluate(() => ({ eff: APP.results.pooled.effect, cfg: JSON.stringify(APP.analysisSettings) }));
+    await page.evaluate(() => {
+      document.getElementById('reMethod').value = 'DL';
+      document.getElementById('useHKSJ').checked = true;
+      const t = document.getElementById('varTreatment');
+      if (![...t.options].some((o) => o.value === 'age')) { const o = document.createElement('option'); o.value = o.textContent = 'age'; t.appendChild(o); }
+      t.value = 'age';
+      try { return Promise.resolve(window.runAnalysis()).catch(() => null); } catch (e) { return null; }
+    });
+    await page.waitForTimeout(3000);
+    const after = await page.evaluate(() => ({ eff: APP.results.pooled.effect, cfg: APP.config.reMethod + '/' + APP.config.useHKSJ + '/' + APP.config.treatmentVar, saved: JSON.stringify(APP.analysisSettings) }));
+    check('refused rerun: precondition - the rerun was refused (results and saved settings unchanged, form settings DL/HKSJ/age)',
+      after.eff === ok.eff && after.saved === ok.cfg && after.cfg === 'DL/true/age', JSON.stringify(after));
+    const rs = await page.evaluate(() => window.generateRScript());
+    const primR = ((rs.split('(cur_primary)')[1] || '').split('\n# ──')[0]);
+    check('refused rerun: primary-MA R code uses the analysed REML / test z, not DL / adhoc',
+      /method="REML", test="z"/.test(primR) && !/method="DL"/.test(primR), (/res\s+<- rma\([^\n]*/.exec(primR) || [])[0]);
+    check('refused rerun: the script says it checks the last successful analysis', /not the settings now on the form/.test(rs));
+    const rr = runR(rs, 'refused_rerun');
+    const mr = /^MATCH (\d+)\/(\d+)$/.exec(rr.last);
+    check('refused rerun: fresh Rscript prints MATCH n/n', rr.status === 0 && !!mr && mr[1] === mr[2] && +mr[1] > 0, rr.last);
+    check('refused rerun: primary-MA ci_lower and ci_upper MATCH (both MISMATCHed before the fix)',
+      ['ci_lower', 'ci_upper'].every((k) => new RegExp('^\\[MATCH\\] +Current Analysis - Primary MA :: ' + k + ' \\|', 'm').test(rr.out)));
+    console.log('    refused-rerun Rscript: ' + rr.last);
 
     // 3. planted defect: the page's SE off by 0.01 (tolerance 0.001) -> MISMATCH, naming the row
     const planted = await page.evaluate(() => { APP.results.pooled.se += 0.01; const s = window.generateRScript(); APP.results.pooled.se -= 0.01; return s; });
