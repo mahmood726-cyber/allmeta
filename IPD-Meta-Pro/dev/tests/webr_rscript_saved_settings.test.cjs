@@ -64,8 +64,11 @@ check('generating the restored-results script leaves no state behind (next tied 
   (run('APP.lastResults = APP.results; APP.analysisSettings = Object.assign({}, APP.config);'), /why  = NULL,/.test(block(gen(), 'cur_primary'))));
 
 // the Beyond-R batch workflow runner analyses every example (runAnalysis() each time) and then puts
-// the user's APP.results back: its saved settings must come back with it, or the user's own analysis
-// would be NOT CHECKED afterwards (and APP.analysisSettings would describe the last example).
+// the user's APP.results/config back, but NOT APP.lastResults / APP.analysisSettings: restoring those
+// changes displayed output (fitted-display CI, interpretation, GRADE, report) and is held for review
+// (HELD_batch_restore.patch). So afterwards APP.analysisSettings describes the LAST EXAMPLE. The
+// requirement: the user's analysis is then NOT CHECKED, never MATCHed against R code built from the
+// last example's settings. The example here analyses under DL; the user's analysis was PM.
 // runAnalysis / loadExampleData are stood in for (the vm has no form); the panel elements are given.
 run('var __els = {}, __gid = document.getElementById;' +
     'document.getElementById = function (id) { if (id === "beyondR40Results" || id === "beyondR40Output") return __els[id] || (__els[id] = { style: {}, innerHTML: "", appendChild: function () {}, querySelector: function () { return null; }, querySelectorAll: function () { return []; } }); return __gid.call(document, id); };' +
@@ -75,10 +78,16 @@ run('var __els = {}, __gid = document.getElementById;' +
     'APP.config = Object.assign(APP.config || {}, { reMethod: "PM", useHKSJ: false, confLevel: 0.95 });' +
     'APP.lastResults = APP.results; APP.analysisSettings = Object.assign({}, APP.config); var __mine = APP.results;' +
     'runBeyondR40("batchIPDWorkflowRunner");');
-const after = JSON.parse(run('JSON.stringify({ runs: __runs, same: APP.results === __mine, tied: APP.lastResults === APP.results, method: APP.analysisSettings && APP.analysisSettings.reMethod })'));
-check('batch runner: precondition - it analysed the examples', after.runs > 0 && after.same, JSON.stringify(after));
-check('batch runner: the user analysis comes back with its own saved settings (PM), still checked',
-  after.tied && after.method === 'PM' && /method="PM"/.test(block(gen(), 'cur_primary')) && /why  = NULL,/.test(block(gen(), 'cur_primary')), JSON.stringify(after));
+const after = JSON.parse(run('JSON.stringify({ runs: __runs, same: APP.results === __mine, cfg: APP.config.reMethod, tied: APP.lastResults === APP.results, method: APP.analysisSettings && APP.analysisSettings.reMethod })'));
+check('batch runner: precondition - it analysed the examples and put the user analysis (PM) back, with the last example settings (DL) left in APP.analysisSettings',
+  after.runs > 0 && after.same && after.cfg === 'PM' && !after.tied && after.method === 'DL', JSON.stringify(after));
+const sb = gen();
+check('batch runner: afterwards every current-analysis scenario is NOT CHECKED with the reason',
+  curIds.every((id) => /why  = "Not checked: the settings these page results were computed under are not recorded/.test(block(sb, id)) && /page = NULL,/.test(block(sb, id))),
+  curIds.filter((id) => !/why  = "Not checked:/.test(block(sb, id))).join(','));
+check('batch runner: no current-analysis R code is built from the last example settings (DL)',
+  !/res_primary <- rma\(yi=yi, vi=vi, method="DL"/.test(sb.split('PAGE vs R CHECK')[0]), (/res_primary <- rma\([^\n]*/.exec(sb) || [])[0]);
+check('batch runner: the reference benchmarks are still checked', ['ref_dl', 'ref_reml', 'ref_hksj'].every((id) => /why  = NULL,/.test(block(sb, id))));
 
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('all passed');
