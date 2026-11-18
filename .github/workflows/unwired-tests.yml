@@ -71,7 +71,12 @@ jobs:
           #   IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs  NEEDS system Chrome + playwright-core:
           #       without them it prints SKIPPED and exits 2 by the same rule. This job has no system
           #       Chrome. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
-          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs "
+          #   IPD-Meta-Pro/dev/tests/webr_rscript_page_check.test.cjs  NEEDS system Chrome + playwright-core
+          #       AND Rscript with metafor: without them it prints SKIPPED and exits 2 by the same rule.
+          #       Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> RSCRIPT=<path> node <file>.
+          #   IPD-Meta-Pro/dev/tests/webr_validation_report_pairing.test.cjs  NEEDS system Chrome + playwright-core:
+          #       exits 2 without them by the same rule. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs IPD-Meta-Pro/dev/tests/webr_rscript_page_check.test.cjs IPD-Meta-Pro/dev/tests/webr_validation_report_pairing.test.cjs "
           files=()
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \

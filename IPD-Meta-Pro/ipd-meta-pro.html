@@ -77426,6 +77426,7 @@ function displayValidationResults(results) {
 
       // (g) Generate R script and show preview
       var script = generateRScript();
+      webRLastScript = script; webRLastScriptFor = webRLastResults;
       if (webrScriptDetails) webrScriptDetails.style.display = '';
       if (webrScriptCode) webrScriptCode.textContent = script;
 
@@ -77484,7 +77485,7 @@ function displayValidationResults(results) {
   };
 
   // ─── Task 6: generateRScript ──────────────────────────────────────────────
-  var generateRScript = function() {
+  var generateRScriptForEmbeddedAnalysis = function() {
     var hasResults = !!(typeof APP !== 'undefined' && APP && APP.results);
     var method   = (hasResults && APP.config && APP.config.reMethod)   ? APP.config.reMethod   : 'REML';
     var confLevel = (hasResults && APP.config && APP.config.confLevel != null)
@@ -77731,7 +77732,247 @@ function displayValidationResults(results) {
     lines.push('cat("R:", R.version.string, "\\n")');
     lines.push('');
 
+    // Page vs R: page value, R value, |diff|, the panel's tolerance, and a final MATCH n/n / MISMATCH.
+    appendPageVsRCheck(lines);
+
     return lines.join('\n');
+  };
+
+  // ─── The settings of the analysis the script embeds ───────────────────────
+  // runAnalysis() writes the form into APP.config BEFORE it can refuse a run, and sets APP.results
+  // together with APP.analysisSettings only when the run succeeds. After a refused rerun APP.config
+  // therefore holds settings that were never analysed, while APP.results still holds the last
+  // successful analysis (Codex review of PR #635: REML page values were exported next to
+  // rma(method="DL", test="adhoc")). Every getter the script uses reads APP.config, so the script is
+  // generated with APP.config set to the saved settings for this one synchronous pass, then restored.
+  // The panel's own runs are not affected.
+  var RCHECK_SETTING_KEYS = ['reMethod', 'useHKSJ', 'confLevel', 'outcomeType', 'effectMeasure', 'studyVar', 'treatmentVar', 'timeVar', 'eventVar'];
+  function rCheckSettingsNote(cfg, saved) {
+    var diff = RCHECK_SETTING_KEYS.filter(function(k) { return saved[k] !== cfg[k]; });
+    if (!diff.length) return null;
+    return diff.map(function(k) { return k + ': analysed ' + JSON.stringify(saved[k]) + ', form ' + JSON.stringify(cfg[k]); }).join('; ');
+  }
+  // The saved settings belong to APP.results only while APP.results is still the object that run
+  // produced: runAnalysis() sets APP.lastResults = APP.results next to APP.analysisSettings, and
+  // Clear data nulls both. Undo/redo and a loaded session replace APP.results (and APP.config) without
+  // recording the settings those results were computed under (their snapshots hold only data, config,
+  // results); the check then cannot know them and marks every current-analysis quantity NOT CHECKED
+  // rather than pair them with guessed R settings. The Beyond-R batch workflow runner analyses each
+  // example and then restores the user's APP.results/config but not lastResults/analysisSettings
+  // (restoring them changes displayed output and is held for review), so after a batch run the
+  // user's analysis is NOT CHECKED here too, never paired with the last example's settings.
+  var rCheckCurrentUnknownWhy = null;
+  var generateRScript = function() {
+    var hasCurrent = !!(typeof APP !== 'undefined' && APP && APP.results);
+    var hasSaved = hasCurrent && !!(APP.analysisSettings && typeof APP.analysisSettings === 'object' && APP.lastResults === APP.results);
+    if (!hasSaved) {
+      rCheckCurrentUnknownWhy = hasCurrent
+        ? 'the settings these page results were computed under are not recorded (restored by undo, from a saved session, or after the batch workflow ran the examples); re-run the analysis on the page and export again'
+        : null;
+      try { return generateRScriptForEmbeddedAnalysis(); } finally { rCheckCurrentUnknownWhy = null; }
+    }
+    var cfg = APP.config;
+    var note = rCheckSettingsNote(cfg || {}, APP.analysisSettings);
+    APP.config = Object.assign({}, APP.analysisSettings);
+    try {
+      var script = generateRScriptForEmbeddedAnalysis();
+    } finally {
+      APP.config = cfg;
+    }
+    if (note) {
+      script = script.replace('\n', '\n# NOTE: this script checks the last SUCCESSFUL analysis, run with the settings saved with it,\n' +
+        '# not the settings now on the form (' + note.replace(/[\r\n]/g, ' ') + ').\n' +
+        '# Re-run the analysis on the page and export again to check the form\'s settings.\n');
+    }
+    return script;
+  };
+
+  // ─── Page-vs-R check appended to the user-facing R script ─────────────────
+  // The script used to print only R's own output, so a user could check it only by reading numbers
+  // by eye. This appends, for every quantity the WebR panel compares, the page's value, R's value,
+  // |diff| and the panel's OWN tolerance for that quantity (sc.tolerances, unchanged), and a final
+  // line computed in R: "MATCH n/n" or "MISMATCH". Page values are read from the same analysis the
+  // R code is built from: getRCode() then getJSValues() for each scenario, in one synchronous pass
+  // with nothing awaited in between, in the panel's order. Full-precision values are embedded
+  // (String(x) round-trips a double exactly), so nothing is rounded before it is compared. A
+  // quantity with no value on either side, or no tolerance in the panel, is NOT CHECKED with its
+  // reason and is never counted as a MATCH.
+  var RCHECK_TIER_PACKAGES = { A: ['metafor'], B: ['survival'], C: ['lme4', 'cmprsk', 'flexsurvcure'] };
+
+  function rStr(s) {
+    var out = '';
+    var str = String(s == null ? '' : s).replace(/[–—]/g, '-');
+    for (var ch of str) {
+      var c = ch.codePointAt(0);
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '"') out += '\\"';
+      else if (c < 0x20 || c === 0x7f) out += ' ';
+      else if (c > 0x7e) out += (c > 0xffff ? '\\U{' + c.toString(16) + '}' : '\\u' + ('0000' + c.toString(16)).slice(-4));
+      else out += ch;
+    }
+    return '"' + out + '"';
+  }
+
+  // A page value as an R literal, coerced the way the panel's compareResults coerces it
+  // (global isFinite / arithmetic). null/undefined -> NULL ("the page gives no value").
+  function rNumLiteral(v) {
+    if (v === null || v === undefined) return 'NULL';
+    if (typeof v !== 'number') {
+      if (typeof v === 'object' && !Array.isArray(v)) return 'NULL';
+      var n = Number(v);
+      if (!isFinite(v)) return 'NULL';
+      v = n;
+    }
+    if (v !== v) return 'NaN';
+    if (v === Infinity) return 'Inf';
+    if (v === -Infinity) return '-Inf';
+    return String(v);
+  }
+
+  function rNamedList(obj) {
+    if (obj === null || obj === undefined) return 'NULL';
+    var parts = Object.keys(obj).map(function(k) { return '`' + String(k).replace(/[`\\]/g, '_') + '` = ' + rNumLiteral(obj[k]); });
+    return 'list(' + parts.join(', ') + ')';
+  }
+
+  // Which scenarios the check covers is decided by what THIS script embeds, never by the mode of
+  // the panel's last run (agy r635: after "Run Reference Benchmarks" a later analysis was left out;
+  // after "Clear data" the reference benchmarks were left out). The reference benchmark data are
+  // always embedded above, so the reference scenarios are always checked; the current-analysis
+  // scenarios are checked exactly when a current analysis (pooled result + studies) is embedded.
+  function rCheckScenarios() {
+    var hasCurrent = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled &&
+                        APP.results.studies && APP.results.studies.length > 0);
+    return {
+      mode: hasCurrent ? 'reference benchmarks + current analysis' : 'reference benchmarks (no current analysis)',
+      list: WEBR_SCENARIOS.filter(function(sc) {
+        if (sc.source === 'current') return hasCurrent;
+        return true;   // 'reference' and 'both'
+      })
+    };
+  }
+
+  // The number of studies behind a prediction-interval scenario: the analysis the scenario's R code
+  // is built from (agy r635: ref_pi was gated on the CURRENT analysis' k, so a loaded 2-study
+  // analysis marked the 13-study BCG benchmark NOT CHECKED).
+  function rCheckPiStudies(sc) {
+    if (sc.id === 'ref_pi') {
+      return (typeof BENCHMARK_DATASETS !== 'undefined' && BENCHMARK_DATASETS && BENCHMARK_DATASETS.bcg && BENCHMARK_DATASETS.bcg.studies)
+        ? BENCHMARK_DATASETS.bcg.studies.length : 0;
+    }
+    return (typeof APP !== 'undefined' && APP && APP.results && APP.results.studies) ? APP.results.studies.length : 0;
+  }
+
+  function appendPageVsRCheck(lines) {
+    var sel = rCheckScenarios();
+    var L = [];
+    L.push('');
+    L.push('# ════════════════════════════════════════════════════════════════════');
+    L.push('# PAGE vs R CHECK: every quantity the WebR panel compares, for the data embedded above');
+    L.push('# (' + sel.mode + ')');
+    L.push('# page = the value this page computed for the analysis below (full precision, read');
+    L.push('#        from the same analysis the R code was built from); R = the same R code the');
+    L.push('#        panel runs in WebR; tol = the panel\'s own tolerance for that quantity.');
+    L.push('# MATCH when |page - R| <= tol. NOT CHECKED (with its reason) is never counted as a MATCH.');
+    L.push('# ════════════════════════════════════════════════════════════════════');
+    L.push('.ipd_chk <- new.env()');
+    L.push('.ipd_chk$rows <- list()');
+    L.push('.ipd_row <- function(status, scen, key, page = NA, r = NA, diff = NA, tol = NA, why = "") {');
+    L.push('  fmt <- function(x) if (is.null(x) || length(x) != 1 || is.na(suppressWarnings(as.numeric(x)))) "-" else format(as.numeric(x), digits = 10)');
+    L.push('  cat(sprintf("%-12s %s :: %s | page %s | R %s | |diff| %s | tol %s%s\\n", paste0("[", status, "]"), scen, key,');
+    L.push('              fmt(page), fmt(r), if (is.na(diff)) "-" else sprintf("%.3g", diff), if (is.na(tol)) "-" else format(tol),');
+    L.push('              if (nzchar(why)) paste0(" | ", why) else ""))');
+    L.push('  .ipd_chk$rows[[length(.ipd_chk$rows) + 1]] <- status');
+    L.push('}');
+    L.push('.ipd_scenario <- function(label, pkgs, page, tol, why, code) {');
+    L.push('  if (!is.null(why)) { .ipd_row("NOT CHECKED", label, "(all)", why = why); return(invisible()) }');
+    L.push('  miss <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]');
+    L.push('  if (length(miss)) { .ipd_row("NOT CHECKED", label, "(all)", why = paste("R package not installed:", paste(miss, collapse = ", "))); return(invisible()) }');
+    L.push('  res <- tryCatch(suppressMessages(code()), error = function(e) e)');
+    L.push('  if (inherits(res, "error")) { .ipd_row("ERROR", label, "(all)", why = paste("R error:", conditionMessage(res))); return(invisible()) }');
+    L.push('  for (key in union(names(tol), names(res))) {');
+    L.push('    rv <- res[[key]]; pv <- page[[key]]; tl <- tol[[key]]');
+    L.push('    if (is.null(page)) { .ipd_row("NOT CHECKED", label, key, r = rv, why = "the page gives no value for this scenario"); next }');
+    L.push('    if (is.null(pv)) { .ipd_row("NOT CHECKED", label, key, r = rv, why = "the page gives no value"); next }');
+    L.push('    if (is.null(rv) || length(rv) == 0) { .ipd_row("NOT CHECKED", label, key, page = pv, why = "R gives no value"); next }');
+    L.push('    if (length(rv) != 1) { .ipd_row("NOT CHECKED", label, key, page = pv, why = paste("R gives", length(rv), "values, not one")); next }');
+    L.push('    rv <- suppressWarnings(as.numeric(rv))');
+    L.push('    if (is.null(tl)) { .ipd_row("NOT CHECKED", label, key, page = pv, r = rv, why = "R-only quantity: the panel has no tolerance for it"); next }');
+    L.push('    if (!is.finite(pv) || !is.finite(rv)) { .ipd_row("NOT CHECKED", label, key, page = pv, r = rv, tol = tl, why = "a value is not finite"); next }');
+    L.push('    d <- abs(pv - rv)');
+    L.push('    .ipd_row(if (d <= tl) "MATCH" else "MISMATCH", label, key, page = pv, r = rv, diff = d, tol = tl)');
+    L.push('  }');
+    L.push('}');
+    L.push('');
+
+    sel.list.forEach(function(sc) {
+      var pkgs = RCHECK_TIER_PACKAGES[sc.tier || 'A'] || [];
+      var why = null, code = null, js = null;
+      // The panel's own order and skip rules: R code first, then the page's values, same pass.
+      try { code = sc.getRCode(); } catch (e) { code = null; }
+      if (!code) {
+        var curMethod = (typeof APP !== 'undefined' && APP && APP.config && APP.config.reMethod) ? APP.config.reMethod : 'REML';
+        why = (sc.id === 'cur_pi' && curMethod === 'FE')
+          ? 'No R code generated: no prediction interval under a common-effect (FE) model.'
+          : 'No R code generated (data not available or insufficient studies).';
+      }
+      else if ((sc.id === 'ref_pi' || sc.id === 'cur_pi') && rCheckPiStudies(sc) < 3) why = 'Need k>=3 for prediction interval.';
+      if (!why && sc.source === 'current' && rCheckCurrentUnknownWhy) why = 'Not checked: ' + rCheckCurrentUnknownWhy + '.';
+      var jsErr = null;
+      if (!why) {
+        try { js = sc.getJSValues ? sc.getJSValues() : null; } catch (e) { jsErr = (e && e.message) || String(e); }
+      }
+      L.push('# ── ' + String(sc.label || sc.id).replace(/[\r\n]/g, ' ') + ' (' + sc.id + ') ──');
+      if (jsErr !== null) {
+        L.push('.ipd_row("ERROR", ' + rStr(sc.label || sc.id) + ', "(all)", why = ' + rStr('the page threw: ' + jsErr) + ')');
+        L.push('');
+        return;
+      }
+      L.push('.ipd_scenario(' + rStr(sc.label || sc.id) + ', pkgs = c(' + pkgs.map(rStr).join(', ') + '),');
+      L.push('  page = ' + rNamedList(js) + ',');
+      L.push('  tol  = ' + rNamedList(sc.tolerances || {}) + ',');
+      L.push('  why  = ' + (why ? rStr(why) : 'NULL') + ',');
+      if (code) {
+        L.push('  code = function() {');
+        String(code).split('\n').forEach(function(ln) { L.push('    ' + ln); });
+        L.push('  })');
+      } else {
+        L.push('  code = NULL)');
+      }
+      L.push('');
+    });
+
+    L.push('.st <- unlist(.ipd_chk$rows)');
+    L.push('.n_match <- sum(.st == "MATCH"); .n_bad <- sum(.st %in% c("MISMATCH", "ERROR")); .n_nc <- sum(.st == "NOT CHECKED")');
+    L.push('cat(sprintf("\\nCompared %d quantities: %d MATCH, %d MISMATCH/ERROR; %d NOT CHECKED (listed above, not counted as MATCH)\\n",');
+    L.push('            .n_match + .n_bad, .n_match, .n_bad, .n_nc))');
+    L.push('if (.n_bad > 0) {');
+    L.push('  cat(sprintf("MISMATCH (%d of %d compared quantities outside the panel tolerance or in error)\\n", .n_bad, .n_match + .n_bad))');
+    L.push('} else if (.n_match > 0) {');
+    L.push('  cat(sprintf("MATCH %d/%d\\n", .n_match, .n_match))');
+    L.push('} else {');
+    L.push('  cat("NOT CHECKED: no quantity could be compared\\n")');
+    L.push('}');
+    Array.prototype.push.apply(lines, L);
+  }
+
+  // ─── downloadRScript ─────────────────────────────────────────────────────
+  var downloadRScript = function() {
+    var script = generateRScript();
+    if (!script) {
+      showNotification('No R script to download.', 'warning');
+      return;
+    }
+    var blob = new Blob([script], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'ipd-meta-pro-check-' + new Date().toISOString().slice(0, 10) + '.R';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    showNotification('R script downloaded.', 'success');
   };
 
   // ─── copyRScript ─────────────────────────────────────────────────────────
@@ -77863,9 +78104,12 @@ function displayValidationResults(results) {
       }
     }
 
-    // R script
+    // R script: the one generated with the validation run above, so the table and the script describe
+    // the same analysis (no text is added to the report). Only if that run's script is not available is one
+    // generated now, as before.
     html.push('<h2>Reproducible R Script</h2>');
-    html.push('<pre>' + escapeHtml(generateRScript()) + '</pre>');
+    var reportScript = (webRLastScriptFor === webRLastResults && typeof webRLastScript === 'string') ? webRLastScript : generateRScript();
+    html.push('<pre>' + escapeHtml(reportScript) + '</pre>');
 
     // Footer
     html.push('<div class="footer">');
@@ -77953,6 +78197,10 @@ function displayValidationResults(results) {
   // ─── 6. Scenario registry & last-results store ───────────────────────────
   var WEBR_SCENARIOS  = [];
   var webRLastResults = null;
+  // The R script generated together with webRLastResults (step g of the run), and the results object
+  // it belongs to: the downloaded report prints the run's JS/R table next to THIS script, so both
+  // describe the same analysis even if the page has been re-analysed since.
+  var webRLastScript = null, webRLastScriptFor = null;
 
   // ─── 3. initWebR ─────────────────────────────────────────────────────────
   /**
@@ -78154,6 +78402,7 @@ function displayValidationResults(results) {
         '</summary>',
         '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">',
           '<button class="webr-btn webr-btn-secondary" onclick="copyRScript()">Copy R Script</button>',
+          '<button class="webr-btn webr-btn-secondary" onclick="downloadRScript()" title="Download the R script: it prints the page value, R value and |diff| for every compared quantity and a final MATCH n/n or MISMATCH">Download R script</button>',
           '<button class="webr-btn webr-btn-secondary" onclick="copyResultsJSON()">Copy Results JSON</button>',
           '<button class="webr-btn webr-btn-secondary" onclick="downloadValidationReport()">Download Report</button>',
         '</div>',
@@ -79240,6 +79489,7 @@ function displayValidationResults(results) {
   window.runWebRValidation      = runWebRValidation;
   window.generateRScript        = generateRScript;
   window.copyRScript            = copyRScript;
+  window.downloadRScript        = downloadRScript;
   window.copyResultsJSON        = copyResultsJSON;
   window.downloadValidationReport = downloadValidationReport;
   window.getWebRScenarioCount   = function() { return WEBR_SCENARIOS.length; };
