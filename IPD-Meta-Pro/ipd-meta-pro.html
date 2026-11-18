@@ -77785,17 +77785,32 @@ function displayValidationResults(results) {
     return 'list(' + parts.join(', ') + ')';
   }
 
+  // Which scenarios the check covers is decided by what THIS script embeds, never by the mode of
+  // the panel's last run (agy r635: after "Run Reference Benchmarks" a later analysis was left out;
+  // after "Clear data" the reference benchmarks were left out). The reference benchmark data are
+  // always embedded above, so the reference scenarios are always checked; the current-analysis
+  // scenarios are checked exactly when a current analysis (pooled result + studies) is embedded.
   function rCheckScenarios() {
-    var hasPooled = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled);
-    var mode = (webRLastResults && webRLastResults.mode) ? webRLastResults.mode : (hasPooled ? 'current' : 'reference');
+    var hasCurrent = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled &&
+                        APP.results.studies && APP.results.studies.length > 0);
     return {
-      mode: mode,
+      mode: hasCurrent ? 'reference benchmarks + current analysis' : 'reference benchmarks (no current analysis)',
       list: WEBR_SCENARIOS.filter(function(sc) {
-        if (mode === 'current')   return sc.source === 'current' || sc.source === 'both';
-        if (mode === 'reference') return sc.source === 'reference' || sc.source === 'both';
-        return true;
+        if (sc.source === 'current') return hasCurrent;
+        return true;   // 'reference' and 'both'
       })
     };
+  }
+
+  // The number of studies behind a prediction-interval scenario: the analysis the scenario's R code
+  // is built from (agy r635: ref_pi was gated on the CURRENT analysis' k, so a loaded 2-study
+  // analysis marked the 13-study BCG benchmark NOT CHECKED).
+  function rCheckPiStudies(sc) {
+    if (sc.id === 'ref_pi') {
+      return (typeof BENCHMARK_DATASETS !== 'undefined' && BENCHMARK_DATASETS && BENCHMARK_DATASETS.bcg && BENCHMARK_DATASETS.bcg.studies)
+        ? BENCHMARK_DATASETS.bcg.studies.length : 0;
+    }
+    return (typeof APP !== 'undefined' && APP && APP.results && APP.results.studies) ? APP.results.studies.length : 0;
   }
 
   function appendPageVsRCheck(lines) {
@@ -77803,7 +77818,8 @@ function displayValidationResults(results) {
     var L = [];
     L.push('');
     L.push('# ════════════════════════════════════════════════════════════════════');
-    L.push('# PAGE vs R CHECK: every quantity the WebR panel compares (mode: ' + sel.mode + ')');
+    L.push('# PAGE vs R CHECK: every quantity the WebR panel compares, for the data embedded above');
+    L.push('# (' + sel.mode + ')');
     L.push('# page = the value this page computed for the analysis below (full precision, read');
     L.push('#        from the same analysis the R code was built from); R = the same R code the');
     L.push('#        panel runs in WebR; tol = the panel\'s own tolerance for that quantity.');
@@ -77839,8 +77855,6 @@ function displayValidationResults(results) {
     L.push('}');
     L.push('');
 
-    var kStudies = (typeof APP !== 'undefined' && APP && APP.results && APP.results.studies)
-      ? APP.results.studies.length : (sel.mode === 'reference' ? 13 : 0);
     sel.list.forEach(function(sc) {
       var pkgs = RCHECK_TIER_PACKAGES[sc.tier || 'A'] || [];
       var why = null, code = null, js = null;
@@ -77852,7 +77866,7 @@ function displayValidationResults(results) {
           ? 'No R code generated: no prediction interval under a common-effect (FE) model.'
           : 'No R code generated (data not available or insufficient studies).';
       }
-      else if ((sc.id === 'ref_pi' || sc.id === 'cur_pi') && kStudies < 3) why = 'Need k>=3 for prediction interval.';
+      else if ((sc.id === 'ref_pi' || sc.id === 'cur_pi') && rCheckPiStudies(sc) < 3) why = 'Need k>=3 for prediction interval.';
       var jsErr = null;
       if (!why) {
         try { js = sc.getJSValues ? sc.getJSValues() : null; } catch (e) { jsErr = (e && e.message) || String(e); }
