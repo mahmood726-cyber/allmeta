@@ -77731,7 +77731,183 @@ function displayValidationResults(results) {
     lines.push('cat("R:", R.version.string, "\\n")');
     lines.push('');
 
+    // Page vs R: page value, R value, |diff|, the panel's tolerance, and a final MATCH n/n / MISMATCH.
+    appendPageVsRCheck(lines);
+
     return lines.join('\n');
+  };
+
+  // ─── Page-vs-R check appended to the user-facing R script ─────────────────
+  // The script used to print only R's own output, so a user could check it only by reading numbers
+  // by eye. This appends, for every quantity the WebR panel compares, the page's value, R's value,
+  // |diff| and the panel's OWN tolerance for that quantity (sc.tolerances, unchanged), and a final
+  // line computed in R: "MATCH n/n" or "MISMATCH". Page values are read from the same analysis the
+  // R code is built from: getRCode() then getJSValues() for each scenario, in one synchronous pass
+  // with nothing awaited in between, in the panel's order. Full-precision values are embedded
+  // (String(x) round-trips a double exactly), so nothing is rounded before it is compared. A
+  // quantity with no value on either side, or no tolerance in the panel, is NOT CHECKED with its
+  // reason and is never counted as a MATCH.
+  var RCHECK_TIER_PACKAGES = { A: ['metafor'], B: ['survival'], C: ['lme4', 'cmprsk', 'flexsurvcure'] };
+
+  function rStr(s) {
+    var out = '';
+    var str = String(s == null ? '' : s).replace(/[–—]/g, '-');
+    for (var ch of str) {
+      var c = ch.codePointAt(0);
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '"') out += '\\"';
+      else if (c < 0x20 || c === 0x7f) out += ' ';
+      else if (c > 0x7e) out += (c > 0xffff ? '\\U{' + c.toString(16) + '}' : '\\u' + ('0000' + c.toString(16)).slice(-4));
+      else out += ch;
+    }
+    return '"' + out + '"';
+  }
+
+  // A page value as an R literal, coerced the way the panel's compareResults coerces it
+  // (global isFinite / arithmetic). null/undefined -> NULL ("the page gives no value").
+  function rNumLiteral(v) {
+    if (v === null || v === undefined) return 'NULL';
+    if (typeof v !== 'number') {
+      if (typeof v === 'object' && !Array.isArray(v)) return 'NULL';
+      var n = Number(v);
+      if (!isFinite(v)) return 'NULL';
+      v = n;
+    }
+    if (v !== v) return 'NaN';
+    if (v === Infinity) return 'Inf';
+    if (v === -Infinity) return '-Inf';
+    return String(v);
+  }
+
+  function rNamedList(obj) {
+    if (obj === null || obj === undefined) return 'NULL';
+    var parts = Object.keys(obj).map(function(k) { return '`' + String(k).replace(/[`\\]/g, '_') + '` = ' + rNumLiteral(obj[k]); });
+    return 'list(' + parts.join(', ') + ')';
+  }
+
+  function rCheckScenarios() {
+    var hasPooled = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled);
+    var mode = (webRLastResults && webRLastResults.mode) ? webRLastResults.mode : (hasPooled ? 'current' : 'reference');
+    return {
+      mode: mode,
+      list: WEBR_SCENARIOS.filter(function(sc) {
+        if (mode === 'current')   return sc.source === 'current' || sc.source === 'both';
+        if (mode === 'reference') return sc.source === 'reference' || sc.source === 'both';
+        return true;
+      })
+    };
+  }
+
+  function appendPageVsRCheck(lines) {
+    var sel = rCheckScenarios();
+    var L = [];
+    L.push('');
+    L.push('# ════════════════════════════════════════════════════════════════════');
+    L.push('# PAGE vs R CHECK: every quantity the WebR panel compares (mode: ' + sel.mode + ')');
+    L.push('# page = the value this page computed for the analysis below (full precision, read');
+    L.push('#        from the same analysis the R code was built from); R = the same R code the');
+    L.push('#        panel runs in WebR; tol = the panel\'s own tolerance for that quantity.');
+    L.push('# MATCH when |page - R| <= tol. NOT CHECKED (with its reason) is never counted as a MATCH.');
+    L.push('# ════════════════════════════════════════════════════════════════════');
+    L.push('.ipd_chk <- new.env()');
+    L.push('.ipd_chk$rows <- list()');
+    L.push('.ipd_row <- function(status, scen, key, page = NA, r = NA, diff = NA, tol = NA, why = "") {');
+    L.push('  fmt <- function(x) if (is.null(x) || length(x) != 1 || is.na(suppressWarnings(as.numeric(x)))) "-" else format(as.numeric(x), digits = 10)');
+    L.push('  cat(sprintf("%-12s %s :: %s | page %s | R %s | |diff| %s | tol %s%s\\n", paste0("[", status, "]"), scen, key,');
+    L.push('              fmt(page), fmt(r), if (is.na(diff)) "-" else sprintf("%.3g", diff), if (is.na(tol)) "-" else format(tol),');
+    L.push('              if (nzchar(why)) paste0(" | ", why) else ""))');
+    L.push('  .ipd_chk$rows[[length(.ipd_chk$rows) + 1]] <- status');
+    L.push('}');
+    L.push('.ipd_scenario <- function(label, pkgs, page, tol, why, code) {');
+    L.push('  if (!is.null(why)) { .ipd_row("NOT CHECKED", label, "(all)", why = why); return(invisible()) }');
+    L.push('  miss <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]');
+    L.push('  if (length(miss)) { .ipd_row("NOT CHECKED", label, "(all)", why = paste("R package not installed:", paste(miss, collapse = ", "))); return(invisible()) }');
+    L.push('  res <- tryCatch(suppressMessages(code()), error = function(e) e)');
+    L.push('  if (inherits(res, "error")) { .ipd_row("ERROR", label, "(all)", why = paste("R error:", conditionMessage(res))); return(invisible()) }');
+    L.push('  for (key in union(names(tol), names(res))) {');
+    L.push('    rv <- res[[key]]; pv <- page[[key]]; tl <- tol[[key]]');
+    L.push('    if (is.null(page)) { .ipd_row("NOT CHECKED", label, key, r = rv, why = "the page gives no value for this scenario"); next }');
+    L.push('    if (is.null(pv)) { .ipd_row("NOT CHECKED", label, key, r = rv, why = "the page gives no value"); next }');
+    L.push('    if (is.null(rv) || length(rv) == 0) { .ipd_row("NOT CHECKED", label, key, page = pv, why = "R gives no value"); next }');
+    L.push('    if (length(rv) != 1) { .ipd_row("NOT CHECKED", label, key, page = pv, why = paste("R gives", length(rv), "values, not one")); next }');
+    L.push('    rv <- suppressWarnings(as.numeric(rv))');
+    L.push('    if (is.null(tl)) { .ipd_row("NOT CHECKED", label, key, page = pv, r = rv, why = "R-only quantity: the panel has no tolerance for it"); next }');
+    L.push('    if (!is.finite(pv) || !is.finite(rv)) { .ipd_row("NOT CHECKED", label, key, page = pv, r = rv, tol = tl, why = "a value is not finite"); next }');
+    L.push('    d <- abs(pv - rv)');
+    L.push('    .ipd_row(if (d <= tl) "MATCH" else "MISMATCH", label, key, page = pv, r = rv, diff = d, tol = tl)');
+    L.push('  }');
+    L.push('}');
+    L.push('');
+
+    var kStudies = (typeof APP !== 'undefined' && APP && APP.results && APP.results.studies)
+      ? APP.results.studies.length : (sel.mode === 'reference' ? 13 : 0);
+    sel.list.forEach(function(sc) {
+      var pkgs = RCHECK_TIER_PACKAGES[sc.tier || 'A'] || [];
+      var why = null, code = null, js = null;
+      // The panel's own order and skip rules: R code first, then the page's values, same pass.
+      try { code = sc.getRCode(); } catch (e) { code = null; }
+      if (!code) {
+        var curMethod = (typeof APP !== 'undefined' && APP && APP.config && APP.config.reMethod) ? APP.config.reMethod : 'REML';
+        why = (sc.id === 'cur_pi' && curMethod === 'FE')
+          ? 'No R code generated: no prediction interval under a common-effect (FE) model.'
+          : 'No R code generated (data not available or insufficient studies).';
+      }
+      else if ((sc.id === 'ref_pi' || sc.id === 'cur_pi') && kStudies < 3) why = 'Need k>=3 for prediction interval.';
+      var jsErr = null;
+      if (!why) {
+        try { js = sc.getJSValues ? sc.getJSValues() : null; } catch (e) { jsErr = (e && e.message) || String(e); }
+      }
+      L.push('# ── ' + String(sc.label || sc.id).replace(/[\r\n]/g, ' ') + ' (' + sc.id + ') ──');
+      if (jsErr !== null) {
+        L.push('.ipd_row("ERROR", ' + rStr(sc.label || sc.id) + ', "(all)", why = ' + rStr('the page threw: ' + jsErr) + ')');
+        L.push('');
+        return;
+      }
+      L.push('.ipd_scenario(' + rStr(sc.label || sc.id) + ', pkgs = c(' + pkgs.map(rStr).join(', ') + '),');
+      L.push('  page = ' + rNamedList(js) + ',');
+      L.push('  tol  = ' + rNamedList(sc.tolerances || {}) + ',');
+      L.push('  why  = ' + (why ? rStr(why) : 'NULL') + ',');
+      if (code) {
+        L.push('  code = function() {');
+        String(code).split('\n').forEach(function(ln) { L.push('    ' + ln); });
+        L.push('  })');
+      } else {
+        L.push('  code = NULL)');
+      }
+      L.push('');
+    });
+
+    L.push('.st <- unlist(.ipd_chk$rows)');
+    L.push('.n_match <- sum(.st == "MATCH"); .n_bad <- sum(.st %in% c("MISMATCH", "ERROR")); .n_nc <- sum(.st == "NOT CHECKED")');
+    L.push('cat(sprintf("\\nCompared %d quantities: %d MATCH, %d MISMATCH/ERROR; %d NOT CHECKED (listed above, not counted as MATCH)\\n",');
+    L.push('            .n_match + .n_bad, .n_match, .n_bad, .n_nc))');
+    L.push('if (.n_bad > 0) {');
+    L.push('  cat(sprintf("MISMATCH (%d of %d compared quantities outside the panel tolerance or in error)\\n", .n_bad, .n_match + .n_bad))');
+    L.push('} else if (.n_match > 0) {');
+    L.push('  cat(sprintf("MATCH %d/%d\\n", .n_match, .n_match))');
+    L.push('} else {');
+    L.push('  cat("NOT CHECKED: no quantity could be compared\\n")');
+    L.push('}');
+    Array.prototype.push.apply(lines, L);
+  }
+
+  // ─── downloadRScript ─────────────────────────────────────────────────────
+  var downloadRScript = function() {
+    var script = generateRScript();
+    if (!script) {
+      showNotification('No R script to download.', 'warning');
+      return;
+    }
+    var blob = new Blob([script], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'ipd-meta-pro-check-' + new Date().toISOString().slice(0, 10) + '.R';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    showNotification('R script downloaded.', 'success');
   };
 
   // ─── copyRScript ─────────────────────────────────────────────────────────
@@ -78154,6 +78330,7 @@ function displayValidationResults(results) {
         '</summary>',
         '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">',
           '<button class="webr-btn webr-btn-secondary" onclick="copyRScript()">Copy R Script</button>',
+          '<button class="webr-btn webr-btn-secondary" onclick="downloadRScript()" title="Download the R script: it prints the page value, R value and |diff| for every compared quantity and a final MATCH n/n or MISMATCH">Download R script</button>',
           '<button class="webr-btn webr-btn-secondary" onclick="copyResultsJSON()">Copy Results JSON</button>',
           '<button class="webr-btn webr-btn-secondary" onclick="downloadValidationReport()">Download Report</button>',
         '</div>',
@@ -79240,6 +79417,7 @@ function displayValidationResults(results) {
   window.runWebRValidation      = runWebRValidation;
   window.generateRScript        = generateRScript;
   window.copyRScript            = copyRScript;
+  window.downloadRScript        = downloadRScript;
   window.copyResultsJSON        = copyResultsJSON;
   window.downloadValidationReport = downloadValidationReport;
   window.getWebRScenarioCount   = function() { return WEBR_SCENARIOS.length; };
