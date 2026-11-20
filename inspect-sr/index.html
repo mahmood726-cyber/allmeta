@@ -55,6 +55,8 @@
     .dj { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.8rem; }
     .dj select { padding: 0.2rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; }
     .suggest { color: var(--muted); font-size: 0.74rem; }
+    .reason { display: block; margin-top: 0.4rem; font-size: 0.74rem; color: var(--muted); }
+    .reason textarea { display: block; width: 100%; margin-top: 0.15rem; padding: 0.25rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.8rem; }
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 1rem; }
     th, td { padding: 0.35rem 0.45rem; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -178,7 +180,7 @@
     var KEY = "inspect-sr-v1";
 
     function newTrial(name) {
-      return { id: "t" + Date.now() + Math.floor(Math.random() * 1e4), label: name || "", resp: {}, dj: {}, overall: "", est: "", se: "" };
+      return { id: "t" + Date.now() + Math.floor(Math.random() * 1e4), label: name || "", resp: {}, dj: {}, overall: "", why: {}, est: "", se: "" };
     }
     var state = load() || { trials: [newTrial("Trial 1")], cur: 0 };
 
@@ -243,12 +245,14 @@
         var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
         return "<fieldset><legend>Domain " + dm.d + " — " + esc(dm.title) + "</legend>" + rows
           + "<div class='dj'><label>Domain judgement <select data-dj='" + dm.d + "'><option value=''>(use suggested)</option>" + djOpts + "</select></label>"
-          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
+          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div>"
+          + reasonBox(t, String(dm.d), "Reasons for the domain " + dm.d + " judgement (evidence, location)") + "</fieldset>";
       }).join("");
       // overall
       var sugO = suggestOverall(t);
       var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
-      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
+      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div>"
+        + reasonBox(t, "overall", "Reasons for the overall judgement") + "</fieldset>";
       document.getElementById("checks").innerHTML = html;
 
       // wire radios
@@ -261,10 +265,19 @@
         el.addEventListener("change", function () { cur().dj[el.getAttribute("data-dj")] = el.value; commit(); });
       });
       document.getElementById("overall-sel").addEventListener("change", function (e) { cur().overall = e.target.value; commit(); });
+      document.querySelectorAll("textarea[data-reason]").forEach(function (el) {
+        el.addEventListener("input", function () { var t = cur(); if (!t.why) t.why = {}; t.why[el.getAttribute("data-reason")] = el.value; save(); });
+      });
       document.getElementById("eff-est").value = t.est;
       document.getElementById("eff-se").value = t.se;
     }
 
+    // Free-text reasons per domain and for the overall judgement (INSPECT-SR asks reviewers to justify
+    // judgements; the page had nowhere to record them). Saved and exported with the trial.
+    function reasonBox(t, key, label) {
+      var v = (t.why && typeof t.why[key] === "string") ? t.why[key] : "";
+      return "<label class='reason'>" + esc(label) + "<textarea rows='2' data-reason='" + key + "'>" + esc(v) + "</textarea></label>";
+    }
     function tlClass(j) { return "tl tl-" + (j === "unset" ? "unset" : j); }
     function renderSummary() {
       document.getElementById("summary").innerHTML = state.trials.map(function (t, i) {
@@ -372,7 +385,7 @@
         trials: state.trials.map(function (t) {
           return { label: t.label, responses: t.resp,
             domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
-            overall: effectiveOverall(t), est: t.est, se: t.se };
+            overall: effectiveOverall(t), reasons: t.why || {}, est: t.est, se: t.se };
         }) };
       var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "inspect-sr-assessment.json";

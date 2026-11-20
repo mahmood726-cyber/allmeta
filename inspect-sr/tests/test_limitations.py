@@ -110,3 +110,20 @@ def test_L07_display_scale_survives_reload_and_is_exported():
       return { scale, displayScale: j.displayScale };
     """)
     assert res["out"] == {"scale": "exp", "displayScale": "exp"}, res
+
+
+def test_L08_reasons_are_recorded_saved_and_exported():
+    """L08: there was nowhere to record the reason for a domain or overall judgement (the guidance asks the
+    reviewer to justify them). Requirement: a reason box per domain and for the overall judgement, saved
+    and exported."""
+    res = drive(r"""
+      await fill('textarea[data-reason="1"]', 'Retraction notice 2024');
+      await fill('textarea[data-reason="overall"]', 'Retracted');
+      await p.reload({ waitUntil: 'load' });
+      const kept = await p.inputValue('textarea[data-reason="1"]');
+      const j = JSON.parse(await download('#btn-json'));
+      return { kept, reasons: j.trials[0].reasons };
+    """)
+    o = res["out"]
+    assert o["kept"] == "Retraction notice 2024", o
+    assert o["reasons"]["1"] == "Retraction notice 2024" and o["reasons"]["overall"] == "Retracted", o
