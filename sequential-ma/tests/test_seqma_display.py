@@ -15,7 +15,13 @@ from pathlib import Path
 
 import pytest
 
-from test_seqma_r_user_path import CHROME, NODE, _playwright_dir, server  # noqa: F401  (fixture)
+import importlib.util as _ilu
+
+# reuse the sibling user-path harness (server fixture, Chrome/playwright discovery) whatever pytest's import mode
+_spec = _ilu.spec_from_file_location("_seqma_user_path", Path(__file__).with_name("test_seqma_r_user_path.py"))
+_up = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_up)
+CHROME, NODE, _playwright_dir, server = _up.CHROME, _up.NODE, _up._playwright_dir, _up.server
 
 JS = r"""
 const { chromium } = require(process.argv[1]);
