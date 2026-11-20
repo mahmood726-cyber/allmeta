@@ -214,6 +214,19 @@
       showVerdict(null);
     }).then(function () { busy = false; el("btn-verify-r").disabled = false; });
   }
+  // Called by runCalc() on every new analysis (or refusal): a verdict R already returned is for the
+  // previous analysis, so it is removed, never left beside the new table. A run still in progress is
+  // handled by the snapshot check in verify() when its answer arrives.
+  var CHANGED = "The analysis changed since the last R check, so that R verdict was removed (it described the earlier analysis). Press Verify in R again.";
+  window.__almM2MRInvalidate = function () {
+    if (busy) return;
+    var out = el("rcheck-out"), v = el("rcheck-verdict");
+    var shown = (out && !out.hidden && out.textContent) || (v && !v.hidden);
+    if (!shown) return;
+    if (out) { out.textContent = ""; out.hidden = true; }
+    showVerdict(null);
+    setStatus(CHANGED);
+  };
   function wire() {
     var v = el("btn-verify-r"), d = el("btn-download-r");
     if (v) v.addEventListener("click", verify);

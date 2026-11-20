@@ -222,6 +222,8 @@
       const b = parseFloat(document.getElementById("b").value);
       // The inputs behind the table now shown; r-check.js writes its R script from these.
       _lastM2MInputs = { scenario: scenario, n: n, a: a, q1: q1, m: m, q3: q3, b: b };
+      // A completed R verdict describes the analysis it was run on: every new analysis removes it (r-check.js).
+      if (typeof window.__almM2MRInvalidate === "function") window.__almM2MRInvalidate();
 
       // Validation
       const warnSlot = document.getElementById("warn-slot");
