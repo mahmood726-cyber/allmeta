@@ -635,6 +635,8 @@
     window._almLastPcurve = function () { return _lastResults; };
 
     function run() {
+      // A completed R verdict describes the analysis it was run on: every new analysis removes it (rcheck.js).
+      if (window.PCurveRCheck && typeof window.PCurveRCheck.invalidate === "function") window.PCurveRCheck.invalidate();
       const inp = readInput(document.getElementById("src").value);
       const raw = inp.used;
       const nSig = raw.length;
