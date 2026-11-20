@@ -265,6 +265,15 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       try {
         fit = AlmNmaMetaReg.fit(rows, treatments, { method: document.getElementById("f-method").value, predictAt: predicts.length ? predicts : undefined });
       } catch (e) { showFail(e.message); return; }
+      // The engine returns ok:true with converged:false when its tau^2 optimiser stops early, and extreme
+      // prediction values can overflow to infinite intervals: neither is a result to display.
+      if (fit.converged === false) { showFail("the " + fit.method + " estimate of tau² did not converge (" + fit.iterations + " iterations); no result is shown."); return; }
+      var allNums = [fit.tau2, fit.QE, fit.xMean];
+      treatments.slice(1).forEach(function (t) {
+        [fit.beta_at_mean[t], fit.gamma[t]].concat(fit.predictions.map(function (q) { return q.perTreatment[t]; }))
+          .forEach(function (e) { allNums.push(e.estimate, e.se, e.ci_lo, e.ci_hi); });
+      });
+      if (!allNums.every(isFinite)) { showFail("the fit produced non-finite values (for example at an extreme prediction covariate); no result is shown."); return; }
       document.getElementById("summary").innerHTML =
         '<div class="card"><span class="k">Method</span><span class="v">' + esc(fit.method) + '</span></div>' +
         '<div class="card"><span class="k">QE (df)</span><span class="v">' + fmt(fit.QE, 3) + ' (' + fit.QEdf + ')</span></div>' +
