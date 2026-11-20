@@ -92,7 +92,7 @@
       <div class="row3" id="grp-reg" hidden>
         <label id="grp-se"><span class="lbl">Standard error</span><input id="se" type="number" step="any" min="0" aria-describedby="se-hint"><span class="hint" id="se-hint">optional; instead of a CI (EValue's convention)</span></label>
         <label id="grp-sd"><span class="lbl">Outcome SD</span><input id="sd" type="number" step="any" min="0"></label>
-        <label id="grp-delta"><span class="lbl">Contrast &delta;</span><input id="delta" type="number" step="any" value="1"><span class="hint">exposure units compared</span></label>
+        <label id="grp-delta"><span class="lbl">Contrast &delta;</span><input id="delta" type="number" step="any" value="1"><span class="hint">exposure units compared; its sign is ignored (&#124;&delta;&#124;, as evalues.OLS)</span></label>
       </div>
       <div class="row4" id="grp-rd" hidden>
         <label><span class="lbl">Exposed, event</span><input id="n11" type="number" step="any" min="0"></label>
@@ -130,7 +130,7 @@
     confidence limit nearest the null (= 1 if that limit crosses the null). Non-RR measures are mapped
     to an approximate RR: OR → √OR (common) or OR (rare); HR via VanderWeele-Ding; d → exp(0.91·d) (Chinn 2000).
     With a standard error instead of a CI, d's limits are exp(0.91·d ∓ 1.78·SE), as in EValue's <code>evalues.MD</code>;
-    a regression coefficient b is first converted to d = b·δ/SD (<code>evalues.OLS</code>); a risk difference uses the
+    a regression coefficient b is first converted to d = b·|δ|/SD, the absolute contrast (<code>evalues.OLS</code> recodes δ to |δ|); a risk difference uses the
     bias-factor method of Ding &amp; VanderWeele (2016) with EValue's grid search (<code>evalues.RD</code>).
     Reference: VanderWeele TJ, Ding P. Sensitivity Analysis in Observational Research: Introducing the
     E-Value. Ann Intern Med. 2017;167(4):268-274. doi:10.7326/M16-2607. Computed client-side by the audited
