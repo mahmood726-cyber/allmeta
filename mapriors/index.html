@@ -725,7 +725,14 @@ function addRow(d) {
   sync();
 }
 function addRows(n) { for(let i=0;i<n;i++) addRow(); }
-function clearAll() { document.getElementById('dataBody').innerHTML=''; rowNum=0; studies=[]; sync(); }
+function clearAll() {
+  document.getElementById('dataBody').innerHTML=''; rowNum=0; studies=[];
+  // The CSV import notice describes the table it loaded; once the table is cleared (JSON import, preset, new import)
+  // it no longer applies. parseCSVAndLoad re-shows it after loading. Test: tests/csv_import.test.js I15.
+  const notice = document.getElementById('csvImportNotice');
+  if (notice) { notice.textContent = ''; notice.style.display = 'none'; }
+  sync();
+}
 
 // ---- CSV Import with auto-detection ----
 function handleCSVImport(event) {
@@ -761,8 +768,10 @@ function parseCSVAndLoad(text, fileName) {
   // A header matches an alias only if it IS the alias or one of its whole words (words split at any character that is
   // not a letter or digit): "N total" and "Events (control)" match, but "trial" never matches "r" and "mean" never
   // matches "n" (the earlier substring fallback did, so trial,mean,sd,n loaded 0 studies as binary). A column already
-  // given to one role is not given to another. Test: tests/csv_import.test.js.
-  const headerWords = rawHeaders.map(h => h.split(/[^a-z0-9]+/).filter(Boolean));
+  // given to one role is not given to another. A multi-word alias ("standard_deviation") matches as a run of whole
+  // words ("control_standard_deviation", "Standard Deviation"). Test: tests/csv_import.test.js.
+  const words = s => s.split(/[^a-z0-9]+/).filter(Boolean);
+  const headerWords = rawHeaders.map(h => ' ' + words(h).join(' ') + ' ');
   const taken = new Set();
   function findCol(aliases) {
     let idx = -1;
@@ -771,18 +780,32 @@ function parseCSVAndLoad(text, fileName) {
       if (idx !== -1) break;
     }
     if (idx === -1) for (const alias of aliases) {
-      idx = headerWords.findIndex((w, j) => !taken.has(j) && w.includes(alias));
+      const phrase = ' ' + words(alias).join(' ') + ' ';
+      idx = headerWords.findIndex((w, j) => !taken.has(j) && w.includes(phrase));
       if (idx !== -1) break;
     }
     if (idx !== -1) taken.add(idx);
     return idx;
   }
 
-  const colTrial  = findCol(COL_MAP.trial);
-  const colEvents = findCol(COL_MAP.events);
-  const colN      = findCol(COL_MAP.n);
-  const colMean   = findCol(COL_MAP.mean);
-  const colSD     = findCol(COL_MAP.sd);
+  let colTrial  = findCol(COL_MAP.trial);
+  let colEvents = findCol(COL_MAP.events);
+  let colN      = findCol(COL_MAP.n);
+  let colMean   = findCol(COL_MAP.mean);
+  let colSD     = findCol(COL_MAP.sd);
+
+  // An optional label must not prevent a complete endpoint mapping. Keep a
+  // usable label-first mapping (e.g. "Author X,mean,sd,n"), otherwise release
+  // that column and let missing numeric roles use it before finding a label.
+  if (colTrial !== -1 && !(colEvents !== -1 && colN !== -1) &&
+      !(colMean !== -1 && colSD !== -1 && colN !== -1)) {
+    taken.delete(colTrial);
+    if (colEvents === -1) colEvents = findCol(COL_MAP.events);
+    if (colN === -1) colN = findCol(COL_MAP.n);
+    if (colMean === -1) colMean = findCol(COL_MAP.mean);
+    if (colSD === -1) colSD = findCol(COL_MAP.sd);
+    colTrial = findCol(COL_MAP.trial);
+  }
 
   // Auto-detect endpoint type from columns present
   const hasBinary     = colEvents !== -1 && colN !== -1;
@@ -801,6 +824,7 @@ function parseCSVAndLoad(text, fileName) {
     epSelect.value = 'continuous';
   }
   // If both detected, keep current selection
+  renderHeader();
   epSelect.dispatchEvent(new Event('change'));
 
   // Clear existing data and load
@@ -818,10 +842,10 @@ function parseCSVAndLoad(text, fileName) {
     if (type === 'binary') {
       const events = parseInt(cells[colEvents]);
       const n = parseInt(cells[colN]);
-      if (isFinite(events) && isFinite(n) && n > 0) {
+      if (isFinite(events) && isFinite(n) && n > 0 && events >= 0 && events <= n) {
         addRow({ trial: trial, events: events, n: n });
         loaded++;
-      } else skip(!isFinite(events) ? 'events is not a number' : !isFinite(n) ? 'n is not a number' : 'n is not positive');
+      } else skip(!isFinite(events) ? 'events is not a number' : !isFinite(n) ? 'n is not a number' : n <= 0 ? 'n is not positive' : events < 0 ? 'events is negative' : 'events exceeds n');
     } else {
       const mean = parseFloat(cells[colMean]);
       const sd   = parseFloat(cells[colSD]);

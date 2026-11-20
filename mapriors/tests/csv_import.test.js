@@ -37,11 +37,12 @@ function load(values) {
   sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.navigator = { userAgent: 'node' }; sandbox.location = { href: '' };
   vm.createContext(sandbox);
   const html = fs.readFileSync(page, 'utf8');
+  assert.ok(/<div\b[^>]*id="csvImportNotice"[^>]*role="status"/.test(html), 'visible import notice must exist in the page markup');
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     if (/\bsrc\s*=/i.test(m[1])) continue;
     vm.runInContext(m[2].replace(/^(renderHeader|autoLoadDemo)\(\);[ \t]*\r?$/gm, '//$&'), sandbox);
   }
-  vm.runInContext('globalThis.__rows = []; addRow = function (d) { __rows.push(d); }; clearAll = function () { __rows.length = 0; };', sandbox);
+  vm.runInContext('globalThis.__rows = []; addRow = function (d) { __rows.push(d); }; __realClearAll = clearAll; clearAll = function () { __rows.length = 0; }; renderHeader();', sandbox);
   return { el, alerts, run: s => vm.runInContext(s, sandbox) };
 }
 function importCSV(text, selected) {
@@ -57,6 +58,7 @@ const CONT = 'trial,mean,sd,n\nA,1.5,2,50\nB,0.8,1.9,40\nC,1.1,2.2,60\n';
 test('I1 trial,mean,sd,n with Binary selected (the default) loads 3 continuous studies', () => {
   const r = importCSV(CONT, 'binary');
   assert.strictEqual(r.type, 'continuous', 'endpoint type');
+  assert.ok(/>Mean<.*>SD<.*>N</.test(r.app.el('dataHead').innerHTML), 'table headings follow continuous data');
   assert.deepStrictEqual(r.rows, [{ trial: 'A', mean: 1.5, sd: 2, n: 50 }, { trial: 'B', mean: 0.8, sd: 1.9, n: 40 }, { trial: 'C', mean: 1.1, sd: 2.2, n: 60 }]);
 });
 test('I2 control: trial,mean,sd,n with Continuous selected loads the same 3 studies', () => {
@@ -66,6 +68,7 @@ test('I2 control: trial,mean,sd,n with Continuous selected loads the same 3 stud
 test('I3 trial,events,n with Continuous selected switches to binary and loads 2 studies', () => {
   const r = importCSV('trial,events,n\nA,12,40\nB,9,35\n', 'continuous');
   assert.strictEqual(r.type, 'binary');
+  assert.ok(/>Events<.*>N<.*>Rate</.test(r.app.el('dataHead').innerHTML), 'table headings follow binary data');
   assert.deepStrictEqual(r.rows, [{ trial: 'A', events: 12, n: 40 }, { trial: 'B', events: 9, n: 35 }]);
 });
 test('I4 whole-word headers are matched ("Study ID", "Events (control)", "N total")', () => {
@@ -85,13 +88,65 @@ test('I6 rows not loaded are named in a visible notice with their line and reaso
   assert.notStrictEqual(r.notice.style.display, 'none', 'notice visible');
   const t = r.notice.textContent;
   assert.ok(/2 of 4/.test(t) || /excluded 2/i.test(t) || /2 rows? (were )?not loaded/i.test(t), 'count of excluded rows in: ' + t);
-  assert.ok(t.includes('line 3') && t.includes('Bad1'), 'names line 3 / Bad1: ' + t);
-  assert.ok(t.includes('line 5') && t.includes('Bad2'), 'names line 5 / Bad2: ' + t);
+  assert.ok(t.includes('line 3 (Bad1): events is not a number'), 'line, name and reason for Bad1: ' + t);
+  assert.ok(t.includes('line 5 (Bad2): n is not positive'), 'line, name and reason for Bad2: ' + t);
   assert.ok(!t.includes('line 2') && !t.includes('line 4'), 'loaded rows not named: ' + t);
 });
 test('I7 control: an all-valid import shows no excluded-row text', () => {
   const r = importCSV(CONT, 'binary');
   assert.ok(!/line \d/.test(r.notice.textContent), 'no row named: ' + r.notice.textContent);
+});
+
+test('I8 optional trial label cannot consume a required continuous column', () => {
+  const r = importCSV('Study mean,sd,n\n1.5,2,50\n', 'binary');
+  assert.strictEqual(r.type, 'continuous');
+  assert.deepStrictEqual(r.rows, [{ trial: 'Study 1', mean: 1.5, sd: 2, n: 50 }]);
+});
+test('I9 optional trial label cannot consume a required events column', () => {
+  const r = importCSV('Study events,n\n12,40\n', 'continuous');
+  assert.strictEqual(r.type, 'binary');
+  assert.deepStrictEqual(r.rows, [{ trial: 'Study 1', events: 12, n: 40 }]);
+});
+test('I10 import exclusions agree with analysis event bounds and retain zero', () => {
+  const r = importCSV('trial,events,n\nGood,3,10\nTooMany,12,10\nNegative,-1,10\nZero,0,10', 'binary');
+  assert.deepStrictEqual(r.rows, [{ trial: 'Good', events: 3, n: 10 }, { trial: 'Zero', events: 0, n: 10 }]);
+  assert.ok(r.notice.textContent.includes('Imported 2 of 4'));
+  assert.ok(r.notice.textContent.includes('line 3 (TooMany): events exceeds n'));
+  assert.ok(r.notice.textContent.includes('line 4 (Negative): events is negative'));
+});
+test('I11 excluded rows use original file lines across comments and blanks', () => {
+  const r = importCSV('# comment\ntrial,events,n\n\nGood,0,10\n# ignored\nBad,abc,20\nShort\nBadN,5,0', 'binary');
+  assert.strictEqual(r.rows.length, 1);
+  assert.ok(r.notice.textContent.includes('Imported 1 of 4'));
+  assert.ok(r.notice.textContent.includes('line 6 (Bad): events is not a number'));
+  assert.ok(r.notice.textContent.includes('line 7 (Short): fewer than 2 cells'));
+  assert.ok(r.notice.textContent.includes('line 8 (BadN): n is not positive'));
+});
+test('I12 continuous exclusions name the rejected field and preserve mean zero', () => {
+  const r = importCSV('trial,mean,sd,n\nGood,0,1,10\nBadMean,abc,1,10\nBadSD,1,0,10\nBadN,1,1,0', 'binary');
+  assert.deepStrictEqual(r.rows, [{ trial: 'Good', mean: 0, sd: 1, n: 10 }]);
+  assert.ok(r.notice.textContent.includes('line 3 (BadMean): mean is not a number'));
+  assert.ok(r.notice.textContent.includes('line 4 (BadSD): sd is not positive'));
+  assert.ok(r.notice.textContent.includes('line 5 (BadN): n is not positive'));
+});
+test('I13 a usable label-first mapping is retained when a label contains an events alias', () => {
+  const r = importCSV('Author X,mean,sd,n\nA,1.5,2,50', 'binary');
+  assert.strictEqual(r.type, 'continuous');
+  assert.deepStrictEqual(r.rows, [{ trial: 'A', mean: 1.5, sd: 2, n: 50 }]);
+});
+test('I14 a multi-word alias matches as a whole-word phrase ("control_standard_deviation", "Standard Deviation")', () => {
+  for (const h of ['control_standard_deviation', 'Standard Deviation']) {
+    const r = importCSV('trial,mean,' + h + ',n\nA,1.5,2,50', 'binary');
+    assert.strictEqual(r.type, 'continuous', h);
+    assert.deepStrictEqual(r.rows, [{ trial: 'A', mean: 1.5, sd: 2, n: 50 }], h);
+  }
+});
+test('I15 the import notice does not outlive the table it describes (cleared by clearAll, e.g. JSON import or a preset)', () => {
+  const r = importCSV(CONT, 'binary');
+  assert.notStrictEqual(r.notice.style.display, 'none', 'shown after import');
+  r.app.run('__realClearAll()');
+  assert.strictEqual(r.notice.style.display, 'none', 'hidden after the table is cleared');
+  assert.strictEqual(r.notice.textContent, '', 'text removed');
 });
 console.log(passed + '/' + total + ' passed');
 process.exitCode = passed === total ? 0 : 1;
