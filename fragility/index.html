@@ -116,7 +116,7 @@
     ].join("\n");
 
     function parse(text) {
-      var studies = [], labels = [], errs = [];
+      var studies = [], labels = [], errs = [], N = 0;
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim();
         if (!t || t[0] === "#") return;
@@ -132,9 +132,13 @@
           errs.push("line " + (i + 1)); return;
         }
         var e1 = +f[0], n1 = +f[1], e0 = +f[2], n0 = +f[3];
-        if (![e1, n1, e0, n0].every(isFinite) || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
+        // exact integers only (2^53 + 1 would be read as 2^53, which can hide events > total),
+        // and the summed N used for FQ must stay exact too
+        if (![e1, n1, e0, n0].every(Number.isSafeInteger) || !Number.isSafeInteger(N + n1 + n0)
+            || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
           errs.push("line " + (i + 1)); return;
         }
+        N += n1 + n0;
         studies.push({ e1: e1, n1: n1, e0: e0, n0: n0 });
         labels.push(lab || ("Study " + studies.length));
       });
