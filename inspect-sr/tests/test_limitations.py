@@ -204,3 +204,25 @@ def test_L16_export_keeps_overrides_pool_and_provenance():
     assert o["analysis"]["method"].startswith("Paule-Mandel") and o["analysis"]["sets"][0]["k"] == 2, o
     assert abs(o["analysis"]["sets"][0]["mu"] - (-0.328)) < 5e-4, o
     assert o["software"]["app"] == "inspect-sr", o
+
+
+def test_L17_downloaded_json_can_be_loaded_back():
+    """L17: the downloaded JSON could not be reloaded, so moving an assessment meant re-entering it.
+    Requirement: Load JSON restores labels, responses, overrides, reasons and effects."""
+    res = drive(TWO + r"""
+      await p.evaluate(() => document.querySelector('input[name="resp-1.1"][value="yes"]').click());
+      await p.selectOption('select[data-dj="1"]', 'serious');
+      const txt = await download('#btn-json');
+      p.__acceptDialogs = true;
+      await p.click('#btn-reset');
+      const fs = require('fs'), f = require('path').join(process.env.TEMP || '.', 'insp-load-' + Date.now() + '.json');
+      fs.writeFileSync(f, txt);
+      await p.setInputFiles('#file-load', f);
+      await p.waitForTimeout(300);
+      fs.unlinkSync(f);
+      return await p.evaluate(() => JSON.parse(localStorage.getItem('inspect-sr-v1')));
+    """)
+    s = res["out"]
+    assert [t["label"] for t in s["trials"]] == ["A", "B"], s
+    assert s["trials"][1]["resp"] == {"1.1": "yes"} and s["trials"][1]["dj"] == {"1": "serious"}, s
+    assert s["trials"][0]["est"] == "-0.4" and s["trials"][0]["se"] == "0.15", s

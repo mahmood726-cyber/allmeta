@@ -135,8 +135,10 @@
       <p id="pool-excluded" class="suggest" style="margin:-0.6rem 0 0.6rem"></p>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.3rem">
         <button type="button" id="btn-json" class="primary">Download JSON</button>
+        <label class="ghost" style="display:inline-block;padding:0.35rem 0.7rem;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;color:var(--accent);cursor:pointer">Load JSON<input type="file" id="file-load" accept="application/json,.json" style="position:absolute;opacity:0;width:1px;height:1px"></label>
         <button type="button" id="btn-reset" class="ghost">Reset all</button>
       </div>
+      <p id="load-status" class="suggest" role="status" style="margin:0.3rem 0 0"></p>
       <div id="rcheck-mount"></div>
       <div class="note"><strong>Not a prescriptive algorithm.</strong> INSPECT-SR guides reviewers to reach justified judgements; the suggested domain/overall ratings here are non-binding cues from the check responses — the reviewer decides. Handling per the tool: <em>serious concerns</em> → exclude; <em>some concerns</em> → sensitivity analysis; <em>no concerns</em> → standard analysis. Median assessment time ≈ 45 min/RCT.</div>
     </section>
@@ -446,7 +448,7 @@
     document.getElementById("btn-json").addEventListener("click", function () {
       var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(), displayScale: state.scale === "exp" ? "exp" : "linear",
         trials: state.trials.map(function (t) {
-          return { label: t.label, responses: t.resp,
+          return { id: t.id, label: t.label, responses: t.resp,
             domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
             // The reviewer's own entries, apart from the effective values above (a suggestion and an equal
             // explicit judgement used to be indistinguishable in the export).
@@ -464,6 +466,26 @@
     });
 
     document.getElementById("scale").value = state.scale === "exp" ? "exp" : "linear";
+    // Load a downloaded assessment back (the JSON could not be reloaded, so moving work meant re-entry).
+    // Accepts this page's export (responses / domainOverrides / overallOverride / reasons) and rebuilds it
+    // through sanitize(), so only well-formed fields are kept; effective (suggested) values are recomputed.
+    document.getElementById("file-load").addEventListener("change", function (e) {
+      var f = e.target.files && e.target.files[0], msg = document.getElementById("load-status");
+      if (!f) return;
+      f.text().then(function (txt) {
+        var j = JSON.parse(txt);
+        if (!j || j._schema !== "inspect-sr-v1" || !Array.isArray(j.trials)) throw new Error("not an inspect-sr JSON download");
+        var s = sanitize({ cur: 0, scale: j.displayScale, trials: j.trials.map(function (t) {
+          return t && typeof t === "object" ? { id: t.id, label: t.label, resp: t.responses, dj: t.domainOverrides, overall: t.overallOverride,
+            why: t.reasons, est: t.est, se: t.se } : null; }) });
+        if (!s) throw new Error("the file holds no trials");
+        if (!confirm("Replace the current workspace with the " + s.trials.length + " trial(s) in " + f.name + "?")) return;
+        state = s; document.getElementById("scale").value = state.scale; save(); renderAll();
+        msg.textContent = "Loaded " + s.trials.length + " trial(s) from " + f.name + ".";
+      }).catch(function (err) { msg.textContent = "Could not load " + f.name + ": " + (err && err.message || err); })
+        .then(function () { e.target.value = ""; });
+    });
+
     renderAll();
   </script>
 <script src="../shared/webr-runner.js"></script>
