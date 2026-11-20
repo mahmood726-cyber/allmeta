@@ -117,8 +117,8 @@
 
     <section class="panel" aria-label="Boundaries">
       <h2>Boundaries</h2>
-      <p class="summary" id="summary"></p>
-      <table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th><th>P(efficacy | H1)</th></tr></thead><tbody id="tb"></tbody></table>
+      <p class="summary" id="summary" aria-live="polite"></p>
+      <div class="tblwrap" style="overflow-x:auto"><table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th><th>P(efficacy | H1)</th></tr></thead><tbody id="tb"></tbody></table></div>
       <svg id="plot" viewBox="0 0 640 300" role="img" aria-label="Boundary plot"></svg>
       <p class="foot" id="note"></p>
     </section>
@@ -148,8 +148,8 @@
         <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" min="0" max="4294967295" value="20261021" aria-label="Seed"></label>
       </div>
       <button class="primary" id="simrun" type="button">Simulate</button>
-      <p class="foot" id="simnote" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
-      <table id="simtbl"><thead id="simth"></thead><tbody id="simtb"></tbody></table>
+      <p class="foot" id="simnote" aria-live="polite" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
+      <div class="tblwrap" style="overflow-x:auto"><table id="simtbl"><thead id="simth"></thead><tbody id="simtb"></tbody></table></div>
     </section>
   </main>
   <footer>
@@ -170,10 +170,14 @@
         $("paramLbl").textContent = $("spend").value === "landemets" ? "ρ (power)" : "γ (HSD)";
         var two = $("sided").value === "2";
         $("alphaLbl").textContent = two ? "Two-sided α (total)" : "One-sided α";
+        // accessible names follow the visible labels, whose meaning changes with these selections
+        $("alpha").setAttribute("aria-label", $("alphaLbl").textContent);
+        $("param").setAttribute("aria-label", $("paramLbl").textContent);
         $("futWrap").hidden = two;
         var fut = !two && $("fut").value !== "none";
         $("fparamWrap").hidden = !(fut && needsParam($("fut").value));
         $("fparamLbl").textContent = $("fut").value === "landemets" ? "Futility ρ (power)" : "Futility γ (HSD)";
+        $("fparam").setAttribute("aria-label", $("fparamLbl").textContent);
         $("bindWrap").hidden = !fut;
       }
       function readHash() {
