@@ -91707,7 +91707,18 @@ function ipd80AutoMapVariables(options) {
     ipd80SetSelectValue('varStudy', mapped.varStudy);
     ipd80SetSelectValue('varTreatment', mapped.varTreatment);
     if (outcome === 'survival') ipd80SetSelectValue('varTime', mapped.varTime);
-    if (ipd80SetSelectValue('varEvent', mapped.varEvent) && APP.ipd80UserSelected) delete APP.ipd80UserSelected.varEvent;
+    // A column the user picked by hand on the Event control for the data now loaded (ipd80NoteUserSelect, with the data
+    // fingerprint) and still showing there is never overwritten by a suggestion, and its record is kept: Fast Path and
+    // the SOP lock call this, and used to revert the user's correction and then lock it
+    // (dev/tests/auto_map_identifier_columns.test.cjs). The user's pick is the mapping, and it is confirmed.
+    const userEventNow = ipd80UserSelectedValue('varEvent');
+    const eventElNow = document.getElementById('varEvent');
+    if (userEventNow && eventElNow && eventElNow.value === userEventNow) {
+        mapped.varEvent = userEventNow;
+        outcomeConfident = true;
+    } else {
+        ipd80SetSelectValue('varEvent', mapped.varEvent);
+    }
     if (!mapped.varEvent) {
         // nothing identified: an identifier left on the outcome control by code (e.g. pre-selected on upload) is
         // cleared to "-- Select --", so a Run cannot analyse it. A column the user chose by hand (ipd80NoteUserSelect,

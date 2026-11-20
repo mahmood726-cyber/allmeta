@@ -246,3 +246,24 @@ def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_dis
     assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
                        "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
     assert "MISMATCH 3/6 agree" in out, out
+
+
+# Review (lane minors, 2026-11-20): the descriptive bayesmeta block is wrapped in tryCatch (bma-tau-priors has
+# the same block and the test test_a_failing_descriptive_bayesmeta_check_does_not_abort_the_counted_check); this
+# page had no test for it. bayesmeta 3.5 stops on these data ("the integral is probably divergent"); unwrapped,
+# Rscript exits with an error before finish() and prints no verdict. Requirement: the counted base-R check still
+# reaches its verdict, and the skipped descriptive check is reported as skipped.
+TINY = [WAIT, {"fill": "#src", "value": "0, 1e-18, A\n1e-8, 1e-18, B\n3e-8, 1e-18, C"},
+        {"fill": "#iter", "value": "1000"}, {"fill": "#burn", "value": "100"}, {"click": "#btn-run"},
+        {"waitFor": "window.__almRCheckInputs() && window.__almRCheckInputs().rows.length === 3"}]
+
+
+def test_a_failing_descriptive_bayesmeta_check_does_not_abort_the_counted_check(server, tmp_path):
+    res = drive(server, TINY)
+    assert res["downloaded"], res["status"]
+    assert 'requireNamespace("bayesmeta"' in res["script"], res["script"][-3000:]
+    rc, out = run_r(res["script"], tmp_path, "tiny")
+    _need("bayesmeta not installed" not in out, "bayesmeta not installed: the descriptive block was not exercised")
+    assert rc == 0, out
+    assert re.search(r"^(MATCH \d+/\d+|MISMATCH \d+/\d+ agree)$", out, re.M), out
+    assert "bayesmeta stopped:" in out and "descriptive cross-check skipped" in out, out

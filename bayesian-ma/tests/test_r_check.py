@@ -265,3 +265,23 @@ def test_pm_tau2_root_does_not_depend_on_the_units_of_the_data(server, tmp_path,
     R = r_values(out)
     assert math.isclose(R["tau^2 (plug-in)"], 2.3233333333333333 * scale * scale, rel_tol=1e-9), out
     check_dom_against_r(res["dom"], R)
+
+
+# Review (lane minors, 2026-11-20): chk()'s tolerance was min(1e-6 * max(1, |page|), half): ABSOLUTE (1e-6) for
+# any |page| < 1, so on data in tiny units (1e-8) the posterior mean / CrI checks passed whatever the page showed
+# (a 1% error is 1e-10, far inside 1e-6). Requirement: the tolerance is relative to the scale of the data, so a
+# 1% error in any displayed estimate is a MISMATCH at any unit scale (and the unperturbed script still MATCHes:
+# test_pm_tau2_root_does_not_depend_on_the_units_of_the_data).
+@pytest.mark.parametrize("field", ["mu", "lo", "hi", "tau2"])
+def test_a_one_percent_error_at_tiny_units_is_reported_as_MISMATCH(server, tmp_path, field):
+    res = drive(server, _scaled(1e-8))
+    assert res["downloaded"], res["status"]
+    m = re.search(r"^(page <- list\(.*?\b" + field + r" = )(-?[0-9][0-9.e+-]*)", res["script"], re.M)
+    assert m, res["script"][:2000]
+    v = float(m.group(2))
+    assert v != 0 and abs(v) < 1e-6, v          # the case really is in tiny units
+    bad = res["script"][:m.start(2)] + repr(v * 1.01) + res["script"][m.end(2):]
+    rc, out = run_r(bad, tmp_path, "tiny-" + field)
+    assert rc == 0, out
+    assert re.search(r"^MISMATCH (\d+)/(\d+) agree$", out, re.M), out
+    assert out.count("DIFFERS") == 1, out

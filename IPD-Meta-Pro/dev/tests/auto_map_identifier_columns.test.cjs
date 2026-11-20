@@ -127,6 +127,31 @@ const ID_LIKE = /^(patient_id|subject|record_no|row)$/;
   check('... after the user then chose vomit, an identifier put there by code (not by the user) is still cleared', run("document.getElementById('varEvent').value") === '', run("document.getElementById('varEvent').value"));
 }
 {
+  // Review of #644 (follow-up): when auto-map HAS a suggestion of its own (here nausea, unconfident) it used to set it
+  // on the Event control over the user's hand-picked column and delete the user's record
+  // (ipd80AutoMapVariables: `if (ipd80SetSelectValue('varEvent', ...)) delete APP.ipd80UserSelected.varEvent`).
+  // Fast Path and the SOP lock call auto-map, so a user's correction was reverted and then locked. Requirement: a
+  // value the user picked for the currently loaded data is never overwritten, and its record is kept.
+  for (const v of ['patient_id', 'age', 'nausea']) {
+    load(lee(120));
+    sandbox.__v = v;
+    run("(function () { var el = document.getElementById('varEvent'); el.value = __v; ipd80NoteUserSelect('varEvent', el.value); })()");
+    const rep = JSON.parse(JSON.stringify(run('ipd80AutoMapVariables({ silent: true })')));
+    check('Lee-shaped upload, user picked ' + v + ' by hand: auto-map (suggestion nausea) keeps ' + v + ' on the Event control',
+      run("document.getElementById('varEvent').value") === v, run("document.getElementById('varEvent').value"));
+    check('... the record of the hand pick is kept', run("ipd80UserSelectedValue('varEvent')") === v, JSON.stringify(run('APP.ipd80UserSelected')));
+    check('... the report maps the hand-picked column and counts it as confirmed', rep.mapped.varEvent === v && rep.outcomeConfident === true, JSON.stringify(rep));
+    run('ipd80AutoMapVariables({ silent: true })');
+    check('... and a second auto-map (e.g. SOP lock after Fast Path) still keeps it', run("document.getElementById('varEvent').value") === v, run("document.getElementById('varEvent').value"));
+  }
+  // a hand pick made for another file does not hold back the suggestion in this one
+  load(lee(120).replace(/,S/g, ',T'));
+  run("ipd80NoteUserSelect('varEvent', 'patient_id')");
+  load(lee(120));
+  run("document.getElementById('varEvent').value = 'patient_id'; ipd80AutoMapVariables({ silent: true })");
+  check('... a hand pick recorded for a different file does not stop auto-map suggesting nausea here', run("document.getElementById('varEvent').value") === 'nausea', run("document.getElementById('varEvent').value"));
+}
+{
   // Review of #644, minor 3: weight (a patient characteristic) as the only candidate: nothing is suggested or run,
   // and the warning tells the user to map the outcome.
   const NL = String.fromCharCode(10);
