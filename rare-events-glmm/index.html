@@ -306,22 +306,8 @@ Trial 8, 1, 210, 3, 215</textarea>
   if (window.AlmRareGlmmRCheck) AlmRareGlmmRCheck.attach({ mount: "#rcheck-mount", filename: "rare-events-glmm-r-check.R", packages: ["metafor", "lme4"], getState: function () { return window.__almRareRState(); } });
 </script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page writes no studies to the shared bus (and its GLMM is
+     not an inverse-variance effect list), so the destinations would open on stale bus data. -->
 
 <script>
 (function () {
