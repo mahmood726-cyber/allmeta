@@ -147,7 +147,15 @@
       var raw = input.value.trim();
       return raw === "" ? null : Number(raw);
     }
-    function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }
+    // LIM-P22 F12: toFixed(4) shows a positive value below 5e-5 as "0", and above 1e21
+    // returns exponent text whose trailing zeros the strip then removed (1e30 -> "1e+3").
+    // Outside [1e-4, 1e6) show 4 significant digits in exponent form; inside, unchanged.
+    function fmt(x) {
+      if (x == null || !isFinite(x)) return "—";
+      var a = Math.abs(x);
+      if (x !== 0 && (a < 1e-4 || a >= 1e6)) return x.toExponential(3).replace(/\.?0+e/, "e");
+      return x.toFixed(4).replace(/\.?0+$/, "");
+    }
 
     function show(id, on) { document.getElementById(id).hidden = !on; }
     function layout(measure) {
