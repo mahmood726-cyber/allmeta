@@ -50,6 +50,18 @@
       '<pre id="r-check-out" hidden style="flex-basis:100%;max-height:28rem;overflow:auto;font-size:0.75rem;white-space:pre-wrap;border:1px solid #ccc;border-radius:6px;padding:0.5rem;margin:0"></pre>';
     mount.parentNode.insertBefore(box, mount.nextSibling);
     var st = box.querySelector("#r-check-status"), out = box.querySelector("#r-check-out");
+    // A COMPLETED verdict belongs to the analysis it was computed for. When an edit re-runs the analysis
+    // (the page replaces its result object), clear that verdict and its output instead of leaving
+    // "R says: MATCH" beside numbers R never saw. (A pending run is discarded on completion: STALE.)
+    var shownFor = null;
+    function invalidate() {
+      if (!shownFor) return;
+      var now = cfg.getInputs();
+      if (now && now.page === shownFor) return;
+      shownFor = null; out.textContent = ""; out.hidden = true; window.__almRCheckLast = null;
+      st.textContent = "The analysis changed since the last R check, so its verdict was cleared. Press Verify in R again.";
+    }
+    document.addEventListener("input", invalidate); document.addEventListener("change", invalidate);
     function current() {
       var inp = cfg.getInputs();
       if (!inp) { st.textContent = cfg.refuse || "Nothing to check: the page shows no result for the current input."; return null; }
@@ -70,9 +82,12 @@
       var btn = this; btn.disabled = true; out.hidden = false;
       var my = ++verifyGen, snap = inp.page;   // the page's result object: replaced on every new analysis
       out.textContent = (cfg.webrNote ? cfg.webrNote(inp) + "\n" : "") + "Starting WebR...\n";
-      var pk = cfg.packages(inp);
-      var res = await window.AlmWebR.runR({ script: cfg.buildScript(inp), packages: pk, onStatus: function (s) { st.textContent = s; out.textContent += s + "\n"; } });
-      btn.disabled = false;
+      var pk = cfg.packages(inp), res;
+      shownFor = null;
+      // A runner that rejects (instead of resolving { ok: false }) must not leave Verify disabled for good.
+      try { res = await window.AlmWebR.runR({ script: cfg.buildScript(inp), packages: pk, onStatus: function (s) { st.textContent = s; out.textContent += s + "\n"; } }); }
+      catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
+      finally { btn.disabled = false; }
       // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
       var now = cfg.getInputs();
       if (my !== verifyGen || !now || now.page !== snap) { st.textContent = STALE; out.textContent = STALE + "\n"; return; }
@@ -82,6 +97,7 @@
       var m = /^(MATCH \d+\/\d+|MISMATCH \d+\/\d+ agree)\s*$/m.exec(res.stdout);
       st.textContent = m ? "R says: " + m[1] : "R ran but printed no MATCH/MISMATCH line - see output.";
       window.__almRCheckLast = { stdout: res.stdout, versions: v, verdict: m ? m[1] : null };
+      shownFor = snap;
     });
   }
 
