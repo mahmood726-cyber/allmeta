@@ -51,6 +51,9 @@
       border-radius: 5px; cursor: pointer; background: var(--input-bg); user-select: none; }
     .opts input { position: absolute; opacity: 0; width: 0; height: 0; }
     .opts input:checked + span { font-weight: 700; }
+    /* The radios are visually hidden, so the focus cue goes on their visible label. */
+    .opts label:has(input:focus-visible), label:has(> #file-load:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     .clear-resp { margin-left: 0.3rem; font-size: 0.7rem; padding: 0.08rem 0.4rem; border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--muted); cursor: pointer; }
     .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
     .dj { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.8rem; }
@@ -285,7 +288,7 @@
             var id = "r-" + c.id + "-" + r;
             return "<label><input type='radio' name='resp-" + c.id + "' value='" + r + "'" + (t.resp[c.id] === r ? " checked" : "") + "><span>" + RESP_LBL[r] + "</span></label>";
           }).join("");
-          return "<div class='check'><span class='q'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts'>" + opts + "</span>"
+          return "<div class='check'><span class='q' id='q-" + c.id + "'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts' role='radiogroup' aria-labelledby='q-" + c.id + "'>" + opts + "</span>"
             + "<button type='button' class='clear-resp' data-clear='" + c.id + "' aria-label='Clear the answer to check " + c.id + "'>Clear</button></div>";
         }).join("");
         var sug = suggestDomain(t, dm.d);
@@ -338,7 +341,7 @@
     function tlClass(j) { return "tl tl-" + (j === "unset" ? "unset" : j); }
     function renderSummary() {
       document.getElementById("summary").innerHTML = state.trials.map(function (t, i) {
-        var cells = DOMAINS.map(function (dm) { var j = effectiveDomain(t, dm.d); return "<td><i class='" + tlClass(j) + "' title='" + JUDGE_LBL[j] + "'></i></td>"; }).join("");
+        var cells = DOMAINS.map(function (dm) { var j = effectiveDomain(t, dm.d); return "<td><i class='" + tlClass(j) + "' title='" + JUDGE_LBL[j] + "' aria-hidden='true'></i><span class='sr-only'>" + JUDGE_LBL[j] + "</span></td>"; }).join("");
         var o = effectiveOverall(t);
         return "<tr><td>" + esc(t.label || ("Trial " + (i + 1))) + "</td>" + cells + "<td><i class='" + tlClass(o) + "'></i> " + JUDGE_LBL[o] + "</td></tr>";
       }).join("");

@@ -226,3 +226,22 @@ def test_L17_downloaded_json_can_be_loaded_back():
     assert [t["label"] for t in s["trials"]] == ["A", "B"], s
     assert s["trials"][1]["resp"] == {"1.1": "yes"} and s["trials"][1]["dj"] == {"1": "serious"}, s
     assert s["trials"][0]["est"] == "-0.4" and s["trials"][0]["se"] == "0.15", s
+
+
+def test_L19_radio_groups_named_focus_visible_and_domain_text():
+    """L19: each check's radios had no group name tied to the question, the visually hidden radios had no
+    visible focus cue, and the summary's domain cells were colour dots with a title only.
+    Requirement: role=radiogroup labelled by the question, a focus-visible style, domain text in cells."""
+    res = drive(r"""
+      return await p.evaluate(() => {
+        const g = document.querySelector('.opts');
+        const id = g && g.getAttribute('aria-labelledby'), lab = id && document.getElementById(id);
+        const css = [...document.styleSheets].flatMap(s => { try { return [...s.cssRules].map(r => r.cssText); } catch (e) { return []; } }).join('\n');
+        return { role: g && g.getAttribute('role'), label: lab ? lab.textContent : '', focus: /focus-visible/.test(css),
+                 cell: document.querySelector('#summary td:nth-child(2)').textContent };
+      });
+    """)
+    o = res["out"]
+    assert o["role"] == "radiogroup" and "retraction" in o["label"], o
+    assert o["focus"], o
+    assert o["cell"].strip() == "Not set", o
