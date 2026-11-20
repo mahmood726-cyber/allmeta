@@ -220,6 +220,21 @@
       return anyUnset ? "unset" : worst;
     }
     function effectiveOverall(t) { return t.overall || suggestOverall(t); }
+    // Warn (never change the reviewer's choice) when an explicit overall judgement is less severe than a
+    // domain judgement, or is set while domains are incomplete -- it decides which analysis sets the trial
+    // enters. "Serious concerns" with incomplete domains is allowed by the guidance and is not warned.
+    function overrideWarning(t) {
+      if (!t.overall) return "";
+      var sev = { unset: -1, no: 0, some: 1, serious: 2 }, worse = [], open = [];
+      DOMAINS.forEach(function (dm) {
+        var j = effectiveDomain(t, dm.d);
+        if (j === "unset") open.push(dm.d); else if (sev[j] > sev[t.overall]) worse.push("domain " + dm.d + " (" + JUDGE_LBL[j] + ")");
+      });
+      var w = [];
+      if (worse.length) w.push("The overall judgement (" + JUDGE_LBL[t.overall] + ") is less severe than " + worse.join(", ") + ".");
+      if (open.length && t.overall !== "serious") w.push("Domain" + (open.length > 1 ? "s " : " ") + open.join(", ") + (open.length > 1 ? " are" : " is") + " not complete, yet the overall is set to " + JUDGE_LBL[t.overall] + ".");
+      return w.length ? w.join(" ") + " This override decides which analysis sets the trial enters." : "";
+    }
 
     function renderTrialSelect() {
       var sel = document.getElementById("trial-sel");
@@ -252,6 +267,7 @@
       var sugO = suggestOverall(t);
       var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
       html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div>"
+        + "<p id='overall-warn' class='suggest' role='status' style='color:var(--warn);margin:0.3rem 0 0'>" + esc(overrideWarning(t)) + "</p>"
         + reasonBox(t, "overall", "Reasons for the overall judgement") + "</fieldset>";
       document.getElementById("checks").innerHTML = html;
 
@@ -362,6 +378,7 @@
       var t = cur(), el;
       DOMAINS.forEach(function (dm) { el = document.getElementById("sug-d" + dm.d); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestDomain(t, dm.d)]; });
       el = document.getElementById("sug-overall"); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestOverall(t)];
+      el = document.getElementById("overall-warn"); if (el) el.textContent = overrideWarning(t);
     }
     function commit() { save(); renderSuggestions(); renderSummary(); renderPooled(); }
 

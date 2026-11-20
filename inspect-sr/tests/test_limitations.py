@@ -127,3 +127,24 @@ def test_L08_reasons_are_recorded_saved_and_exported():
     o = res["out"]
     assert o["kept"] == "Retraction notice 2024", o
     assert o["reasons"]["1"] == "Retraction notice 2024" and o["reasons"]["overall"] == "Retracted", o
+
+
+def test_L10_override_inconsistent_with_domains_is_warned():
+    """L10: an overall override of "no concerns" was accepted silently when a domain was "serious" or when
+    domains were incomplete, and it decided which analysis sets the trial entered. Requirement: the page
+    warns (it does not change the reviewer's choice)."""
+    res = drive(r"""
+      const w = () => p.evaluate(() => (document.getElementById('overall-warn') || {}).textContent || '');
+      await p.selectOption('#overall-sel', 'no');
+      const incomplete = await w();
+      await p.selectOption('select[data-dj="1"]', 'serious');
+      const below = await w();
+      const kept = await p.inputValue('#overall-sel');
+      await p.selectOption('#overall-sel', 'serious');
+      const none = await w();
+      return { incomplete, below, kept, none };
+    """)
+    o = res["out"]
+    assert "not complete" in o["incomplete"], o
+    assert "less severe" in o["below"] and o["kept"] == "no", o
+    assert o["none"] == "", o
