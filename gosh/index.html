@@ -653,10 +653,12 @@
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
     window.__almValidatorStudies = function () {
-      var rows; try { rows = parse(document.getElementById('src').value); } catch (e) { return []; } // parse throws on unreadable input; the page refuses it
-      // Only when the page shows a result (run() refuses k < 3 and k > 100).
-      if (rows.length < 3 || rows.length > 100 || !_lastResults) return [];
-      return rows.map(function (r) { return { label: r.label, est: r.te, se: r.se }; });
+      // Only when the page shows a result, and only the studies that result was computed on
+      // (run() records them and clears _lastResults on every refusal). Never a re-read of the
+      // input box: Run is a button here, so an edit not yet run would otherwise be saved,
+      // signed and sent to R while the page shows the old result (lane hf1, review of PR #579).
+      if (!_lastResults || !Array.isArray(_lastResults.studies)) return [];
+      return _lastResults.studies.map(function (r) { return { label: r.label, est: r.te, se: r.se }; });
     };
 
 
