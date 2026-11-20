@@ -169,8 +169,14 @@
     }
     function run() {
       var rowsParsed = parse(document.getElementById("src").value);
+      // Every run starts from an empty display: an input that gives no result must not leave the previous table,
+      // plot or exported result on screen (LIM-P46 F11).
       lastState = null;
-      if (!rowsParsed.length) return;
+      window.__almLastSequentialMA = function () { return null; };
+      document.querySelector("#looks tbody").innerHTML = "";
+      document.getElementById("plot-host").innerHTML = "";
+      document.getElementById("overall").textContent = "";
+      if (!rowsParsed.length) { document.getElementById("overall").textContent = "No looks to analyse: enter t, z or y_cum, se_cum, n_cum rows."; return; }
       var looks;
       if (rowsParsed[0].kind === "tz") looks = rowsParsed.map(function (r) { return { t: r.t, z: r.z }; });
       else looks = AlmSequentialMA.looksFromRows(rowsParsed);
