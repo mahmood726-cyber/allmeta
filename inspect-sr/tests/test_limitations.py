@@ -148,3 +148,15 @@ def test_L10_override_inconsistent_with_domains_is_warned():
     assert "not complete" in o["incomplete"], o
     assert "less severe" in o["below"] and o["kept"] == "no", o
     assert o["none"] == "", o
+
+
+def test_L12_a_single_response_can_be_cleared():
+    """L12: once answered, a check could not be returned to unanswered (only Remove trial / Reset all).
+    Requirement: a per-check Clear control."""
+    res = drive(r"""
+      await p.evaluate(() => document.querySelector('input[name="resp-1.1"][value="yes"]').click());
+      await p.click('button[data-clear="1.1"]');
+      return { resp: await p.evaluate(() => JSON.parse(localStorage.getItem('inspect-sr-v1')).trials[0].resp),
+               checked: await p.evaluate(() => document.querySelectorAll('input[name="resp-1.1"]:checked').length) };
+    """)
+    assert res["out"] == {"resp": {}, "checked": 0}, res

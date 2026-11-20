@@ -51,6 +51,7 @@
       border-radius: 5px; cursor: pointer; background: var(--input-bg); user-select: none; }
     .opts input { position: absolute; opacity: 0; width: 0; height: 0; }
     .opts input:checked + span { font-weight: 700; }
+    .clear-resp { margin-left: 0.3rem; font-size: 0.7rem; padding: 0.08rem 0.4rem; border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--muted); cursor: pointer; }
     .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
     .dj { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.8rem; }
     .dj select { padding: 0.2rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; }
@@ -254,7 +255,8 @@
             var id = "r-" + c.id + "-" + r;
             return "<label><input type='radio' name='resp-" + c.id + "' value='" + r + "'" + (t.resp[c.id] === r ? " checked" : "") + "><span>" + RESP_LBL[r] + "</span></label>";
           }).join("");
-          return "<div class='check'><span class='q'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts'>" + opts + "</span></div>";
+          return "<div class='check'><span class='q'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts'>" + opts + "</span>"
+            + "<button type='button' class='clear-resp' data-clear='" + c.id + "' aria-label='Clear the answer to check " + c.id + "'>Clear</button></div>";
         }).join("");
         var sug = suggestDomain(t, dm.d);
         var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
@@ -275,6 +277,15 @@
       CHECKS.forEach(function (c) {
         document.getElementsByName("resp-" + c.id).forEach(function (el) {
           el.addEventListener("change", function () { cur().resp[c.id] = el.value; commit(); });
+        });
+      });
+      // Return one check to unanswered (there was no way back short of Remove trial / Reset all).
+      document.querySelectorAll("button[data-clear]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          var id = el.getAttribute("data-clear");
+          delete cur().resp[id];
+          document.getElementsByName("resp-" + id).forEach(function (r) { r.checked = false; });
+          commit();
         });
       });
       document.querySelectorAll("select[data-dj]").forEach(function (el) {
