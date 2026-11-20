@@ -319,14 +319,20 @@
         { name: "Exclude serious concerns (INSPECT-SR rule)", arr: noSerious },
         { name: "Sensitivity: no-concern trials only", arr: onlyNo },
       ];
-      var rRows = [];
+      var rRows = [], failed = false;
       document.getElementById("pooled").innerHTML = sets.map(function (s) {
-        var r = poolSet(s.arr);
+        // A set the engine cannot pool (e.g. an SE whose square underflows) gets its own row saying so; the
+        // exception used to escape here and leave the previous inputs' table on screen.
+        var r;
+        try { r = poolSet(s.arr); } catch (err) {
+          failed = true; rRows.push(null);
+          return "<tr><td>" + esc(s.name) + "</td><td>—</td><td colspan='2'>could not be computed: " + esc(err && err.message || err) + "</td></tr>";
+        }
         rRows.push(r ? { k: r.k, mu: tx(r.mu), lo: tx(r.ciLo), hi: tx(r.ciHi), I2: r.I2 } : { k: 0, mu: null, lo: null, hi: null, I2: null });
         if (!r) return "<tr><td>" + esc(s.name) + "</td><td>0</td><td>—</td><td>—</td></tr>";
         return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
       }).join("");
-      if (rRows[0].k > 0) rState = { exp: ratio, page: rRows,
+      if (!failed && rRows[0].k > 0) rState = { exp: ratio, page: rRows,
         trials: all.map(function (t, i) { var e = numOf(t.est), s = numOf(t.se);
           return { label: t.label || ("Trial " + (i + 1)), est: isFinite(e) ? e : null, se: isFinite(s) ? s : null, overall: effectiveOverall(t) }; }) };
       // Name every trial that no pooled set can contain, with the reason (they used to vanish silently).

@@ -75,3 +75,25 @@ def test_L03_trials_left_out_of_the_pool_are_named():
     o = res["out"]
     assert "C" in o["blank"] and "SE" in o["blank"], o
     assert "C" in o["prefix"] and o["k"] == "2", o
+
+
+TWO = r"""
+      await fill('#trial-name', 'A'); await fill('#eff-est', '-0.4'); await fill('#eff-se', '0.15');
+      await p.click('#btn-add'); await fill('#trial-name', 'B'); await fill('#eff-est', '-0.2'); await fill('#eff-se', '0.2');
+"""
+
+
+def test_L04_failed_repool_does_not_leave_the_previous_table():
+    """L04: a finite SE whose square underflows (1e-200) made shared/ma-core.js throw inside the table render;
+    the exception escaped and the table kept the numbers of the previous inputs. Requirement: the failing
+    sets say the pool could not be computed, no exception escapes, and nothing is offered to R."""
+    res = drive(TWO + r"""
+      const before = await p.innerText('#pooled');
+      await fill('#eff-se', '1e-200');
+      return { before, after: await p.innerText('#pooled'), r: await p.evaluate(() => window.__almInspectSrRState()) };
+    """)
+    o = res["out"]
+    assert res["errs"] == [], res["errs"]
+    first = o["after"].splitlines()[0]
+    assert "-0.328" not in first and "could not" in first, o
+    assert o["r"] is None
