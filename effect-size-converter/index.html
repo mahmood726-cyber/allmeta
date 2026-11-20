@@ -407,7 +407,11 @@
         // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
         // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
         // log-space back-transform (otherwise Math.log yields NaN silently).
-        const isRatio = /^(OR|RR|HR|IRR)(\b|\s|$)/.test(row.scale) && row.point > 0;
+        const ratioScale = /^(OR|RR|HR|IRR)(\b|\s|$)/.test(row.scale);
+        const isRatio = ratioScale && row.point > 0;
+        // LIM-P20 A03: a ratio whose point under/overflowed (exp(-907) = 0) has no valid CI;
+        // a difference-scale interval around 0 would give a negative ratio limit.
+        if (ratioScale && !isRatio) return out;
         if (isRatio) {
           const lnPt = Math.log(row.point);
           out.lo = Math.exp(lnPt - Z95 * row.se);
@@ -651,13 +655,18 @@
         }
       }
       const rows = convert(type, est, se, p0, sd);
-      const warn = type === "HR" || type === "IRR"
+      // LIM-P20 A03: say so when a converted value left floating-point range.
+      const outOfRange = rows.some(r => !Number.isFinite(r.point) && !/outside \(0,1\)/.test(r.note || "") ||
+        (/^(OR|RR|HR|IRR)(\b|\s|$)/.test(r.scale) && (r.point === 0 || r.point === Infinity)));
+      const rangeNote = outOfRange ? " Some converted values are outside floating-point range (shown as 0, a dash or without a CI): the input is too extreme for that conversion." : "";
+      const warn0 = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
         : type === "OR" || type === "RR" || type === "RD"
         ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; logit OR-to-SMD is a separate distributional approximation."
         : type === "SMD"
         ? "The logit OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
+      const warn = (warn0 + rangeNote).trim();
       render(rows, warn);
       return true;
     }
