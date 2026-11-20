@@ -196,6 +196,11 @@
       else if (!(inc > 0)) b[k] = Infinity;
       else b[k] = _solve(function (c) { return _cross(s, info[k], c, 0, true) - inc; }, -10, 40);
       if (k < K - 1) {
+        // Once no later look spends alpha (all information past t = 1), every later boundary is Infinity and the
+        // density need not be carried further -- so looks there are never refused as "too close" by the mesh check.
+        var more = false;
+        for (var j = k + 1; j < K; j++) if (incr[j] > 0) { more = true; break; }
+        if (!more) { for (j = k + 1; j < K; j++) b[j] = Infinity; break; }
         var lo = sided === 2 ? -b[k] : -Infinity;
         var rk = _mesh(k > 0 ? info[k - 1] : null, info[k], info[k + 1]);
         s = k === 0 ? _start(info[0], 0, lo, b[0], rk) : _advance(s, info[k], 0, lo, b[k], rk);
@@ -270,7 +275,17 @@
         var tx = t.concat([1]), cx = tx.map(function (x) { return _spendPerSide(family, alpha, x, sided, convention); });
         var effx = _efficacy(tx, cx.map(function (c, i) { return Math.max(0, i ? c - cx[i - 1] : c); }), sided);
         fut = _futility(tx, effx, beta, futilityFamily, drift, sided);
-      } else fut = _futility(t, eff, beta, futilityFamily, drift, sided);
+      } else {
+        // The design ends at the first look with t >= 1: every alpha and beta increment after it is zero, so later
+        // looks have no efficacy (Infinity) and no futility boundary. Including them made the final-look objective
+        // of the inflation root infinite, R NaN, and every futility boundary null -- a post-RIS look erased the
+        // futility decisions at earlier looks. (RTSA's RTSA() drops looks beyond the required information;
+        // its boundaries() stops with "Non-binding futility boundaries could not be computed".)
+        var kEnd = 0;
+        while (t[kEnd] < 1) kEnd++;
+        fut = _futility(t.slice(0, kEnd + 1), eff.slice(0, kEnd + 1), beta, futilityFamily, drift, sided);
+        for (var kp = kEnd + 1; kp < t.length; kp++) fut.za.push(-Infinity);
+      }
     }
     var decisionTaken = null, out = [];
     for (var k = 0; k < sorted.length; k++) {

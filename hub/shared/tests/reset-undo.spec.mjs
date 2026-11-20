@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(join(__dirname, '..', 'reset-undo.js'), 'utf-8');
@@ -33,8 +34,8 @@ test.describe('reset-undo', () => {
   });
 
   test('undo restores prior snapshot', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.bump === 'function');
 
     await page.evaluate(() => {
@@ -54,8 +55,8 @@ test.describe('reset-undo', () => {
   });
 
   test('stack capacity drops oldest', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.bump === 'function');
 
     // capacity=3; bump a/b/c/d
@@ -84,8 +85,8 @@ test.describe('reset-undo', () => {
   });
 
   test('undo button disabled when stack empty', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window.bump === 'function');
 
     // Fresh init — stack empty — button must be disabled

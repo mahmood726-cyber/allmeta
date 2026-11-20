@@ -128,10 +128,13 @@ Trial 5, -0.38, 0.022</textarea>
       return out;
     }
 
+    var _rcheck = null;
+    window.__almRCheckInputs = function () { return _rcheck; };
+
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
 
     function run() {
-      window.__almLastBMA = function () { return null; };
+      window.__almLastBMA = function () { return null; }; _rcheck = null;
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) {
         document.getElementById("summary-card").innerHTML =
@@ -169,6 +172,8 @@ Trial 5, -0.38, 0.022</textarea>
       document.getElementById("per-model").innerHTML = html;
 
       window.__almLastBMA = function () { return result; };
+      // What the R check (r-check.js) recomputes: the rows analysed and the displayed result.
+      _rcheck = { rows: rows.map(function (r) { return { label: r.label, yi: r.yi, vi: r.vi }; }), page: result };
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
@@ -178,13 +183,10 @@ Trial 5, -0.38, 0.022</textarea>
     // refused there). Pure: no page state changes. [] -> the validator is not opened
     // on an earlier session's shared bus.
     window.__almValidatorStudies = function () {
-      try {
-        var rows = parse(document.getElementById("src").value);
-        if (rows.length < 2) return [];
-        var res = AlmBMA.fit(rows.map(function (r) { return r.yi; }), rows.map(function (r) { return r.vi; }), AlmBMA.defaultModels());
-        if (!res || !res.ok) return [];
-        return rows.map(function (r) { return { label: r.label, est: r.yi, se: Math.sqrt(r.vi) }; });
-      } catch (_) { return []; }
+      // The rows the displayed result analysed (lane pa8): re-parsing the textarea sent unrun edits
+      // ("Run BMA" not pressed) while the page still showed the earlier result.
+      if (!_rcheck) return [];
+      return _rcheck.rows.map(function (r) { return { label: r.label, est: r.yi, se: Math.sqrt(r.vi) }; });
     };
 
     // Bus interop: load studies via MaStudies.
@@ -223,6 +225,8 @@ Trial 5, -0.38, 0.022</textarea>
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
 
 <script>
 (function () {

@@ -16,7 +16,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/cross-design/
 
 ## Method papers
 
-- Welton NJ, Cooper NJ, Ades AE, Lu G, Sutton AJ. Mixed treatment comparison with multiple outcomes reported inconsistently across trials: evaluation of antivirals for treatment of influenza A and B. Stat Med. 2008;27(27):5620-5639. doi:10.1002/sim.3445
+- Welton NJ, Cooper NJ, Ades AE, Lu G, Sutton AJ. Mixed treatment comparison with multiple outcomes reported inconsistently across trials: evaluation of antivirals for treatment of influenza A and B. Stat Med. 2008;27(27):5620-5639. doi:10.1002/sim.3377
 - Ibrahim JG, Chen MH. Power Prior Distributions for Regression Models. Statist Sci. 2000;15(1):46-60. doi:10.1214/ss/1009212673
 
 ## Cite as

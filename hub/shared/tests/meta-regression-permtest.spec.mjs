@@ -6,7 +6,8 @@
  *   exactly (the HKSJ t differs ~0.4% in scale but the ordering — hence p — is identical).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/meta-regression/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/meta-regression/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const Y = [0.10,0.30,0.50,0.20,0.90,0.40,1.10];
 const SE = [0.20,0.25,0.18,0.30,0.22,0.28,0.35];

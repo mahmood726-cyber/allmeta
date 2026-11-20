@@ -5584,6 +5584,36 @@ S4,DrugC,35,1.02,0.16`;
   // Reference: Veroniki et al. (2016) Research Synthesis Methods
   // ----------------------------------------------------------------------------
 
+  // Heterogeneity statistics as metafor::rma reports them for a given tau²: Q at the fixed-effect
+  // mean, I² = 100 tau²/(tau² + s²), H² = (tau² + s²)/s², s² = (k - 1) sum(w) / (sum(w)² - sum(w²)).
+  function rmaHeterogeneity(y, v, tau2) {
+    const w = v.map(vi => 1 / vi);
+    const sw = w.reduce((a, b) => a + b, 0);
+    const sw2 = w.reduce((a, b) => a + b * b, 0);
+    const k = y.length;
+    const mu = w.reduce((s, wi, i) => s + wi * y[i], 0) / sw;
+    const Q = w.reduce((s, wi, i) => s + wi * (y[i] - mu) * (y[i] - mu), 0);
+    const s2 = (k - 1) * sw / (sw * sw - sw2);
+    if (!(k > 1) || !Number.isFinite(s2) || !(s2 > 0)) return { Q, I2: 0, H2: 1 };
+    const t2 = Math.max(0, tau2);
+    return { Q, I2: 100 * t2 / (t2 + s2), H2: (t2 + s2) / s2 };
+  }
+
+  // Upper-alpha chi-square quantile, inverting AlmTail.pchisqUpper (= qchisq(alpha, df, lower.tail = FALSE)).
+  function chiSquareCritical(alpha, df) {
+    const tail = globalThis.AlmTail;
+    if (!tail || typeof tail.pchisqUpper !== 'function') {
+      throw new Error('The shared tail engine (shared/upper-tail.js) is not loaded.');
+    }
+    let lo = 0, hi = 1;
+    while (tail.pchisqUpper(hi, df) > alpha) hi *= 2;
+    for (let i = 0; i < 200 && hi - lo > 1e-12 * hi; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (tail.pchisqUpper(mid, df) > alpha) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
   class REMLEstimator {
     constructor(effects, variances, options = {}) {
       // Input validation
@@ -5616,60 +5646,15 @@ S4,DrugC,35,1.02,0.16`;
 
     // REML estimation via Fisher scoring (Viechtbauer 2005)
     estimate() {
-      // Initialize with DL estimate
-      let tau2 = this.derSimonianLaird();
-      if (!Number.isFinite(tau2)) tau2 = 0;
-
-      let converged = false;
-
-      for (let iter = 0; iter < this.maxIter; iter++) {
-        const weights = this.v.map(vi => 1 / (vi + tau2));
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        // Guard against zero sumW
-        if (sumW < 1e-10) {
-          tau2 = 0;
-          break;
-        }
-
-        const sumW2 = weights.reduce((a, b) => a + b * b, 0);
-        const yBar = weights.reduce((sum, w, i) => sum + w * this.y[i], 0) / sumW;
-
-        // Q statistic under current tau2
-        const Q = weights.reduce((sum, w, i) => sum + w * Math.pow(this.y[i] - yBar, 2), 0);
-
-        // Correct REML score function (Viechtbauer 2005, eq. 7)
-        // U(tau2) = -0.5 * tr(P) + 0.5 * y'Py where P = W - WX(X'WX)^{-1}X'W
-        // For simple random effects: df = n - k where k = 1 (intercept)
-        const df = this.n - this.k;
-        const deriv1 = -0.5 * (sumW2 / sumW) + 0.5 * (Q - df) / (tau2 > 0 ? 1 : 1);
-
-        // Corrected: Score is (Q - df) / 2 - sumW2/(2*sumW)
-        // Simplified: 0.5 * ((Q - df) - sumW2/sumW)
-        const score = 0.5 * (Q - df - sumW2 / sumW);
-
-        // Expected Fisher information (second derivative)
-        // I(tau2) = 0.5 * tr(P^2) = 0.5 * (sumW2 - sumW3/sumW)
-        const sumW3 = weights.reduce((a, b) => a + b * b * b, 0);
-        const fisherInfo = 0.5 * (sumW2 - sumW3 / sumW);
-
-        // Guard against zero Fisher info
-        if (Math.abs(fisherInfo) < 1e-12) {
-          converged = true;
-          break;
-        }
-
-        // Fisher scoring update
-        const delta = score / fisherInfo;
-        const newTau2 = Math.max(0, tau2 + delta);
-
-        if (Math.abs(newTau2 - tau2) < this.tolerance) {
-          tau2 = newTau2;
-          converged = true;
-          break;
-        }
-        tau2 = newTau2;
+      // REML tau^2 from AllMeta's audited shared core (../shared/ma-core.js, loaded by index.html).
+      // The former Fisher-scoring loop used the score 0.5*(Q - df - sum(w^2)/sum(w)), which is not
+      // the REML score (dat.bcg: 0.223 against metafor's 0.313), and stopped on an absolute 1e-8 step.
+      const core = globalThis.AlmMaCore;
+      if (!core || typeof core.tau2REML !== 'function') {
+        throw new Error('The shared REML engine (shared/ma-core.js) is not loaded.');
       }
+      const tau2 = core.tau2REML(this.y, this.v);
+      const converged = Number.isFinite(tau2);
 
       // Compute profile likelihood CI for tau²
       const ciTau2 = this.profileLikelihoodCI(tau2);
@@ -5691,11 +5676,11 @@ S4,DrugC,35,1.02,0.16`;
       const effect = weights.reduce((sum, w, i) => sum + w * this.y[i], 0) / sumW;
       const se = sumW > 1e-10 ? Math.sqrt(1 / sumW) : Infinity;
 
-      // Compute I² and H² with proper guards
-      const Q = this.computeQ(effect);
+      // Q, I² and H² as metafor::rma reports them: Q at the fixed-effect mean (it was taken at the
+      // REML mean, dat.bcg Q 168.3 / I² 94.0% against metafor's 152.2 / 92.2%), and
+      // I² = tau²/(tau² + s²), H² = (tau² + s²)/s², s² the typical within-study variance.
+      const { Q, I2, H2 } = rmaHeterogeneity(this.y, this.v, tau2);
       const df = this.n - 1;
-      const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
-      const H2 = df > 0 ? Q / df : 1;
 
       return {
         tau2,
@@ -5736,8 +5721,10 @@ S4,DrugC,35,1.02,0.16`;
 
     // Profile likelihood CI for tau² using bisection (more robust)
     profileLikelihoodCI(tau2Est, alpha = 0.05) {
-      // Use chi-square quantile based on alpha
-      const critVal = this.chiSquareQuantile(1 - alpha, 1);
+      // Exact chi-square(1) critical value (= metafor confint(type = "PL")). It was the Wilson-Hilferty
+      // approximation evaluated at the one-sided normal quantile, about 3.70 instead of 3.84 for alpha
+      // 0.05, which narrowed the interval (dat.bcg [0.1166, 0.9503] against metafor [0.1153, 0.9647]).
+      const critVal = chiSquareCritical(alpha, 1);
       const maxLL = this.remlLogLik(tau2Est);
 
       // Binary search for lower bound
@@ -5885,15 +5872,14 @@ S4,DrugC,35,1.02,0.16`;
       // Degrees of freedom
       const df = this.n - 1;
 
-      // Sidik-Jonkman tau² estimator
-      // Formula: tau² = max(0, (Q - df + 2*sum(w²)/sum(w)) / (sum(w) - sum(w²)/sum(w)))
-      const numerator = Q - df + 2 * sumW2 / sumW;
-      const denominator = sumW - sumW2 / sumW;
-
-      let tau2 = 0;
-      if (denominator > this.tolerance && numerator > 0) {
-        tau2 = Math.max(0, numerator / denominator);
+      // Sidik-Jonkman (2005) tau^2 from the shared core (ma-core.js tau2SJ, = metafor method="SJ").
+      // The former closed form (Q - df + 2*sum(w^2)/sum(w)) / (sum(w) - sum(w^2)/sum(w)) is not the
+      // Sidik-Jonkman estimator (dat.bcg: 0.994 against metafor's 0.346).
+      const core = globalThis.AlmMaCore;
+      if (!core || typeof core.tau2SJ !== 'function') {
+        throw new Error('The shared tau^2 engine (shared/ma-core.js) is not loaded.');
       }
+      const tau2 = core.tau2SJ(this.y, this.v);
 
       // Compute random-effects weights
       const wRE = this.v.map(vi => 1 / (vi + tau2));
@@ -5903,9 +5889,9 @@ S4,DrugC,35,1.02,0.16`;
       const reEffect = wRE.reduce((sum, wi, i) => sum + wi * this.y[i], 0) / sumWRE;
       const reSE = Math.sqrt(1 / sumWRE);
 
-      // Compute I² and H²
-      const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
-      const H2 = df > 0 ? Q / df : 1;
+      // I² and H² as metafor::rma(method = "SJ") reports them (tau²/(tau² + s²)); they were the
+      // Q-based values (Q - df)/Q, which describe the DL fit, not this one (dat.bcg 92.1% vs 92.9%).
+      const { I2, H2 } = rmaHeterogeneity(this.y, this.v, tau2);
 
       return {
         tau2,
@@ -6709,15 +6695,18 @@ S4,DrugC,35,1.02,0.16`;
         const looVariances = this.variances.filter((_, j) => j !== i);
         const looEstimate = this.pooledEstimate(looEffects, looVariances);
 
-        // DFBETAS (standardized difference in estimate)
-        const dfbetas = (fullEstimate.effect - looEstimate.effect) / fullEstimate.se;
-
-        // Standardized residual
+        // As metafor::influence(rma(method = "REML")) defines them (lane nmaparsed, 2026-11-13):
+        // DFBETAS = (b - b(-i)) / sqrt(1 / sum_j 1/(v_j + tau2(-i))), all k studies weighted with the
+        // leave-one-out tau2; studentized deleted residual = (y_i - b(-i)) / sqrt(v_i + tau2(-i) + se(-i)^2);
+        // Cook's distance = (b - b(-i))^2 / se^2. The former "DFBETAS" (b - b(-i))/se and "std
+        // residual" (y_i - b)/sqrt(v_i + tau2) are neither (dat.bcg study 4: -0.479 / -1.259 against
+        // metafor -0.514 / -1.451).
         const residual = this.effects[i] - fullEstimate.effect;
-        const stdResidual = residual / Math.sqrt(this.variances[i] + fullEstimate.tau2);
-
-        // Cook's distance analog
-        const cooksD = Math.pow(dfbetas, 2);
+        const sumWdel = this.variances.reduce((s, v) => s + 1 / (v + looEstimate.tau2), 0);
+        const dfbetas = (fullEstimate.effect - looEstimate.effect) / Math.sqrt(1 / sumWdel);
+        const stdResidual = (this.effects[i] - looEstimate.effect) /
+          Math.sqrt(this.variances[i] + looEstimate.tau2 + looEstimate.se * looEstimate.se);
+        const cooksD = Math.pow((fullEstimate.effect - looEstimate.effect) / fullEstimate.se, 2);
 
         // Hat value (leverage)
         const weight = 1 / (this.variances[i] + fullEstimate.tau2);
@@ -6755,6 +6744,12 @@ S4,DrugC,35,1.02,0.16`;
     }
 
     pooledEstimate(effects, variances) {
+      // One study is its own estimate (metafor::cumul's first step); REMLEstimator needs k >= 2.
+      if (effects.length === 1) {
+        const se = Math.sqrt(variances[0]);
+        const z = getCriticalZ(0.95);
+        return { tau2: 0, tau: 0, effect: effects[0], se, ci: [effects[0] - z * se, effects[0] + z * se], I2: 0, H2: 1, Q: 0, df: 0, method: 'REML' };
+      }
       // REML estimate
       const reml = new REMLEstimator(effects, variances);
       return reml.estimate();
@@ -7228,6 +7223,7 @@ S4,DrugC,35,1.02,0.16`;
     covariateMean: NaN,
     covariateBeta: NaN,
     tau2ByTreatment: {},
+    tau2NotEstimable: [],
     globalTau2: NaN,
     globalI2: NaN,
     globalH2: NaN,
@@ -8209,6 +8205,109 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     }
   }
 
+  // Residual heterogeneity of a weighted linear dose-response fit (yi = effect - study offset, vi = 1/weight,
+  // X = the model's design). Estimators as in metafor::rma(mods = X, intercept = FALSE): DL, REML, PM, SJ, EB.
+  function linearDesign(fit, dose, freeBaseline) {
+    if (!fit) return null;
+    if (fit.model === "log_linear") return freeBaseline ? [1, Math.log(dose + fit.shift)] : [Math.log(dose + fit.shift)];
+    if (fit.model === "rcs") return buildRcsBasis(dose, fit.knots, fit.includeIntercept);
+    if (fit.model === "fp") {
+      const x = dose + fit.shift;
+      const row = [];
+      if (fit.includeIntercept) row.push(1);
+      const t1 = buildFpTerm(x, fit.powers[0]);
+      row.push(t1);
+      if (fit.powers.length > 1) row.push(fit.powers[1] === fit.powers[0] ? t1 * Math.log(x) : buildFpTerm(x, fit.powers[1]));
+      return row;
+    }
+    return null;
+  }
+
+  // info (optional): info.notEstimable is set when the value returned is not an estimate --
+  // 'k <= p' (no residual degrees of freedom: 0 is returned, i.e. fixed-effect weights, as metafor would refuse the fit)
+  // or 'no root bracketed' (NaN is returned).
+  function residualTau2(y, v, Xin, method, info) {
+    const k = y.length;
+    // independent columns (modified Gram-Schmidt on the unweighted columns, relative tolerance)
+    const cols = [];
+    const basis = [];
+    const p0 = Xin.length ? Xin[0].length : 0;
+    for (let j = 0; j < p0; j += 1) {
+      const c = Xin.map(r => r[j]);
+      const norm0 = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (!(norm0 > 0)) continue;
+      const r = c.slice();
+      basis.forEach(q => { const d = r.reduce((a, b, i) => a + b * q[i], 0); for (let i = 0; i < k; i += 1) r[i] -= d * q[i]; });
+      const nr = Math.sqrt(r.reduce((a, b) => a + b * b, 0));
+      if (nr > 1e-7 * norm0) { basis.push(r.map(x => x / nr)); cols.push(j); }
+    }
+    const p = cols.length;
+    if (k <= p) { if (info) info.notEstimable = 'k <= p'; return 0; }
+    const X = Xin.map(r => cols.map(j => r[j]));
+    const projQ = t2 => {          // returns { P, Py } for weights 1/(v + t2)
+      const w = v.map(vi => 1 / (vi + t2));
+      const P = [];
+      for (let i = 0; i < k; i += 1) { P.push(new Array(k).fill(0)); P[i][i] = w[i]; }
+      if (p > 0) {
+        const A = Array.from({ length: p }, () => new Array(p).fill(0));
+        for (let a = 0; a < p; a += 1) for (let b = 0; b < p; b += 1) { let s = 0; for (let i = 0; i < k; i += 1) s += X[i][a] * w[i] * X[i][b]; A[a][b] = s; }
+        const Ainv = invertSym(A);
+        // P = W - W X Ainv X' W
+        const WX = X.map((r, i) => r.map(x => x * w[i]));
+        const M = WX.map(r => { const o = new Array(p).fill(0); for (let a = 0; a < p; a += 1) for (let b = 0; b < p; b += 1) o[a] += r[b] * Ainv[b][a]; return o; });
+        for (let i = 0; i < k; i += 1) for (let j = 0; j < k; j += 1) { let s = 0; for (let a = 0; a < p; a += 1) s += M[i][a] * WX[j][a]; P[i][j] -= s; }
+      }
+      const Py = P.map(r => r.reduce((a, b, j) => a + b * y[j], 0));
+      return { P, Py };
+    };
+    const rss = t2 => { const { Py } = projQ(t2); return Py.reduce((a, b, i) => a + b * y[i], 0); };
+    const trace = P => P.reduce((a, r, i) => a + r[i], 0);
+    const dl = () => { const { P, Py } = projQ(0); const q = Py.reduce((a, b, i) => a + b * y[i], 0); return Math.max(0, (q - (k - p)) / trace(P)); };
+    // root searches double the upper bound until the sign changes (y'P(t)y and the REML score fall to 0 and
+    // below as t grows, so a bracket exists for finite data); without a sign change there is no estimate
+    const noRoot = () => { if (info) info.notEstimable = 'no root bracketed'; return NaN; };
+    const rootQ = () => {            // PM / EB: y'P(t2)y = k - p
+      if (rss(0) <= k - p) return 0;
+      let lo = 0; let hi = 1;
+      while (rss(hi) > k - p && hi < 1e300) hi *= 2;
+      if (!(rss(hi) <= k - p)) return noRoot();
+      for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (rss(mid) > k - p) lo = mid; else hi = mid; }
+      return (lo + hi) / 2;
+    };
+    if (method === "dl") return dl();
+    if (method === "pm" || method === "eb") return rootQ();
+    if (method === "sj") {
+      const mean = y.reduce((a, b) => a + b, 0) / k;
+      const t0 = y.reduce((a, b) => a + (b - mean) * (b - mean), 0) / k;
+      if (!(t0 > 0)) return 0;
+      return Math.max(0, t0 * rss(t0) / (k - p));
+    }
+    if (method === "reml") {      // root of the restricted-likelihood score y'PPy - tr(P); 0 if the score is negative at 0
+      const score = t2 => { const { P, Py } = projQ(t2); return Py.reduce((a, b) => a + b * b, 0) - trace(P); };
+      if (score(0) <= 0) return 0;
+      let lo = 0; let hi = 1;
+      while (score(hi) > 0 && hi < 1e300) hi *= 2;
+      if (!(score(hi) <= 0)) return noRoot();
+      for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (score(mid) > 0) lo = mid; else hi = mid; }
+      return (lo + hi) / 2;
+    }
+    return dl();
+  }
+
+  function invertSym(A) {
+    const n = A.length;
+    const M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+    for (let i = 0; i < n; i += 1) {
+      let piv = i;
+      for (let r = i + 1; r < n; r += 1) if (Math.abs(M[r][i]) > Math.abs(M[piv][i])) piv = r;
+      [M[i], M[piv]] = [M[piv], M[i]];
+      const d = M[i][i];
+      for (let c = 0; c < 2 * n; c += 1) M[i][c] /= d;
+      for (let r = 0; r < n; r += 1) if (r !== i) { const f = M[r][i]; for (let c = 0; c < 2 * n; c += 1) M[r][c] -= f * M[i][c]; }
+    }
+    return M.map(r => r.slice(n));
+  }
+
   function computeTau2ByTreatment(baseData, fits, offsets, options = {}) {
     const {
       useCovariate = false,
@@ -8229,9 +8328,11 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (!Number.isFinite(weight) || weight <= 0) return;
       const variance = weight > 0 ? 1 / weight : 1;
       if (!agg.has(row.treatment)) {
-        agg.set(row.treatment, { resids: [], vars: [], weights: [], n: 0 });
+        agg.set(row.treatment, { resids: [], vars: [], weights: [], n: 0, ys: [], xs: [] });
       }
       const entry = agg.get(row.treatment);
+      entry.ys.push(row.effect - offset - covAdj);
+      entry.xs.push(linearDesign(fit, row.dose, state.freeBaseline));
       entry.resids.push(resid);
       entry.vars.push(variance);
       entry.weights.push(weight);
@@ -8269,6 +8370,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     };
 
     const tau2ByTreatment = {};
+    const tau2NotEstimable = [];
     let totalTau2 = 0;
     let totalN = 0;
     let totalQ = 0;
@@ -8287,7 +8389,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       totalQ += q;
       totalDf += df;
       let tau2 = 0;
-      if (tau2Method === "pm") {
+      if (entry.xs.every(x => Array.isArray(x))) {
+        // linear dose-response models: residual heterogeneity with the method the user selected
+        const info = {};
+        tau2 = residualTau2(entry.ys, entry.vars, entry.xs, tau2Method, info);
+        if (info.notEstimable) { tau2NotEstimable.push(treatment); if (!Number.isFinite(tau2)) tau2 = 0; }   // fixed-effect weights
+      } else if (tau2Method === "pm") {
         tau2 = computePauleMandel(entry.vars, entry.resids, df);
       } else {
         const c = wsum - (wsum2 / (wsum || 1));
@@ -8300,7 +8407,62 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const globalTau2 = totalN ? totalTau2 / totalN : NaN;
     const i2 = totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0;
     const h2 = totalDf ? totalQ / totalDf : NaN;
-    return { tau2ByTreatment, globalTau2, i2, h2, totalQ, totalDf };
+    return { tau2ByTreatment, tau2NotEstimable, globalTau2, i2, h2, totalQ, totalDf };
+  }
+
+  // Fixed-effect linear dose-response models: the alternating sweeps converge (slowly) to the joint weighted
+  // least-squares solution of effect = study offset + curve(dose); solve it directly with a QR decomposition
+  // (modified Gram-Schmidt with re-orthogonalisation; dependent columns get coefficient 0).
+  function jointLinearSolve(baseData, fits, freeBaseline) {
+    const rows = baseData.filter(r => fits[r.treatment] && linearDesign(fits[r.treatment], r.dose, freeBaseline));
+    if (!rows.length) return null;
+    const studies = Array.from(new Set(rows.map(r => r.study)));
+    const trts = Array.from(new Set(rows.map(r => r.treatment)));
+    const width = {}; let p = studies.length; const start = {};
+    trts.forEach(t => { start[t] = p; width[t] = linearDesign(fits[t], 1, freeBaseline).length; p += width[t]; });
+    const n = rows.length;
+    const sw = rows.map(r => Math.sqrt(Number.isFinite(r.baseWeight) ? r.baseWeight : r.weight));
+    const cols = [];
+    for (let j = 0; j < p; j += 1) cols.push(new Float64Array(n));
+    rows.forEach((r, i) => {
+      cols[studies.indexOf(r.study)][i] = sw[i];
+      linearDesign(fits[r.treatment], r.dose, freeBaseline).forEach((x, k) => { cols[start[r.treatment] + k][i] = x * sw[i]; });
+    });
+    const yw = rows.map((r, i) => r.effect * sw[i]);
+    const Q = []; const keep = []; const Rm = [];
+    for (let j = 0; j < p; j += 1) {
+      const c = Float64Array.from(cols[j]);
+      const n0 = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (!(n0 > 0)) continue;
+      const rcol = new Array(Q.length).fill(0);
+      for (let pass = 0; pass < 2; pass += 1) {
+        Q.forEach((q, qi) => { let d = 0; for (let i = 0; i < n; i += 1) d += q[i] * c[i]; rcol[qi] += d; for (let i = 0; i < n; i += 1) c[i] -= d * q[i]; });
+      }
+      const nr = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (nr <= 1e-10 * n0) continue;
+      for (let i = 0; i < n; i += 1) c[i] /= nr;
+      Q.push(c); keep.push(j); Rm.push(rcol.concat([nr]));
+    }
+    const qty = Q.map(q => q.reduce((a, b, i) => a + b * yw[i], 0));
+    const m = Q.length; const coef = new Array(m).fill(0);
+    for (let a = m - 1; a >= 0; a -= 1) {
+      let s = qty[a];
+      for (let b = a + 1; b < m; b += 1) s -= Rm[b][a] * coef[b];
+      coef[a] = s / Rm[a][a];
+    }
+    const beta = new Array(p).fill(0);
+    keep.forEach((j, a) => { beta[j] = coef[a]; });
+    const offsets = new Map();
+    studies.forEach((s, i) => offsets.set(s, beta[i]));
+    const out = {};
+    trts.forEach(t => {
+      const c = beta.slice(start[t], start[t] + width[t]);
+      const f = { ...fits[t] };
+      if (f.model === "log_linear") { if (freeBaseline) { f.e0 = c[0]; f.slope = c[1]; } else { f.slope = c[0]; } }
+      else f.betas = c;
+      out[t] = f;
+    });
+    return { offsets, fits: out };
   }
 
   function fitNetwork(baseData, modelChoice, options = {}, iterations = 3) {
@@ -8314,6 +8476,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     let covariateBeta = NaN;
     let covariateMean = NaN;
     let tau2ByTreatment = {};
+    let tau2NotEstimable = [];
     let globalTau2 = NaN;
     let globalI2 = NaN;
     let globalH2 = NaN;
@@ -8344,6 +8507,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         tau2Method
       });
       tau2ByTreatment = tau2Result.tau2ByTreatment;
+      tau2NotEstimable = tau2Result.tau2NotEstimable || [];
       globalTau2 = tau2Result.globalTau2;
       globalI2 = tau2Result.i2;
       globalH2 = tau2Result.h2;
@@ -8357,6 +8521,24 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       });
     }
 
+    // ... and replace it by the exact joint solution for fixed-effect linear models (structure from the sweeps)
+    let jointSolved = false;
+    if (!randomEffects && !useCovariate && ["log_linear", "rcs", "fp"].includes(modelChoice)) {
+      const joint = jointLinearSolve(baseData, fits, state.freeBaseline);
+      if (joint) {
+        jointSolved = true;
+        const studySet = new Set(baseData.map(r => r.study));
+        offsets = new Map(); studySet.forEach(s => { if (joint.offsets.has(s)) offsets.set(s, joint.offsets.get(s)); });
+        missingStudies = studySet.size - offsets.size;
+        Object.assign(fits, joint.fits);
+        adjusted = applyStudyOffsets(baseData, offsets, { randomEffects: false, tau2ByTreatment, useCovariate, covariateBeta, covariateMean });
+        Object.keys(joint.fits).forEach(t => {
+          const pts = adjusted.filter(r => r.treatment === t);
+          fits[t] = { ...fits[t], ...computeWeightedStats(pts, d => predictModel(fits[t], d), fits[t].k) };
+        });
+      }
+    }
+
     return {
       fits,
       treatments,
@@ -8367,9 +8549,11 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       covariateBeta,
       covariateMean,
       tau2ByTreatment,
+      tau2NotEstimable,
       globalTau2,
       globalI2,
-      globalH2
+      globalH2,
+      jointSolved
     };
   }
 
@@ -8405,8 +8589,9 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
   function solveLinearSystem(matrix, vector) {
     const n = matrix.length;
-    const a = matrix.map(row => row.slice());
-    const b = vector.slice();
+    const dg = matrix.map((row, i) => (row[i] > 0 ? 1 / Math.sqrt(row[i]) : 1));
+    const a = matrix.map((row, i) => row.map((v, j) => v * dg[i] * dg[j]));
+    const b = vector.map((v, i) => v * dg[i]);
     for (let i = 0; i < n; i += 1) {
       let maxRow = i;
       let max = Math.abs(a[i][i]);
@@ -8440,7 +8625,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         b[r] -= factor * b[i];
       }
     }
-    return b;
+    return b.map((v, i) => v * dg[i]);
   }
 
   function weightedLeastSquares(design, y, weights) {
@@ -8494,7 +8679,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const terms = [];
     if (includeIntercept) terms.push(1);
     terms.push(dose);
-    for (let j = 1; j < k - 1; j += 1) {
+    for (let j = 0; j < k - 2; j += 1) {
       const knot = knots[j];
       const term = Math.pow(Math.max(dose - knot, 0), 3);
       const termLastMinus = Math.pow(Math.max(dose - lastMinus, 0), 3);
@@ -8845,6 +9030,54 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         converged: result.converged || false
       };
 
+      // Emax is linear in (e0, emax) for fixed ed50: profile them out by weighted least squares (within the same
+      // bounds) and minimise over log(ed50) in its bounds (dense grid + golden-section refinement).
+      const fb = !!options.freeBaseline;
+      const lo50 = bounds[2].min; const hi50 = bounds[2].max;
+      const profile = ed50 => {
+        const g = doses.map(d => d / (ed50 + d));
+        let e0 = 0; let em;
+        const sw = weights.reduce((a, b) => a + b, 0);
+        if (fb) {
+          const mg = g.reduce((a, x, i) => a + weights[i] * x, 0) / sw; const my = effects.reduce((a, x, i) => a + weights[i] * x, 0) / sw;
+          let sxy = 0; let sxx = 0; g.forEach((x, i) => { sxy += weights[i] * (x - mg) * (effects[i] - my); sxx += weights[i] * (x - mg) * (x - mg); });
+          const sgg = g.reduce((a, x, i) => a + weights[i] * x * x, 0);
+          const cl = (v, b) => Math.min(b.max, Math.max(b.min, v));
+          const ssOf = (a0, a1) => g.reduce((a, x, i) => a + weights[i] * (effects[i] - a0 - a1 * x) ** 2, 0);
+          const emGiven = a0 => cl(sgg > 0 ? g.reduce((a, x, i) => a + weights[i] * x * (effects[i] - a0), 0) / sgg : 0, bounds[1]);
+          const e0Given = a1 => cl(my - a1 * mg, bounds[0]);
+          const cands = [];
+          const emU = sxx > 0 ? sxy / sxx : 0; const e0U = my - emU * mg;
+          if (emU >= bounds[1].min && emU <= bounds[1].max && e0U >= bounds[0].min && e0U <= bounds[0].max) cands.push([e0U, emU]);
+          [bounds[0].min, bounds[0].max].forEach(a0 => cands.push([a0, emGiven(a0)]));
+          [bounds[1].min, bounds[1].max].forEach(a1 => cands.push([e0Given(a1), a1]));
+          let bestC = null; let bestS = Infinity;
+          cands.forEach(([a0, a1]) => { const v = ssOf(a0, a1); if (v < bestS) { bestS = v; bestC = [a0, a1]; } });
+          e0 = bestC[0]; em = bestC[1];
+        } else {
+          let sxy = 0; let sxx = 0; g.forEach((x, i) => { sxy += weights[i] * x * effects[i]; sxx += weights[i] * x * x; });
+          em = sxx > 0 ? sxy / sxx : 0;
+          em = Math.min(bounds[1].max, Math.max(bounds[1].min, em));
+        }
+        let sse = 0; g.forEach((x, i) => { const r = effects[i] - e0 - em * x; sse += weights[i] * r * r; });
+        return { e0, emax: em, ed50, sse };
+      };
+      if (hi50 > lo50 && lo50 > 0) {
+        const a = Math.log(lo50); const b = Math.log(hi50); const G = 400;
+        let bi = 0; let bv = Infinity; const vals = [];
+        for (let i = 0; i <= G; i += 1) { const v = profile(Math.exp(a + (b - a) * i / G)).sse; vals.push(v); if (v < bv) { bv = v; bi = i; } }
+        let l = a + (b - a) * Math.max(0, bi - 1) / G; let u = a + (b - a) * Math.min(G, bi + 1) / G;
+        const phi = (Math.sqrt(5) - 1) / 2;
+        for (let it = 0; it < 200 && u - l > 1e-14 * Math.max(1, Math.abs(u)); it += 1) {
+          const c = u - phi * (u - l); const d = l + phi * (u - l);
+          if (profile(Math.exp(c)).sse < profile(Math.exp(d)).sse) u = d; else l = c;
+        }
+        const cand = profile(Math.exp((l + u) / 2));
+        const edge = profile(Math.exp(a + (b - a) * bi / G));
+        const pick = cand.sse <= edge.sse ? cand : edge;
+        if (pick.sse < best.sse) Object.assign(best, pick);
+      }
+
       const rmse = Math.sqrt(best.sse / Math.max(n, 1));
       return { ...best, rmse, n };
     } catch (error) {
@@ -8936,6 +9169,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     };
 
     const trials = 220 + Math.min(320, n * 60);
+    const topStarts = [];
     const e0Range = effRange;
     const emaxRange = effRange * 1.6;
 
@@ -8948,6 +9182,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (sse < best.sse) {
         best = { e0, emax, ed50, hill, sse };
       }
+      if (Number.isFinite(sse)) { topStarts.push({ e0, emax, ed50, hill, sse }); topStarts.sort((a, b) => a.sse - b.sse); if (topStarts.length > 5) topStarts.pop(); }
     }
 
     let stepE0 = e0Range * 0.25;
@@ -8971,6 +9206,45 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         stepHill *= 0.75;
       }
     }
+
+    // polish the best random-search point with Nelder-Mead (log scale for ed50 and hill keeps them positive)
+    const fb = !!options.freeBaseline;
+    const toX = b => (fb ? [b.e0] : []).concat([b.emax, Math.log(b.ed50), Math.log(b.hill)]);
+    const fromX = x => { const o = fb ? 1 : 0; return { e0: fb ? x[0] : 0, emax: x[o], ed50: Math.exp(x[o + 1]), hill: Math.exp(x[o + 2]) }; };
+    const obj = x => { const b = fromX(x); const v = evaluate(b.e0, b.emax, b.ed50, b.hill); return Number.isFinite(v) ? v : Number.MAX_VALUE; };
+    const polish = start => {
+      let cur = start;
+      for (let round = 0; round < 5; round += 1) {
+        const res = nelderMead(obj, toX(cur), { maxIterations: 2000, tolerance: 1e-16, initialStep: 0.1 });
+        const cand = fromX(res.x);
+        const sse = evaluate(cand.e0, cand.emax, cand.ed50, cand.hill);
+        if (!(sse < cur.sse * (1 - 1e-13))) { if (sse < cur.sse) cur = { ...cand, sse }; break; }
+        cur = { ...cand, sse };
+      }
+      return cur;
+    };
+    const sw0 = weights.reduce((a, b) => a + b, 0);
+    const gridBest = { sse: Number.POSITIVE_INFINITY };
+    for (let i = 0; i <= 40; i += 1) {
+      const ed50 = Math.pow(10, logMin + (logMax - logMin) * i / 40);
+      for (let j = 0; j <= 40; j += 1) {
+        const hill = hillMin + (hillMax - hillMin) * j / 40;
+        const g = doses.map(d => { const pw = Math.pow(d, hill); const dn = Math.pow(ed50, hill) + pw; return dn ? pw / dn : 0; });
+        let e0 = 0; let emax = 0;
+        if (fb) {
+          const mg = g.reduce((a, x, q) => a + weights[q] * x, 0) / sw0; const my = values.reduce((a, x, q) => a + weights[q] * x, 0) / sw0;
+          let sxy = 0; let sxx = 0; g.forEach((x, q) => { sxy += weights[q] * (x - mg) * (values[q] - my); sxx += weights[q] * (x - mg) * (x - mg); });
+          emax = sxx > 0 ? sxy / sxx : 0; e0 = my - emax * mg;
+        } else {
+          let sxy = 0; let sxx = 0; g.forEach((x, q) => { sxy += weights[q] * x * values[q]; sxx += weights[q] * x * x; });
+          emax = sxx > 0 ? sxy / sxx : 0;
+        }
+        const sse = evaluate(e0, emax, ed50, hill);
+        if (sse < gridBest.sse) Object.assign(gridBest, { e0, emax, ed50, hill, sse });
+      }
+    }
+    if (gridBest.sse < best.sse) best = { ...gridBest };
+    [best, gridBest, ...topStarts].filter(st => Number.isFinite(st.sse)).forEach(st => { const r = polish(st); if (r.sse < best.sse) best = r; });
 
     return { ...best, n };
   }
@@ -9969,22 +10243,41 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     return { se, seCr2, studies: n };
   }
 
-  function updateDiagnostics(stats) {
-    if (!dom.diagQ) return;
-    const valid = stats.filter(item => Number.isFinite(item.q));
+  // The Diagnostics panel's Global Q / df / p and I² (I² as a fraction). The LaTeX and DOCX exports
+  // read this same function, so an export cannot print a heterogeneity value the panel does not show
+  // (they printed Q = N/A, "the network fit computes no global Q", and I² = 0.931\% beside the
+  // panel's Global Q = 8.148 and I² = 93.1%; re-review lane rrev61, F1/F3).
+  // With no per-treatment Q, or no residual df at all (every curve has as many parameters as
+  // points), nothing was estimated: Q, df, p and I² are NaN (shown "-", exported "not computed"),
+  // never Q = 0 on df = 0 with I² = 0% or a state.globalI2 left from an earlier run (agy, #565).
+  function diagnosticsHeterogeneity(stats) {
+    const valid = (stats || []).filter(item => Number.isFinite(item.q));
     const totalQ = valid.reduce((sum, item) => sum + item.q, 0);
     const totalDf = valid.reduce((sum, item) => sum + (Number.isFinite(item.df) ? item.df : 0), 0);
-    const dispersion = totalDf ? totalQ / totalDf : NaN;
+    if (!valid.length || !(totalDf > 0)) return { valid, computed: false, Q: NaN, df: NaN, Qp: NaN, I2: NaN };
     const i2 = Number.isFinite(state.globalI2) ? state.globalI2 : (totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0);
+    return { valid, computed: true, Q: totalQ, df: totalDf, Qp: chiSquarePValue(totalQ, totalDf), I2: i2 };
+  }
+
+  function updateDiagnostics(stats) {
+    if (!dom.diagQ) return;
+    const het = diagnosticsHeterogeneity(stats);
+    const valid = het.valid;
+    const totalQ = het.Q;
+    const totalDf = het.df;
+    const dispersion = totalDf ? totalQ / totalDf : NaN;
+    const i2 = het.I2;
     const meanRmse = valid.length ? valid.reduce((sum, item) => sum + (Number.isFinite(item.rmse) ? item.rmse : 0), 0) / valid.length : NaN;
     const meanR2 = valid.length ? valid.reduce((sum, item) => sum + (Number.isFinite(item.r2) ? item.r2 : 0), 0) / valid.length : NaN;
 
     dom.diagQ.textContent = formatNumber(totalQ);
-    dom.diagQp.textContent = formatNumber(chiSquarePValue(totalQ, totalDf));
+    dom.diagQp.textContent = formatNumber(het.Qp);
     dom.diagDf.textContent = formatNumber(totalDf);
     dom.diagI2.textContent = formatProbability(i2);
     dom.diagDispersion.textContent = formatNumber(dispersion);
-    dom.diagTau2.textContent = formatNumber(state.globalTau2);
+    const notEst = state.randomEffects && Array.isArray(state.tau2NotEstimable) ? state.tau2NotEstimable : [];
+    dom.diagTau2.textContent = formatNumber(state.globalTau2) +
+      (notEst.length ? ` (not estimable for ${notEst.join(', ')}: no residual df or no root; fixed-effect weights)` : '');
     dom.diagH2.textContent = formatNumber(state.globalH2);
     dom.diagRmse.textContent = formatNumber(meanRmse);
     dom.diagR2.textContent = formatNumber(meanR2);
@@ -10639,6 +10932,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
   function updateAnalysis() {
     if (!state.rawData.length || !state.wasm) return;
+    if (typeof seedNmaRng === "function") seedNmaRng(42);
     state.freeBaseline = dom.baselineToggle.checked;
     state.logDose = dom.logDoseToggle.checked;
     state.modelChoice = dom.modelSelect.value;
@@ -10690,6 +10984,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     state.covariateBeta = networkResult.covariateBeta;
     state.covariateMean = networkResult.covariateMean;
     state.tau2ByTreatment = networkResult.tau2ByTreatment || {};
+    state.tau2NotEstimable = networkResult.tau2NotEstimable || [];
     state.globalTau2 = networkResult.globalTau2;
     state.globalI2 = networkResult.globalI2;
     state.globalH2 = networkResult.globalH2;
@@ -10804,7 +11099,11 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         rankCounts[treatment] = Array(treatments.length).fill(0);
       });
 
-      const rng = makeRng(Math.floor(Date.now() % 2147483647));
+      // The seed input must govern the study resampling (and the random starts of the nonlinear
+      // fits inside each replicate); a clock seed is used only when no seed is given.
+      const hasSeed = Boolean(seedVal && !isNaN(seedVal));
+      const rng = makeRng(hasSeed ? seedVal : Math.floor(Date.now() % 2147483647));
+      if (hasSeed && typeof seedNmaRng === "function") seedNmaRng(seedVal);
       let validIterations = 0;
       let validRankIterations = 0;
 
@@ -11210,6 +11509,187 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     }
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // Data access for the analysis controls (lane nmaparsed, 2026-11-13). These controls read
+  // state.parsedData.rows, which nothing assigns, so they did nothing or alerted "Load data first."
+  // The parsed CSV rows are state.rawData. The pairwise methods pool ONE effect per study;
+  // dose-response data with several rows per study (arms / doses) are refused rather than pooled
+  // as if every row were an independent study.
+  function pairwiseRows() {
+    const rows = state.rawData || [];
+    if (!rows.length) return { refusal: "Load data first." };
+    const perStudy = new Map();
+    rows.forEach(r => perStudy.set(r.study, (perStudy.get(r.study) || 0) + 1));
+    const multi = [...perStudy.values()].filter(n => n > 1).length;
+    if (multi) {
+      return { refusal: `Not run: this method pools one effect per study, and ${multi} of ${perStudy.size} studies have more than one row (dose-response arms).` };
+    }
+    const badSe = rows.filter(r => !(Number.isFinite(r.se) && r.se > 0)).length;
+    if (badSe) return { refusal: `Not run: ${badSe} row(s) have no positive standard error.` };
+    if (rows.length < 2) return { refusal: "Not run: at least 2 studies are needed." };
+    return { rows };
+  }
+
+  function showRefusal(el, message) {
+    if (el) el.textContent = message;
+    if (dom.exportStatus && el !== dom.exportStatus) dom.exportStatus.textContent = message;
+    if (typeof showNotification === "function") showNotification(message, "warning");
+  }
+
+  // Controls whose engine does not reproduce R on a reference dataset (each checked with its data
+  // access repaired; lane nmaparsed, 2026-11-13: dat.bcg for the pairwise methods, the default
+  // sample for the network methods) are refused visibly instead of printing a number.
+  const UNVALIDATED_CONTROLS = {
+    runCopas: "the Copas selection model does not reproduce metasens::copas (dat.bcg: adjusted -0.680 against -0.711; gamma0 and gamma1 stay at 1.00)",
+    copasSensitivity: "the Copas selection model does not reproduce metasens::copas",
+    runPUniformStar: "p-uniform* does not reproduce puniform::puni_star (dat.bcg: effect 0.500, outside the range of the data)",
+    runLimitMA: "limit meta-analysis fails (limitMA.estimate is not a function); metasens::limitmeta gives -0.630 on dat.bcg",
+    runRoBMA: "robust Bayesian model averaging returns placeholder values (effect 0.000, every posterior probability 0.500)",
+    runBiasSensitivity: "the publication-bias sensitivity analysis returns placeholder values (worst-case 0.000, ratio N/A)",
+    runWorstCase: "the worst-case publication-bias analysis returns a placeholder value (0.000)",
+    runWAAP: "WAAP-WLS returns N/A on dat.bcg",
+    runWLS: "WLS / FAT-PET returns N/A on dat.bcg (in R: unrestricted WLS -0.430, PET intercept -0.191)",
+    runZCurve: "the z-curve returns N/A on dat.bcg",
+    runSunset: "the sunset power analysis returns 0% power for every study of dat.bcg",
+    compareSelectionModels: "the selection-model comparison fails (object is not iterable)",
+    runBeggMazumdar: "the Begg-Mazumdar test does not reproduce metafor::ranktest (dat.bcg: tau -0.179 against 0.026)",
+    runPeters: "Peters' test needs per-arm sample sizes and events, which this data format does not carry (it imputed sizes as 4/SE^2 and returned t = 0.00)",
+    runMacaskill: "Macaskill's test needs per-study sample sizes, which this data format does not carry",
+    runDeeks: "Deeks' test needs diagnostic-accuracy data, which this data format does not carry",
+    runContourFunnel: "the contour-enhanced funnel plot fails (generatePlotData is not a function)",
+    runCumulativeMA: "this cumulative meta-analysis fails (result.steps is not iterable); use the Cumulative button under Sensitivity",
+    runLOOBias: "this leave-one-out bias analysis fails; use the Leave-one-out button under Sensitivity",
+    exportBeyondRReport: "it collects the publication-bias results above, none of which reproduces R",
+    runGOSH: "the GOSH summary has not been checked against metafor::gosh",
+    runClustering: "the study clustering is a heuristic with no R reference",
+    detectOutliers: "the outlier screen flags every study of dat.bcg (13 of 13); it does not reproduce metafor::influence",
+    runLivingReview: "the living-review simulation has no R reference",
+    findStability: "the evidence-stability estimate has no R reference",
+    exportNodeSplit: "node-splitting reports direct estimates only, from rows mapped to 'versus Placebo', with no indirect estimate and no test; it does not reproduce netmeta::netsplit",
+    runDesignByTreatment: "the design-by-treatment test takes one row per study (the first, often the reference arm with effect 0) and gives Q = 0 on the default sample; it does not reproduce netmeta::decomp.design",
+    computeContribution: "the contribution matrix takes one row per study; it does not reproduce netmeta::netcontrib",
+    runNetHeat: "the net heat plot takes one row per study (overall inconsistency 0.000 on the default sample); it does not reproduce netmeta::netheat",
+    compareModels: "the arm-based / contrast-based model comparison gives delta AIC = NaN",
+    runComponentNMA: "the component NMA has not been checked against netmeta::netcomb",
+    suggestDesign: "the network design suggestion is a heuristic with no R reference",
+    runBMA: "Bayesian model averaging of the dose-response curves reads model parameters the fit does not provide",
+    exportPosteriors: "it exports the Bayesian model averaging posteriors, which are not validated",
+    findOptimalDose: "the optimal-dose finder reads model parameters the fit does not provide (it reported a dose outside its own 95% interval)",
+    findMED: "the minimum-effective-dose finder reads model parameters the fit does not provide",
+    optimizeDose: "no fitted dose-response model is exposed to this control (state.currentModel is never set)",
+    generate3DSurface: "no fitted dose-response model is exposed to this control (state.currentModel is never set)",
+    // lane nmaguard, 2026-11-13: these read state.rawData directly, so on the default sample they pooled the
+    // 13 dose-response arms as 13 independent studies; each was clicked on the default sample and on dat.bcg.
+    fitGP: "the Gaussian-process dose-response fit has no R reference, and it fails on single-dose data (dat.bcg: Invalid array length)",
+    poolMedians: "median pooling reads each effect as a median and imputes a sample size of 100; this data format carries effects and standard errors, not medians",
+    poolIQRs: "IQR pooling imputes sample sizes (100) and IQRs from standard errors; this data format carries no quartiles",
+    estimateMeanSD: "the median/IQR to mean/SD conversion needs medians and quartiles, which this data format does not carry (it converted 0 studies)",
+    runGRIME: "GRIME checks a reported mean against its integer sample size; this data format carries effects and standard errors, not means and sample sizes (it imputed n = 100 for every row)",
+    runSPRITE: "SPRITE reconstructs raw data from means, SDs and sample sizes, which this data format does not carry (it flagged every row)",
+    runRIVETS: "the RIVETS rounding test has no R reference",
+    runBenford: "the Benford first-digit test has no R reference",
+    startLiveMA: "the live meta-analysis monitor pools every row as an independent study and has no R reference",
+    runTrimFill: "trim-and-fill does not reproduce metafor::trimfill (dat.bcg: 0 missing studies against 1, adjusted -0.714 against -0.657)",
+    runPET: "PET does not reproduce the weighted least-squares fit lm(yi ~ sqrt(vi), weights = 1/vi) (dat.bcg: 95% CI [-0.622, 0.240] from a normal quantile against [-0.675, 0.293] from t on 11 df)",
+    runPEESE: "PEESE does not reproduce the weighted least-squares fit lm(yi ~ vi, weights = 1/vi) (dat.bcg: 95% CI [-0.688, -0.072] from a normal quantile against [-0.726, -0.034] from t on 11 df)",
+    computeLFK: "the LFK index has no R reference (it reported LFK = 34.46, major asymmetry, on dat.bcg)",
+    runDoiPlot: "the Doi plot and its LFK index have no R reference (LFK = 34.46 on dat.bcg)",
+    runVeveaHedges: "the Vevea-Hedges selection model with a priori weights has not been checked against weightr or metafor::selmodel",
+    computeCooksD: "these Cook's distance outlier counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    computeDFFITS: "these DFFITS counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    computeStudentized: "these studentized-residual counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    runTransitivity: "the transitivity assessment compares every row with a fixed comparator 'Placebo' and imputes n = 100 and year = 2020; it has no R reference",
+    runFractionalPolynomial: "fractional-polynomial heterogeneity fails (FractionalPolynomialHeterogeneity is not defined)",
+    runBayesianNMA: "this Bayesian NMA fails (model.run is not a function)",
+    runCumulativeNMA: "the cumulative NMA fails (model.run is not a function)",
+    runNonGaussianRE: "the non-Gaussian random-effects model fails (NonGaussianRandomEffectsModel is not defined)",
+    runShrinkagePriors: "the shrinkage-prior meta-analysis fails (ShrinkagePriorsMetaAnalysis is not defined)",
+    runGradientBoosting: "gradient boosting fails (GradientBoostingHeterogeneity is not defined)",
+    runPoissonGamma: "the Poisson-gamma rare-event model fails (model.estimate is not a function), and this data format carries no event counts",
+    runBayesianPower: "the Bayesian power calculation fails (model.calculate is not a function)",
+    runMixtureSubgroup: "mixture-model subgroup detection fails (MixtureModelSubgroupDetection is not defined)",
+    runCopulaSelection: "the copula selection model fails (model.estimate is not a function)",
+    runHierarchicalSelection: "hierarchical model selection fails (model.select is not a function)",
+    runPredictiveSelection: "predictive model selection fails (model.select is not a function)",
+    runMultilevelNested: "the multilevel nested model fails (model.estimate is not a function)",
+    runRobustBayesian: "the robust Bayesian meta-analysis fails (Cannot read properties of undefined)",
+  };
+
+  function unvalidatedMessage(id) {
+    return `Not available: ${UNVALIDATED_CONTROLS[id]}. Disabled until it is validated against R.`;
+  }
+
+  function refuseUnvalidated(el, id) {
+    showRefusal(el, unvalidatedMessage(id));
+    return true;
+  }
+
+  // The refused controls said "Disabled until it is validated" but none was disabled, and feature
+  // search still offered them (re-review lane rrev61, F4). Each is now disabled (disabled +
+  // aria-disabled="true"), with the reason shown beside it and linked by aria-describedby, so the
+  // explanation is visible without clicking. Feature search (index.html) skips disabled controls.
+  // The click handlers keep their refuseUnvalidated() guard as a second line of defence.
+  function markUnvalidatedControls() {
+    for (const id of Object.keys(UNVALIDATED_CONTROLS)) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const message = unvalidatedMessage(id);
+      el.disabled = true;
+      el.setAttribute("aria-disabled", "true");
+      el.title = message;
+      const noteId = `${id}-refusal`;
+      let note = document.getElementById(noteId);
+      if (!note) {
+        note = document.createElement("span");
+        note.id = noteId;
+        note.className = "refusal-note";
+        note.style.cssText = "display:block;margin:4px 0 8px;font-size:12px;color:var(--muted,#6b7280);";
+        el.after(note);
+      }
+      note.textContent = message;
+      el.setAttribute("aria-describedby", noteId);
+    }
+  }
+
+  // The "Tau-squared Estimation" panel: the estimator chosen in #tau2Estimator applied to the loaded
+  // data, = metafor::rma(yi, vi, method = <estimator>) tau² and I² (EB equals PM without moderators).
+  // Refreshed on every data load and on every change of the estimator or the CI box.
+  function refreshTau2Panel() {
+    if (!dom.tau2Estimator || !dom.tau2Result) return;
+    state.remlResult = null;
+    state.sjResult = null;
+    const pw = pairwiseRows();
+    if (pw.refusal) { dom.tau2Result.textContent = pw.refusal; return; }
+    const effects = pw.rows.map(r => r.effect);
+    const variances = pw.rows.map(r => r.se * r.se);
+    const method = dom.tau2Estimator.value;
+    try {
+      if (method === "REML") {
+        const result = new REMLEstimator(effects, variances).estimate();
+        state.remlResult = result;
+        let text = `REML: tau²=${safeFormat.toFixed(result.tau2, 4)}, I²=${result.I2.toFixed(1)}%`;
+        if (dom.showTau2CI?.checked && result.tau2CI) {
+          text += ` [${result.tau2CI[0].toFixed(4)}, ${result.tau2CI[1].toFixed(4)}]`;
+        }
+        dom.tau2Result.textContent = text;
+      } else if (method === "SJ") {
+        const result = new SidikJonkmanEstimator(effects, variances).estimate();
+        state.sjResult = result;
+        dom.tau2Result.textContent = `Sidik-Jonkman: tau²=${safeFormat.toFixed(result.tau2, 4)}, I²=${result.I2.toFixed(1)}%`;
+      } else {
+        const core = globalThis.AlmMaCore;
+        const fn = { DL: core?.tau2DL, PM: core?.tau2PM, EB: core?.tau2PM }[method];
+        if (typeof fn !== "function") { dom.tau2Result.textContent = `Not available: no ${method} estimator is loaded.`; return; }
+        const tau2 = fn(effects, variances);
+        const { I2 } = rmaHeterogeneity(effects, variances, tau2);
+        const label = { DL: "DerSimonian-Laird", PM: "Paule-Mandel", EB: "Empirical Bayes" }[method];
+        dom.tau2Result.textContent = `${label}: tau²=${safeFormat.toFixed(tau2, 4)}, I²=${I2.toFixed(1)}%`;
+      }
+    } catch (e) {
+      dom.tau2Result.textContent = `Not run: ${e.message}`;
+    }
+  }
+
   function bindEvents() {
     if (dom.chartTabs) {
       const tabButtons = Array.from(dom.chartTabs.querySelectorAll("[data-tab-button]"));
@@ -11258,6 +11738,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       dom.csvInput.value = SAMPLE_CSV;
       state.rawData = parseCSV(SAMPLE_CSV);
       updateAnalysis();
+      refreshTau2Panel();
       setStatus("Sample loaded.");
     });
 
@@ -11269,6 +11750,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       }
       state.rawData = parsed;
       updateAnalysis();
+      refreshTau2Panel();
       setStatus(`Parsed ${parsed.length} rows.`);
     });
 
@@ -11285,6 +11767,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         }
         state.rawData = parsed;
         updateAnalysis();
+        refreshTau2Panel();
         setStatus(`Loaded ${file.name}.`);
       };
       reader.readAsText(file);
@@ -11314,6 +11797,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         }
         state.rawData = parsed;
         updateAnalysis();
+        refreshTau2Panel();
         setStatus(`Loaded ${file.name}.`);
       };
       reader.readAsText(file);
@@ -11395,11 +11879,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const data = {
             stats: state.lastStats,
             curves: state.lastCurves,
-            globalMetrics: {
-              Q: state.globalQ,
-              I2: state.globalI2,
-              tau2: state.globalTau2
-            }
+            // the Diagnostics panel's values (Global Q, df, p, I² as a fraction) and its tau²
+            globalMetrics: { ...diagnosticsHeterogeneity(state.lastStats), valid: undefined, tau2: state.globalTau2 }
           };
           const latex = exportLatexDocument(data);
           const blob = new Blob([latex], { type: "text/plain" });
@@ -11433,11 +11914,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const data = {
             stats: state.lastStats,
             curves: state.lastCurves,
-            globalMetrics: {
-              Q: state.globalQ,
-              I2: state.globalI2,
-              tau2: state.globalTau2
-            }
+            // the Diagnostics panel's values (Global Q, df, p, I² as a fraction) and its tau²
+            globalMetrics: { ...diagnosticsHeterogeneity(state.lastStats), valid: undefined, tau2: state.globalTau2 }
           };
           showNotification("Generating DOCX...", "info");
           const blob = await exportDocx(data);
@@ -11460,7 +11938,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     if (dom.exportPRISMA) {
       dom.exportPRISMA.addEventListener("click", () => {
         const analysisData = {
-          treatments: state.parsedData?.treatments || [],
+          treatments: state.allTreatments || [],
           pooledResult: state.lastStats?.length > 0,
           modelFit: state.lastStats?.some(s => s.selectedModel),
           tau2: state.lastStats?.find(s => s.tau2)?.tau2
@@ -11523,11 +12001,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Node-splitting export
     if (dom.exportNodeSplit) {
       dom.exportNodeSplit.addEventListener("click", () => {
-        if (!state.parsedData || !state.parsedData.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "exportNodeSplit")) return;
+        if (!state.rawData.length) {
           alert("Load data first to perform node-splitting.");
           return;
         }
-        const treatments = [...new Set((state.parsedData?.rows || []).map(r => r.treatment))];
+        const treatments = [...new Set(state.rawData.map(r => r.treatment))];
         const comparisons = [];
         for (let i = 0; i < treatments.length; i++) {
           for (let j = i + 1; j < treatments.length; j++) {
@@ -11540,7 +12019,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         report += "|------------|--------------|-----------|---------------|----------|\n";
 
         for (const comp of comparisons) {
-          const result = performNodeSplitting((state.parsedData?.rows || []).map(r => ({
+          const result = performNodeSplitting(state.rawData.map(r => ({
             study: r.study,
             treatment1: r.treatment,
             treatment2: "Placebo",
@@ -11587,14 +12066,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Copas Selection Model
     if (dom.runCopas) {
       dom.runCopas.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.copasResult, "runCopas")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.copasResult) dom.copasResult.textContent = "Running Copas model...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               n: r.n || Math.round(4 / (r.se * r.se))
@@ -11617,14 +12097,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.copasSensitivity) {
       dom.copasSensitivity.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.copasResult, "copasSensitivity")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.copasResult) dom.copasResult.textContent = "Running sensitivity analysis...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               n: r.n || Math.round(4 / (r.se * r.se))
@@ -11657,14 +12138,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // P-uniform*
     if (dom.runPUniformStar) {
       dom.runPUniformStar.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.puniformResult, "runPUniformStar")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.puniformResult) dom.puniformResult.textContent = "Running P-uniform*...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               n: r.n || Math.round(4 / (r.se * r.se))
@@ -11687,14 +12169,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Limit Meta-Analysis
     if (dom.runLimitMA) {
       dom.runLimitMA.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.limitResult, "runLimitMA")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.limitResult) dom.limitResult.textContent = "Running Limit MA...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se
             }));
@@ -11716,14 +12199,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // RoBMA (Robust Bayesian Meta-Analysis)
     if (dom.runRoBMA) {
       dom.runRoBMA.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.robmaResult, "runRoBMA")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.robmaResult) dom.robmaResult.textContent = "Running RoBMA (may take a moment)...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se
             }));
@@ -11746,14 +12230,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Publication Bias Sensitivity (Mathur & VanderWeele)
     if (dom.runBiasSensitivity) {
       dom.runBiasSensitivity.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.sensitivityResultBias, "runBiasSensitivity")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.sensitivityResultBias) dom.sensitivityResultBias.textContent = "Running sensitivity analysis...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se
             }));
@@ -11775,12 +12260,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runWorstCase) {
       dom.runWorstCase.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.sensitivityResultBias, "runWorstCase")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -11799,12 +12285,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // WAAP-WLS
     if (dom.runWAAP) {
       dom.runWAAP.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.waapResult, "runWAAP")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se,
             n: r.n || Math.round(4 / (r.se * r.se))
@@ -11825,12 +12312,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runWLS) {
       dom.runWLS.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.waapResult, "runWLS")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -11851,14 +12339,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Z-Curve Analysis
     if (dom.runZCurve) {
       dom.runZCurve.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.zcurveResult, "runZCurve")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.zcurveResult) dom.zcurveResult.textContent = "Running Z-curve...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se
             }));
@@ -11880,12 +12369,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runSunset) {
       dom.runSunset.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.zcurveResult, "runSunset")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -11907,14 +12397,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Selection Model Comparison
     if (dom.compareSelectionModels) {
       dom.compareSelectionModels.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.comparisonResult, "compareSelectionModels")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.comparisonResult) dom.comparisonResult.textContent = "Comparing all models...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               n: r.n || Math.round(4 / (r.se * r.se))
@@ -11950,12 +12441,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Begg-Mazumdar Rank Correlation
     if (dom.runBeggMazumdar) {
       dom.runBeggMazumdar.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.beggResult, "runBeggMazumdar")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -11975,12 +12467,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Egger Test for Publication Bias
     if (dom.runEgger) {
       dom.runEgger.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -12004,12 +12496,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Peters, Macaskill, Deeks Tests
     if (dom.runPeters) {
       dom.runPeters.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.regressionResult, "runPeters")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se,
             n: r.n || Math.round(4 / (r.se * r.se))
@@ -12030,12 +12523,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runMacaskill) {
       dom.runMacaskill.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.regressionResult, "runMacaskill")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se,
             n: r.n || Math.round(4 / (r.se * r.se))
@@ -12056,12 +12550,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runDeeks) {
       dom.runDeeks.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.regressionResult, "runDeeks")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se,
             n: r.n || Math.round(4 / (r.se * r.se))
@@ -12083,12 +12578,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Advanced Diagnostics
     if (dom.runContourFunnel) {
       dom.runContourFunnel.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.advDiagResult, "runContourFunnel")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         try {
-          const studies = (state.parsedData?.rows || []).map(r => ({
+          const studies = state.rawData.map(r => ({
             effect: r.effect,
             se: r.se
           }));
@@ -12136,14 +12632,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runCumulativeMA) {
       dom.runCumulativeMA.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.advDiagResult, "runCumulativeMA")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.advDiagResult) dom.advDiagResult.textContent = "Running cumulative analysis...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               study: r.study || r.id
@@ -12176,14 +12673,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runLOOBias) {
       dom.runLOOBias.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.advDiagResult, "runLOOBias")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         if (dom.advDiagResult) dom.advDiagResult.textContent = "Running leave-one-out...";
         setTimeout(() => {
           try {
-            const studies = (state.parsedData?.rows || []).map(r => ({
+            const studies = state.rawData.map(r => ({
               effect: r.effect,
               se: r.se,
               study: r.study || r.id
@@ -12220,7 +12718,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Export Beyond R Report
     if (dom.exportBeyondRReport) {
       dom.exportBeyondRReport.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "exportBeyondRReport")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
@@ -12228,7 +12727,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         let report = "# Comprehensive Publication Bias Analysis Report\n";
         report += "## Generated by NMA Dose-Response Pro (Beyond R)\n\n";
         report += `Date: ${new Date().toISOString().split("T")[0]}\n`;
-        report += `Studies: ${state.parsedData.rows.length}\n\n`;
+        report += `Studies: ${state.rawData.length}\n\n`;
 
         // Collect all results
         if (state.copasResult) {
@@ -12354,7 +12853,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Bayesian Model Averaging
     if (dom.runBMA) {
       dom.runBMA.addEventListener("click", () => {
-        if (!state.parsedData || !state.lastStats?.length) {
+        if (refuseUnvalidated(dom.bmaStatus, "runBMA")) return;
+        if (!state.rawData.length || !state.lastStats?.length) {
           alert("Load data and run analysis first.");
           return;
         }
@@ -12369,7 +12869,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
               { type: "quadratic" }
             ];
             const data = {
-              maxDose: Math.max(...(state.parsedData?.rows || []).map(r => r.dose))
+              maxDose: Math.max(...state.rawData.map(r => r.dose))
             };
             const bma = new BayesianModelAveraging(models, data, { nIter });
 
@@ -12377,7 +12877,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
             for (const model of models) {
               const likelihood = (params) => {
                 let ll = 0;
-                for (const row of state.parsedData.rows) {
+                for (const row of state.rawData) {
                   const pred = bma.predictModel(model.type, params, row.dose);
                   const residual = row.effect - pred;
                   ll -= 0.5 * (residual * residual) / (row.se * row.se + (params.tau2 || 0.01));
@@ -12404,12 +12904,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.exportPosteriors) {
       dom.exportPosteriors.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "exportPosteriors")) return;
         if (!state.bmaResults) {
           alert("Run BMA first.");
           return;
         }
         const doses = [];
-        const maxDose = Math.max(...(state.parsedData?.rows || []).map(r => r.dose));
+        const maxDose = Math.max(...state.rawData.map(r => r.dose));
         for (let i = 0; i <= 50; i++) doses.push(maxDose * i / 50);
 
         const predictions = state.bmaResults.bma.predictWithUncertainty(doses);
@@ -12432,12 +12933,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Optimal Dose Finding
     if (dom.findOptimalDose) {
       dom.findOptimalDose.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.optimalDoseResult, "findOptimalDose")) return;
         if (!state.lastStats?.length) {
           alert("Run analysis first.");
           return;
         }
         const stat = state.lastStats[0];
-        const maxDose = Math.max(...(state.parsedData?.rows || []).map(r => r.dose));
+        const maxDose = Math.max(...state.rawData.map(r => r.dose));
         const targetEffect = parseFloat(dom.targetEffectInput?.value) || null;
         const safetyThreshold = parseFloat(dom.safetyThreshold?.value) || null;
 
@@ -12463,13 +12965,14 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.findMED) {
       dom.findMED.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.optimalDoseResult, "findMED")) return;
         if (!state.lastStats?.length) {
           alert("Run analysis first.");
           return;
         }
         const minEffect = parseFloat(dom.targetEffectInput?.value) || 0.2;
         const stat = state.lastStats[0];
-        const maxDose = Math.max(...(state.parsedData?.rows || []).map(r => r.dose));
+        const maxDose = Math.max(...state.rawData.map(r => r.dose));
 
         const finder = new OptimalDoseFinder(stat.selectedModel || "emax", {
           e0: stat.e0 || 0,
@@ -12488,11 +12991,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Heterogeneity Detection
     if (dom.runClustering) {
       dom.runClustering.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "runClustering")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
-        const detector = new HeterogeneityDetector(state.parsedData.rows);
+        const detector = new HeterogeneityDetector(state.rawData);
         const result = detector.clusterStudies(3);
 
         let report = "# Study Clusters\n\n";
@@ -12517,11 +13021,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.detectOutliers) {
       dom.detectOutliers.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length || !state.lastStats?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "detectOutliers")) return;
+        if (!state.rawData.length || !state.lastStats?.length) {
           alert("Run analysis first.");
           return;
         }
-        const detector = new HeterogeneityDetector(state.parsedData.rows);
+        const detector = new HeterogeneityDetector(state.rawData);
         const pooledEffect = state.lastStats[0].pooledEffect || 0;
         const tau2 = state.lastStats[0].tau2 || 0;
         const outliers = detector.detectOutliers(pooledEffect, tau2);
@@ -12552,7 +13057,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // GOSH Analysis
     if (dom.runGOSH) {
       dom.runGOSH.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "runGOSH")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
@@ -12560,7 +13066,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         if (dom.exportStatus) dom.exportStatus.textContent = "Running GOSH analysis...";
 
         setTimeout(() => {
-          const gosh = new GOSHAnalysis(state.parsedData.rows, { nSubsets });
+          const gosh = new GOSHAnalysis(state.rawData, { nSubsets });
           const result = gosh.run();
 
           let report = "# GOSH Analysis Results\n\n";
@@ -12594,7 +13100,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Living Review Simulation
     if (dom.runLivingReview) {
       dom.runLivingReview.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.livingReviewStatus, "runLivingReview")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
@@ -12603,7 +13110,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
         if (dom.livingReviewStatus) dom.livingReviewStatus.textContent = "Simulating...";
         setTimeout(() => {
-          const simulator = new LivingReviewSimulator(state.parsedData.rows, {
+          const simulator = new LivingReviewSimulator(state.rawData, {
             studiesPerYear,
             years
           });
@@ -12631,13 +13138,14 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.findStability) {
       dom.findStability.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.livingReviewStatus, "findStability")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
         const studiesPerYear = parseInt(dom.studiesPerYear?.value) || 3;
 
-        const simulator = new LivingReviewSimulator(state.parsedData.rows, {
+        const simulator = new LivingReviewSimulator(state.rawData, {
           studiesPerYear,
           years: 10
         });
@@ -12649,7 +13157,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Component NMA
     if (dom.runComponentNMA) {
       dom.runComponentNMA.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "runComponentNMA")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
@@ -12661,7 +13170,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         const components = componentStr.split(",").map(c => c.trim());
 
         try {
-          const cnma = new ComponentNMA(state.parsedData.rows, components);
+          const cnma = new ComponentNMA(state.rawData, components);
           const effects = cnma.estimateComponentEffects();
 
           let report = "# Component NMA Results\n\n";
@@ -12706,11 +13215,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.suggestDesign) {
       dom.suggestDesign.addEventListener("click", () => {
-        if (!state.parsedData?.treatments?.length) {
+        if (refuseUnvalidated(dom.powerResult, "suggestDesign")) return;
+        if (!state.allTreatments.length) {
           alert("Load data first.");
           return;
         }
-        const treatments = state.parsedData.treatments;
+        const treatments = state.allTreatments;
         const budget = 10; // Example: 10 studies budget
 
         const calc = new NMAPowerCalculator({});
@@ -12742,37 +13252,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // ========================================================================
 
     // Tau² estimator change
+    // The panel and the REML report / audit exports below read the parsed CSV rows from state.rawData
+    // (set by init, Load sample, Parse, file input and drop). They used to read state.rawData,
+    // which nothing assigns, so the panel never updated and both exports alerted "Load data first."
     if (dom.tau2Estimator) {
       dom.tau2Estimator.addEventListener("change", () => {
-        if (!state.parsedData?.rows?.length) return;
-
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const method = dom.tau2Estimator.value;
-
-        let result;
-        if (method === "REML") {
-          const reml = new REMLEstimator(effects, variances);
-          result = reml.estimate();
-          state.remlResult = result;
-
-          let text = `REML: tau²=${safeFormat.toFixed(result.tau2, 4)}, I²=${result.I2.toFixed(1)}%`;
-          if (dom.showTau2CI?.checked && result.tau2CI) {
-            text += ` [${result.tau2CI[0].toFixed(4)}, ${result.tau2CI[1].toFixed(4)}]`;
-          }
-          dom.tau2Result.textContent = text;
-        } else if (method === "SJ") {
-          const sj = new SidikJonkmanEstimator(effects, variances);
-          result = sj.estimate();
-          state.sjResult = result;
-
-          const text = `Sidik-Jonkman: tau²=${safeFormat.toFixed(result.tau2, 4)}, I²=${result.I2.toFixed(1)}%`;
-          dom.tau2Result.textContent = text;
-        } else {
-          dom.tau2Result.textContent = `Using ${method} estimator`;
-        }
+        refreshTau2Panel();
         updateAnalysis();
       });
+      if (dom.showTau2CI) dom.showTau2CI.addEventListener("change", refreshTau2Panel);
     }
 
     // Robust SE toggle
@@ -12783,14 +13271,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Design-by-treatment interaction
     if (dom.runDesignByTreatment) {
       dom.runDesignByTreatment.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.inconsistencyResult, "runDesignByTreatment")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
         // Group by study
         const studyMap = {};
-        for (const row of state.parsedData.rows) {
+        for (const row of state.rawData) {
           if (!studyMap[row.study]) {
             studyMap[row.study] = { study: row.study, treatments: [], effect: row.effect, se: row.se };
           }
@@ -12798,7 +13287,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         }
 
         const studies = Object.values(studyMap);
-        const treatments = [...new Set((state.parsedData?.rows || []).map(r => r.treatment))];
+        const treatments = [...new Set(state.rawData.map(r => r.treatment))];
 
         const dbt = new DesignByTreatmentInteraction(studies, treatments);
         const result = dbt.test();
@@ -12832,13 +13321,14 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Contribution matrix
     if (dom.computeContribution) {
       dom.computeContribution.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "computeContribution")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
         const studyMap = {};
-        for (const row of state.parsedData.rows) {
+        for (const row of state.rawData) {
           if (!studyMap[row.study]) {
             studyMap[row.study] = { study: row.study, treatments: [], effect: row.effect, se: row.se };
           }
@@ -12879,20 +13369,21 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Net heat plot
     if (dom.runNetHeat) {
       dom.runNetHeat.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.inconsistencyResult, "runNetHeat")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
         const studyMap = {};
-        for (const row of state.parsedData.rows) {
+        for (const row of state.rawData) {
           if (!studyMap[row.study]) {
             studyMap[row.study] = { study: row.study, treatments: [], effect: row.effect, se: row.se };
           }
           studyMap[row.study].treatments.push(row.treatment);
         }
         const network = Object.values(studyMap);
-        const treatments = [...new Set((state.parsedData?.rows || []).map(r => r.treatment))];
+        const treatments = [...new Set(state.rawData.map(r => r.treatment))];
 
         const comparisons = [];
         for (let i = 0; i < treatments.length; i++) {
@@ -12937,14 +13428,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Model comparison
     if (dom.compareModels) {
       dom.compareModels.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (refuseUnvalidated(dom.exportStatus, "compareModels")) return;
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
         // Format data for model comparison
         const studyMap = {};
-        for (const row of state.parsedData.rows) {
+        for (const row of state.rawData) {
           if (!studyMap[row.study]) {
             studyMap[row.study] = { study: row.study, arms: [] };
           }
@@ -12988,14 +13480,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Leave-one-out analysis
     if (dom.runLeaveOneOut) {
       dom.runLeaveOneOut.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
-          alert("Load data first.");
-          return;
-        }
+        const pw = pairwiseRows();
+        if (pw.refusal) { showRefusal(dom.sensitivityResultMain, pw.refusal); return; }
+        const rows = pw.rows;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const studies = (state.parsedData?.rows || []).map(r => r.study);
+        const effects = rows.map(r => r.effect);
+        const variances = rows.map(r => r.se * r.se);
+        const studies = rows.map(r => r.study);
 
         const sa = new SensitivityAnalysis(effects, variances, studies);
         const result = sa.leaveOneOut();
@@ -13027,14 +13518,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Cumulative meta-analysis
     if (dom.runCumulative) {
       dom.runCumulative.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
-          alert("Load data first.");
-          return;
-        }
+        const pw = pairwiseRows();
+        if (pw.refusal) { showRefusal(dom.sensitivityResultMain, pw.refusal); return; }
+        const rows = pw.rows;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const studies = (state.parsedData?.rows || []).map(r => ({ name: r.study, year: r.year }));
+        const effects = rows.map(r => r.effect);
+        const variances = rows.map(r => r.se * r.se);
+        const studies = rows.map(r => ({ name: r.study, year: r.year }));
 
         const sa = new SensitivityAnalysis(effects, variances, studies);
         const result = sa.cumulative("precision");
@@ -13064,14 +13554,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Influence diagnostics
     if (dom.runInfluence) {
       dom.runInfluence.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
-          alert("Load data first.");
-          return;
-        }
+        const pw = pairwiseRows();
+        if (pw.refusal) { showRefusal(dom.sensitivityResultMain, pw.refusal); return; }
+        const rows = pw.rows;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const studies = (state.parsedData?.rows || []).map(r => r.study);
+        const effects = rows.map(r => r.effect);
+        const variances = rows.map(r => r.se * r.se);
+        const studies = rows.map(r => r.study);
 
         const sa = new SensitivityAnalysis(effects, variances, studies);
         const result = sa.influenceDiagnostics();
@@ -13083,10 +13572,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         report += `Influential studies: ${result.summary.nInfluential}\n`;
         report += `Max |DFBETAS|: ${result.summary.maxDFBETAS.toFixed(3)}\n`;
         report += `Max Cook's D: ${result.summary.maxCooksD.toFixed(3)}\n`;
-        report += `Max |Std Residual|: ${result.summary.maxStdResidual.toFixed(3)}\n\n`;
+        report += `Max |studentized residual|: ${result.summary.maxStdResidual.toFixed(3)}\n`;
+        report += "Values as metafor::influence(rma(yi, vi, method = 'REML')) reports rstudent, dfbetas, cook.d and hat. ";
+        report += "The 'Influential' flag is this page's rule (|DFBETAS| > 1, Cook's D > 4/k or |studentized residual| > 2.5), not metafor's.\n\n";
 
         report += "## All Studies\n\n";
-        report += "| Study | Std Resid | DFBETAS | Cook's D | Hat | Influential |\n";
+        report += "| Study | Studentized resid | DFBETAS | Cook's D | Hat | Influential |\n";
         report += "|-------|-----------|---------|----------|-----|-------------|\n";
         for (const d of result.diagnostics) {
           report += `| ${d.study} | ${d.stdResidual.toFixed(3)} | ${d.dfbetas.toFixed(3)} | ${d.cooksD.toFixed(3)} | ${d.hat.toFixed(3)} | ${d.influential ? "Yes" : "No"} |\n`;
@@ -13113,13 +13604,12 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Export REML report
     if (dom.exportREMLReport) {
       dom.exportREMLReport.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
-          alert("Load data first.");
-          return;
-        }
+        const pw = pairwiseRows();
+        if (pw.refusal) { showRefusal(dom.exportStatus, pw.refusal); return; }
+        const rows = pw.rows;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
+        const effects = rows.map(r => r.effect);
+        const variances = rows.map(r => r.se * r.se);
 
         const reml = new REMLEstimator(effects, variances);
         const result = reml.estimate();
@@ -13153,14 +13643,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Export full audit trail
     if (dom.exportFullAudit) {
       dom.exportFullAudit.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
-          alert("Load data first.");
-          return;
-        }
+        const pw = pairwiseRows();
+        if (pw.refusal) { showRefusal(dom.exportStatus, pw.refusal); return; }
+        const rows = pw.rows;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const studies = (state.parsedData?.rows || []).map(r => r.study);
+        const effects = rows.map(r => r.effect);
+        const variances = rows.map(r => r.se * r.se);
+        const studies = rows.map(r => r.study);
 
         let report = "# Complete Analysis Audit Trail\n\n";
         report += `Generated: ${new Date().toISOString()}\n\n`;
@@ -13169,7 +13658,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         report += "## Data Summary\n\n";
         report += `- Studies: ${new Set(studies).size}\n`;
         report += `- Observations: ${effects.length}\n`;
-        report += `- Treatments: ${new Set((state.parsedData?.rows || []).map(r => r.treatment)).size}\n\n`;
+        report += `- Treatments: ${new Set(rows.map(r => r.treatment)).size}\n\n`;
 
         // REML analysis
         const reml = new REMLEstimator(effects, variances);
@@ -13433,6 +13922,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Gaussian Process Dose-Response
     if (dom.fitGP) {
       dom.fitGP.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.gpResult, "fitGP")) return;
         if (!state.studies || !state.studies.length) {
           if (state.rawData && state.rawData.length) {
             state.studies = state.rawData;
@@ -13493,6 +13983,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Quantile Meta-Analysis
     if (dom.poolMedians) {
       dom.poolMedians.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "poolMedians")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13522,6 +14013,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.poolIQRs) {
       dom.poolIQRs.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "poolIQRs")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13546,6 +14038,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.estimateMeanSD) {
       dom.estimateMeanSD.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "estimateMeanSD")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13579,6 +14072,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Personalized Dose Optimizer
     if (dom.optimizeDose) {
       dom.optimizeDose.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.personalizedResult, "optimizeDose")) return;
         if (!state.currentModel) {
           showNotification("Fit a dose-response model first", "error");
           return;
@@ -13627,6 +14121,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // 3D Surface
     if (dom.generate3DSurface) {
       dom.generate3DSurface.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "generate3DSurface")) return;
         if (!state.currentModel) {
           showNotification("Fit a dose-response model first", "error");
           return;
@@ -13682,6 +14177,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Data Quality Tests
     if (dom.runGRIME) {
       dom.runGRIME.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runGRIME")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13715,6 +14211,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runSPRITE) {
       dom.runSPRITE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runSPRITE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13749,6 +14246,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runRIVETS) {
       dom.runRIVETS.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runRIVETS")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13780,6 +14278,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runBenford) {
       dom.runBenford.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runBenford")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13814,6 +14313,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.startLiveMA) {
       dom.startLiveMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.liveMAStatus, "startLiveMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13976,6 +14476,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Trim-and-Fill
     if (dom.runTrimFill) {
       dom.runTrimFill.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.trimFillResult, "runTrimFill")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14008,6 +14509,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // PET
     if (dom.runPET) {
       dom.runPET.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.petpeeseResult, "runPET")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14036,6 +14538,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // PEESE
     if (dom.runPEESE) {
       dom.runPEESE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.petpeeseResult, "runPEESE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14093,6 +14596,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // LFK Index
     if (dom.computeLFK) {
       dom.computeLFK.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.lfkResult, "computeLFK")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14120,6 +14624,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Doi Plot
     if (dom.runDoiPlot) {
       dom.runDoiPlot.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.lfkResult, "runDoiPlot")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14146,6 +14651,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Vevea-Hedges Selection Model
     if (dom.runVeveaHedges) {
       dom.runVeveaHedges.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.selectionResult, "runVeveaHedges")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14175,6 +14681,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Cook's D
     if (dom.computeCooksD) {
       dom.computeCooksD.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeCooksD")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14203,6 +14710,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // DFFITS
     if (dom.computeDFFITS) {
       dom.computeDFFITS.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeDFFITS")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14233,6 +14741,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Studentized Residuals
     if (dom.computeStudentized) {
       dom.computeStudentized.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeStudentized")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14262,6 +14771,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Transitivity Assessment
     if (dom.runTransitivity) {
       dom.runTransitivity.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.transitivityResult, "runTransitivity")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -15068,6 +15578,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Fractional Polynomials for Heterogeneity
     if (dom.runFractionalPolynomial) {
       dom.runFractionalPolynomial.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runFractionalPolynomial")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15212,6 +15723,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Bayesian Network Meta-Analysis
     if (dom.runBayesianNMA) {
       dom.runBayesianNMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runBayesianNMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15276,6 +15788,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Cumulative Network Meta-Analysis
     if (dom.runCumulativeNMA) {
       dom.runCumulativeNMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runCumulativeNMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15405,6 +15918,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Non-Gaussian Random Effects Model
     if (dom.runNonGaussianRE) {
       dom.runNonGaussianRE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runNonGaussianRE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15432,6 +15946,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Shrinkage Priors Meta-Analysis
     if (dom.runShrinkagePriors) {
       dom.runShrinkagePriors.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runShrinkagePriors")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15631,6 +16146,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Gradient Boosting for Heterogeneity
     if (dom.runGradientBoosting) {
       dom.runGradientBoosting.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runGradientBoosting")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15692,6 +16208,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Poisson-Gamma Rare Event Model
     if (dom.runPoissonGamma) {
       dom.runPoissonGamma.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runPoissonGamma")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15863,6 +16380,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Bayesian Power Analysis
     if (dom.runBayesianPower) {
       dom.runBayesianPower.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.powerResult, "runBayesianPower")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16002,6 +16520,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Mixture Model Subgroup Detection
     if (dom.runMixtureSubgroup) {
       dom.runMixtureSubgroup.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runMixtureSubgroup")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16126,6 +16645,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Copula Selection Model
     if (dom.runCopulaSelection) {
       dom.runCopulaSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runCopulaSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16157,33 +16677,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // 10. MODEL AVERAGING & ENSEMBLE METHODS (2019-2023)
     // ============================================================================
 
-    // Bayesian Model Averaging for Dose-Response
-    if (dom.runBMA) {
-      dom.runBMA.addEventListener("click", () => {
-        if (!state.rawData || !state.rawData.length) {
-          showNotification("Load data first", "error");
-          return;
-        }
-        try {
-          const doses = state.rawData.map(d => d.dose);
-          const effects = state.rawData.map(d => d.effect);
-          const variances = state.rawData.map(d => d.se * d.se);
-
-          const model = new BayesianModelAveragingDoseResponse(doses, effects, variances);
-          const result = model.average();
-
-          state.bmaResult = result;
-          if (dom.ensembleResult) {
-            dom.ensembleResult.textContent =
-              `BMA: ${result.nModels} models, best=${result.bestModel} (${result.bestWeight.toFixed(1)}%)`;
-          }
-          showNotification(`BMA: ${result.bestModel} with ${result.bestWeight.toFixed(1)}% weight`, "success");
-        } catch (e) {
-          showNotification("BMA failed: " + e.message, "error");
-        }
-      });
-    }
-
+    // Bayesian Model Averaging for Dose-Response: #runBMA is handled (and refused) above; a second
+    // listener here ran after that refusal and added "BMA failed: model.average is not a function".
     // Stacking Meta-Analysis
     if (dom.runStacking) {
       dom.runStacking.addEventListener("click", () => {
@@ -16214,6 +16709,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Hierarchical Model Selection
     if (dom.runHierarchicalSelection) {
       dom.runHierarchicalSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.ensembleResult, "runHierarchicalSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16241,6 +16737,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Predictive Model Selection
     if (dom.runPredictiveSelection) {
       dom.runPredictiveSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.ensembleResult, "runPredictiveSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16272,6 +16769,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Multilevel Nested Meta-Analysis
     if (dom.runMultilevelNested) {
       dom.runMultilevelNested.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.multilevelResult, "runMultilevelNested")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16333,6 +16831,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Robust Bayesian Meta-Analysis
     if (dom.runRobustBayesian) {
       dom.runRobustBayesian.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.multilevelResult, "runRobustBayesian")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -20395,6 +20894,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   window.showQuickStartGuide = showQuickStartGuide;
 
   async function init() {
+    // before the engine loads, so a refused control is never clickable, even if WASM fails
+    markUnvalidatedControls();
     try {
       state.wasm = await loadWasm();
       setStatus("Engine ready.");
@@ -20408,6 +20909,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     state.rawData = parseCSV(SAMPLE_CSV);
     applySettingsFromHash();
     updateAnalysis();
+    refreshTau2Panel();
     setStatus("Sample loaded.");
 
     // Show quick-start guide for new users
@@ -20428,6 +20930,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     state.lastStats = [];
     state.lastCurves = [];
     updateAnalysis();
+    refreshTau2Panel();
     if (!state.lastStats || !state.lastStats.length) {
       return { ok: false, message: 'No valid comparisons were available for plotting. Check the input data.' };
     }
@@ -20494,6 +20997,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   window.TrimAndFill = TrimAndFill;
   window.EggerTest = EggerTest;
   window.REMLEstimator = REMLEstimator;
+  window.SidikJonkmanEstimator = SidikJonkmanEstimator;
   window.BeggMazumdarTest = BeggMazumdarTest;
   window.PetersTest = PetersTest;
   window.PETPEESE = PETPEESE;
@@ -21620,7 +22124,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         df += 1;
       }
 
-      const pValue = AlmTail.pchisqUpper(Q, df);
+      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
+      const pValue = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
 
       return { Q, df, pValue };
     }
@@ -21638,7 +22143,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     _combineIncoherence(loop, splitNode, sideSplit) {
       const totalQ = loop.Q + splitNode.Q + sideSplit.Q;
       const totalDf = loop.df + splitNode.df + sideSplit.df;
-      const pValue = AlmTail.pchisqUpper(totalQ, totalDf);
+      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
+      const pValue = totalDf > 0 ? AlmTail.pchisqUpper(totalQ, totalDf) : 1;
 
       return { Q: totalQ, df: totalDf, pValue };
     }

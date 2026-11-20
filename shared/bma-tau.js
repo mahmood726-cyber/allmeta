@@ -237,19 +237,22 @@
       if (!(pr > 0)) return -Infinity;
       return _logMarginal(yi, vi, x) + Math.log(pr) - Math.log(2 * t);
     };
-    // Scan log(tau^2) on [1e-8, 100]; if the maximum is at the upper end, raise it (x1e4) and rescan, so the
-    // reported mode is never the cap of the search range.
-    var lo = Math.log(1e-8), hi = Math.log(100), best, bi, grid;
-    for (var pass = 0; pass < 12; pass++) {
+    // Scan log(tau^2) on [1e-8, 100]; if the maximum is at either end, move that end out (upper x1e4, lower x1e-20) and rescan, so
+    // the reported mode is never a limit of the search range. Below tau^2 = 1e-300 the density is still rising
+    // toward 0, so the supremum is at tau^2 = 0 and 0 is reported.
+    var lo = Math.log(1e-8), hi = Math.log(100), best, bi, grid, LO_MIN = Math.log(1e-300), nUp = 0;
+    for (var pass = 0; pass < 40; pass++) {
       best = -Infinity; bi = 0; grid = [];
       for (var i = 0; i <= 4000; i++) {
         var lx = lo + i * (hi - lo) / 4000;
         grid.push(lx); var v = lg(lx); if (v > best) { best = v; bi = i; }
       }
-      if (bi === 4000) hi += Math.log(1e4);
+      if (bi === 4000 && nUp < 11) { hi += Math.log(1e4); nUp++; }   // as before: at most 11 raises (to 1e46)
+      else if (bi === 0 && best > -Infinity && lo > LO_MIN) lo = Math.max(LO_MIN, lo - Math.log(1e20));
       else break;
     }
     if (bi === 4000) return NaN;              // no interior maximum found: report non-finite, never the cap
+    if (bi === 0 && best > -Infinity && lo <= LO_MIN) return 0;
     var a = grid[Math.max(0, bi - 1)], b = grid[Math.min(4000, bi + 1)];
     var gr = (Math.sqrt(5) - 1) / 2, c = b - gr * (b - a), d = a + gr * (b - a), fc = lg(c), fd = lg(d);
     for (var it = 0; it < 200 && (b - a) > 1e-15; it++) {

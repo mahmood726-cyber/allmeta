@@ -4,6 +4,8 @@ Before the fix chiSqCDF() returned an UPPER-tail-like quantity (2 * (1 - Phi(sqr
 1 - Phi(z * sqrt(df / 2)), a Wilson-Hilferty tail with the wrong scale), so `Qp = 1 - chiSqCDF(Q, df)` was
 roughly the LOWER tail: the built-in sample gave p = 0.646 (R 0.130) and, with tau2 = 0, p = 0.806 (R 0.0046);
 Q = 1814 on 10 df gave p = 1 (R ~0). Reference values: tests/upper_tail_r460.json (tests/upper_tail_reference.R).
+Since the Q-test fix (tests/test_q_standard.py) the page's Q is the standard Q_E at tau2 = 0 for every tau2 setting,
+so each row without _tau0 now carries the same Q as its _tau0 row.
 """
 import json
 import re

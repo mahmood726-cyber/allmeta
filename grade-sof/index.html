@@ -77,6 +77,7 @@
     .grade-moderate { background:#fff4d5; color:#7a5a0d; }
     .grade-low { background:#fde1d3; color:#a34a12; }
     .grade-verylow { background:#fbd2d2; color:#912121; }
+    .grade-notassessed { background:#eceff3; color:#4a525e; font-weight:500; font-style:italic; }
     /* GRADE 5-domain wizard */
     .grade-cert-row { display:flex; gap:0.5rem; align-items:flex-end; }
     .grade-cert-row label { flex:1; }
@@ -208,11 +209,14 @@
       "high": "⊕⊕⊕⊕ High",
       "moderate": "⊕⊕⊕○ Moderate",
       "low": "⊕⊕○○ Low",
-      "verylow": "⊕○○○ Very low"
+      "verylow": "⊕○○○ Very low",
+      // GRADE certainty is a reviewer judgement, never a default: a row nobody has rated
+      // (a loaded pooled result, a new outcome) is "Not assessed" until a level is chosen.
+      "notassessed": "Not assessed"
     };
     const CERT_CLASS = {
       "high": "grade-high", "moderate": "grade-moderate",
-      "low": "grade-low", "verylow": "grade-verylow"
+      "low": "grade-low", "verylow": "grade-verylow", "notassessed": "grade-notassessed"
     };
 
     const EXAMPLE_STATE = {
@@ -273,7 +277,7 @@
     let state = null;
 
     function emptyOutcome() {
-      return { outcome:"", followup:"", assumed:"", corresponding:"", effectType:"RR", effect:"", ciLo:"", ciHi:"", participants:"", studies:"", certainty:"moderate", comments:"",
+      return { outcome:"", followup:"", assumed:"", corresponding:"", effectType:"RR", effect:"", ciLo:"", ciHi:"", participants:"", studies:"", certainty:"notassessed", comments:"",
         grade: { design:"rct", rob:0, inc:0, ind:0, imp:0, pub:0, large:0, dose:false, conf:false } };
     }
     // GRADE 5-domain compute. Returns { level, label, rationale }.
@@ -320,7 +324,7 @@
       const rows = outcomesWrap.querySelectorAll(".outcome-row");
       const out = [];
       rows.forEach((row, i) => {
-        const r = { effectType: "RR", certainty: "moderate" };
+        const r = { effectType: "RR", certainty: "notassessed" };
         row.querySelectorAll("[data-field]").forEach((el) => {
           r[el.dataset.field] = el.value || "";
         });
@@ -353,6 +357,7 @@
         '</div>',
         '<div class="row-3">',
         '  <label><span class="lbl">Effect type</span><select data-field="effectType" aria-label="Effect type">',
+        '    <option value=""' + (o.effectType===""?' selected':'') + '>— not specified —</option>',
         '    <option value="RR"' + (o.effectType==="RR"?' selected':'') + '>RR</option>',
         '    <option value="OR"' + (o.effectType==="OR"?' selected':'') + '>OR</option>',
         '    <option value="HR"' + (o.effectType==="HR"?' selected':'') + '>HR</option>',
@@ -370,6 +375,7 @@
         '</div>',
         '<div class="grade-cert-row">',
         '  <label><span class="lbl">Certainty</span><select data-field="certainty" aria-label="Certainty">',
+        '    <option value="notassessed"' + (!CERT_LABEL[o.certainty] || o.certainty==="notassessed"?' selected':'') + '>Not assessed</option>',
         '    <option value="high"' + (o.certainty==="high"?' selected':'') + '>High</option>',
         '    <option value="moderate"' + (o.certainty==="moderate"?' selected':'') + '>Moderate</option>',
         '    <option value="low"' + (o.certainty==="low"?' selected':'') + '>Low</option>',
@@ -605,7 +611,7 @@
       if (!o.effect) return "—";
       const low = o.ciLo || "?";
       const high = o.ciHi || "?";
-      return escapeHtml(o.effectType) + " " + escapeHtml(o.effect) + " (95% CI " + escapeHtml(low) + " to " + escapeHtml(high) + ")";
+      return (o.effectType ? escapeHtml(o.effectType) : "Effect (measure not specified)") + " " + escapeHtml(o.effect) + " (95% CI " + escapeHtml(low) + " to " + escapeHtml(high) + ")";
     }
 
     function renderPreview() {
@@ -617,8 +623,8 @@
       }
 
       const rows = state.outcomes.map((o) => {
-        const certClass = CERT_CLASS[o.certainty] || "grade-moderate";
-        const certLabel = CERT_LABEL[o.certainty] || CERT_LABEL.moderate;
+        const certClass = CERT_CLASS[o.certainty] || "grade-notassessed";
+        const certLabel = CERT_LABEL[o.certainty] || CERT_LABEL.notassessed;
         const nStudies = o.studies ? " (" + escapeHtml(o.studies) + ")" : "";
         return [
           '<tr class="outcome-row">',
@@ -663,7 +669,7 @@
         '</tbody>',
         '</table>',
         '<p class="sof-legend">* The risk with ' + escapeHtml(h.intervention || "intervention") + ' (and its 95% confidence interval) is based on the assumed risk in the comparison group and the <strong>relative effect</strong> of the intervention (and its 95% CI).</p>',
-        '<p class="sof-legend"><strong>GRADE certainty:</strong> <strong>High</strong> — we are very confident; <strong>Moderate</strong> — moderately confident; <strong>Low</strong> — confidence is limited; <strong>Very low</strong> — we have very little confidence.</p>',
+        '<p class="sof-legend"><strong>GRADE certainty:</strong> <strong>High</strong> — we are very confident; <strong>Moderate</strong> — moderately confident; <strong>Low</strong> — confidence is limited; <strong>Very low</strong> — we have very little confidence.' + (state.outcomes.some(o => !CERT_LABEL[o.certainty] || o.certainty === "notassessed") ? ' <strong>Not assessed</strong> — no GRADE rating has been made for this outcome yet.' : '') + '</p>',
         '</div>'
       ].join("");
       host.innerHTML = html;
@@ -724,6 +730,7 @@
         '.grade-moderate { background:#fff4d5; color:#7a5a0d; }',
         '.grade-low { background:#fde1d3; color:#a34a12; }',
         '.grade-verylow { background:#fbd2d2; color:#912121; }',
+        '.grade-notassessed { background:#eceff3; color:#4a525e; font-weight:500; font-style:italic; }',
         '.sof-legend { margin-top:0.75rem; font-size:0.75rem; color:#5c6470; line-height:1.5; }',
         '</style></head><body>',
         html,
@@ -776,7 +783,15 @@
       o.ciLo = fmt(r.ciLo);
       o.ciHi = fmt(r.ciHi);
       const KNOWN = { RR: 1, OR: 1, HR: 1, MD: 1, SMD: 1, RD: 1 };
-      o.effectType = (r.measure && KNOWN[r.measure]) ? r.measure : (r.scale === "ratio" ? "RR" : "MD");
+      // Never guess the measure: a linear-scale pool may be a log OR / log RR / SMD / MD and a
+      // ratio-scale one an OR / HR / RR. Unnamed -> "" (not specified) plus a visible note.
+      if (r.measure && KNOWN[r.measure]) {
+        o.effectType = r.measure;
+      } else {
+        o.effectType = "";
+        o.comments = "Effect measure not supplied by the producing tool (pooled on its " +
+          (r.scale === "ratio" ? "ratio" : "analysis (e.g. log)") + " scale) — set the effect type.";
+      }
       if (r.k != null) o.studies = String(r.k);
       if (r.nTotal != null) o.participants = String(r.nTotal);
       if (r.label) o.outcome = r.label;
@@ -805,7 +820,8 @@
         if (idx >= 0) {
           const ex = state.outcomes[idx];
           ex.effect = o.effect; ex.ciLo = o.ciLo; ex.ciHi = o.ciHi;
-          ex.effectType = o.effectType; ex.studies = o.studies;
+          if (o.effectType) ex.effectType = o.effectType;  // an unnamed measure keeps the user's choice
+          ex.studies = o.studies;
           if (o.participants) ex.participants = o.participants;
         } else {
           state.outcomes.push(o);

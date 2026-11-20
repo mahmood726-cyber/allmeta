@@ -13,6 +13,9 @@ function stats() {
   for (; i < s.length; i++) { if (s[i] === '{') d++; else if (s[i] === '}') { d--; if (!d) break; } }
   const c = { Math };
   vm.createContext(c);
+  // The page loads ../shared/upper-tail.js just before this script (Stats.pnorm / pt / pchisq / betainc call AlmTail).
+  assert.ok(/<script src="\.\.\/shared\/upper-tail\.js"><\/script>\s*<script>\s*'use strict';\s*const Stats=/.test(html), 'page must load shared/upper-tail.js before Stats');
+  vm.runInContext(readFileSync(new URL('../../../../shared/upper-tail.js', import.meta.url), 'utf8'), c);
   vm.runInContext('const MainRNG={random:Math.random};' + s.slice(start, i + 1) + ';globalThis.Stats=Stats;', c);
   return c.Stats;
 }
@@ -47,17 +50,12 @@ test('nma-pro-v2: no p-value in the page is formed as 1 - Stats.<cdf>(...)', () 
   assert.equal(hits.length, 0, `${hits.length} sites still compute an upper tail as 1 - CDF`);
 });
 
-test('nma-pro-v2: the inlined Web Worker Stats provides the pnormU its NMA code calls', () => {
+// lane nmapro5 (2026-11-15): the inlined Web Worker (a second, older engine whose result was discarded) is removed,
+// so there is no worker Stats left to check; this asserts it stays gone.
+test('nma-pro-v2: no inlined Web Worker engine (one engine, one Stats)', () => {
   const html = readFileSync(PAGE, 'utf8');
-  const a = html.indexOf('const WORKER_CODE=`'), b = html.indexOf('`;', a);
-  const code = html.slice(a + 'const WORKER_CODE=`'.length, b);
-  const line = code.split(/\r?\n/).find(l => l.startsWith('const Stats={'));
-  const c = { Math }; vm.createContext(c);
-  vm.runInContext(line + ';globalThis.Stats=Stats;', c);
-  if (/Stats\.pnormU\(/.test(code)) assert.equal(typeof c.Stats.pnormU, 'function', 'worker calls Stats.pnormU but does not define it');
-  for (const g of grid.filter(g => g.d === 'normal')) assert.ok(rel(c.Stats.pnormU(g.x), g.p) < 1e-9, `worker pnormU(${g.x}) = ${c.Stats.pnormU(g.x)} vs ${g.p}`);
-  assert.ok(Math.abs(c.Stats.pnormU(-1.9599639845400536) - 0.975) < 1e-12);
-  assert.equal(c.Stats.pnormU(0), 0.5);
+  assert.equal(html.indexOf('const WORKER_CODE=`'), -1, 'WORKER_CODE is back');
+  assert.ok(!/workerCall\(|initWorker\(/.test(html), 'worker plumbing is back');
 });
 
 test('nma-pro-v2: pchisqU stays exact at large df (the old CDF switched to Wilson-Hilferty above df = 100)', () => {

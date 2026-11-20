@@ -12,7 +12,8 @@
  *   PRED: FPR[0.0564527122,0.5723263518] Se[0.3224495182,0.9925720938]   (mada 0.5.12)
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/dta-sroc/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/dta-sroc/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const TP = [47,126,19,36,130,84,68,752,59,142,137,57,34,152], FN = [9,51,10,3,19,2,0,0,5,50,24,3,1,51];
 const FP = [101,272,12,78,211,68,112,3226,55,571,107,103,21,88], TN = [738,1543,192,276,959,89,423,2977,136,2788,358,437,56,264];

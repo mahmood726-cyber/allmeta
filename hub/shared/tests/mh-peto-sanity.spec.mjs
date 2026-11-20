@@ -12,8 +12,9 @@
  * connections alive and networkidle never fires. Use waitForFunction instead.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const MHPETO_URL = 'http://localhost:8088/mh-peto/';
+const MHPETO_URL = ALM_BASE_URL + '/mh-peto/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm

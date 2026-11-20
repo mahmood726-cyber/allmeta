@@ -123,6 +123,15 @@
       <p class="foot" id="note"></p>
     </section>
 
+    <section class="panel full" id="rcheck-panel" aria-label="Check in R">
+      <h2>Check in R</h2>
+      <p class="foot">Both controls use the design of the boundaries shown above. The R script refits it with <code>gsDesign::gsDesign</code> and prints every displayed boundary quantity next to the page's value with an honest MATCH/MISMATCH line (the Monte Carlo simulation is not checked: different random-number generators). gsDesign is not in this site's pinned WebR package repository, so nothing is checked in the browser (<em>Verify in R</em> reports NOT CHECKED); the downloaded R script checks it in R.</p>
+      <button type="button" id="btn-rscript">Download R script</button>
+      <button type="button" id="btn-rverify">Verify in R (WebR)</button>
+      <p id="rcheck-status" class="foot" aria-live="polite"></p>
+      <pre id="rcheck-out" style="white-space:pre-wrap;font-size:0.75rem;overflow-x:auto"></pre>
+    </section>
+
     <section class="panel full" aria-label="Adaptive simulation">
       <h2>Adaptive simulation — two-group comparison of means</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0 0.8rem">
@@ -201,12 +210,14 @@
         try {
           var b = G.boundaries(opts);
         } catch (e) {
-          current = null;
+          current = null; window._almLastGSD = null;
           $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
           s.textContent = "Cannot compute this design: " + e.message; $("summary").appendChild(s);
           $("note").textContent = ""; draw([], false); return;
         }
         current = b.design;
+        // Inputs and boundaries now on screen, for the R check (rcheck.js).
+        window._almLastGSD = { opts: opts, rows: b };
         b.forEach(function (r) {
           var tr = document.createElement("tr");
           function td(v) { var c = document.createElement("td"); c.textContent = v; tr.appendChild(c); }
@@ -306,5 +317,7 @@
       if (h && h.sim) simulate();
     })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Multi-outcome NMA
 
-Achana 2014 multi-arm Ã— multi-outcome.
+Achana 2014 multi-arm × multi-outcome.
 
 Part of the [allmeta](https://github.com/mahmood726-cyber/allmeta) collection.
 
@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/multi-outcome-nma/
 
 - **Category:** Network MA
 - **Data shape:** multi-arm trials in NMA shape — multiple rows per study, one per arm.
-- **Purpose:** Achana 2014 multi-arm Ã— multi-outcome.
+- **Purpose:** Achana 2014 multi-arm × multi-outcome.
 
 ## Method papers
 

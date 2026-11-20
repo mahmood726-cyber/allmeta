@@ -47,7 +47,11 @@ def test_fit_basic_convergence():
     """)
     assert out["ok"] is True
     assert -0.5 < out["mu"] < -0.1
-    assert out["tau2"] > 0
+    # tau2 is a variance: >= 0. The ML estimate here is 0 (metafor::rma.mv(yi, vi, mods = ~time,
+    # random = ~1|study, method = "ML") gives sigma2 2.8e-12, lane audit7); "> 0" only held
+    # because the EM floored tau2 at 1e-8 and never reached the optimum.
+    assert out["tau2"] >= 0
+    assert out["tau2"] < 1e-6
 
 
 def test_fit_separates_two_outcomes():

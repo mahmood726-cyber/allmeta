@@ -128,7 +128,7 @@
         + "<table><tr><th>Quantile</th><th>Pooled QTE</th><th>95% CI</th><th>τ²</th><th>I²</th><th>k</th></tr>"
         + r.profile.map(function (p) {
           if (p.est == null) return "<tr><td>" + p.q + '</td><td colspan="5"><span class="hint">no data</span></td></tr>';
-          return "<tr><td>" + p.q + "</td><td>" + p.est.toFixed(3) + "</td><td>" + p.ciLo.toFixed(3) + ", " + p.ciHi.toFixed(3) + "</td><td>" + p.tau2.toFixed(3) + "</td><td>" + (p.i2 * 100).toFixed(0) + "%</td><td>" + p.k + "</td></tr>";
+          return "<tr><td>" + p.q + "</td><td>" + p.est.toFixed(3) + "</td><td>" + p.ciLo.toFixed(3) + ", " + p.ciHi.toFixed(3) + "</td><td>" + p.tau2.toFixed(3) + "</td><td>" + p.i2.toFixed(0) + "%</td><td>" + p.k + "</td></tr>";
         }).join("") + "</table>";
       drawProfile(r.profile);
     }

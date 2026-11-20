@@ -1,4 +1,4 @@
-# Sequential MA (Î±-spending)
+# Sequential MA (α-spending)
 
 Adaptive boundaries across information looks.
 

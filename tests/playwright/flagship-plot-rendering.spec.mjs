@@ -151,10 +151,18 @@ for (const width of [1280, 390]) {
     test('IPD Meta-Pro: computed trim-and-fill result has a populated plot', async ({ page }) => {
       test.setTimeout(65000);
       await page.goto('/IPD-Meta-Pro/ipd-meta-pro.html', { waitUntil: 'load' });
-      await page.evaluate(() => loadExampleData('survival'));
+      // loadExampleData draws patients with unseeded Math.random; some draws (3 of 200 seeds)
+      // leave ARCTIC with a non-estimable effect and a null pooled estimate (lane ci515), and
+      // this test then still passed on that invalid analysis. It is about plotting a VALID
+      // analysis, so draw a fixed dataset with the page's own SeededRNG (seed 7, as in
+      // remaining-plots.spec.mjs) and assert that precondition by name.
+      await page.evaluate(() => SeededRNG.withDeterminism(7, () => loadExampleData('survival')));
       await page.waitForTimeout(500);
       await page.evaluate(() => runAnalysis());
       await page.waitForFunction(() => !!APP.results?.pooled);
+      expect(await page.evaluate(() => Number.isFinite(APP.results.pooled.pooled) && APP.results.studies.every(s =>
+        Number.isFinite(s.effect) && Number.isFinite(s.variance) && s.variance > 0)),
+        'precondition: the seeded example gives every study an estimable effect').toBe(true);
       const before = await page.evaluate(() => JSON.stringify(APP.results));
       await page.locator('.nav-tab[data-panel="pubbias"]').click();
       await canvasHasInk(page, 'funnelPlot');

@@ -18,8 +18,9 @@
  *   - waitForAlm includes alm.tooltips
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const FUNNEL_URL = 'http://localhost:8088/funnel-plot/';
+const FUNNEL_URL = ALM_BASE_URL + '/funnel-plot/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

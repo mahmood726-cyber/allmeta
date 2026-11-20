@@ -110,7 +110,7 @@
             <option value="trimfill">Trim-and-fill</option>
           </optgroup>
           <optgroup label="netmeta">
-            <option value="netmeta">NMA consistency + SUCRA</option>
+            <option value="netmeta">NMA consistency + P-scores</option>
             <option value="netsplit">Node-splitting inconsistency</option>
             <option value="netheat">Net-heat contribution plot</option>
             <option value="bucher">Bucher indirect</option>
@@ -272,7 +272,7 @@ d <- .allmeta.data
 res <- rma(yi = te, sei = se, data = d)
 tf <- trimfill(res)
 print(tf)
-cat("\\n", tf$k0, "studies imputed (", tf$side, ").\\n", sep="")`,
+cat("\\n", tf$k0, " studies imputed (", tf$side, " side).\\n", sep="")`,
         parse: parseTESE,
       },
       netmeta: {
@@ -289,7 +289,7 @@ d <- .allmeta.data
 res <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, data = d,
                reference.group = "A", sm = "SMD", fixed = FALSE, random = TRUE)
 print(res)
-cat("\\nSUCRA:\\n"); print(netrank(res, small.values = "good"))`,
+cat("\\nP-scores (frequentist analogue of SUCRA; Rucker & Schwarzer 2015):\\n"); print(netrank(res, small.values = "good"))`,
         parse: parseContrasts,
         packages: ["meta", "netmeta"],
       },
@@ -327,7 +327,7 @@ netheat(nm)`,
         packages: ["meta", "netmeta"],
       },
       bucher: {
-        hint: "treatmentA, treatmentB, effect, SE, study — for A-vs-B direct-effect combination",
+        hint: "treatmentA, treatmentB, effect, SE, study — A-vs-C and B-vs-C trials give the indirect A-vs-B estimate (Bucher 1997)",
         data: `A, C, -0.30, 0.10, Smith
 B, C, -0.18, 0.12, Jones`,
         code: () => `library(netmeta)
@@ -389,7 +389,7 @@ res <- bayesmeta(y = d$te, sigma = d$se, labels = d$label,
                  mu.prior = c(0, 100),
                  tau.prior = function(t) dhalfnormal(t, scale = 1))
 print(res)
-cat("\\nPosterior mean (mu):", round(res$summary["median", "mu"], 3), "\\n")
+cat("\\nPosterior median (mu):", round(res$summary["median", "mu"], 3), "\\n")
 cat("Prediction interval:\\n"); print(res$summary[c("95% lower", "95% upper"), "theta"])`,
         parse: parseTESELabel,
         packages: ["bayesmeta"],
@@ -583,6 +583,20 @@ print(summary(res))`,
       }
     }
 
+    // Text of one captureR output item. stdout/stderr items carry a string; message, warning
+    // and error items carry the R condition object (an RList proxy), whose text is its
+    // "message" element. Lane audit8: these were shown as "{}" (JSON of the proxy), so every
+    // R message and warning (package start-up notes, "Studies with NAs omitted", ...) was lost.
+    async function captureItemText(x) {
+      if (typeof x.data === "string") return x.data;
+      try {
+        const msg = (await (await x.data.get("message")).toArray()).join("\n").replace(/\n$/, "");
+        return x.type === "warning" ? "Warning: " + msg : (x.type === "error" ? "Error: " + msg : msg);
+      } catch (_) {
+        return (x.data && typeof x.data.message === "string") ? x.data.message : "[" + x.type + " without text]";
+      }
+    }
+
     async function ensurePackages(list) {
       if (!list) return;
       const missing = list.filter(p => !loadedPkgs.has(p));
@@ -639,8 +653,8 @@ print(summary(res))`,
         const count = capture.images?.length || 0;
         plotHost.dataset.plotCount = String(count);
         if (count) plotWrap.style.display = "block";
-        const output = capture.output.filter(x => ["stdout", "stderr", "message", "warning", "error"].includes(x.type))
-          .map(x => typeof x.data === "string" ? x.data : (x.data?.message || JSON.stringify(x.data))).join("\n");
+        const kept = capture.output.filter(x => ["stdout", "stderr", "message", "warning", "error"].includes(x.type));
+        const output = (await Promise.all(kept.map(captureItemText))).join("\n");
         const hasError = capture.output.some(x => x.type === "error");
         outEl.textContent = (output || "(no textual output)") + (count ? "\n" + count + " plot page(s) displayed." : "\nThis run produced no plots.");
         statusEl.textContent = hasError ? "R error" : "ready";

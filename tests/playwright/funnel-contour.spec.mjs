@@ -4,7 +4,8 @@
  * clipped to the plot frame, with the study points still drawn on top. No errors.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/funnel-plot/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/funnel-plot/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 test('funnel-plot: significance contours render around the null', async ({ page }) => {

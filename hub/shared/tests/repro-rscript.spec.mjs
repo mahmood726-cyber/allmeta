@@ -6,7 +6,8 @@
  * → matches ma-core to ~1e-7) is verified locally.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/forest-plot/index.html'; // loads webr-runner
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/forest-plot/index.html'; // loads webr-runner
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('buildReproScript emits a well-formed, data-faithful metafor script', async ({ page }) => {

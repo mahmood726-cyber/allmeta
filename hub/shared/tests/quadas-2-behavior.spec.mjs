@@ -5,8 +5,9 @@
  * the suggestion is the algorithmic part worth pinning.)
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/quadas-2/';
+const APP_URL = ALM_BASE_URL + '/quadas-2/';
 
 test.describe('quadas-2', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

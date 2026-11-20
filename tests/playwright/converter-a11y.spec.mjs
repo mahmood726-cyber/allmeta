@@ -11,7 +11,8 @@
  *  2. no <label>-WRAPPED input also has an aria-label (that's the override bug).
  */
 import { test, expect } from '@playwright/test';
-const B = 'http://127.0.0.1:8080';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const B = ALM_BASE_URL;
 // Environmental / pre-existing console noise that is NOT a regression (mirrors the
 // verify-touched-apps benign list): the meta-CSP frame-ancestors warning, favicon
 // 404s, and loopback probes from optional shared services (ERR_CONNECTION_REFUSED /

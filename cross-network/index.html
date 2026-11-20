@@ -75,7 +75,7 @@ A_vs_C, -0.62, 0.014, obs</textarea>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Run bias-corrected synthesis</button>
       <div class="note">
-        Each contrast is processed independently. The bias offsets δ_ipd, δ_obs are estimated per-contrast — observational data may be biased in different directions for different comparisons. References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. 2017 "GetReal in NMA" (Res Synth Methods 8:23-39).
+        Each contrast is processed independently. The bias offsets δ_ipd, δ_obs are estimated per-contrast — observational data may be biased in different directions for different comparisons. References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. "GetReal in network meta-analysis" (Res Synth Methods 2016;7:236-263); Efthimiou et al. 2017 (Stat Med 36:1210-1226). Under this fixed-offset model the bias-adjusted non-RCT rows carry no information about μ, whatever σ² is: the synthesis is the RCT anchor plus a combination of the non-RCT rows whose weights sum to zero (shifting every non-RCT estimate by the same amount leaves it unchanged). When σ² = 0 the synthesis equals the RCT anchor, with the anchor's SE. When σ² &gt; 0 the non-RCT rows add variance but no information: the synthesis differs from the anchor only by noise, its SE is larger than the anchor's, and it is never more precise than the RCT anchor alone.
       </div>
     </section>
     <section class="panel">

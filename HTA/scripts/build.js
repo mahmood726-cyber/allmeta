@@ -6,7 +6,12 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
-const outDir = path.join(root, 'dist');
+const repoRoot = path.resolve(root, '..');
+// Layout: <outDir>/HTA/ holds the app; files the page loads from outside HTA/ (../shared/, ../hub/)
+// are copied to <outDir>/<same path from the repository root>, so every relative URL (and its SRI
+// hash) resolves unchanged in the built copy.
+const outDir = process.env.HTA_DIST_DIR ? path.resolve(process.env.HTA_DIST_DIR) : path.join(root, 'dist');
+const appOut = path.join(outDir, path.basename(root));
 
 const includePaths = [
     'index.html',
@@ -58,6 +63,21 @@ function checkSyntax(files) {
     }
 }
 
+// Every ../ resource of index.html (src/href attributes) and service-worker.js (string literals).
+function externalRefs() {
+    const refs = new Set();
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    for (const m of html.matchAll(/\b(?:src|href)\s*=\s*"(\.\.\/[^"#?]*)[^"]*"/g)) refs.add(m[1]);
+    const swPath = path.join(root, 'service-worker.js');
+    if (fs.existsSync(swPath)) {
+        const sw = fs.readFileSync(swPath, 'utf8');
+        for (const m of sw.matchAll(/['"](\.\.\/[^'"#?]*)[^'"]*['"]/g)) refs.add(m[1]);
+    }
+    // A query or fragment is not part of the file; a path ending in / is a navigation link
+    // (the hub-back link href="../"), not a resource the page loads.
+    return [...refs].filter(r => r.length > 3 && !r.endsWith('/'));
+}
+
 function build() {
     const srcDir = path.join(root, 'src');
     const jsFiles = collectJsFiles(srcDir);
@@ -69,10 +89,25 @@ function build() {
     for (const relPath of includePaths) {
         const src = path.join(root, relPath);
         if (!fs.existsSync(src)) continue;
-        copyRecursive(src, path.join(outDir, relPath));
+        copyRecursive(src, path.join(appOut, relPath));
     }
 
-    console.log(`Build complete: ${jsFiles.length} JS files validated, output written to ${outDir}`);
+    const refs = externalRefs();
+    for (const ref of refs) {
+        const src = path.resolve(root, ref);
+        const fromRepo = path.relative(repoRoot, src);
+        if (fromRepo.startsWith('..') || path.isAbsolute(fromRepo)) {
+            process.stderr.write(`Reference outside the repository: ${ref}\n`);
+            process.exit(1);
+        }
+        if (!fs.existsSync(src) || !fs.statSync(src).isFile()) {
+            process.stderr.write(`Referenced file not found: ${ref} (${src})\n`);
+            process.exit(1);
+        }
+        copyRecursive(src, path.join(outDir, fromRepo));
+    }
+
+    console.log(`Build complete: ${jsFiles.length} JS files validated, ${refs.length} files from outside ${path.basename(root)}/ copied; open ${path.join(appOut, 'index.html')}`);
 }
 
 build();

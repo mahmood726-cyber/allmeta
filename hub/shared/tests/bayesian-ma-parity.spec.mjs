@@ -9,8 +9,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/bayesian-ma/';
+const APP_URL = ALM_BASE_URL + '/bayesian-ma/';
 const O = JSON.parse(readFileSync(
   new URL('../../../bayesian-ma/tests/fixtures/bma-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-9;        // exact closed-form posterior

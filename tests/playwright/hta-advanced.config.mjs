@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+// One origin for the page server: set ALM_BASE_URL to serve and test this checkout on your own port.
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const ALM_PORT = new URL(ALM_BASE_URL).port || '80';
 
 export default defineConfig({
   testDir: '.',
@@ -9,7 +12,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['json', { outputFile: 'artifacts/hta-advanced-report.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: ALM_BASE_URL,
     browserName: 'chromium',
     launchOptions: {
       // Optional local browser; CI uses Playwright's installed Chromium.
@@ -20,8 +23,8 @@ export default defineConfig({
     trace: 'retain-on-failure'
   },
   webServer: {
-    command: 'python3 -m http.server 8080 --bind 127.0.0.1 --directory ../..',
-    url: 'http://127.0.0.1:8080/HTA/index.html',
+    command: `python3 -m http.server ${ALM_PORT} --bind 127.0.0.1 --directory ../..`,
+    url: ALM_BASE_URL + '/HTA/index.html',
     reuseExistingServer: false,
     stdout: 'ignore',
     stderr: 'ignore',

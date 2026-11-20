@@ -7,7 +7,8 @@
  * Surfaced as a widget in effect-size-converter.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/effect-size-converter/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/effect-size-converter/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('E-value matches the EValue R package (RR/OR/HR)', async ({ page }) => {

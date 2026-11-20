@@ -117,3 +117,16 @@ def test_invGamma_prior_is_zero_at_tau2_zero():
     assert out["at_0"] == 0    # inv-gamma → 0 at τ² → 0
     assert out["at_001"] > 0
     assert out["at_1"] > 0
+
+
+def test_tau2_mode_below_the_initial_scan_range():
+    # Codex review of #510: the mode scan starts at tau^2 = 1e-8 and only the UPPER end was extended, so a mode
+    # below 1e-8 was reported as the scan's lower limit. y = (0, 0), v = (1, 1), flat mu, invGamma(1, 1e-12) on
+    # tau^2: log posterior -0.5 log(1 + x) - 2 log x - 1e-12 / x, whose root of the derivative is
+    # x = 5e-13 - 6.25e-26 (to first order), i.e. 5e-13 to 1e-12 relative.
+    out = _run_node(
+        f"const B = require({json.dumps(str(MODULE))});"
+        "const f = B.fitModel([0, 0], [1, 1], B.invGamma(1, 1e-12));"
+        "console.log(JSON.stringify(f.tau2_post_mode));"
+    )
+    assert abs(out - 5e-13) / 5e-13 < 1e-6, out

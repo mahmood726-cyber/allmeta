@@ -1,4 +1,4 @@
-# BMA across Ï„Â² priors
+# BMA across τ² priors
 
 Posterior averaged over prior choice.
 
@@ -16,7 +16,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/bma-tau-priors/
 
 ## Method papers
 
-- Friede T, RÃ¶ver C, Wandel S, Neuenschwander B. Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases. Biom J. 2017;59(4):658-671. doi:10.1002/bimj.201500236
+- Friede T, Röver C, Wandel S, Neuenschwander B. Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases. Biom J. 2017;59(4):658-671. doi:10.1002/bimj.201500236
 
 ## Cite as
 

@@ -120,6 +120,71 @@ describe('upper-tail p-values agree with R lower.tail = FALSE', () => {
     });
 });
 
+describe('zero residual df: heterogeneity p stays 1, as before the AlmTail change (metafor QEp = 1)', () => {
+    // Where a statistic has no residual df it is identically 0 up to rounding (QBetween for one study is
+    // 1.9e-32). AlmTail.pchisqUpper now follows R at df = 0 (1 for x = 0, but 0 for x > 0), so rounding
+    // noise would read p = 0; each site therefore keeps p = 1, as metafor reports QEp = 1 for a saturated
+    // model (netmeta: pval.Q = NA). Each page showed 1 here before the AlmTail change (Codex review of #515).
+    test('NetworkMetaAnalysis: saturated tree network (A-B, B-C), Q = 0 on 0 df -> p = 1, not NaN', () => {
+        const { NetworkMetaAnalysis } = loadEngine('nma.js');
+        const nma = new NetworkMetaAnalysis({ model: 'fixed', seed: 1 });
+        nma.setData([
+            { study: 's1', treatment: 'A', mean: 0, sd: 1, n: 50 }, { study: 's1', treatment: 'B', mean: 0, sd: 1, n: 50 },
+            { study: 's2', treatment: 'B', mean: 0, sd: 1, n: 50 }, { study: 's2', treatment: 'C', mean: 0.3, sd: 1, n: 50 }
+        ], 'continuous');
+        const r = nma.runFrequentistNMA();
+        expect(r.df).toBe(0);
+        expect(r.Q).toBe(0);
+        expect(r.pValueQ).toBe(1);
+    });
+
+    test('AdvancedMetaAnalysis.threeLevel: one effect per study -> QWithin p = 1; one study -> QBetween p = 1', () => {
+        const { AdvancedMetaAnalysis } = loadEngine('advancedMeta.js');
+        const a = new AdvancedMetaAnalysis();
+        const r = a.threeLevel([{ study: 'a', yi: 0.1, vi: 0.04 }, { study: 'b', yi: 0.3, vi: 0.05 }, { study: 'c', yi: 0.2, vi: 0.03 }], {});
+        expect(r.QWithin.df).toBe(0);
+        expect(r.QWithin.pValue).toBe(1);
+        // one study with two effects: Q = 1.9e-32 (rounding noise) on 0 df
+        const qb = a.calculateQBetween(null, { a: [{ yi: 0.1, vi: 0.04 }, { yi: 0.2, vi: 0.04 }] }, 0.15, { yiVar: 'yi', viVar: 'vi' });
+        expect(qb.df).toBe(0);
+        expect(qb.pValue).toBe(1);
+    });
+
+    test('MendelianRandomizationMA.ivw: a single instrument -> heterogeneity p = 1', () => {
+        const { MendelianRandomizationMA } = loadEngine('frontierMeta.js');
+        const h = new MendelianRandomizationMA().ivw([{ betaExposure: 1, seBetaExposure: 0.01, betaOutcome: 0.5, seBetaOutcome: 0.02 }]).heterogeneity;
+        expect(h.df).toBe(0);
+        expect(h.pValue).toBe(1);
+    });
+
+    test('MendelianRandomizationMA.mrPresso: 2 instruments with pleiotropy still flags the outlier (leave-one-out p on 0 df)', () => {
+        const { MendelianRandomizationMA } = loadEngine('frontierMeta.js');
+        const d = [{ betaExposure: 1, seBetaExposure: 0.01, betaOutcome: 0.5, seBetaOutcome: 0.02 },
+            { betaExposure: 1, seBetaExposure: 0.01, betaOutcome: -0.5, seBetaOutcome: 0.02 }];
+        const r = new MendelianRandomizationMA().mrPresso(d, { nDistributions: 200 });
+        expect(r.outlierTest.outlierIndices).toEqual([0]);   // main (before AlmTail): [0]
+    });
+
+    test('MetaAnalysisMethods.metaRegression: saturated categorical moderator (k = 3, 3 levels) -> residual p = 1, not 0', () => {
+        const { MetaAnalysisMethods } = loadEngine('metaMethods.js');
+        const st = [{ effect: 0.1, se: 0.11, n: 50, g: 'a' }, { effect: 0.35, se: 0.13, n: 50, g: 'b' }, { effect: -0.2, se: 0.17, n: 50, g: 'c' }];
+        const f = new MetaAnalysisMethods().metaRegression(st, [{ name: 'g', type: 'categorical' }]).modelFit;
+        expect(f.dfResidual).toBe(0);
+        expect(f.QResidual).toBeLessThan(1e-20);   // 6.1e-32: rounding noise, not evidence
+        expect(f.pValueResidual).toBe(1);          // metafor QEp = 1 (was NaN; R pchisq(6.1e-32, 0) would say 0)
+    });
+
+    test('MetaAnalysisMethods.metaRegression: a categorical moderator with one level -> model p = 1, not 0', () => {
+        const { MetaAnalysisMethods } = loadEngine('metaMethods.js');
+        const st = [{ effect: 0.1, se: 0.11, n: 50, g: 'a' }, { effect: 0.35, se: 0.13, n: 50, g: 'a' }, { effect: -0.2, se: 0.17, n: 50, g: 'a' }];
+        const f = new MetaAnalysisMethods().metaRegression(st, [{ name: 'g', type: 'categorical' }]).modelFit;
+        expect(f.dfModel).toBe(0);
+        expect(f.QModel).toBeLessThan(1e-20);      // 8.6e-33
+        expect(f.pValueModel).toBe(1);
+        expect(f.pValueResidual).toBeCloseTo(0.3466962326620566, 12);   // df > 0 path unchanged
+    });
+});
+
 describe('CDFs that were crude approximations now agree with R (lower tail)', () => {
     // (competingRisks' module-level chi2CDF is not exported; it is covered by the grayTest case above.)
     test('jointModel _chi2CDF (was Wilson-Hilferty)', () => {

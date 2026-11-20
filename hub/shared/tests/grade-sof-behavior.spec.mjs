@@ -9,8 +9,9 @@
  * table.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/grade-sof/';
+const APP_URL = ALM_BASE_URL + '/grade-sof/';
 const G = (o) => ({ design: 'rct', rob: 0, inc: 0, ind: 0, imp: 0, pub: 0,
   large: 0, dose: false, conf: false, ...o });
 

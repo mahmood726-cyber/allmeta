@@ -17,8 +17,9 @@
  */
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const PAGE = (process.env.RVE_BASE || 'http://localhost:8088') + (process.env.RVE_PAGE || '/rve-meta/index.html');
+const PAGE = (process.env.RVE_BASE || ALM_BASE_URL) + (process.env.RVE_PAGE || '/rve-meta/index.html');
 const fixture = rel => JSON.parse(fs.readFileSync(new URL(`../../../rve-meta/tests/fixtures/${rel}`, import.meta.url), 'utf8'));
 // Chromium and WebKit report this for every meta CSP (in their own wording);
 // it is not a wasm or script refusal.

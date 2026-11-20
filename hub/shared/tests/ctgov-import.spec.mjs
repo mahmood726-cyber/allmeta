@@ -4,8 +4,9 @@
  * Pure, no network: the user pastes the API JSON and it is parsed in-browser.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP = 'http://localhost:8088/rct-extractor/';
+const APP = ALM_BASE_URL + '/rct-extractor/';
 
 const FIXTURE = JSON.stringify({
   protocolSection: { identificationModule: { nctId: 'NCT01234567' } },

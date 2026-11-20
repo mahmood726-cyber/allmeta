@@ -6,7 +6,8 @@
  *   back r=0.37507210, CI(r)=[0.27537287, 0.46678898]
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/correlation-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/correlation-ma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 test('correlation-ma matches metafor escalc(ZCOR)+rma(REML)', async ({ page }) => {

@@ -9,8 +9,9 @@
  *   RVE_PAGE=/rve-meta-prefix/index.html npx playwright test rve-meta-usability
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const PAGE = (process.env.RVE_BASE || 'http://localhost:8088') + (process.env.RVE_PAGE || '/rve-meta/index.html');
+const PAGE = (process.env.RVE_BASE || ALM_BASE_URL) + (process.env.RVE_PAGE || '/rve-meta/index.html');
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>|ERR_CONNECTION_REFUSED|favicon/;
 
 // Uncentred calendar-year moderator: kappa(X'WX) ~ 1e11 (ill-conditioned).

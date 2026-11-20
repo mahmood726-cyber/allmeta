@@ -26,7 +26,8 @@
  * Host: review-project/index.html (loads ../shared/experimental-ma.js → window.ExperimentalMA).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/review-project/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/review-project/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION|favicon/;
 
 const YI = [-0.15, -0.10, -0.20, 0.02, -0.30, -0.05];

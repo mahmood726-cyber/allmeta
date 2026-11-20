@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(join(__dirname, '..', 'chart-download.js'), 'utf-8');
@@ -29,8 +30,8 @@ test.describe('chart-download SVG path', () => {
     await page.route('/hub/shared/chart-download.js', route => {
       route.fulfill({ contentType: 'application/javascript', body: MODULE_SRC });
     });
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     // Wait until the buttons are rendered
     await page.waitForSelector('#dl-mount button[data-fmt="svg"]');
   });

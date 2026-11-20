@@ -16,7 +16,8 @@
  * a documented limitation, not covered here; point estimates stay accurate.)
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/multi-outcome-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/multi-outcome-ma/index.html';
 
 const buildV = (se, rhoW) => {
   const V = [[NaN, NaN], [NaN, NaN]];

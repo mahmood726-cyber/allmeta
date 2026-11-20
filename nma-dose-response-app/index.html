@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- V9-E07: Chart/docx now vendored to ../shared/vendor/ with SRI. webr remains external (R runtime). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://webr.r-wasm.org 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://webr.r-wasm.org; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <!-- V9-E07: Chart/docx now vendored to ../shared/vendor/ with SRI. WebR is the pinned same-origin bundle (../shared/webr-runner.js -> ../r-shiny/shinylive/webr/). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <title>NMA Dose Response Studio</title>
   <style>
@@ -1900,7 +1900,7 @@
               </div>
               <div>
                 <label style="font-size: 11px; color: var(--muted);">Effect Size (OR/RR)</label>
-                <input type="number" id="nntEffect" step="0.01" value="" placeholder="From analysis" style="width: 100%;" readonly aria-label="Effect Size (OR/RR)" />
+                <input type="number" id="nntEffect" step="0.01" value="" placeholder="Enter OR/RR" style="width: 100%;" aria-label="Effect Size (OR/RR)" />
               </div>
             </div>
             <div class="inline-actions">
@@ -1910,7 +1910,7 @@
                 <option value="rd">Risk Diff</option>
               </select>
               <button class="secondary" id="calcNNT" title="Calculate NNT/NNH">Calculate NNT</button>
-              <button class="secondary" id="calcNNTFromPooled" title="Use pooled effect">Use Pooled</button>
+              <button class="secondary" id="calcNNTFromPooled" title="A dose-response network has no single pooled effect">Use Pooled</button>
             </div>
             <div class="nnt-result" id="nntResults" style="display: none;">
               <div class="nnt-item">
@@ -2444,10 +2444,10 @@
         <div class="control">
           <label>GRADE Evidence Tables</label>
           <div class="inline-actions">
-            <button class="secondary" id="exportGRADE" title="Export GRADE Summary of Findings">GRADE SoF Table <span class="badge validated">Val</span></button>
+            <button class="secondary" id="exportGRADE" title="Export a GRADE Summary of Findings template (judgements are left to you)">GRADE SoF Table</button>
             <button class="secondary" id="exportGRADEProfile" title="Export GRADE evidence profile">Evidence Profile</button>
           </div>
-          <div class="hint">Summary of Findings with certainty ratings (Schunemann et al. 2019)</div>
+          <div class="hint">Summary of Findings template: the app makes no certainty ratings; you rate each domain (Schunemann et al. 2019)</div>
         </div>
 
         <div class="control">
@@ -4126,7 +4126,7 @@
       });
 
       // Check if first visit - show wizard
-      if (!localStorage.getItem('nma_wizard_completed')) {
+      if (!localStorage.getItem('nma_wizard_completed') && !localStorage.getItem('nma_wizard_dismissed')) {
         setTimeout(openWizard, 1000);
       }
 
@@ -4147,7 +4147,13 @@
     }
 
     function closeWizard() {
-      document.getElementById('wizardOverlay').classList.remove('active');
+      const overlay = document.getElementById('wizardOverlay');
+      // Closing an open wizard (x, Escape) is the user declining it: remember that, or
+      // the first-visit check below reopens it over the Run button on every load.
+      const wasOpen = overlay.classList.contains('active');
+      overlay.classList.remove('active');
+      // Best effort: blocked or full storage must never keep the wizard on screen.
+      if (wasOpen) { try { localStorage.setItem('nma_wizard_dismissed', 'true'); } catch (_) {} }
     }
 
     function selectWizardOption(el) {
@@ -4332,11 +4338,9 @@
       { name: 'Bootstrap', keywords: 'bootstrap confidence interval resampling', panel: 'Model Controls', button: 'runBootstrap' },
 
       // Publication Bias
-      { name: 'Egger Test', keywords: 'egger regression funnel asymmetry bias', panel: 'Publication Bias', button: 'runEgger' },
       { name: 'Begg Test', keywords: 'begg mazumdar rank correlation bias', panel: 'Regression Tests', button: 'runBeggMazumdar' },
       { name: 'Trim and Fill', keywords: 'trim fill duval tweedie imputation bias', panel: 'Publication Bias', button: 'runTrimFill' },
       { name: 'PET-PEESE', keywords: 'pet peese precision effect stanley', panel: 'Publication Bias', button: 'runPETPEESE' },
-      { name: 'Funnel Plot', keywords: 'funnel plot asymmetry visualization', panel: 'Publication Bias', button: 'runFunnelPlot' },
       { name: 'P-Curve', keywords: 'p curve pcurve evidential value', panel: 'Evidential Value', button: 'runPCurve' },
       { name: 'Fail-safe N', keywords: 'failsafe rosenthal orwin file drawer', panel: 'Evidential Value', button: 'runRosenthal' },
       { name: 'Copas Model', keywords: 'copas selection model sensitivity', panel: 'Beyond R', button: 'runCopas' },
@@ -4376,7 +4380,6 @@
       { name: 'Two-Stage IPD', keywords: 'ipd two stage individual patient aggregate', panel: 'IPD Meta-Analysis', button: 'runTwoStageIPD' },
       { name: 'IPD Dose-Response', keywords: 'ipd dose response individual patient nonlinear', panel: 'IPD Meta-Analysis', button: 'runIPDDoseResponse' },
       { name: 'IPD Subgroup', keywords: 'ipd subgroup individual patient covariate interaction', panel: 'IPD Meta-Analysis', button: 'runIPDSubgroup' },
-      { name: 'IPD Interactions', keywords: 'ipd interaction treatment effect modifier', panel: 'IPD Meta-Analysis', button: 'runIPDInteractions' },
       { name: 'Pseudo-IPD', keywords: 'pseudo ipd aggregate convert reconstruct', panel: 'IPD Meta-Analysis', button: 'convertADtoIPD' },
 
       // Time-to-Event
@@ -4417,9 +4420,14 @@
       }
 
       const q = query.toLowerCase();
+      // only controls this page has: an entry whose button is missing led nowhere ("Egger Test" had no button);
+      // and only controls a user can use: a control refused as not validated against R is disabled
+      // (app.js markUnvalidatedControls) and is not offered ("Trim and Fill", "Copas Model", ...)
+      const usable = el => el && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
       const matches = featureIndex.filter(f =>
-        f.name.toLowerCase().includes(q) ||
-        f.keywords.toLowerCase().includes(q)
+        usable(document.getElementById(f.button)) &&
+        (f.name.toLowerCase().includes(q) ||
+        f.keywords.toLowerCase().includes(q))
       );
 
       if (matches.length === 0) {
@@ -4891,93 +4899,115 @@ Study3,Placebo,0,0,0.09`
       announce('NNT calculated: ' + (nnt || nnh || 'no effect'));
     }
 
+    // A dose-response network has no single pooled effect (it fits one curve per treatment), so
+    // there is nothing to load. This read #pooledEffect, an element the page does not have, and the
+    // effect box was read-only, so the calculator could never be used (lane nmaexp, 2026-11-14).
     function usePooledEffect() {
-      // Get pooled effect from results panel if available
-      const pooledEl = document.getElementById('pooledEffect');
-      if (pooledEl && pooledEl.textContent !== '—') {
-        const effect = parseFloat(pooledEl.textContent);
-        if (!isNaN(effect)) {
-          document.getElementById('nntEffect').value = effect.toFixed(3);
-          showNotification('Pooled effect loaded', 'success');
-        }
-      } else {
-        showNotification('Run analysis first to get pooled effect', 'info');
-      }
+      const msg = 'No single pooled effect: a dose-response network fits one curve per treatment. ' +
+        'Enter the OR/RR for the treatment and dose you want.';
+      const input = document.getElementById('nntEffect');
+      if (input) { input.readOnly = false; input.focus(); }
+      showNotification(msg, 'warning');
+      announce(msg);
     }
 
     // ============================================
     // GRADE EXPORT
     // ============================================
+    // GRADE certainty is a judgement the review team makes; this app makes none of them. The export
+    // used to print "Not serious" / "None detected" / "Overall Certainty: Moderate" for every analysis
+    // and "Participants: 13" (the data-row count; the input has no participant numbers). It now prints
+    // only what the app knows and leaves every judgement to the user (lane nmaexp, 2026-11-14).
+    const GRADE_NOT_ASSESSED = 'Not assessed — user must judge';
     function exportGRADE() {
-      const gradeData = {
-        outcome: 'Primary Outcome',
-        studies: document.getElementById('qualityStudies')?.textContent || '—',
-        participants: document.getElementById('qualityUsed')?.textContent || '—',
-        riskOfBias: 'Not serious',
-        inconsistency: document.getElementById('globalI2')?.textContent || '—',
-        indirectness: 'Not serious',
-        imprecision: 'Not serious',
-        publicationBias: 'None detected',
-        effect: document.getElementById('pooledEffect')?.textContent || '—',
-        certainty: 'Moderate'
-      };
-
+      const studies = (document.getElementById('qualityStudies')?.textContent || '').trim();
+      const rows = (document.getElementById('qualityUsed')?.textContent || '').trim();
+      if (!/^[1-9]\d*$/.test(studies) || !/^[1-9]\d*$/.test(rows)) {
+        const msg = 'Not exported: load data and run the analysis first.';
+        showNotification(msg, 'warning');
+        announce(msg);
+        return;
+      }
+      const NA = GRADE_NOT_ASSESSED;
       const gradeTable = `
-# GRADE Summary of Findings Table
+# GRADE Summary of Findings — template
 Generated by NMA Dose-Response Studio v2.0.1
 Date: ${new Date().toISOString().split('T')[0]}
+
+This app does not make GRADE judgements. Every domain marked "${NA}" must be rated by the review
+team; nothing below is a certainty rating.
 
 ## Summary of Findings
 
 | Domain | Assessment |
 |--------|------------|
-| Studies | ${gradeData.studies} |
-| Participants | ${gradeData.participants} |
-| Risk of Bias | ${gradeData.riskOfBias} |
-| Inconsistency (I²) | ${gradeData.inconsistency} |
-| Indirectness | ${gradeData.indirectness} |
-| Imprecision | ${gradeData.imprecision} |
-| Publication Bias | ${gradeData.publicationBias} |
+| Studies | ${studies} |
+| Participants | Not available — the data have no participant counts (${rows} data rows analysed) |
+| Risk of Bias | ${NA} |
+| Inconsistency | ${NA} |
+| Indirectness | ${NA} |
+| Imprecision | ${NA} |
+| Publication Bias | ${NA} |
 
 ## Effect Estimate
-**Pooled Effect:** ${gradeData.effect}
+No single pooled effect: a dose-response network fits one curve per treatment (see Dose Response Curves).
 
-## Overall Certainty: ${gradeData.certainty}
+## Overall Certainty: ${NA}
 
 ---
 *Citation: NMA Dose-Response Studio v2.0.1*
 `;
 
       downloadText(gradeTable, 'GRADE_SoF_Table.md');
-      showNotification('GRADE Summary of Findings exported', 'success');
+      showNotification('GRADE template exported (no judgements made)', 'success');
     }
 
     // ============================================
     // LATEX EXPORT
     // ============================================
+    // The table used to print literal "[CI]" and "ES" placeholders (and "k", "I²", "τ²" when a value
+    // was missing): #pooledEffect does not exist and #globalI2 / #globalTau2 are never filled. It now
+    // prints the study count and the residual heterogeneity the Diagnostics panel shows, and says so
+    // where nothing was computed (lane nmaexp, 2026-11-14).
     function exportLatexTable() {
-      const studies = document.getElementById('qualityStudies')?.textContent || 'k';
-      const effect = document.getElementById('pooledEffect')?.textContent || 'ES';
-      const i2 = document.getElementById('globalI2')?.textContent || 'I²';
-      const tau2 = document.getElementById('globalTau2')?.textContent || 'τ²';
+      const st = window._nmaState;
+      const studies = (document.getElementById('qualityStudies')?.textContent || '').trim();
+      if (!st || !/^[1-9]\d*$/.test(studies)) {
+        const msg = 'Not exported: load data and run the analysis first.';
+        showNotification(msg, 'warning');
+        announce(msg);
+        return;
+      }
+      // same rounding as the Diagnostics panel (app.js formatNumber)
+      const fmt = v => Math.abs(v) >= 1000 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
+      const tex = s => String(s).replace(/[\\&%$#_{}~^]/g, c => '\\' + c);
+      const i2 = Number.isFinite(st.globalI2) ? tex((st.globalI2 * 100).toFixed(1) + '%') : 'not computed';
+      let tau2;
+      if (!st.randomEffects) tau2 = 'not estimated (fixed-effect model)';
+      else if (!Number.isFinite(st.globalTau2)) tau2 = 'not computed';
+      else {
+        const notEst = Array.isArray(st.tau2NotEstimable) ? st.tau2NotEstimable : [];
+        tau2 = fmt(st.globalTau2) + (notEst.length ? tex(` (not estimable for ${notEst.join(', ')})`) : '');
+      }
 
       const latex = `\\begin{table}[ht]
 \\centering
-\\caption{Meta-analysis Results}
+\\caption{Dose-response network meta-analysis: data and residual heterogeneity}
 \\label{tab:meta-results}
 \\begin{tabular}{lcc}
 \\toprule
 Statistic & Value & 95\\% CI \\\\
 \\midrule
-Number of Studies & ${studies} & — \\\\
-Pooled Effect & ${effect} & [CI] \\\\
-Heterogeneity ($I^2$) & ${i2} & [CI] \\\\
-Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
+Number of studies & ${studies} & --- \\\\
+Residual heterogeneity ($I^2$) & ${i2} & not computed \\\\
+Residual $\\tau^2$ & ${tau2} & --- \\\\
 \\bottomrule
 \\end{tabular}
 
 \\vspace{0.5em}
-\\footnotesize{Generated by NMA Dose-Response Studio v2.0.1}
+\\footnotesize{No single pooled effect: a dose-response network fits one curve per treatment.
+Residual $\\tau^2$ is the row-weighted mean of the per-treatment residual $\\tau^2$.
+Generated by NMA Dose-Response Studio v2.0.1}
 \\end{table}`;
 
       downloadText(latex, 'meta_analysis_table.tex');
@@ -5357,6 +5387,7 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
   </script>
 
   <script src="../shared/upper-tail.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="app.js" defer></script>
 
   <!-- ================================================================
@@ -5497,18 +5528,26 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
       if (!state || !state.rawData || state.rawData.length < 1) return null;
 
       var groups = {};
+      // A row with no positive SE used to be sent to R with se = 0.1 substituted, so R and the page
+      // "agreed" on a variance nobody supplied. Such rows are now refused by name (lane nmaexp).
+      var badSe = [], badEffect = [];
       state.rawData.forEach(function(row) {
         var t = row.treatment;
         if (!t) return;
         var yi = row.effect;
         var se = row.se;
-        if (!isFinite(yi)) return;
-        if (!isFinite(se) || se <= 0) se = 0.1; // fallback
+        var label = row.study + ' ' + t;
+        if (!isFinite(yi)) { badEffect.push(label); return; }
+        if (!isFinite(se) || se <= 0) { badSe.push(label); return; }
         if (!groups[t]) groups[t] = { name: t, yi: [], se: [], vi: [] };
         groups[t].yi.push(yi);
         groups[t].se.push(se);
         groups[t].vi.push(se * se);
       });
+      var reasons = [];
+      if (badSe.length) reasons.push(badSe.length + ' row(s) have no positive standard error (' + badSe.join(', ') + ')');
+      if (badEffect.length) reasons.push(badEffect.length + ' row(s) have no effect (' + badEffect.join(', ') + ')');
+      if (reasons.length) return { refusal: 'Not run: ' + reasons.join('; ') + '. The cross-check never substitutes a value; fix or remove these rows.' };
 
       return groups;
     }
@@ -5541,6 +5580,73 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     // =====================================================================
     // WebR VALIDATION RUNNER
     // =====================================================================
+    // The R runtime is the SAME pinned, same-origin webR bundle every other allmeta
+    // "verify in R" panel uses (shared/webr-runner.js -> r-shiny/shinylive/webr/,
+    // SHA-256-verified metafor). This card used to import webR 0.4.4 from
+    // webr.r-wasm.org and webr::install() metafor from repo.r-wasm.org. Under this
+    // page's CSP that never finished: webR 0.4.4's dynamic linker eval()s the EM_ASM
+    // bodies of a side module (addEmAsm -> eval), 'unsafe-eval' is not allowed, the
+    // worker died with an uncaught WebAssembly.Exception, init() never settled and the
+    // card stayed busy for ever; connect-src also refused repo.r-wasm.org.
+    var _webrRunnerPromise = null;
+    function loadWebrRunner() {
+      if (window.AlmWebR && typeof window.AlmWebR.runR === 'function') return Promise.resolve(window.AlmWebR);
+      if (!_webrRunnerPromise) _webrRunnerPromise = new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = '../shared/webr-runner.js';
+        s.onload = function() {
+          if (window.AlmWebR && typeof window.AlmWebR.runR === 'function') resolve(window.AlmWebR);
+          else reject(new Error('shared/webr-runner.js loaded but AlmWebR is missing'));
+        };
+        s.onerror = function() { reject(new Error('Could not load ../shared/webr-runner.js')); };
+        document.head.appendChild(s);
+      }).catch(function(e) { _webrRunnerPromise = null; throw e; });
+      return _webrRunnerPromise;
+    }
+
+    // One R script for every pool: each line "NMAWEBR:<id>:v1,...,v9" carries
+    // c(beta, se, tau2, I2, QE, QEp, ci.lb, ci.ub, k), printed with %.17g (exact round trip).
+    function buildWebrScript(pools, useMetafor) {
+      var lines = [];
+      if (useMetafor) {
+        lines.push('suppressPackageStartupMessages(library(metafor))');
+        lines.push('pool <- function(yi, vi) { fit <- rma(yi, vi, method="DL"); c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp, fit$ci.lb, fit$ci.ub, fit$k) }');
+      } else {
+        lines.push('pool <- function(yi, vi) {');
+        lines.push('  k <- length(yi); wi <- 1/vi; sumW <- sum(wi)');
+        lines.push('  theta_fe <- sum(wi * yi) / sumW');
+        lines.push('  Q <- sum(wi * (yi - theta_fe)^2)');
+        lines.push('  C0 <- sumW - sum(wi^2)/sumW');
+        lines.push('  tau2 <- max(0, (Q - (k - 1)) / C0)');
+        lines.push('  wi_re <- 1/(vi + tau2); sumW_re <- sum(wi_re)');
+        lines.push('  theta_re <- sum(wi_re * yi) / sumW_re; se_re <- sqrt(1/sumW_re)');
+        lines.push('  I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)');
+        lines.push('  Qp <- 1 - pchisq(Q, k - 1)');
+        lines.push('  c(theta_re, se_re, tau2, I2, Q, Qp, theta_re - qnorm(0.975) * se_re, theta_re + qnorm(0.975) * se_re, k)');
+        lines.push('}');
+      }
+      lines.push('emit <- function(id, yi, vi) cat("NMAWEBR:", id, ":", paste(sprintf("%.17g", pool(yi, vi)), collapse=","), "\\n", sep="")');
+      pools.forEach(function(pl, i) {
+        lines.push('emit(' + i + ', c(' + pl.yi.join(',') + '), c(' + pl.vi.join(',') + '))');
+      });
+      return lines.join('\n');
+    }
+
+    function parseWebrStdout(stdout, n) {
+      var byId = {};
+      String(stdout || '').split(/\r?\n/).forEach(function(l) {
+        var m = /^NMAWEBR:(\d+):(.*)$/.exec(l.trim());
+        if (m) byId[+m[1]] = m[2].split(',').map(Number);
+      });
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        var v = byId[i];
+        if (!v || v.length !== 9) throw new Error('R result record ' + i + ' missing');
+        out.push({ effect: v[0], se: v[1], tau2: v[2], I2: v[3], Q: v[4], Qp: v[5], ci_lb: v[6], ci_ub: v[7], k: v[8] });
+      }
+      return out;
+    }
+
     async function runWebRValidation() {
       var btn = document.getElementById('webrRunBtn');
       var progress = document.getElementById('webrProgress');
@@ -5550,6 +5656,11 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
 
       // Extract data
       var groups = extractTreatmentData();
+      if (groups && groups.refusal) {
+        resultsDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;'
+          + 'border-radius:8px;color:#92400e;font-size:13px;">' + esc(groups.refusal) + '</div>';
+        return;
+      }
       if (!groups || Object.keys(groups).length < 1) {
         resultsDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;'
           + 'border-radius:8px;color:#92400e;font-size:13px;">'
@@ -5557,197 +5668,79 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
           + 'then return here to validate.</div>';
         return;
       }
+      if (webrLoading) {
+        progressText.textContent = 'WebR is already loading, please wait...';
+        return;
+      }
+      var dataKey = JSON.stringify(groups);   // what R is about to be given
 
       btn.disabled = true;
       btn.textContent = 'Running...';
       progress.style.display = 'block';
       resultsDiv.innerHTML = '';
+      webrLoading = true;
 
       try {
-        // Step 1: Load WebR if not already loaded
-        if (!webrInstance) {
-          if (webrLoading) {
-            progressText.textContent = 'WebR is already loading, please wait...';
-            return;
-          }
-          webrLoading = true;
-          progressText.textContent = 'Loading WebR runtime (~15 MB)...';
+        var status = function(s) { progressText.textContent = s; };
+        status('Loading the pinned same-origin WebR runner...');
+        var runner = await loadWebrRunner();
 
-          var WebR = (await import('https://webr.r-wasm.org/v0.4.4/webr.mjs')).WebR;
-          webrInstance = new WebR();
-          await webrInstance.init();
-          webrLoading = false;
-        }
-
-        // Step 2: Try metafor first
-        var useMetafor = true;
-        var rSource = 'metafor::rma(method="DL")';
-        progressText.textContent = 'Installing metafor package...';
-
-        try {
-          await webrInstance.evalR('webr::install("metafor", quiet = TRUE)');
-          await webrInstance.evalR('library(metafor)');
-        } catch (e) {
-          useMetafor = false;
-          rSource = 'base R DL fallback';
-          progressText.textContent = 'metafor unavailable, using base R fallback...';
-        }
-
-        // Step 3: Run per-treatment DL in R and compare with app
+        // Pools: every treatment with k >= 2, then the overall pool of all data points.
         var treatmentNames = Object.keys(groups);
         var perTreatment = [];
-        var totalK = 0;
-
-        for (var t = 0; t < treatmentNames.length; t++) {
-          var tName = treatmentNames[t];
-          var g = groups[tName];
-          if (g.yi.length < 2) {
-            perTreatment.push({
-              treatment: tName,
-              k: g.yi.length,
-              rData: null,
-              appData: null,
-              skip: true
-            });
-            continue;
-          }
-          totalK += g.yi.length;
-
-          progressText.textContent = 'Analyzing ' + tName + ' (' + (t + 1) + '/' + treatmentNames.length + ')...';
-
-          var yiStr = g.yi.join(',');
-          var viStr = g.vi.join(',');
-
-          var rCode;
-          if (useMetafor) {
-            rCode = [
-              'yi <- c(' + yiStr + ')',
-              'vi <- c(' + viStr + ')',
-              'fit <- rma(yi, vi, method="DL")',
-              'c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp,',
-              '  fit$ci.lb, fit$ci.ub, fit$k, 0)'
-            ].join('\n');
-          } else {
-            rCode = [
-              'yi <- c(' + yiStr + ')',
-              'vi <- c(' + viStr + ')',
-              'k <- length(yi)',
-              'wi <- 1/vi',
-              'sumW <- sum(wi)',
-              'theta_fe <- sum(wi * yi) / sumW',
-              'Q <- sum(wi * (yi - theta_fe)^2)',
-              'C0 <- sumW - sum(wi^2)/sumW',
-              'tau2 <- max(0, (Q - (k - 1)) / C0)',
-              'wi_re <- 1/(vi + tau2)',
-              'sumW_re <- sum(wi_re)',
-              'theta_re <- sum(wi_re * yi) / sumW_re',
-              'se_re <- sqrt(1/sumW_re)',
-              'I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)',
-              'Qp <- 1 - pchisq(Q, k - 1)',
-              'ci_lb <- theta_re - qnorm(0.975) * se_re',
-              'ci_ub <- theta_re + qnorm(0.975) * se_re',
-              'c(theta_re, se_re, tau2, I2, Q, Qp, ci_lb, ci_ub, k, 1)'
-            ].join('\n');
-          }
-
-          var rResult = await webrInstance.evalR(rCode);
-          var vals = await rResult.toArray();
-
-          var rData = {
-            effect: vals[0],
-            se: vals[1],
-            tau2: vals[2],
-            I2: vals[3],
-            Q: vals[4],
-            Qp: vals[5],
-            ci_lb: vals[6],
-            ci_ub: vals[7],
-            k: vals[8]
-          };
-
-          // Get app DL for same treatment
-          var appData = getAppDL(g.yi, g.se);
-
-          perTreatment.push({
-            treatment: tName,
-            k: g.yi.length,
-            rData: rData,
-            appData: appData,
-            skip: false
-          });
-        }
-
-        // Step 4: Also run overall (all data points pooled) if k >= 2
-        var allYi = [];
-        var allVi = [];
-        var allSe = [];
+        var pools = [];
+        var allYi = [], allVi = [], allSe = [];
         treatmentNames.forEach(function(tName) {
           var g = groups[tName];
-          for (var i = 0; i < g.yi.length; i++) {
-            allYi.push(g.yi[i]);
-            allVi.push(g.vi[i]);
-            allSe.push(g.se[i]);
+          for (var i = 0; i < g.yi.length; i++) { allYi.push(g.yi[i]); allVi.push(g.vi[i]); allSe.push(g.se[i]); }
+          if (g.yi.length < 2) {
+            perTreatment.push({ treatment: tName, k: g.yi.length, rData: null, appData: null, skip: true });
+          } else {
+            perTreatment.push({ treatment: tName, k: g.yi.length, rData: null, appData: getAppDL(g.yi, g.se), skip: false, _pool: pools.length });
+            pools.push({ yi: g.yi, vi: g.vi });
           }
         });
+        var overallIdx = -1;
+        if (allYi.length >= 2) { overallIdx = pools.length; pools.push({ yi: allYi, vi: allVi }); }
+
+        // metafor first (pinned, SHA-256 verified); base-R DL only if metafor cannot be used.
+        var useMetafor = true;
+        status('Booting WebR and verifying metafor (first run downloads ~30 MB)...');
+        var res = await runner.runR({ script: buildWebrScript(pools, true), packages: ['metafor'], onStatus: status });
+        var rSource;
+        if (res.ok) {
+          rSource = 'metafor ' + res.versions.metafor + ' rma(method="DL"), webR ' + res.versions.webR;
+        } else {
+          useMetafor = false;
+          status('metafor unavailable (' + res.error + '), using base R fallback...');
+          res = await runner.runR({ script: buildWebrScript(pools, false), packages: [], onStatus: status });
+          if (!res.ok) throw new Error(res.error);
+          rSource = 'base R DL fallback, webR ' + res.versions.webR;
+        }
+        // R answered for the data it was given; if the page's data changed meanwhile, never show that answer.
+        if (JSON.stringify(extractTreatmentData()) !== dataKey) {
+          progress.style.display = 'none';
+          btn.disabled = false;
+          btn.textContent = 'Re-run Validation';
+          resultsDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;'
+            + 'border-radius:8px;color:#92400e;font-size:13px;"><strong>R result discarded:</strong> the data on the page '
+            + 'changed while R was running, so the comparison R returned (for the earlier data) is not shown. '
+            + 'Press Re-run Validation.</div>';
+          return;
+        }
+        var rAll = parseWebrStdout(res.stdout, pools.length);
+        perTreatment.forEach(function(pt) { if (!pt.skip) { pt.rData = rAll[pt._pool]; delete pt._pool; } });
 
         var overallR = null;
         var overallApp = null;
-        if (allYi.length >= 2) {
-          progressText.textContent = 'Running overall pooled analysis...';
-          var allYiStr = allYi.join(',');
-          var allViStr = allVi.join(',');
-
-          var rCodeAll;
-          if (useMetafor) {
-            rCodeAll = [
-              'yi <- c(' + allYiStr + ')',
-              'vi <- c(' + allViStr + ')',
-              'fit <- rma(yi, vi, method="DL")',
-              'c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp,',
-              '  fit$ci.lb, fit$ci.ub, fit$k, 0)'
-            ].join('\n');
-          } else {
-            rCodeAll = [
-              'yi <- c(' + allYiStr + ')',
-              'vi <- c(' + allViStr + ')',
-              'k <- length(yi)',
-              'wi <- 1/vi',
-              'sumW <- sum(wi)',
-              'theta_fe <- sum(wi * yi) / sumW',
-              'Q <- sum(wi * (yi - theta_fe)^2)',
-              'C0 <- sumW - sum(wi^2)/sumW',
-              'tau2 <- max(0, (Q - (k - 1)) / C0)',
-              'wi_re <- 1/(vi + tau2)',
-              'sumW_re <- sum(wi_re)',
-              'theta_re <- sum(wi_re * yi) / sumW_re',
-              'se_re <- sqrt(1/sumW_re)',
-              'I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)',
-              'Qp <- 1 - pchisq(Q, k - 1)',
-              'ci_lb <- theta_re - qnorm(0.975) * se_re',
-              'ci_ub <- theta_re + qnorm(0.975) * se_re',
-              'c(theta_re, se_re, tau2, I2, Q, Qp, ci_lb, ci_ub, k, 1)'
-            ].join('\n');
-          }
-
-          var rResultAll = await webrInstance.evalR(rCodeAll);
-          var valsAll = await rResultAll.toArray();
-          overallR = {
-            effect: valsAll[0],
-            se: valsAll[1],
-            tau2: valsAll[2],
-            I2: valsAll[3],
-            Q: valsAll[4],
-            Qp: valsAll[5],
-            ci_lb: valsAll[6],
-            ci_ub: valsAll[7],
-            k: valsAll[8]
-          };
-
+        if (overallIdx >= 0) {
+          overallR = rAll[overallIdx];
           overallApp = getAppDL(allYi, allSe);
         }
+        window.__nmaWebrLast = { rSource: rSource, useMetafor: useMetafor, perTreatment: perTreatment, overall: overallR };
 
-        // Step 5: Render results
-        progressText.textContent = 'Rendering results...';
+        // Render results
+        status('Rendering results...');
         var appGlobal = getAppGlobalStats();
         renderWebrResults(resultsDiv, perTreatment, overallR, overallApp, appGlobal, rSource);
 
@@ -5762,6 +5755,8 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
         resultsDiv.innerHTML = '<div style="padding:12px;background:#fef2f2;border:1px solid #ef4444;'
           + 'border-radius:8px;color:#991b1b;font-size:13px;">'
           + '<strong>WebR Error:</strong> ' + esc(e.message) + '</div>';
+      } finally {
+        webrLoading = false;
       }
     }
 
@@ -5887,14 +5882,15 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
 
           var match = false;
           if (m.appKey && isFinite(rVal) && isFinite(appVal)) {
-            var tol = Math.max(Math.abs(rVal) * 1e-4, 1e-6);
+            var tol = webrTol(rVal, m.d);
             match = Math.abs(rVal - appVal) < tol;
-          } else if (!m.appKey) {
-            // Q p-value not available from app DL, skip match check
-            match = true;
           }
 
-          var matchIcon = match
+          // A row with no page value (Q p-value: the page's DL estimator does not return one) is R output only:
+          // it is not compared, so it must not carry a tick (it used to be drawn with match = true).
+          var matchIcon = !m.appKey
+            ? '<span style="color:var(--text-muted,#8892a4);font-size:11px;">not compared (R only)</span>'
+            : match
             ? '<span style="color:#4ade80;">&#x2713;</span>'
             : '<span style="color:#f87171;">&#x2717;</span>';
 
@@ -5907,16 +5903,22 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
       return html;
     }
 
+    // Agreement tolerance: relative 1e-4 (floor 1e-6), but never looser than half a unit of the decimals the card
+    // shows for that metric (d), so a tick never sits beside two values that differ in the digits displayed.
+    function webrTol(rVal, d) {
+      return Math.min(0.5 * Math.pow(10, -d), Math.max(Math.abs(rVal) * 1e-4, 1e-6));
+    }
+
     function checkMatch(rData, appData) {
       if (!appData) return true;
-      var keys = [
-        { rKey: 'effect', appKey: 'effect' },
-        { rKey: 'se', appKey: 'se' },
-        { rKey: 'tau2', appKey: 'tau2' },
-        { rKey: 'I2', appKey: 'I2' },
-        { rKey: 'Q', appKey: 'Q' },
-        { rKey: 'ci_lb', appKey: 'ci_lb' },
-        { rKey: 'ci_ub', appKey: 'ci_ub' }
+      var keys = [   // d = the decimals buildComparisonTable shows
+        { rKey: 'effect', appKey: 'effect', d: 6 },
+        { rKey: 'se', appKey: 'se', d: 6 },
+        { rKey: 'tau2', appKey: 'tau2', d: 6 },
+        { rKey: 'I2', appKey: 'I2', d: 2 },
+        { rKey: 'Q', appKey: 'Q', d: 4 },
+        { rKey: 'ci_lb', appKey: 'ci_lb', d: 6 },
+        { rKey: 'ci_ub', appKey: 'ci_ub', d: 6 }
       ];
       for (var i = 0; i < keys.length; i++) {
         var rVal = rData[keys[i].rKey];
@@ -5925,10 +5927,11 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
         else if (keys[i].appKey === 'ci_ub' && appData.ci) appVal = appData.ci.upper;
         else appVal = appData[keys[i].appKey];
 
-        if (isFinite(rVal) && isFinite(appVal)) {
-          var tol = Math.max(Math.abs(rVal) * 1e-4, 1e-6);
-          if (Math.abs(rVal - appVal) >= tol) return false;
-        }
+        // A compared metric that either side did not produce is a failed comparison, not a skipped one
+        // (a missing page value used to be skipped and still counted towards "VALIDATED").
+        if (!isFinite(rVal) || !isFinite(appVal)) return false;
+        var tol = webrTol(rVal, keys[i].d);
+        if (Math.abs(rVal - appVal) >= tol) return false;
       }
       return true;
     }

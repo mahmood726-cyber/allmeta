@@ -13,7 +13,8 @@
  * (τ², β̂, CR2 SE, Satterthwaite df ≤1e-5) across two datasets.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/rve-meta/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/rve-meta/index.html';
 
 const ROWS = [
   ['s1', 0.45, 0.04, 1, 6], ['s1', 0.38, 0.05, 1, 6], ['s1', 0.55, 0.06, 1, 6],

@@ -168,10 +168,6 @@
   function eValuesRD(n11, n10, n01, n00, opts) {
     opts = opts || {};
     var tv = opts["true"] == null ? 0 : opts["true"], grid = opts.grid == null ? 1e-4 : opts.grid;
-    // R's seq(1, est.BF, grid) stops on a non-positive or non-finite step ("wrong sign in
-    // 'by' argument" / "invalid '(to - from)/by'"); refuse it here rather than letting the
-    // loop below run zero times and report the CI E-value as null.
-    if (!(Number.isFinite(grid) && grid > 0)) throw new RangeError("The grid step must be a positive finite number (EValue's evalues.RD grid argument).");
     var Z = 1.959963984540054; // qnorm(1 - 0.05/2)
     [n11, n10, n01, n00].forEach(function (n) { if (!Number.isFinite(n)) throw new RangeError("All four cell counts are required."); });
     if (n11 < 0 || n10 < 0 || n01 < 0 || n00 < 0) throw new RangeError("Negative cell counts are impossible.");
@@ -191,12 +187,19 @@
       point: estE, ci: 1, rr: { point: estBF, lo: null, hi: null } };
     if (lowerCI <= tv) return out;
     if (!Number.isFinite(estBF)) { out.ci = null; return out; }
+    // grid is consulted only here, as in EValue (which returns lower.Evalue = 1 above without
+    // ever reaching seq). R's seq(1, est.BF, grid) checks, in seq.default's order:
+    var steps = (estBF - 1) / grid;
+    if (!(steps === steps && Math.abs(steps) !== Infinity) && !(grid === 0 && estBF === 1))
+      throw new RangeError("invalid '(to - from)/by' in seq(): the grid step must be a positive number (EValue's evalues.RD grid argument).");
+    if (steps < 0) throw new RangeError("wrong sign in 'by' argument of seq(): the grid step must be positive (EValue's evalues.RD grid argument).");
     var maxGrid = opts.maxGrid == null ? 5e7 : opts.maxGrid;
     if ((estBF - 1) / grid > 2147483647) throw new RangeError("'by' argument is much too small (as R's seq() reports): the bias factor is too large for EValue's grid search.");
     var n = seqLength(1, estBF, grid), found = null;
     if (n > maxGrid) throw new RangeError("the grid search would need " + n + " steps (bias factor " + estBF.toPrecision(6) + "); this browser page stops at " + maxGrid + ". Use EValue::evalues.RD in R.");
     for (var i = 0; i < n; i++) {
-      var bf = Math.min(1 + i * grid, estBF);
+      var bf = Math.min(1 + i * grid, estBF);   // grid = +-Infinity: 0 * Inf is NaN, as in R -> lower.Evalue NA
+      if (bf !== bf) break;
       var rdS = p1 - p0 * bf, fS = f + (1 - f) / bf, a = 1 - 1 / bf;
       var low = rdS * fS - Z * Math.sqrt((s2p1 + s2p0 * (bf * bf)) * (fS * fS) + (rdS * rdS) * (a * a) * s2f);
       if (low <= tv) { found = bf; break; }

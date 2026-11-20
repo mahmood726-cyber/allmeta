@@ -1,5 +1,11 @@
+import sys
 from pathlib import Path
 import pytest
+# The root pytest.ini uses --import-mode=importlib, which does not put a test's own
+# directory on sys.path, so a bare sibling import only resolved when pytest was
+# started from this directory. Locate the helper the same way every app's
+# test_against_*.py already does.
+sys.path.insert(0, str(Path(__file__).parent))
 from _r_parity import assert_r_parity, _rscript_path
 
 FIXTURES = Path(__file__).parent / "fixtures"

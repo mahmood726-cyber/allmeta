@@ -8,7 +8,8 @@
  *  package adds publication-bias models via MCMC — offered as a downloadable R script.)
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/robma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/robma/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const YI = [0.10, 0.30, 0.50, 0.20, 0.90, 0.40, 1.10, 0.05];
 const SEI = [0.20, 0.25, 0.18, 0.30, 0.22, 0.28, 0.35, 0.15];

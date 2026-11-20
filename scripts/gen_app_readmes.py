@@ -6,6 +6,15 @@ Behavior:
     marker and replaces everything below it with freshly-rendered sections.
   - If no README exists, creates one with the catalog blurb as the summary.
   - Idempotent: re-run safely; only the auto section changes.
+  - Hand-edited auto sections are PRESERVED. scripts/app_readmes.generated.json records the sha256 of the
+    auto section this script last wrote for each app. An existing auto section is rewritten only when its
+    hash matches that record (it is still exactly what the generator wrote); a section that differs from
+    the record -- or has no record and differs from the fresh render -- was edited by hand and is left
+    alone (reported as PRESERVED). Pass --force APP to regenerate a preserved README deliberately.
+    Root cause this guards (lane crlfreadme, 2026-11-15): the script replaced everything between the
+    markers unconditionally, so a run reverted hand corrections in component-nma, cross-design,
+    multi-outcome-ma, nma-inconsistency and rve-meta (data-shape and reproducibility wording, two DOIs,
+    rve-meta's Outputs section) back to the catalog defaults.
 
 Why structured-only: we deliberately don't fabricate "when to use" advice
 beyond what the catalog blurb + category + method papers already encode.
@@ -13,6 +22,8 @@ That keeps the READMEs trustworthy when an expert reads them.
 """
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -21,8 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 NODE = shutil.which("node")
-if NODE is None:
-    raise SystemExit("node not installed")
+LOCK = ROOT / "scripts" / "app_readmes.generated.json"
 
 # Dump all three catalogs as JSON via node.
 DUMP_SCRIPT = """
@@ -39,13 +49,17 @@ console.log(JSON.stringify(out));
 """
 
 def _load_data() -> dict:
+    if NODE is None:
+        raise SystemExit("node not installed")
     script = (
         DUMP_SCRIPT
         .replace("__FP__", json.dumps(str(ROOT / "shared" / "app-flow.js")))
         .replace("__CT__", json.dumps(str(ROOT / "shared" / "citation.js")))
         .replace("__HR__", json.dumps(str(ROOT / "shared" / "hero-examples.js")))
     )
-    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, check=True)
+    # encoding is explicit: node writes UTF-8, and text=True alone decodes with the locale encoding
+    # (cp1252 on Windows), which wrote "Ã—" for "×" into the READMEs this script created.
+    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, encoding="utf-8", check=True)
     return json.loads(r.stdout.strip())
 
 
@@ -151,7 +165,48 @@ def _patch_readme(path: Path, app_key: str, entry: dict, citations: list, hero: 
     return summary + "\n" + new_section + "\n"
 
 
-def main() -> int:
+def _section_hash(section: str) -> str:
+    return hashlib.sha256(section.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+
+def _existing_section(text: str) -> str | None:
+    """The auto section currently in a README, markers included, or None if it has no markers."""
+    if MARK_BEGIN in text and MARK_END in text:
+        return MARK_BEGIN + text.split(MARK_BEGIN, 1)[1].split(MARK_END, 1)[0] + MARK_END
+    return None
+
+
+def process_readme(readme: Path, app_key: str, entry: dict, citations: list, hero: dict | None,
+                   lock: dict, force: bool = False) -> str:
+    """Write (or leave) one README. Returns 'WROTE', 'SKIP (no change)' or 'PRESERVED (hand-edited)'.
+    Sets lock[app_key] to the hash of the auto section on disk whenever that section is generator output;
+    a preserved README keeps whatever record it had."""
+    fresh = _render_auto_section(app_key, entry, citations, hero)
+    if readme.exists() and not force:
+        cur = _existing_section(readme.read_text(encoding="utf-8"))
+        if cur is not None and cur != fresh and lock.get(app_key) != _section_hash(cur):
+            return "PRESERVED (hand-edited)"
+    new_content = _patch_readme(readme, app_key, entry, citations, hero)
+    lock[app_key] = _section_hash(fresh)
+    if readme.exists() and readme.read_text(encoding="utf-8") == new_content:
+        return "SKIP (no change)"
+    readme.write_text(new_content, encoding="utf-8")
+    return "WROTE"
+
+
+def _read_lock(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def _write_lock(path: Path, lock: dict) -> None:
+    path.write_text(json.dumps(dict(sorted(lock.items())), indent=2) + "\n", encoding="utf-8", newline="\n")
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Regenerate the auto section of per-app README.md files.")
+    ap.add_argument("--force", action="append", default=[], metavar="APP",
+                    help="regenerate this app's auto section even if it was edited by hand (repeatable)")
+    args = ap.parse_args(argv)
     data = _load_data()
     catalog = data.get("catalog", {})
     citations = data.get("citations", {})
@@ -159,8 +214,10 @@ def main() -> int:
     if not catalog:
         raise SystemExit("CATALOG empty — is shared/app-flow.js loadable?")
 
+    lock = _read_lock(LOCK)
     wrote = 0
     skipped = 0
+    preserved: list[str] = []
     for app_key, entry in catalog.items():
         app_dir = ROOT / app_key
         if not app_dir.is_dir():
@@ -170,16 +227,19 @@ def main() -> int:
         readme = app_dir / "README.md"
         cites = citations.get(app_key) or []
         h = hero.get(app_key)
-        new_content = _patch_readme(readme, app_key, entry, cites, h)
-        if readme.exists() and readme.read_text(encoding="utf-8") == new_content:
-            print(f"SKIP (no change): {app_key}")
+        status = process_readme(readme, app_key, entry, cites, h, lock, force=app_key in args.force)
+        print(f"{status}: {app_key}")
+        if status == "WROTE":
+            wrote += 1
+        elif status.startswith("PRESERVED"):
+            preserved.append(app_key)
+        else:
             skipped += 1
-            continue
-        readme.write_text(new_content, encoding="utf-8")
-        print(f"WROTE: {app_key}")
-        wrote += 1
+    _write_lock(LOCK, lock)
 
-    print(f"\nSummary: wrote={wrote} skipped={skipped} total={len(catalog)}")
+    print(f"\nSummary: wrote={wrote} skipped={skipped} preserved={len(preserved)} total={len(catalog)}")
+    if preserved:
+        print("Preserved (hand-edited; regenerate with --force APP): " + ", ".join(preserved))
     return 0
 
 

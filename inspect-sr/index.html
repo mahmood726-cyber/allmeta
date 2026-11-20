@@ -132,6 +132,7 @@
         <button type="button" id="btn-json" class="primary">Download JSON</button>
         <button type="button" id="btn-reset" class="ghost">Reset all</button>
       </div>
+      <div id="rcheck-mount"></div>
       <div class="note"><strong>Not a prescriptive algorithm.</strong> INSPECT-SR guides reviewers to reach justified judgements; the suggested domain/overall ratings here are non-binding cues from the check responses — the reviewer decides. Handling per the tool: <em>serious concerns</em> → exclude; <em>some concerns</em> → sensitivity analysis; <em>no concerns</em> → standard analysis. Median assessment time ≈ 45 min/RCT.</div>
     </section>
   </main>
@@ -241,12 +242,12 @@
         var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
         return "<fieldset><legend>Domain " + dm.d + " — " + esc(dm.title) + "</legend>" + rows
           + "<div class='dj'><label>Domain judgement <select data-dj='" + dm.d + "'><option value=''>(use suggested)</option>" + djOpts + "</select></label>"
-          + "<span class='suggest'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
+          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
       }).join("");
       // overall
       var sugO = suggestOverall(t);
       var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
-      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
+      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
       document.getElementById("checks").innerHTML = html;
 
       // wire radios
@@ -282,7 +283,12 @@
       if (yi.length === 1) { var z = window.AlmMaCore._qnorm(0.975); return { k: 1, mu: yi[0], ciLo: yi[0] - z * Math.sqrt(vi[0]), ciHi: yi[0] + z * Math.sqrt(vi[0]), I2: 0 }; }
       return window.AlmMaCore.pool(yi, vi, { method: "PM" });
     }
+    // Trials + the numbers of the re-pool table, for "Check the re-pool in R" (inspect-sr/r-check.js); null
+    // while the table has no estimate. A new object per render, so an R answer for an earlier table is stale.
+    var rState = null;
+    window.__almInspectSrRState = function () { return rState; };
     function renderPooled() {
+      rState = null;
       var ratio = document.getElementById("scale").value === "exp";
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
       var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
@@ -297,15 +303,27 @@
         { name: "Exclude serious concerns (INSPECT-SR rule)", arr: noSerious },
         { name: "Sensitivity: no-concern trials only", arr: onlyNo },
       ];
+      var rRows = [];
       document.getElementById("pooled").innerHTML = sets.map(function (s) {
         var r = poolSet(s.arr);
+        rRows.push(r ? { k: r.k, mu: tx(r.mu), lo: tx(r.ciLo), hi: tx(r.ciHi), I2: r.I2 } : { k: 0, mu: null, lo: null, hi: null, I2: null });
         if (!r) return "<tr><td>" + esc(s.name) + "</td><td>0</td><td>—</td><td>—</td></tr>";
         return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
       }).join("");
+      if (rRows[0].k > 0) rState = { exp: ratio, page: rRows,
+        trials: all.map(function (t, i) { var e = parseFloat(t.est), s = parseFloat(t.se);
+          return { label: t.label || ("Trial " + (i + 1)), est: isFinite(e) ? e : null, se: isFinite(s) ? s : null, overall: effectiveOverall(t) }; }) };
     }
 
     function renderAll() { renderTrialSelect(); renderChecks(); renderSummary(); renderPooled(); }
-    function commit() { save(); renderSummary(); renderPooled(); }
+    // The "suggested:" labels in the form follow every answer (they used to keep the value
+    // from the last full render until a reload or a trial switch).
+    function renderSuggestions() {
+      var t = cur(), el;
+      DOMAINS.forEach(function (dm) { el = document.getElementById("sug-d" + dm.d); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestDomain(t, dm.d)]; });
+      el = document.getElementById("sug-overall"); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestOverall(t)];
+    }
+    function commit() { save(); renderSuggestions(); renderSummary(); renderPooled(); }
 
     document.getElementById("trial-sel").addEventListener("change", function (e) { state.cur = +e.target.value; save(); renderChecks(); document.getElementById("trial-name").value = cur().label; });
     document.getElementById("trial-name").addEventListener("input", function (e) { cur().label = e.target.value; save(); renderTrialSelect(); renderSummary(); });
@@ -336,6 +354,11 @@
 
     renderAll();
   </script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
+<script>
+  if (window.AlmInspectSrRCheck) AlmInspectSrRCheck.attach({ mount: "#rcheck-mount", filename: "inspect-sr-r-check.R", getState: function () { return window.__almInspectSrRState(); } });
+</script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

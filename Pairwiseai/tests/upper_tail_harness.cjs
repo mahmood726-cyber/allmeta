@@ -23,8 +23,11 @@ const sandbox = {
 };
 sandbox.window = sandbox; sandbox.self = sandbox; sandbox.globalThis = sandbox;
 const ctx = vm.createContext(sandbox);
-const tail = path.join(root, '..', 'shared', 'upper-tail.js');
-vm.runInContext(fs.readFileSync(tail, 'utf8'), ctx, { filename: tail });
+// every ../shared/*.js script the page loads, in page order (upper-tail.js, ma-core.js, heterogeneity-ci.js, stats-qt.js)
+for (const m of html.matchAll(/<script src="\.\.\/shared\/([\w.-]+\.js)"><\/script>/g)) {
+  const f = path.join(root, '..', 'shared', m[1]);
+  vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
+}
 // the engine script: the inline <script> (no src attribute) that defines solveGLS
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(s => s.includes('function calculatePooledEstimate('));
 if (scripts.length !== 1) throw new Error('engine script not found: ' + scripts.length);
@@ -37,5 +40,12 @@ const re = get('calculatePooledEstimate')(yi, vi, 0.002);
 const hk = get('calculateHKSJ')(yi, vi, re.theta, 0.002);
 const het = get('calculateHeterogeneity')(yi, vi, 0.002);
 const small = get('calculatePooledEstimate')([0.1, 0.25, 0.05], [0.02, 0.03, 0.025], 0);
+// zero df: one study (Q = 1.75e-32, rounding noise) and a saturated meta-regression (k = 2, one covariate)
+const het1 = get('calculateHeterogeneity')([0.1], [0.011], 0);
+const mr = get('multipleMetaRegression')([0.1, 0.35], [0.011, 0.021], [{ name: 'x', values: [-0.7, 0.33] }], 0);
+// no covariates: the model Q is rounding noise (2.9e-31) on 0 df
+const mr0 = get('multipleMetaRegression')([0.841, -0.129, 0.3, 0.141], [0.02, 0.03, 0.05, 0.04], [], 0.01);
 process.stdout.write(JSON.stringify({ fe: { z: fe.z, p: fe.p_value }, small: { z: small.z, p: small.p_value },
-  hksj: { t: hk.t_stat, df: hk.df, p: hk.p_value }, het: { Q: het.Q, df: yi.length - 1, p: het.p_Q } }));
+  hksj: { t: hk.t_stat, df: hk.df, p: hk.p_value }, het: { Q: het.Q, df: yi.length - 1, p: het.p_Q },
+  het_k1: { Q: het1.Q, df: het1.df, p: het1.p_Q }, mr_sat: { Q: mr.Q_residual, df: mr.df_residual, p: mr.p_residual },
+  mr_nocov: { Q: mr0.Q_model, df: mr0.df_model, p: mr0.p_model } }));

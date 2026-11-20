@@ -31,13 +31,45 @@ assert.ok(Math.abs(T.ptUpper(-2.5, 10) - (1 - T.ptUpper(2.5, 10))) < 1e-15);
 assert.equal(T.pchisqUpper(0, 3), 1);
 assert.equal(T.pchisqUpper(Infinity, 3), 0);
 assert.equal(T.pfUpper(0, 2, 5), 1);
-assert.ok(Number.isNaN(T.pchisqUpper(1, 0)));
+// df = 0 is valid in R (point mass at 0): pchisq(1, 0, lower = FALSE) = 0, pchisq(0, 0, lower = FALSE) = 1; df < 0 NaN
+assert.equal(T.pchisqUpper(1, 0), 0);
+assert.equal(T.pchisqUpper(0, 0), 1);
+assert.ok(Number.isNaN(T.pchisqUpper(1, -1)));
+// large df near the mean: R pchisq(1e8, 1e8, lower = FALSE) = 0.49998119368054633 (was 0.8886: 2000-term partial sum)
+assert.ok(Math.abs(T.pchisqUpper(1e8, 1e8) - 0.49998119368054633) / 0.5 < 1e-11);
+// beyond the 2e6-term cap the result is NaN (fail closed), never a partial sum
+assert.ok(Number.isNaN(T.pchisqUpper(1e16, 1e16)));
 assert.ok(Number.isNaN(T.ptUpper(NaN, 3)));
 assert.ok(Math.abs(T.p2norm(-1.959963984540054) - 0.05) < 1e-15);
 assert.ok(Math.abs(T.p2t(-2.5, 10) - 2 * T.ptUpper(2.5, 10)) < 1e-15);
 assert.ok(Math.abs(T.ptUpper(1, Infinity) - 0.15865525393145705) < 1e-14, 'df = Infinity is the normal');
 // large df: R pchisq(1e5, 1e5, lower = FALSE) = 0.49940529189520672
 assert.ok(Math.abs(T.pchisqUpper(1e5, 1e5) - 0.49940529189520672) / 0.4994 < 1e-9);
+// fixrev2 (Codex review of #512), R 4.6.0 oracles:
+// very large shape -- the series/CF must run to convergence, never stop at a fixed cap
+// R pchisq(1e7, 1e7, lower = FALSE) = 0.49994052919606219
+assert.ok(Math.abs(T.pchisqUpper(1e7, 1e7) - 0.49994052919606219) / 0.5 < 1e-9, 'pchisqUpper(1e7,1e7) ' + T.pchisqUpper(1e7, 1e7));
+// R pgamma(1e9, 1e9 + 1e5, lower = FALSE) = 0.99921712885374958
+assert.ok(Math.abs(T.pgammaUpper(1e9, 1e9 + 1e5) - 0.99921712885374958) < 1e-8, 'pgammaUpper(1e9,1e9+1e5) ' + T.pgammaUpper(1e9, 1e9 + 1e5));
+// tiny shape -- the upper tail is tiny on the series side, so 1 - P is wrong
+// R pgamma(0.5, shape = 1e-20, lower = FALSE) = 5.5977359477616082e-21
+assert.ok(Math.abs(T.pgammaUpper(0.5, 1e-20) - 5.5977359477616082e-21) / 5.6e-21 < 1e-12, 'pgammaUpper(0.5,1e-20) ' + T.pgammaUpper(0.5, 1e-20));
+// infinite F degrees of freedom: R pf(1, Inf, 10, lower = FALSE) = 0.55950671493478754,
+// pf(1, 10, Inf, lower = FALSE) = 0.44049328506521246, pf(1, Inf, Inf) upper = 0.5, pf(2, Inf, Inf) upper = 0
+assert.ok(Math.abs(T.pfUpper(1, Infinity, 10) - 0.55950671493478754) < 1e-14, 'pfUpper(1,Inf,10) ' + T.pfUpper(1, Infinity, 10));
+assert.ok(Math.abs(T.pfUpper(1, 10, Infinity) - 0.44049328506521246) < 1e-14, 'pfUpper(1,10,Inf) ' + T.pfUpper(1, 10, Infinity));
+assert.equal(T.pfUpper(1, Infinity, Infinity), 0.5);
+assert.equal(T.pfUpper(2, Infinity, Infinity), 0);
+assert.equal(T.pfUpper(0.5, Infinity, Infinity), 1);
+// large df (independent numerical review): Lanczos lgamma differences and log(r2) - log1p(r2) lost ~a * 1e-16.
+// R 4.6.0: pchisq(5.005e7, 5e7) 2.8903841482006476e-07, pf(1.2, 1e4, 1e7) 1.268374361704551e-40,
+// pt(2, 1e5) 0.022751481728753232, pf(1.05, 1e6, 1e6) 9.9336861807050377e-132, pt(10, 1e6) 7.6393053840891504e-24
+for (const [v, r, what] of [[T.pchisqUpper(5.005e7, 5e7), 2.8903841482006476e-07, 'pchisq(5.005e7,5e7)'],
+  [T.pfUpper(1.2, 1e4, 1e7), 1.268374361704551e-40, 'pf(1.2,1e4,1e7)'], [T.ptUpper(2, 1e5), 0.022751481728753232, 'pt(2,1e5)'],
+  [T.pfUpper(1.05, 1e6, 1e6), 9.9336861807050377e-132, 'pf(1.05,1e6,1e6)'], [T.ptUpper(10, 1e6), 7.6393053840891504e-24, 'pt(10,1e6)']])
+  assert.ok(Math.abs(v - r) / r < 1e-10, what + ' = ' + v + ', R ' + r);
+// known limit (header): df >= 1e8 for t. R pt(3, 1e8, lower = FALSE) = 0.0013498983640187468; was rel 1.5e-7
+assert.ok(Math.abs(T.ptUpper(3, 1e8) - 0.0013498983640187468) / 0.00135 < 5e-9, 'pt(3,1e8) ' + T.ptUpper(3, 1e8));
 // the motivating case: dat.bcg Q = 152.2330 on 12 df (R: 1.9967645908458142e-26 at the exact Q)
 assert.ok(T.pchisqUpper(152.233, 12) > 1e-27 && T.pchisqUpper(152.233, 12) < 1e-25);
 

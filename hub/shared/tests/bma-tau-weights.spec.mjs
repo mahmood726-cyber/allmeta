@@ -12,7 +12,8 @@
  * weight ratio HN(0.5):uniform ≈ 7.4.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/bma-tau-priors/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/bma-tau-priors/index.html';
 
 const Y = [-0.42, -0.25, -0.55, -0.18, -0.38];
 const VI = [0.012, 0.018, 0.025, 0.030, 0.022];

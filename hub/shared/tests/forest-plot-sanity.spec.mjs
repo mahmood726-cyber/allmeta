@@ -12,8 +12,9 @@
  * connections alive and networkidle never fires. Use waitForFunction instead.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const FOREST_URL = 'http://localhost:8088/forest-plot/';
+const FOREST_URL = ALM_BASE_URL + '/forest-plot/';
 
 /** Wait until all 5 alm modules have registered on window.alm */
 async function waitForAlm(page) {

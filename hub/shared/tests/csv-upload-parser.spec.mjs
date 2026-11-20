@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MODULE_SRC = readFileSync(join(__dirname, '..', 'csv-upload.js'), 'utf-8');
@@ -23,8 +24,8 @@ test.describe('csv-upload parser', () => {
 
   // ------------------------------------------------------------------ T1
   test('parses simple CSV', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window._parse === 'function');
 
     const result = await page.evaluate(() =>
@@ -44,8 +45,8 @@ test.describe('csv-upload parser', () => {
 
   // ------------------------------------------------------------------ T2
   test('handles quoted commas and embedded newlines', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window._parse === 'function');
 
     const result = await page.evaluate(() =>
@@ -59,8 +60,8 @@ test.describe('csv-upload parser', () => {
 
   // ------------------------------------------------------------------ T3
   test('handles doubled quotes inside quoted field', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window._parse === 'function');
 
     const result = await page.evaluate(() =>
@@ -73,8 +74,8 @@ test.describe('csv-upload parser', () => {
 
   // ------------------------------------------------------------------ T4
   test('fuzzy column mapping warns on typo', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window._parse === 'function');
 
     const result = await page.evaluate(() =>
@@ -92,8 +93,8 @@ test.describe('csv-upload parser', () => {
 
   // ------------------------------------------------------------------ T5
   test('int validation warning on non-integer value', async ({ page }) => {
-    await page.goto('http://localhost:8088/');
-    await page.setContent(HARNESS, { baseURL: 'http://localhost:8088/' });
+    await page.goto(ALM_BASE_URL + '/');
+    await page.setContent(HARNESS, { baseURL: ALM_BASE_URL + '/' });
     await page.waitForFunction(() => typeof window._parse === 'function');
 
     const result = await page.evaluate(() =>

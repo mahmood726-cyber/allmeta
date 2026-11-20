@@ -9,7 +9,8 @@
  * ma-core + trimfill). The app additionally exposes window._almLastTrimFill().
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/funnel-plot/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/funnel-plot/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const Y = [0.05,0.08,0.12,0.20,0.55,0.62,0.85,1.10,1.35,1.60];
 const S = [0.08,0.09,0.10,0.12,0.30,0.33,0.40,0.48,0.55,0.62];

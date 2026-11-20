@@ -126,3 +126,39 @@ def test_tsa_adjusted_ci_card(data):
     assert abs((alo + ahi) / 2 - mu) <= 1.5e-3, (mu, alo, ahi)
     assert abs((ahi - alo) / 2 - b * se) <= 6e-3, (b, se, alo, ahi)   # inputs printed to 2-3 decimals
     assert ahi - alo > hi - lo                                        # wider than the naive 95% CI
+
+
+PAGE_ERR = PAGE.replace("console.log(JSON.stringify({ cards, M_ok: !!M }));",
+                        "console.log(JSON.stringify({ cards, warn: els['warn-banner'].innerHTML, svg: els['svg-host'].innerHTML }));")
+
+
+def _page_err(data, delta="0.20"):
+    state = {"data": data, "risMode": "auto", "delta": delta, "alpha": "0.05", "power": "0.8", "risManual": "200",
+             "diversity": "1", "title": ""}
+    r = subprocess.run([NODE, "-e", PAGE_ERR, str(APP / "index.html"), json.dumps(state)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert r.returncode == 0, r.stderr   # an uncaught exception in render() exits non-zero
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+EXAMPLE = ("Trial A 2015, -0.18, 0.22\nTrial B 2017, -0.25, 0.18\nTrial C 2019, -0.28, 0.12\nTrial D 2021, -0.22, 0.08\n"
+           "Trial E 2023, -0.19, 0.06")
+
+
+def test_post_ris_negligible_study_does_not_freeze_the_page():
+    # Independent review: the example plus "Pilot F, 0.40, 25" adds 1.6e-3 information units after the RIS has been
+    # passed (t = 2.82842 -> 2.82843). No alpha is spent there, yet the mesh check threw "two looks are too close"
+    # from render() and buildSvg() uncaught: the page stayed on the k = 5 result. Now k = 6 renders.
+    out = _page_err(EXAMPLE + "\nPilot F, 0.40, 25")
+    assert out["cards"].get("k") == "6", out["cards"]
+    assert "--" not in out["cards"]["OF boundary (now)"], out["cards"]
+    assert "<svg" in out["svg"]
+
+
+def test_too_close_looks_before_ris_are_reported_not_thrown():
+    # Looks 1e-6 apart BEFORE t = 1 need a boundary the mesh cannot resolve; the engine refuses (fail closed) and the
+    # page must say so instead of throwing out of render().
+    out = _page_err("A, -0.5, 0.5\nB, -0.5, 1000", delta="0.5")
+    assert out["cards"].get("k") == "2", out["cards"]
+    assert "too close in information" in out["warn"], out
+    assert "OF boundary (now)" not in out["cards"], out["cards"]
+    assert "<svg" in out["svg"] and "NaN" not in out["svg"], out["svg"][:200]

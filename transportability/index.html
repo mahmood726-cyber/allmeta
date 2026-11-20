@@ -100,6 +100,13 @@
           <strong>Transport is valid only if:</strong> (1) the modifier you entered is the (dominant) effect modifier and is measured on the same scale in trials and target; (2) no <em>unmeasured</em> effect modifier also differs between trials and target; (3) the linear meta-regression is a reasonable model over the modifier range; (4) you are not extrapolating far beyond the trials' modifier range. The sensitivity below quantifies how much an unmeasured shift would nullify the result, but cannot prove there isn't one.
         </div>
       </section>
+      <section class="panel" id="r-panel" aria-label="Check in R">
+        <h2>Check in R</h2>
+        <p class="hint">Recompute every number shown above in R, from the inputs currently analysed: download a self-contained script for desktop R, or run the same script here in WebR (in-browser R, pinned and SHA-256 verified; the first run downloads the R bundle, then it is cached). Needs the metafor package. Both print each value next to R's and end with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" id="btn-rscript">Download R script</button><button type="button" id="btn-webr">Verify in R (WebR)</button></div>
+        <p id="r-status" class="hint" role="status" aria-live="polite"></p>
+        <pre id="r-out" hidden style="max-height:24rem;overflow:auto;white-space:pre;font-size:.72rem;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;margin:0"></pre>
+      </section>
     </section>
   </main>
 
@@ -131,7 +138,7 @@
     function fmt(v, log) { return log ? Math.exp(v).toFixed(3) : v.toFixed(3); }
 
     function run() {
-      window.__lastTransport = null;   // cleared unless this run succeeds (test hook reads it)
+      window.__lastTransport = null; window.__lastTransportInput = null;   // cleared unless this run succeeds (test hook + R check read them)
       var rows = parseData($("f-data").value);
       var target = num($("f-target").value);
       var log = $("f-log").checked;
@@ -143,6 +150,7 @@
       var r = window.AlmTransport.transport({ studies: rows, target: target });
       if (!r.ok) { host.innerHTML = '<p class="badge flag">' + r.error + "</p>"; $("plot").innerHTML = ""; return; }
       window.__lastTransport = r;
+      window.__lastTransportInput = { studies: rows.slice(), target: target, log: log, modname: modname };
 
       var unit = log ? "" : "";
       var slopeSig = r.slope.p < 0.05;
@@ -228,6 +236,8 @@
     window.__almTransport = { run: function () { run(); return window.__lastTransport || null; }, parse: parseData };
   })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-verify.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

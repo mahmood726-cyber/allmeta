@@ -9,8 +9,9 @@
  *   npx playwright test nma-pro-v8-diagnose.spec.mjs --reporter=list
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
 
-const URL = 'http://127.0.0.1:8080/nma-pro-v2/nma-pro-v8.0.html';
+const URL = ALM_BASE_URL + '/nma-pro-v2/nma-pro-v8.0.html';
 
 const TABS = [
   { tab: 'data',            mustHave: ['#studyTableBody'] },

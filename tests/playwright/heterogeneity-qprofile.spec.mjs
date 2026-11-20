@@ -11,7 +11,8 @@
  * s² term, or a swapped bound would miss by orders of magnitude more.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/heterogeneity/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/heterogeneity/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 const CASES = [

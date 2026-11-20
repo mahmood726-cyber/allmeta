@@ -134,13 +134,14 @@
     }
 
     function run() {
-      window.__lastSurrogate = null;
+      window.__lastSurrogate = null; window.__lastSurrogatePairs = null;   // no stale input for r-verify.js
       var pairs = parse($("f-data").value);
       var host = $("result");
       if (pairs.length < 3) { host.innerHTML = '<p class="hint">Need ≥3 trials with (surrogate, final, SE).</p>'; $("plot").innerHTML = ""; return; }
       var r = window.AlmSurrogate.analyze({ pairs: pairs });
       if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
       window.__lastSurrogate = r;
+      window.__lastSurrogatePairs = pairs;   // read by r-verify.js (R script / WebR check)
       var cls = r.adj_degenerate ? "bad" : (r.r2_adj >= 0.7 ? "ok" : "warn");
       host.innerHTML = '<div class="verdict ' + cls + '">' + esc(r.verdict) + "</div>"
         + '<div class="stats">'
@@ -178,6 +179,8 @@
     window.__almSurrogate = { run: function () { run(); return window.__lastSurrogate || null; } };
   })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-verify.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

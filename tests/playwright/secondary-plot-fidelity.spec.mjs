@@ -139,10 +139,15 @@ for(const width of [1280,390]) {
           window.__survivalCalls.push({id:canvas.id,curves:JSON.parse(JSON.stringify(curves))});
           return draw.call(this,canvas,curves,options);
         };
-        loadExampleData('survival');
+        // Unseeded Math.random can leave a study with a non-estimable effect (lane ci515);
+        // this test is about a VALID analysis, so draw a fixed dataset with the page's SeededRNG.
+        SeededRNG.withDeterminism(7,()=>loadExampleData('survival'));
       });
       await page.waitForTimeout(300);await page.evaluate(()=>runAnalysis());
       await page.waitForFunction(()=>!!APP.results?.pooled);
+      expect(await page.evaluate(()=>Number.isFinite(APP.results.pooled.pooled)&&APP.results.studies.every(s=>
+        Number.isFinite(s.effect)&&Number.isFinite(s.variance)&&s.variance>0)),
+        'precondition: the seeded example gives every study an estimable effect').toBe(true);
       await page.locator('.nav-tab[data-panel="results"]').click();
       await ink(page,'survivalPlot');
       const before=await page.evaluate(()=>JSON.stringify({data:APP.data,results:APP.results,config:APP.config}));

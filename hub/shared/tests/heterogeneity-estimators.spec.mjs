@@ -5,8 +5,9 @@
  * renders) and that AlmMaCore exposes the new estimators returning finite τ².
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/heterogeneity/';
+const URL = ALM_BASE_URL + '/heterogeneity/';
 const NEW = ['ml', 'eb', 'sj', 'he', 'hs'];
 
 test.describe('heterogeneity τ² estimator menu', () => {

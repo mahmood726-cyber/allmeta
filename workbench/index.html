@@ -163,7 +163,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Deep links open dedicated apps with the same shared data. Close, rename, or remove the shared bus entry via browser storage tools. <strong>R-parity:</strong> the headline pooled estimate uses the canonical Paule-Mandel random-effects model (τ² = root of Q(τ²)=k−1) and matches an independent R reference to 1e-6 on τ², estimate, SE, CI, Cochran Q and I² (<code>hub/shared/tests/workbench-parity.spec.mjs</code>).</p>
+  <p class="footer-note">Deep links open dedicated apps with the same shared data. Close, rename, or remove the shared bus entry via browser storage tools. <strong>R-parity:</strong> the headline pooled estimate uses the canonical Paule-Mandel random-effects model (τ² = root of Q(τ²)=k−1) and matches an independent R reference to 1e-6 on τ², estimate, SE, CI, Cochran Q and the Q-based I² (Q−df)/Q (<code>hub/shared/tests/workbench-parity.spec.mjs</code>). The I² <em>displayed</em> is the τ²-based form τ²/(τ²+s²) of <code>metafor::rma</code>, because its 95% CI is the Q-profile CI (<code>confint</code>) of that same quantity; the Q-based value is in the I² tooltip.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -237,14 +237,24 @@
         tau2 = tau2_PM(studies); const s = wsum(studies, tau2);
         mu = s.mu; se = Math.sqrt(1 / s.sw); Q0 = wsum(studies, 0).Q;
       }
-      // workbench reports the Q-based I² (Higgins-Thompson original) — its oracle's
-      // convention; ma-core's pool().I2 is the τ²-based form (metafor's rma).
+      // Two I² forms. I2 = Q-based (Q-df)/Q (Higgins-Thompson 2002), kept on the hook because
+      // the workbench parity oracle pins it. I2tau = τ²-based 100·τ²/(τ²+s²), s² the typical
+      // within-study variance (metafor rma's I², Higgins-Thompson 2002 eq. 9). The page DISPLAYS
+      // I2tau, because its 95% CI below is the Q-profile CI of exactly that quantity
+      // (metafor confint) — showing the Q-based point inside that bracket mixed two definitions.
       const I2 = df > 0 ? Math.max(0, 100 * (Q0 - df) / Q0) : 0;
+      let I2tau = 0;
+      if (df > 0) {
+        let sw = 0, sw2 = 0;
+        for (const s of studies) { const w = 1 / s.v; sw += w; sw2 += w * w; }
+        const s2 = df * sw / (sw * sw - sw2);
+        I2tau = (tau2 + s2) > 0 ? 100 * tau2 / (tau2 + s2) : 0;
+      }
       // Q-profile (Viechtbauer 2007) 95% CI for I²/τ² via the shared module.
       const ci = (window.AlmHetCI && df > 0) ? window.AlmHetCI.qProfileCI(studies) : null;
       // 95% prediction interval (t_{k-1}, Cochrane v6.5) via the shared core.
       const pi = (window.AlmMaCore && k >= 2) ? window.AlmMaCore.predictionInterval({ mu, se, tau2, k }) : null;
-      return { mu, se, lo: mu-Z975 *se, hi: mu+Z975 *se, tau2, Q: Q0, I2, k,
+      return { mu, se, lo: mu-Z975 *se, hi: mu+Z975 *se, tau2, Q: Q0, I2, I2tau, k,
                I2Lo: ci ? ci.I2Lo : null, I2Hi: ci ? ci.I2Hi : null,
                tau2Lo: ci ? ci.tau2Lo : null, tau2Hi: ci ? ci.tau2Hi : null,
                piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
@@ -422,7 +432,7 @@
       p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
       const lines = [
         { k: "Q (df=" + (pool.k-1) + ")", v: fmt(pool.Q, 2) },
-        { k: "I²" + (pool.I2Lo!=null ? " [95% CI]" : ""), v: fmt(pool.I2, 1) + "%" + (pool.I2Lo!=null ? "  [" + fmt(pool.I2Lo,1) + ", " + fmt(pool.I2Hi,1) + "]" : "") },
+        { k: "I² (τ²-based)" + (pool.I2Lo!=null ? " [95% CI]" : ""), v: fmt(pool.I2tau, 1) + "%" + (pool.I2Lo!=null ? "  [" + fmt(pool.I2Lo,1) + ", " + fmt(pool.I2Hi,1) + "]" : "") },
         { k: "τ² (PM)" + (pool.tau2Lo!=null ? " [95% CI]" : ""), v: fmt(pool.tau2, 4) + (pool.tau2Lo!=null ? "  [" + fmt(pool.tau2Lo,4) + ", " + fmt(pool.tau2Hi,4) + "]" : "") },
         { k: "95% PI (t, k=" + pool.k + ")", v: piText(pool) }
       ];
@@ -448,7 +458,7 @@
           "<div class=\"headline-stats\">",
           "  <div class=\"stat\"><span class=\"k\">k</span><span class=\"v\">"+pool.k+"</span></div>",
           "  <div class=\"stat\"><span class=\"k\">Pooled (RE, PM)</span><span class=\"v\">"+fmt(pool.mu)+" ["+fmt(pool.lo)+", "+fmt(pool.hi)+"]</span></div>",
-          "  <div class=\"stat\"><span class=\"k\">I²</span><span class=\"v\">"+fmt(pool.I2, 1)+"%"+(pool.I2Lo!=null?" <span style=\"font-weight:400;font-size:0.85em\">["+fmt(pool.I2Lo,1)+", "+fmt(pool.I2Hi,1)+"]</span>":"")+"</span></div>",
+          "  <div class=\"stat\" title=\"τ²-based I² = τ²/(τ²+s²) (metafor rma), the quantity its Q-profile 95% CI is for. Q-based (Q−df)/Q = "+fmt(pool.I2, 1)+"%.\"><span class=\"k\">I²</span><span class=\"v\">"+fmt(pool.I2tau, 1)+"%"+(pool.I2Lo!=null?" <span style=\"font-weight:400;font-size:0.85em\">["+fmt(pool.I2Lo,1)+", "+fmt(pool.I2Hi,1)+"]</span>":"")+"</span></div>",
           "  <div class=\"stat\"><span class=\"k\">τ²</span><span class=\"v\">"+fmt(pool.tau2, 4)+(pool.tau2Lo!=null?" <span style=\"font-weight:400;font-size:0.85em\">["+fmt(pool.tau2Lo,4)+", "+fmt(pool.tau2Hi,4)+"]</span>":"")+"</span></div>",
           "</div>"
         ].join("");
@@ -468,7 +478,7 @@
         tsaTile.innerHTML = miniTSA(parsed.studies);
         document.getElementById("tile-forest-stat").textContent = pool ? ("Pooled " + fmt(pool.mu) + " [" + fmt(pool.lo) + ", " + fmt(pool.hi) + "]") : "";
         document.getElementById("tile-funnel-stat").textContent = egg ? ("Egger t(" + egg.df + ") = " + fmt(egg.tAlpha, 2) + ", intercept " + fmt(egg.alpha, 2)) : "Egger needs k≥3";
-        document.getElementById("tile-het-stat").textContent = pool ? ("Q=" + fmt(pool.Q, 2) + ", I²=" + fmt(pool.I2, 1) + "%, τ²=" + fmt(pool.tau2, 4)) : "";
+        document.getElementById("tile-het-stat").textContent = pool ? ("Q=" + fmt(pool.Q, 2) + ", I²=" + fmt(pool.I2tau, 1) + "%, τ²=" + fmt(pool.tau2, 4)) : "";
         document.getElementById("tile-tsa-stat").textContent = parsed.studies.length ? ("Cumulative info " + fmt(parsed.studies.reduce((a,s) => a + 1/s.v, 0), 1) + ", final Z shown") : "";
       } else {
         for (const el of [fTile, funTile, hetTile, tsaTile]) el.innerHTML = "";
@@ -564,7 +574,7 @@
           "<div class=\"stats\">",
           "<div class=\"stat\"><span class=\"k\">k</span><span class=\"v\">" + pool.k + "</span></div>",
           "<div class=\"stat\"><span class=\"k\">Pooled (RE, PM)</span><span class=\"v\">" + fmt(pool.mu) + " [" + fmt(pool.lo) + ", " + fmt(pool.hi) + "]</span></div>",
-          "<div class=\"stat\"><span class=\"k\">I²</span><span class=\"v\">" + fmt(pool.I2, 1) + "%</span></div>",
+          "<div class=\"stat\"><span class=\"k\">I² (τ²-based)</span><span class=\"v\">" + fmt(pool.I2tau, 1) + "%" + (pool.I2Lo!=null ? " [" + fmt(pool.I2Lo,1) + ", " + fmt(pool.I2Hi,1) + "]" : "") + "</span></div>",
           "<div class=\"stat\"><span class=\"k\">τ² (PM)</span><span class=\"v\">" + fmt(pool.tau2, 4) + "</span></div>",
           egg ? "<div class=\"stat\"><span class=\"k\">Egger intercept</span><span class=\"v\">" + fmt(egg.alpha, 3) + " (t(" + egg.df + ") = " + fmt(egg.tAlpha, 2) + ")</span></div>" : "",
           "</div>"

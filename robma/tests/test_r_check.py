@@ -1,0 +1,305 @@
+"""R user path (lane pa8, 2026-11-17; rewritten after review of PR #630): the page's own R check.
+
+Requirement: the page offers "Download R script", generated from the inputs it analysed (not the
+example, not the saved bus), that recomputes every number it DISPLAYS and prints an honest
+"MATCH n/n" or "MISMATCH m/n" -- and "Verify this analysis in R (WebR)" runs that same script in
+the browser with the unchanged shared/webr-runner.js. Before this lane the page had no such path.
+
+These tests use the real buttons in headless Chrome, read the numbers from the DOM, run the
+downloaded file in Rscript, and check that R's values round to exactly what the page shows. They
+also check that a wrong page value is reported as MISMATCH, that the button refuses when there is
+no result, and that the WebR button prints MATCH.
+
+They need ALM_PLAYWRIGHT (path to playwright-core), ALM_CHROME (a Chrome executable), node and
+Rscript on PATH (the root conftest.py adds R's bin dir). Without them they SKIP -- not a pass.
+"""
+import functools
+import http.server
+import json
+import math
+import os
+import random
+import re
+import shutil
+import socketserver
+import subprocess
+import threading
+from pathlib import Path
+
+import pytest
+
+HERE = Path(__file__).resolve().parent
+APP_DIR = HERE.parent
+ROOT = APP_DIR.parent
+APP = APP_DIR.name
+SRC = (APP_DIR / "index.html").read_text(encoding="utf-8")
+RCHECK = (APP_DIR / "r-check.js").read_text(encoding="utf-8")
+DRIVER = HERE / "r_check_driver.cjs"
+
+
+# ---------------------------------------------------------------- harness
+def _need(cond, why):
+    if not cond:
+        pytest.skip(why)
+
+
+@pytest.fixture(scope="module")
+def server():
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT))
+    handler.log_message = lambda *a, **k: None
+    httpd = None
+    for port in random.sample(range(18000, 19000), 50):
+        try:
+            httpd = socketserver.ThreadingTCPServer(("127.0.0.1", port), handler)
+            break
+        except OSError:
+            continue
+    assert httpd is not None, "no free port in 18000-18999"
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    yield "http://127.0.0.1:%d/%s/" % (httpd.server_address[1], APP)
+    httpd.shutdown()
+
+
+def drive(url, actions, webr=False, refuse=False, dom=None):
+    _need(shutil.which("node"), "node not on PATH")
+    _need(os.environ.get("ALM_PLAYWRIGHT") and os.environ.get("ALM_CHROME"), "ALM_PLAYWRIGHT / ALM_CHROME not set")
+    r = subprocess.run(["node", str(DRIVER), url, json.dumps(actions), dom or DOM_EXPR,
+                        json.dumps({"webr": webr, "refuse": refuse})],
+                       capture_output=True, text=True, encoding="utf-8", timeout=1500)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)
+
+
+def run_r(script, tmp_path, name):
+    rs = shutil.which("Rscript")
+    _need(rs, "Rscript not on PATH")
+    p = tmp_path / (name + ".R")
+    p.write_text(script, encoding="utf-8")
+    r = subprocess.run([rs, "--vanilla", str(p)], capture_output=True, text=True, encoding="utf-8", timeout=900)
+    return r.returncode, r.stdout + r.stderr
+
+
+LINE = re.compile(r"^(.+?)\s+R = (\S+)\s+page = (\S+)\s+\|diff\| = \S+\s+(ok|DIFFERS)$", re.M)
+_SPECIAL = {"NA": float("nan"), "NaN": float("nan"), "Inf": math.inf, "-Inf": -math.inf}
+
+
+def r_values(out):
+    """{quantity: R value} from the script's per-quantity lines."""
+    return {m.group(1).strip(): _SPECIAL[m.group(2)] if m.group(2) in _SPECIAL else float(m.group(2))
+            for m in LINE.finditer(out)}
+
+
+def assert_match(rc, out):
+    assert rc == 0, out
+    m = re.search(r"^MATCH (\d+)/(\d+)$", out, re.M)
+    assert m and m.group(1) == m.group(2) and int(m.group(1)) > 0, out
+    assert "MISMATCH" not in out and "DIFFERS" not in out, out
+    assert len(LINE.findall(out)) == int(m.group(1)), out
+    return int(m.group(1))
+
+
+def fmt(x, d):
+    """JS Number.prototype.toFixed for the values these pages show ("—" when not finite)."""
+    if x is None or not math.isfinite(x):
+        return "—"
+    return "%.*f" % (d, x)
+
+
+def check_dom_against_r(dom, R):
+    bad, n = DOM_CHECK(dom, R)
+    assert not bad, bad
+    assert n >= MIN_DOM_CHECKS, (n, dom)
+    return n
+
+
+# ---------------------------------------------------------------- per-app configuration
+PASTED = ("Aronson1948, -0.8893, 0.5706\nFerguson1949, -1.5854, 0.4411\nRosenthal1960, -1.3481, 0.6445\n"
+          "Hart1977, -1.4416, 0.1415\nFrimodt-Moller1973, -0.2175, 0.2263\nStein1953, -0.7861, 0.0831\n"
+          "Vandiviere1973, -1.6209, 0.4722")
+DEFAULT_ACTIONS = [{"wait": 500}]
+PASTED_ACTIONS = [{"fill": "#f-data", "value": PASTED}, {"wait": 800}]
+PASTED_TOKENS = ["-1.5854", "0.4411", "-1.6209"]
+REFUSE_ACTIONS = [{"fill": "#f-data", "value": ""}, {"wait": 500}]
+DOM_EXPR = ("({ head: document.getElementById('headline').innerText, rows: [...document.querySelectorAll('#model-body tr')]"
+            ".map(tr => [...tr.cells].map(c => c.textContent)) })")
+MIN_DOM_CHECKS = 13
+MODELS = ["H0FE", "H1FE", "H0RE", "H1RE"]
+
+
+def fmt_exp_log(l):
+    """The page's fmtExpLog: a likelihood given on the log scale, written like toExponential(3)."""
+    l10 = l / math.log(10)
+    e = math.floor(l10)
+    m = 10 ** (l10 - e)
+    s = fmt(m, 3)
+    if s == "10.000":
+        e += 1
+        s = fmt(m / 10, 3)
+    return s + "e" + ("+" if e >= 0 else "-") + str(abs(e))
+
+
+def DOM_CHECK(dom, R):
+    """Headline Bayes factors / probabilities / averaged effect and the model table vs R."""
+    bad, n = [], 0
+    head = dom["head"]
+    want = ["BF10 = " + fmt(math.exp(R["log BF10 (effect)"]), 2), "P(effect) = " + fmt(R["P(effect)"], 3),
+            "BF = " + fmt(math.exp(R["log BF (heterogeneity)"]), 2), "P(τ>0) = " + fmt(R["P(tau > 0)"], 3),
+            "Model-averaged effect = " + fmt(R["model-averaged effect"], 4)]
+    for w in want:
+        n += 1
+        if w not in head:
+            bad.append(("headline", w, head))
+    for row, mdl in zip(dom["rows"], MODELS):
+        for got, exp in ((row[1], fmt(R["posterior prob. " + mdl], 3)), (row[2], fmt_exp_log(R["log marginal lik. " + mdl]))):
+            n += 1
+            if got != exp:
+                bad.append((mdl, got, exp))
+    return bad, n
+
+
+
+# ---------------------------------------------------------------- tests
+def test_page_loads_the_unchanged_runner_and_the_app_local_check():
+    assert '<script src="../shared/webr-runner.js"></script>' in SRC
+    assert '<script src="r-check.js"></script>' in SRC
+    assert "window.__almRCheckInputs = function" in SRC
+
+
+def test_default_example_download_button_runs_in_R_and_agrees_with_the_display(server, tmp_path):
+    res = drive(server, DEFAULT_ACTIONS)
+    assert res["downloaded"], res["status"]
+    rc, out = run_r(res["script"], tmp_path, "default")
+    assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(out))
+
+
+def test_pasted_data_reaches_the_downloaded_script_and_agrees_with_the_display(server, tmp_path):
+    res = drive(server, PASTED_ACTIONS)
+    assert res["downloaded"], res["status"]
+    for tok in PASTED_TOKENS:
+        assert tok in res["script"], tok
+    rc, out = run_r(res["script"], tmp_path, "pasted")
+    assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(out))
+
+
+def test_a_wrong_page_value_is_reported_as_MISMATCH(server, tmp_path):
+    # The verdict is computed by R from the comparisons: change one page value in the downloaded
+    # script and the same script must say MISMATCH and mark exactly that quantity DIFFERS.
+    res = drive(server, DEFAULT_ACTIONS)
+    m = re.search(r"^(page <- list\(\w+ = (?:c\()?)(-?[0-9][0-9.e+-]*)", res["script"], re.M)
+    assert m, res["script"][:2000]
+    bad = res["script"][:m.start(2)] + repr(float(m.group(2)) + 0.01) + res["script"][m.end(2):]
+    rc, out = run_r(bad, tmp_path, "perturbed")
+    assert rc == 0, out
+    assert re.search(r"^MISMATCH (\d+)/(\d+) agree$", out, re.M), out
+    assert out.count("DIFFERS") == 1, out
+
+
+def test_buttons_refuse_when_the_page_shows_no_result(server):
+    res = drive(server, REFUSE_ACTIONS, refuse=True)
+    assert not res["downloaded"], "a script was downloaded for an input the page does not analyse"
+    assert res["status"].startswith("Nothing to check"), res["status"]
+
+
+def test_webr_button_runs_the_same_check_in_the_browser(server, tmp_path):
+    res = drive(server, DEFAULT_ACTIONS, webr=True)
+    m = re.search(r"^MATCH (\d+)/(\d+)$", res["webr"] or "", re.M)
+    assert res["status"].startswith("R says: MATCH"), (res["status"], res["webr"])
+    assert m and m.group(1) == m.group(2), res["webr"]
+    rc, out = run_r(res["script"], tmp_path, "webr-default")
+    assert int(m.group(1)) == assert_match(rc, out)
+    check_dom_against_r(res["dom"], r_values(res["webr"]))
+
+
+def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_display(tmp_path):
+    # Review of PR #630: chk() counted NaN vs Inf and -Inf vs Inf as agreeing, and its relative tolerance
+    # was looser than 3 decimals once |page| > 1000. The helpers shipped in r-check.js are run here.
+    helpers = re.search(r"var R_HELPERS = \[(.*?)\]\.join", RCHECK, re.S).group(1)
+    rsrc = "\n".join(json.loads("[" + helpers.rstrip().rstrip(",") + "]"))
+    cases = ("chk('nan-vs-inf', NaN, Inf); chk('minf-vs-inf', -Inf, Inf); chk('big', 2000.0015, 2000);"
+             "chk('na-vs-nan', NA, NaN); chk('inf-vs-inf', Inf, Inf); chk('close', 2000.0001, 2000); finish()")
+    rc, out = run_r(rsrc + "\n" + cases + "\n", tmp_path, "chk")
+    assert rc == 0, out
+    verdict = {m.group(1).strip(): m.group(4) for m in LINE.finditer(out)}
+    assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
+                       "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
+    assert "MISMATCH 3/6 agree" in out, out
+
+
+# Review of PR #630 (Codex F1 / agy A2): the R reference formed the mu-integrated likelihood as
+# l0 + B^2/(2A); for precise studies with a non-zero effect the two terms are ~sum(w y^2) and cancel
+# (y = c(1, 1), se = 2^-30: H1FE 0 instead of 18.10996, H1RE 232.67 instead of 0.15830), and its tau
+# integral, on a fixed grid from 1e-6, could not resolve structure at tau ~ se (integrate() stopped with
+# an error). Requirement: the R reference itself is right for such data, checked against closed forms
+# computed here independently of r-check.js (two identical studies: cov = s2 I + 11', s2 = v + tau^2).
+PRECISE_ACTIONS = [{"fill": "#f-data", "value": "A, 1, 0.000001\nB, 1.00001, 0.000001"}, {"wait": 800}]
+
+
+def test_R_reference_has_no_cancellation_for_precise_studies(tmp_path):
+    oracle = re.search(r"var ORACLE_R = \[(.*?)\]\.join", RCHECK, re.S).group(1)
+    rsrc = "\n".join(json.loads("[" + oracle.rstrip().rstrip(",") + "]"))
+    pre = "yi <- c(1, 1); sei <- rep(2^-30, 2)\n"
+    post = r"""
+vv <- 2^-60
+lH1FE <- -log(2 * pi) - 0.5 * log(vv * (vv + 2)) - 1 / (vv + 2)
+g <- function(t) { s2 <- vv + t^2; -log(2 * pi) - 0.5 * log(s2) - 0.5 * log(s2 + 2) - 1 / (s2 + 2) + log(2) + dnorm(t, 0, 1, log = TRUE) }
+f <- function(t) exp(g(t) - g(0)); br <- c(0, 10^seq(-14, 1, by = 0.25), Inf); s <- 0
+for (i in seq_len(length(br) - 1)) s <- s + integrate(f, br[i], br[i + 1], rel.tol = 1e-12, abs.tol = 0)$value
+lH1RE <- g(0) + log(s)
+cat(sprintf("H1FE %.15g %.15g\nH1RE %.15g %.15g\nmuH1FE %.15g\n", lml[["H1FE"]], lH1FE, lml[["H1RE"]], lH1RE, mH1FE))
+"""
+    rc, out = run_r(pre + rsrc + post, tmp_path, "oracle-precise")
+    assert rc == 0, out
+    vals = {m.group(1): [float(x) for x in m.group(2).split()] for m in re.finditer(r"^(H1FE|H1RE|muH1FE) (.+)$", out, re.M)}
+    assert abs(vals["H1FE"][0] - vals["H1FE"][1]) < 1e-9 and abs(vals["H1FE"][1] - 18.109964760109) < 1e-9, out
+    assert abs(vals["H1RE"][0] - vals["H1RE"][1]) < 1e-9 and abs(vals["H1RE"][1] - 0.158301161195) < 1e-9, out
+    assert abs(vals["muH1FE"][0] - 1) < 1e-12, out
+
+
+def test_precise_studies_download_runs_in_R_and_agrees_with_the_display(server, tmp_path):
+    # Before the fix this script stopped inside integrate() (exit 1) for these two studies.
+    res = drive(server, PRECISE_ACTIONS)
+    assert res["downloaded"], res["status"]
+    assert "1.00001" in res["script"] and "0.000001" in res["script"], res["script"][:1500]
+    rc, out = run_r(res["script"], tmp_path, "precise")
+    assert_match(rc, out)
+    # H0FE's log marginal likelihood here is -1.00001e12: R prints it to 12 significant digits, which
+    # cannot fix the mantissa of exp(l) (that needs l to ~1e-4 absolute, i.e. 16 digits), so the
+    # 4-digit mantissa string cannot be rebuilt from the printout. Those cells are compared on the full-
+    # precision page value by the script's own chk() above (log scale, half a displayed unit), and every
+    # other cell is checked against the display here. (At this magnitude even double precision fixes the
+    # 4th digit only to about one unit: exact 2.6076e-434298824859, page 2.607.)
+    R = r_values(out)
+    bad, n = DOM_CHECK(res["dom"], R)
+    huge = {m for m in MODELS if abs(R["log marginal lik. " + m]) > 1e9}
+    assert huge == {"H0FE"}, huge
+    assert all(b[0] in huge for b in bad), bad
+    assert n - len(bad) >= MIN_DOM_CHECKS - len(huge), (n, bad)
+
+
+# User path (LEDGER 17 Nov 11:20): the "Download full RoBMA R script" file stopped in fresh Rscript at its
+# first line, install.packages('RoBMA') with no repos, because a fresh non-interactive R has no CRAN
+# mirror set ("trying to use CRAN without setting a mirror"). Requirement: every install.packages()
+# call in that script names a repository. Checked on R's own parse of the script (no package is
+# installed and nothing is downloaded by this test).
+def test_full_RoBMA_script_names_a_CRAN_mirror(tmp_path):
+    _need(shutil.which("node"), "node not on PATH")
+    js = ("const R = require(%s); process.stdout.write(R.buildRCode([0.1, 0.3], [0.2, 0.25]))"
+          % json.dumps(str(ROOT / "shared" / "robma.js")))
+    code = subprocess.run(["node", "-e", js], capture_output=True, text=True, encoding="utf-8", timeout=60, check=True).stdout
+    (tmp_path / "full.R").write_text(code, encoding="utf-8")
+    walker = r"""
+f <- function(e) if (is.call(e)) {
+  if (identical(e[[1]], as.name("install.packages"))) cat("INSTALL_CALL repos =", "repos" %in% names(e), "\n")
+  for (i in seq_along(e)[-1]) if (is.call(e[[i]])) f(e[[i]]) }
+for (e in parse(file = commandArgs(TRUE)[1])) f(e)
+"""
+    rs = shutil.which("Rscript")
+    _need(rs, "Rscript not on PATH")
+    (tmp_path / "walk.R").write_text(walker, encoding="utf-8")
+    r = subprocess.run([rs, "--vanilla", str(tmp_path / "walk.R"), str(tmp_path / "full.R")],
+                       capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr
+    calls = re.findall(r"^INSTALL_CALL repos = (TRUE|FALSE)", r.stdout, re.M)
+    assert calls and all(c == "TRUE" for c in calls), (calls, code)

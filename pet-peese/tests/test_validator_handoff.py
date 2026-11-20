@@ -14,7 +14,7 @@ APP = "pet-peese"
 HERE = Path(__file__).resolve().parent
 SRC = (HERE.parent / "index.html").read_text(encoding="utf-8")
 VALIDATOR = (HERE.parent.parent / "webr-validator" / "index.html").read_text(encoding="utf-8")
-MODEL = None
+MODEL = ("FE", "z")  # lane estho: its inverse-variance row ("Pooled mu" / "FE meta-analysis")
 
 
 def _call(fn):

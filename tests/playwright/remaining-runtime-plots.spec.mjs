@@ -63,7 +63,12 @@ for(const width of [1280,390])test.describe(`R and clustering ${width}px`,()=>{
  });
  test('IPD clustering: actual covariate plot survives resize without mutating data or fitted results',async({page},info)=>{
   await page.goto('/IPD-Meta-Pro/ipd-meta-pro.html',{waitUntil:'load'});
-  await page.evaluate(()=>loadExampleData('survival'));await page.waitForTimeout(400);
+  // loadExampleData draws patients with unseeded Math.random (lane ci515); draw a fixed
+  // dataset with the page's own SeededRNG so this test always clusters the same patients.
+  await page.evaluate(()=>SeededRNG.withDeterminism(7,()=>loadExampleData('survival')));await page.waitForTimeout(400);
+  expect(await page.evaluate(()=>{const r=APP.data?.[0]||{};const cov=Object.keys(r).filter(k=>!['study','study_id','patient_id','treatment','treatment_name','time','event'].includes(k)&&typeof r[k]==='number').slice(0,5);
+   return APP.data.length>0&&cov.length>=2&&APP.data.every(row=>cov.every(k=>Number.isFinite(row[k])));}),
+   'precondition: the seeded example loads patients with at least 2 finite numeric covariates to cluster').toBe(true);
   const before=await page.evaluate(()=>JSON.stringify({data:APP.data,results:APP.results}));
   await page.evaluate(()=>runPatientClustering());
   const plot=page.locator('#clusterPlot');await expect(plot).toHaveAttribute('data-plot-state','ready');

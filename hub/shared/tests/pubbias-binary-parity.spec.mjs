@@ -13,7 +13,8 @@
  * (Both tests use a t-distribution with df=k-2=6 and multiplicative dispersion.)
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/pubbias-tests/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/pubbias-tests/index.html';
 
 // 8 binary 2×2 studies: events1, n1, events2, n2
 const BINARY = [

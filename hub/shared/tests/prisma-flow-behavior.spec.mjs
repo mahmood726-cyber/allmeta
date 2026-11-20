@@ -9,8 +9,9 @@
  * internally inconsistent PRISMA diagram.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/prisma-flow/';
+const APP_URL = ALM_BASE_URL + '/prisma-flow/';
 const S = (o) => ({ db: 0, reg: 0, removed: 0, screened: 0,
   excludedScreen: 0, sought: 0, notRetrieved: 0, assessed: 0,
   excludedEligible: 0, ...o });

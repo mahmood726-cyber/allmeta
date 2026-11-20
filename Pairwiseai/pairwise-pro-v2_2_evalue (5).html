@@ -3172,7 +3172,7 @@
         alert.innerHTML = `
           <span class="alert__icon">⚠️</span>
           <div class="alert__content">
-            <div class="alert__text">${validStudies.length} valid studies. Minimum 3 studies recommended for reliable estimates.</div>
+            <div class="alert__text">${validStudies.length} valid ${validStudies.length === 1 ? 'study' : 'studies'}. Minimum 3 studies recommended for reliable estimates.</div>
           </div>
         `;
       } else if (validStudies.length > 100) {
@@ -5642,7 +5642,8 @@
       // === BIOMARKERS (continuous, lower=benefit for NT-proBNP) ===
       'ntprobnp_change': [
         'nt-probnp change', 'ntprobnp reduction', 'nt-probnp reduction',
-        'change in nt-probnp', 'bnp change', 'natriuretic peptide'
+        'change in nt-probnp', 'bnp change', 'natriuretic peptide',
+        'nt-probnp', 'ntprobnp', 'nt probnp', 'nt-pro-bnp', 'nt pro-bnp', 'n-terminal probnp', 'n-terminal pro-bnp'
       ],
       
       // === ATRIAL FIBRILLATION (ratio, lower=benefit) ===
@@ -5699,62 +5700,67 @@
       return OUTCOME_METADATA[outcomeKey] || { type: 'ratio', direction: 'lower' };
     }
     
+    // Whole-word test for the 3-4 character synonyms of OUTCOME_DICTIONARY / BASELINE_COVARIATE_MAP: no letter
+    // immediately before the synonym and no letter immediately after it, except one plural / participle "s" or "d"
+    // ("arbs", "males", "aged"), so "men" no longer matches inside "treatment", "age" inside "percentage", "ami" inside
+    // "amiodarone". 2-character synonyms keep their \b rule; 5+ character synonyms still match as substrings.
+    function synonymWordMatch(t, s) {
+      const L = e => /[a-z]/.test(e || "");
+      for (let i = t.indexOf(s); i >= 0; i = t.indexOf(s, i + 1)) {
+        const j = i + s.length;
+        if (!L(t[i - 1]) && (!L(t[j]) || /[sd]/.test(t[j]) && !L(t[j + 1]))) return !0
+      }
+      return !1
+    }
+
     /**
      * Map outcome name to standard key
      * @param {string} rawOutcome - Raw outcome name from paper
      * @returns {object} { key, confidence, original }
      */
-    function mapOutcomeToStandard(rawOutcome) {
-      const normalized = rawOutcome.toLowerCase().trim()
-        .replace(/[‐–—]/g, '-')  // Normalize dashes
-        .replace(/\s+/g, ' ');    // Normalize whitespace
-      
-      // Pass 1: Exact match (highest confidence)
-      for (const [key, synonyms] of Object.entries(OUTCOME_DICTIONARY)) {
-        for (const syn of synonyms) {
-          if (normalized === syn) {
-            return { key, confidence: 1.0, original: rawOutcome };
-          }
+    function mapOutcomeToStandard(e) {
+      // Exact match first (a standard key such as "cv_death" or "cv death" counts as its own synonym), then the
+      // LONGEST synonym contained in the name ("time to first hf hospitalization" before "hf hospitalization"),
+      // then 2-letter synonyms as whole words, then a 2-of-n word overlap. Ties keep table order.
+      const t = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
+        syn = [];
+      for (const [n, a] of Object.entries(OUTCOME_DICTIONARY)) {
+        syn.push([n, n.toLowerCase()], [n, n.toLowerCase().replace(/_/g, " ")]);
+        for (const s of a) syn.push([n, s.toLowerCase()])
+      }
+      for (const [n, s] of syn)
+        if (t === s) return {
+          key: n,
+          confidence: 1,
+          original: e
+        };
+      const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
+      for (const [n, s] of byLength)
+        if (s.length > 4 ? t.includes(s) : s.length >= 3 && synonymWordMatch(t, s)) return {
+          key: n,
+          confidence: .9,
+          original: e
+        };
+      for (const [n, s] of syn)
+        if (2 === s.length && new RegExp(`\\b${s}\\b`, "i").test(t)) return {
+          key: n,
+          confidence: .85,
+          original: e
+        };
+      for (const [n, s] of syn) {
+        const a = s.split(" ").filter(e => e.length > 2),
+          i = a.filter(e => e.length > 4 ? t.includes(e) : synonymWordMatch(t, e));
+        if (a.length >= 2 && i.length >= 2) return {
+          key: n,
+          confidence: .7,
+          original: e
         }
       }
-      
-      // Pass 2: Input contains full synonym (e.g., "cv death or hfh" contains "cv death")
-      // Only match if synonym is 3+ chars to avoid false positives with "mi", "hf", etc.
-      for (const [key, synonyms] of Object.entries(OUTCOME_DICTIONARY)) {
-        for (const syn of synonyms) {
-          if (syn.length >= 3 && normalized.includes(syn)) {
-            return { key, confidence: 0.9, original: rawOutcome };
-          }
-        }
+      return {
+        key: "custom_" + t.replace(/\s+/g, "_").slice(0, 30),
+        confidence: 0,
+        original: e
       }
-      
-      // Pass 3: Word-boundary match for short synonyms (2-char codes like "mi", "hf", "af")
-      // Must be a whole word, not part of another word
-      for (const [key, synonyms] of Object.entries(OUTCOME_DICTIONARY)) {
-        for (const syn of synonyms) {
-          if (syn.length === 2) {
-            // Match as whole word only
-            const wordBoundaryRegex = new RegExp(`\\b${syn}\\b`, 'i');
-            if (wordBoundaryRegex.test(normalized)) {
-              return { key, confidence: 0.85, original: rawOutcome };
-            }
-          }
-        }
-      }
-      
-      // Pass 4: Fuzzy match - check for partial word matches (at least 2 significant words)
-      for (const [key, synonyms] of Object.entries(OUTCOME_DICTIONARY)) {
-        for (const syn of synonyms) {
-          const words = syn.split(' ').filter(w => w.length > 2);
-          const matchedWords = words.filter(w => normalized.includes(w));
-          if (words.length >= 2 && matchedWords.length >= 2) {
-            return { key, confidence: 0.7, original: rawOutcome };
-          }
-        }
-      }
-      
-      // No match - return as custom
-      return { key: 'custom_' + normalized.replace(/\s+/g, '_').slice(0, 30), confidence: 0, original: rawOutcome };
     }
     
     /**
@@ -5836,11 +5842,11 @@
       
       // Renal
       'egfr': ['egfr', 'gfr', 'eGFR ml/min', 'eGFR (ml/min/1.73m2)', 'estimated gfr'],
-      'egfr_lt_60': ['egfr <60', 'egfr < 60', 'ckd stage 3+', 'ckd'],
+      'egfr_lt_60': ['egfr <60', 'egfr < 60', 'ckd stage 3+'],
       'creatinine': ['creatinine', 'serum creatinine', 'cr'],
       
       // Cardiac biomarkers
-      'ntprobnp': ['nt-probnp', 'ntprobnp', 'nt probnp', 'n-terminal probnp'],
+      'ntprobnp': ['nt-probnp', 'ntprobnp', 'nt probnp', 'n-terminal probnp', 'nt-pro-bnp', 'nt pro-bnp', 'n-terminal pro-bnp', 'n-terminal pro-b-type natriuretic peptide'],
       'bnp': ['bnp', 'b-type natriuretic peptide'],
       'troponin': ['troponin', 'hs-troponin', 'hstnt', 'hs-tnt'],
       
@@ -5881,49 +5887,38 @@
      * @param {object|array} rawData - Baseline data (object or array of {name, value})
      * @returns {object} Structured baseline characteristics
      */
-    function parseBaselineCharacteristics(rawData) {
-      const baseline = {};
-      const unmapped = [];
-      
-      // Convert array to object if needed
-      let data = rawData;
-      if (Array.isArray(rawData)) {
-        data = {};
-        rawData.forEach(item => {
-          if (item.name && item.value !== undefined) {
-            data[item.name] = item.value;
+    function parseBaselineCharacteristics(e) {
+      // Exact match first, then the LONGEST synonym contained in the name ("age >=65" before "age", "female"
+      // before "male"), 2-letter synonyms only as whole words ("hr" not inside "chronic"). Ties keep table order.
+      const t = {},
+        n = [],
+        syn = [];
+      for (const [e, a] of Object.entries(BASELINE_COVARIATE_MAP))
+        for (const s of a) syn.push([e, s.toLowerCase()]);
+      const byLength = syn.slice().sort((e, t) => t[1].length - e[1].length);
+      let a = e;
+      Array.isArray(e) && (a = {}, e.forEach(e => {
+        e.name && void 0 !== e.value && (a[e.name] = e.value)
+      }));
+      for (const [e, s] of Object.entries(a)) {
+        const a = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " "),
+          i = syn.find(e => a === e[1]) || byLength.find(e => e[1].length > 4 ? a.includes(e[1]) : e[1].length > 2 ? synonymWordMatch(a, e[1]) : new RegExp(`\\b${e[1]}\\b`).test(a));
+        if (i) {
+          let n = s;
+          if ("string" == typeof n) {
+            const e = n.match(/^([\d.]+)/);
+            e && (n = parseFloat(e[1]))
           }
-        });
+          t[i[0]] = n
+        } else n.push({
+          key: e,
+          value: s
+        })
       }
-      
-      for (const [rawKey, rawValue] of Object.entries(data)) {
-        const normalizedKey = rawKey.toLowerCase().trim();
-        let mapped = false;
-        
-        for (const [stdKey, synonyms] of Object.entries(BASELINE_COVARIATE_MAP)) {
-          for (const syn of synonyms) {
-            if (normalizedKey === syn || normalizedKey.includes(syn)) {
-              // Parse value
-              let value = rawValue;
-              if (typeof value === 'string') {
-                // Extract number from string like "66.2 ± 10.1" or "42%"
-                const numMatch = value.match(/^([\d.]+)/);
-                if (numMatch) value = parseFloat(numMatch[1]);
-              }
-              baseline[stdKey] = value;
-              mapped = true;
-              break;
-            }
-          }
-          if (mapped) break;
-        }
-        
-        if (!mapped) {
-          unmapped.push({ key: rawKey, value: rawValue });
-        }
+      return {
+        baseline: t,
+        unmapped: n
       }
-      
-      return { baseline, unmapped };
     }
     
     /**
@@ -6127,9 +6122,15 @@
         covariate,
         outcome,
         regression: result,
-        interpretation: result.slope < 0 
-          ? `Effect increases (more benefit) with higher ${covariate}`
-          : `Effect decreases (less benefit) with higher ${covariate}`,
+        interpretation: result.available === false
+          ? (data.length < 5
+            ? `Meta-regression not run (k<5): only ${data.length} trials have both ${outcome} and ${covariate}`
+            : `Meta-regression not run: ${result.warning}`)
+          : !isFinite(result.slope)
+            ? `Meta-regression slope not estimable for ${covariate}`
+            : result.slope < 0
+              ? `Effect increases (more benefit) with higher ${covariate}`
+              : `Effect decreases (less benefit) with higher ${covariate}`,
         data
       };
     }
@@ -6429,6 +6430,16 @@
       }
     }
     
+    // Slope / p-value cell of the covariate card: a regression that was refused (k<5) says it was not run
+    // instead of "N/A"; a non-finite value (NaN, null) prints "N/A" rather than throwing.
+    function covariateCardValue(result, field) {
+      const reg = result.regression;
+      if (reg && reg.available === false) {
+        return result.data && result.data.length < 5 ? 'Not run (k&lt;5)' : 'Not run';
+      }
+      return reg && Number.isFinite(reg[field]) ? reg[field].toFixed(4) : 'N/A';
+    }
+
     /**
      * UI for covariate-adjusted analysis
      */
@@ -6470,11 +6481,11 @@
             <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">
               <div>
                 <div class="text-xs text-secondary">Slope (β₁)</div>
-                <div class="text-lg font-mono">${result.regression && result.regression.slope !== undefined ? result.regression.slope.toFixed(4) : 'N/A'}</div>
+                <div class="text-lg font-mono">${covariateCardValue(result, 'slope')}</div>
               </div>
               <div>
                 <div class="text-xs text-secondary">p-value</div>
-                <div class="text-lg font-mono">${result.regression && result.regression.p_value !== undefined ? result.regression.p_value.toFixed(4) : 'N/A'}</div>
+                <div class="text-lg font-mono">${covariateCardValue(result, 'p_value')}</div>
               </div>
             </div>
             <p class="text-sm" style="margin-top: var(--space-3);">
@@ -11035,8 +11046,8 @@ plt.show()
       const studies = data.names || data.yi.map((_, i) => `Study_${i + 1}`);
       
       const data_lines = studies.map((s, i) => 
-        `"${s}" ${data.yi[i].toFixed(4)} ${Math.sqrt(data.vi[i]).toFixed(4)}`
-      ).join('\\n');
+        `"${String(s).replace(/"/g,"'")}" ${data.yi[i].toFixed(4)} ${Math.sqrt(data.vi[i]).toFixed(4)}`
+      ).join('\n');
       
       return `
 * =============================================

@@ -78,3 +78,21 @@ def test_check_wording_follows_guidance_v1_1_2():
     assert '"Text and figures"' in html
     assert "Not applicable" in html
     assert "10.1136/bmj-2026-100611" in html
+
+
+def test_suggestion_labels_follow_answers_without_reload():
+    # Found 2026-11-12 on the live page in real Chrome (lane rd2): answering checks 1.1-1.3
+    # updated the summary table but the "suggested:" label beside the domain (and the overall
+    # label after a domain judgement) kept the value from page load until a reload or a trial
+    # switch, because commit() re-rendered the summary and pooled tables only.
+    # Requirement: what the form says is suggested equals what suggestDomain/suggestOverall
+    # return for the current answers, immediately after each answer.
+    o = _run("sb.renderAll();"
+             "sb.cur().resp['1.1']='yes'; sb.commit();"
+             "const a=document.getElementById('sug-d1').textContent;"
+             "sb.cur().resp['1.2']='no'; sb.cur().resp['1.3']='no'; sb.commit();"
+             "const b=document.getElementById('sug-d1').textContent;"
+             "sb.cur().dj[1]='serious'; sb.commit();"
+             "const c=document.getElementById('sug-overall').textContent;"
+             "console.log(JSON.stringify([a,b,c]));")
+    assert o == ["suggested: Not set", "suggested: Some concerns", "suggested: Serious concerns"]

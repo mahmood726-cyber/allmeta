@@ -1968,6 +1968,46 @@ function isPositiveSemiDefinite(V, n) {
 // ================================================================
 
 /**
+ * log|V + tau2 I| for block-diagonal V: the sum over study blocks of the log-determinant of the FULL block
+ * (Cholesky; LU with partial pivoting if a block is not positive definite). Previously only the diagonal
+ * entries were used (sum of log(V_ii + tau2)), which ignores the within-study covariances of the
+ * Greenland-Longnecker blocks, so logLik / AIC / BIC were not the Gaussian log-likelihood of the fitted model.
+ */
+function logDetBlocks(V_blocks, tau2) {
+  let total = 0;
+  for (const block of V_blocks) {
+    const n = block.n;
+    const S = new Array(n * n);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) S[i * n + j] = block.V[i * n + j] + (i === j ? tau2 : 0);
+    const L = new Array(n * n).fill(0);
+    let ld = 0, pd = true;
+    for (let i = 0; i < n && pd; i++) {
+      for (let j = 0; j <= i; j++) {
+        let v = S[i * n + j];
+        for (let k = 0; k < j; k++) v -= L[i * n + k] * L[j * n + k];
+        if (i === j) { if (!(v > 0)) { pd = false; break; } L[i * n + i] = Math.sqrt(v); ld += 2 * Math.log(L[i * n + i]); }
+        else L[i * n + j] = v / L[j * n + j];
+      }
+    }
+    if (!pd) {
+      const M = S.slice();
+      ld = 0;
+      for (let c = 0; c < n; c++) {
+        let piv = c;
+        for (let r = c + 1; r < n; r++) if (Math.abs(M[r * n + c]) > Math.abs(M[piv * n + c])) piv = r;
+        const d = M[piv * n + c];
+        if (!(Math.abs(d) > 0)) return NaN;
+        if (piv !== c) for (let j = 0; j < n; j++) { const t = M[c * n + j]; M[c * n + j] = M[piv * n + j]; M[piv * n + j] = t; }
+        ld += Math.log(Math.abs(d));
+        for (let r = c + 1; r < n; r++) { const f = M[r * n + c] / d; if (f !== 0) for (let j = c; j < n; j++) M[r * n + j] -= f * M[c * n + j]; }
+      }
+    }
+    total += ld;
+  }
+  return total;
+}
+
+/**
  * Compute fit statistics shared across model families.
  */
 function computeModelFitStats(result, p, nPoints) {
@@ -1985,12 +2025,13 @@ function computeModelFitStats(result, p, nPoints) {
 /**
  * Build restricted cubic spline basis matrix
  *
- * Reference: Durrleman, S., & Simon, R. (1989). Flexible regression models
- * with cubic splines. Statistics in medicine, 8(5), 551-561.
+ * Harrell's restricted cubic spline (Hmisc::rcspline.eval with inclx = TRUE, norm = 2 -- the basis that
+ * rms::rcs and dosresmeta use): linear beyond the outer knots. Reference: Harrell, F. E. (2015).
+ * Regression Modeling Strategies, 2nd ed., section 2.4.5; Durrleman & Simon (1989), Stat Med 8:551-561.
  *
  * @param {Array} doses - Array of dose values
- * @param {number} numKnots - Number of knots (default: 4, must be ≥ 3)
- * @returns {Object} - {basis, knots} where basis is the design matrix
+ * @param {number} numKnots - Number of knots (default: 4, must be >= 3)
+ * @returns {Object} - {basis, knots} where basis is the design matrix [1, dose, S_1 .. S_{K-2}]
  */
 function buildSplineBasis(doses, numKnots = 4) {
   const n = doses.length;
@@ -2003,49 +2044,32 @@ function buildSplineBasis(doses, numKnots = 4) {
     knots.push(sortedDoses[Math.min(idx, n - 1)]);
   }
 
-  // Build basis matrix: [intercept, dose, spline1, spline2, ...]
-  const basis = [];
-
-  for (const dose of doses) {
-    const row = [1, dose];  // Intercept and linear term
-
-    // Add spline terms for interior knots (knots 1 to K-2)
-    for (let k = 1; k < numKnots - 1; k++) {
-      const knot = knots[k];
-      const term = computeSplineTerm(dose, knot, knots[0], knots[numKnots - 1]);
-      row.push(term);
-    }
-
-    basis.push(row);
-  }
-
+  const basis = doses.map(dose => [1, dose, ...rcsTerms(dose, knots)]);
   return { basis, knots };
 }
 
 /**
- * Compute a single restricted cubic spline term
- *
- * Formula: S_k(d) = (d - t_k)^3_+ - (d - t_max)^3_+ * (t_max - t_k)/(t_max - t_min)
- *                   + (d - t_min)^3_+ * (t_k - t_min)/(t_max - t_min)
- *
- * where (x)_+ = max(0, x)
+ * Nonlinear terms of Harrell's restricted cubic spline at knots t_1 < ... < t_K (K >= 3), j = 1 .. K-2:
+ *   S_j(d) = [ (d - t_j)_+^3 - (d - t_{K-1})_+^3 (t_K - t_j)/(t_K - t_{K-1})
+ *              + (d - t_K)_+^3 (t_{K-1} - t_j)/(t_K - t_{K-1}) ] / (t_K - t_1)^2
+ * (x)_+ = max(0, x). The cubic and quadratic coefficients cancel for d > t_K, so every S_j (and the fitted
+ * curve) is linear beyond the last knot, and S_j = 0 below t_1. Equals Hmisc::rcspline.eval(d, knots,
+ * inclx = TRUE)[, -1] (norm = 2). Replaced a basis that paired (d - t_j)^3 with (d - t_1)^3 and (d - t_K)^3,
+ * which is neither zero below the first knot nor linear beyond the last one.
  */
-function computeSplineTerm(dose, knot, t_min, t_max) {
-  const x = dose - knot;
-  const x_min = dose - t_min;
-  const x_max = dose - t_max;
+function rcsTerms(dose, knots) {
+  const K = knots.length;
+  const tK = knots[K - 1], tK1 = knots[K - 2], t1 = knots[0];
+  const span = tK - t1, gap = tK - tK1;
+  const out = [];
+  for (let j = 0; j < K - 2; j++) out.push(computeSplineTerm(dose, knots[j], tK1, tK, span, gap));
+  return out;
+}
 
-  // Positive part function
-  const pos = (val) => Math.max(0, val);
-  const cube = (val) => val * val * val;
-
-  const numerator = cube(pos(x)) -
-                   cube(pos(x_max)) * (t_max - knot) / (t_max - t_min) +
-                   cube(pos(x_min)) * (knot - t_min) / (t_max - t_min);
-
-  const denominator = 6 * (t_max - t_min);
-
-  return denominator !== 0 ? numerator / denominator : 0;
+function computeSplineTerm(dose, knot, tK1, tK, span, gap) {
+  if (!(span > 0) || !(gap > 0)) return 0;
+  const c3 = v => (v > 0 ? v * v * v : 0);
+  return (c3(dose - knot) - c3(dose - tK1) * (tK - knot) / gap + c3(dose - tK) * (tK1 - knot) / gap) / (span * span);
 }
 
 /**
@@ -2121,7 +2145,10 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
 
   const result = solveGLSWithTau2Spline(X, y, V_blocks, tau2, p);
 
-  const Q = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatSpline(y, X, solveGLSWithTau2Spline(X, y, V_blocks, 0, p).beta, V_blocks, 0, p);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2131,6 +2158,7 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2191,7 +2219,10 @@ function fitLinearModel(points, tau2Override = null) {
 
   const result = solveGLSLinear(X, y, V_blocks, tau2);
 
-  const Q = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatLinear(y, X, solveGLSLinear(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2201,6 +2232,7 @@ function fitLinearModel(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2296,13 +2328,7 @@ function solveGLSLinear(X, y, V_blocks, tau2) {
     row += blockSize;
   }
 
-  let detV = 0;
-  for (const block of V_blocks) {
-    const blockSize = block.n;
-    for (let i = 0; i < blockSize; i++) {
-      detV += Math.log(Math.max(block.V[i * blockSize + i] + tau2, NUMERICAL_TOLERANCE));
-    }
-  }
+  const detV = logDetBlocks(V_blocks, tau2);
 
   return { beta, se, WRSS, detV, varMatrix };
 }
@@ -2456,13 +2482,7 @@ function solveGLSWithTau2Spline(X, y, V_blocks, tau2, p) {
   }
 
   // Compute log determinant
-  let detV = 0;
-  for (const block of V_blocks) {
-    const blockSize = block.n;
-    for (let i = 0; i < blockSize; i++) {
-      detV += Math.log(Math.max(block.V[i * blockSize + i] + tau2, NUMERICAL_TOLERANCE));
-    }
-  }
+  const detV = logDetBlocks(V_blocks, tau2);
 
   return { beta, se, WRSS, detV, varMatrix: XtVinvX_inv };
 }
@@ -2641,7 +2661,10 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
   // Compute Q and I²
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2651,6 +2674,7 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2806,7 +2830,10 @@ function solveGLS(points, tau2Override = null) {
 
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2819,11 +2846,13 @@ function solveGLS(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
     nStudies,
     nPoints,
+    logLik,
     AIC,
     BIC,
     covarianceSummary
@@ -2937,84 +2966,136 @@ function solveGLSWithTau2(X, y, V_blocks, tau2) {
   }
 
   // Compute log determinant of V
-  let detV = 0;
-  for (const block of V_blocks) {
-    const blockSize = block.n;
-    for (let i = 0; i < blockSize; i++) {
-      detV += Math.log(Math.max(block.V[i * blockSize + i] + tau2, NUMERICAL_TOLERANCE));
-    }
-  }
+  const detV = logDetBlocks(V_blocks, tau2);
 
   return { beta, se, WRSS, detV, varMatrix };
 }
 
-/**
- * Estimate between-study variance (tau²) using TRUE REML
- * Iterative optimization using Fisher scoring algorithm
- *
- * Reference: van Houwelingen, H. C., Arends, L. R., & Stijnen, T. (2002).
- * Advanced methods in meta-analysis: multivariate approach and meta-regression.
- * Statistics in Medicine, 21(4), 589-624.
- *
- * Also: Viechtbauer, W. (2005). Estimating the mean of a normal distribution
- * with known precision. In R Newsletter, 5(1), 11-13.
- *
- * @param {Array} X - Design matrix
- * @param {Array} y - Outcome vector
- * @param {Array} V_blocks - Array of covariance blocks {V, n, studyId}
- * @param {number} maxIter - Maximum iterations (default: 100)
- * @param {number} tol - Convergence tolerance (default: 1e-8)
- * @returns {Object} - {tau2, converged, iterations, logLik}
- */
-function estimateTau2REML(X, y, V_blocks, maxIter = 100, tol = 1e-8) {
-  const n = y.length;
+// Exact restricted-likelihood pieces for y ~ N(X beta, V + tau2 I), V block diagonal (one block per
+// study). With W = (V + tau2 I)^-1, A = X'WX, B2 = X'W^2X, B3 = X'W^3X, r = y - X beta_GLS:
+//   P y = W r,  tr(P) = tr(W) - tr(A^-1 B2),  tr(P^2) = tr(W^2) - 2 tr(A^-1 B3) + tr((A^-1 B2)^2),
+//   REML score = (|W r|^2 - tr(P)) / 2,  restricted log-likelihood = -(log|V+tau2 I| + log|A| + r'Wr) / 2.
+// Returns null when a block is not positive definite or A is singular.
+function tau2BlockPieces(X, y, V_blocks, tau2) {
   const p = X[0].length;
-  const K = V_blocks.length;  // Number of studies
-
-  // Start with DL estimator as initial value
-  let tau2 = estimateTau2DL(X, y, V_blocks);
-
-  let prevLogLik = -Infinity;
-  let converged = false;
-  let iter;
-
-  // REML iteration using Fisher scoring
-  for (iter = 0; iter < maxIter; iter++) {
-    // Get current estimates with this tau2
-    const result = solveGLSWithTau2(X, y, V_blocks, tau2);
-
-    // Calculate log-likelihood (REML)
-    const logLik = computeREMLLogLik(y, X, result.beta, V_blocks, tau2, p);
-
-    // Check convergence
-    if (Math.abs(logLik - prevLogLik) < tol) {
-      converged = true;
-      break;
+  const A = Array.from({ length: p }, () => new Array(p).fill(0));
+  const B2 = Array.from({ length: p }, () => new Array(p).fill(0));
+  const B3 = Array.from({ length: p }, () => new Array(p).fill(0));
+  const b = new Array(p).fill(0);
+  const parts = [];
+  let logdet = 0, trW = 0, trW2 = 0, row = 0;
+  for (const block of V_blocks) {
+    const n = block.n;
+    // Cholesky of S = V + tau2 I, then W = S^-1 by solving against the identity.
+    const L = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j <= i; j++) {
+        let s = block.V[i * n + j] + (i === j ? tau2 : 0);
+        for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+        if (i === j) { if (!(s > 0)) return null; L[i * n + i] = Math.sqrt(s); }
+        else L[i * n + j] = s / L[j * n + j];
+      }
+      logdet += 2 * Math.log(L[i * n + i]);
     }
-
-    prevLogLik = logLik;
-
-    // Fisher scoring update
-    // Calculate score (derivative of log-likelihood w.r.t. tau2)
-    const score = computeREMLScore(y, X, result.beta, V_blocks, tau2);
-
-    // Calculate Fisher information
-    const fisherInfo = computeREMLFisherInfo(X, V_blocks, tau2);
-
-    // Update tau2
-    const step = score / Math.max(fisherInfo, NUMERICAL_TOLERANCE);
-    tau2 += step;
-
-    // Ensure tau2 stays non-negative
-    if (tau2 < 0) tau2 = 0;
+    const W = new Array(n * n).fill(0);
+    for (let c = 0; c < n; c++) {
+      const z = new Array(n).fill(0);
+      for (let i = 0; i < n; i++) { let s = i === c ? 1 : 0; for (let k = 0; k < i; k++) s -= L[i * n + k] * z[k]; z[i] = s / L[i * n + i]; }
+      for (let i = n - 1; i >= 0; i--) { let s = z[i]; for (let k = i + 1; k < n; k++) s -= L[k * n + i] * W[k * n + c]; W[i * n + c] = s / L[i * n + i]; }
+    }
+    const Xi = X.slice(row, row + n), yi = y.slice(row, row + n);
+    const W2 = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { let s = 0; for (let k = 0; k < n; k++) s += W[i * n + k] * W[k * n + j]; W2[i * n + j] = s; }
+    const W3 = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { let s = 0; for (let k = 0; k < n; k++) s += W2[i * n + k] * W[k * n + j]; W3[i * n + j] = s; }
+    for (let i = 0; i < n; i++) { trW += W[i * n + i]; trW2 += W2[i * n + i]; }
+    for (let a = 0; a < p; a++) {
+      for (let c = 0; c < p; c++) {
+        let s1 = 0, s2 = 0, s3 = 0;
+        for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+          const xx = Xi[i][a] * Xi[j][c];
+          s1 += xx * W[i * n + j]; s2 += xx * W2[i * n + j]; s3 += xx * W3[i * n + j];
+        }
+        A[a][c] += s1; B2[a][c] += s2; B3[a][c] += s3;
+      }
+      let sb = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) sb += Xi[i][a] * W[i * n + j] * yi[j];
+      b[a] += sb;
+    }
+    parts.push({ n, W, Xi, yi });
+    row += n;
   }
+  // A^-1 by Gauss-Jordan with partial pivoting; log|A| from the pivots.
+  const M = A.map((r, i) => r.concat(Array.from({ length: p }, (_, j) => (i === j ? 1 : 0))));
+  let logdetA = 0;
+  for (let c = 0; c < p; c++) {
+    let piv = c;
+    for (let r = c + 1; r < p; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (!(Math.abs(M[piv][c]) > 0)) return null;
+    if (piv !== c) { const t = M[piv]; M[piv] = M[c]; M[c] = t; }
+    const d = M[c][c]; logdetA += Math.log(Math.abs(d));
+    for (let j = 0; j < 2 * p; j++) M[c][j] /= d;
+    for (let r = 0; r < p; r++) if (r !== c) { const f = M[r][c]; if (f !== 0) for (let j = 0; j < 2 * p; j++) M[r][j] -= f * M[c][j]; }
+  }
+  const Ai = M.map(r => r.slice(p));
+  const beta = Ai.map(r => r.reduce((s, v, j) => s + v * b[j], 0));
+  let rWr = 0, uu = 0;
+  for (const pt of parts) {
+    const n = pt.n, r = pt.yi.map((v, i) => v - pt.Xi[i].reduce((s, x, j) => s + x * beta[j], 0));
+    for (let i = 0; i < n; i++) { let u = 0; for (let j = 0; j < n; j++) u += pt.W[i * n + j] * r[j]; uu += u * u; rWr += r[i] * u; }
+  }
+  const AiB2 = Ai.map(r => B2[0].map((_, j) => r.reduce((s, v, k) => s + v * B2[k][j], 0)));
+  let trAiB2 = 0, trAiB3 = 0, trSq = 0;
+  for (let a = 0; a < p; a++) {
+    trAiB2 += AiB2[a][a];
+    for (let k = 0; k < p; k++) { trAiB3 += Ai[a][k] * B3[k][a]; trSq += AiB2[a][k] * AiB2[k][a]; }
+  }
+  const trP = trW - trAiB2;
+  return { beta, Q: rWr, trP, trPP: trW2 - 2 * trAiB3 + trSq, score: 0.5 * (uu - trP), rll: -0.5 * (logdet + logdetA + rWr) };
+}
 
-  return {
-    tau2: tau2,
-    converged: converged,
-    iterations: iter + 1,
-    logLik: prevLogLik
-  };
+/**
+ * REML tau² for y ~ N(X beta, V + tau² I) with block-diagonal V (Harville 1977; the metafor
+ * rma.uni REML criterion when every block is 1x1). The estimate is the maximiser of the exact
+ * restricted log-likelihood over tau² >= 0: roots of the exact score are located by a sign scan
+ * on a log grid scaled to the data, bisected to floating-point resolution (a relative rule that is
+ * invariant to rescaling y and V), and compared with the boundary tau² = 0 by restricted
+ * log-likelihood. Replaces a Fisher-scoring loop whose score omitted the REML correction term (it
+ * converged to the ML estimate) and which stopped on an absolute change in the log-likelihood.
+ */
+function estimateTau2REML(X, y, V_blocks) {
+  const p = X[0].length, nObs = y.length;
+  if (V_blocks.length <= 1 || nObs <= p) return { tau2: 0, converged: true, iterations: 0, logLik: null };
+  const at = t => tau2BlockPieces(X, y, V_blocks, t);
+  let scale = 0, cnt = 0;
+  for (const block of V_blocks) for (let i = 0; i < block.n; i++) { const v = block.V[i * block.n + i]; if (v > 0 && Number.isFinite(v)) { scale += v; cnt++; } }
+  scale = cnt ? scale / cnt : 1;
+  const base = at(0);
+  if (!base) return { tau2: 0, converged: false, iterations: 0, logLik: null };
+  let best = { t: 0, rll: base.rll }, evals = 1;
+  // Grid 1e-10 .. 1e10 times the mean sampling variance, 8 points per decade; extended upward
+  // while the score is still positive at the top.
+  let prevT = 0, prev = base, hiEnd = scale * 1e10;
+  for (let e = -80; ; e++) {
+    const t = scale * Math.pow(10, e / 8);
+    if (t > hiEnd) { if (prev.score > 0 && hiEnd < scale * 1e100) hiEnd *= 1e10; else break; }
+    const cur = at(t); evals++;
+    if (!cur) break;
+    if (prev.score > 0 && cur.score <= 0) {
+      let lo = prevT, hi = t;
+      for (let i = 0; i < 2300; i++) {
+        const m = 0.5 * (lo + hi);
+        if (m <= lo || m >= hi) break;
+        const pm = at(m); evals++;
+        if (!pm) break;
+        if (pm.score > 0) lo = m; else hi = m;
+      }
+      const r = 0.5 * (lo + hi), pr = at(r);
+      if (pr && pr.rll > best.rll) best = { t: r, rll: pr.rll };
+    }
+    prevT = t; prev = cur;
+  }
+  return { tau2: best.t, converged: true, iterations: evals, logLik: best.rll - 0.5 * (nObs - p) * Math.log(2 * Math.PI) };
 }
 
 /**
@@ -3028,13 +3109,7 @@ function computeREMLLogLik(y, X, beta, V_blocks, tau2, p) {
   let logLik = 0;
 
   // Log determinant term
-  let detV = 0;
-  for (const block of V_blocks) {
-    const blockSize = block.n;
-    for (let i = 0; i < blockSize; i++) {
-      detV += Math.log(Math.max(block.V[i * blockSize + i] + tau2, NUMERICAL_TOLERANCE));
-    }
-  }
+  const detV = logDetBlocks(V_blocks, tau2);
   logLik -= 0.5 * detV;
 
   // Quadratic form term: (y - Xb)' V^(-1) (y - Xb)
@@ -3259,70 +3334,15 @@ let useREML = false;  // Use DL for tau2 estimation (simpler, more stable)
  * @returns {number} - Estimated tau²
  */
 function estimateTau2DL(X, y, V_blocks) {
-  const p = X[0].length;
-  const K = V_blocks.length;
-
-  if (K <= 1) return 0;
-
-  // Fixed-effect estimate (tau2 = 0)
-  const feResult = solveGLSWithTau2(X, y, V_blocks, 0);
-  const Q = computeQStat(y, X, feResult.beta, V_blocks, 0);
-
-  // V12-02: Multivariate DL τ² (Jackson-Riley-White, Stat Med 2010;29:1282-1297):
-  //   τ² = max(0, (Q − df) / trace(P))
-  // where P = V⁻¹ − V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹, computed in inverse-variance metric.
-  // Previous implementation mixed scales: used Σ v_ii (variance-scale sum) as
-  // the denominator instead of trace(P) (weight-scale sum), so τ² was
-  // systematically wrong when REML didn't converge.
-  // For univariate effects (p=1, n_block=1), fall back to the standard
-  // Cochran/DL form `denom = ΣW − ΣW²/ΣW` with W_i = 1/v_i.
-  // Residual df of the one-stage FE-GLS fit is nPoints − p (coincides with
-  // (K−1)·p only when every study has exactly p points).
-  const nPoints = y.length;
-  const df = Math.max(nPoints - p, 0);
-
-  let denominator = 0;
-  // Univariate fast path (each block is 1×1).
-  const allUni = V_blocks.every(b => b.n === 1) && p === 1;
-  if (allUni) {
-    let sumW = 0, sumW2 = 0;
-    for (const block of V_blocks) {
-      const v = block.V[0];
-      if (v > 0) {
-        const w = 1 / v;
-        sumW += w;
-        sumW2 += w * w;
-      }
-    }
-    denominator = sumW > 0 ? (sumW - sumW2 / sumW) : 0;
-  } else {
-    // Multivariate: compute trace(V⁻¹) − trace(V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹).
-    // V_blocks are independent, so V⁻¹ is block-diagonal. trace(V⁻¹) = Σ trace(V_i⁻¹).
-    // For the second term we need the full GLS inverse already computed inside
-    // solveGLSWithTau2 — read it back via feResult.XtViX_inv if exposed,
-    // otherwise approximate as df-scaled (a conservative lower bound).
-    let traceVinv = 0;
-    for (const block of V_blocks) {
-      const n = block.n;
-      // For n=1: V⁻¹ = 1/v.
-      if (n === 1) { if (block.V[0] > 0) traceVinv += 1 / block.V[0]; continue; }
-      // For larger n, compute matrix inverse trace via diagonal of inverse.
-      // Simplification: use 1/diagonal as an upper bound on trace(V⁻¹).
-      for (let i = 0; i < n; i++) {
-        const vii = block.V[i * n + i];
-        if (vii > 0) traceVinv += 1 / vii;
-      }
-    }
-    // Approximate denominator: trace(V⁻¹) − df. Documented as approximation
-    // pending exposure of XtViX_inv from solveGLSWithTau2.
-    denominator = traceVinv - df;
-  }
-
-  if (!Number.isFinite(Q) || !Number.isFinite(denominator) || denominator <= 0) {
-    return 0;
-  }
-
-  return Math.max(0, (Q - df) / denominator);
+  // Method-of-moments (DerSimonian-Laird) tau² for y ~ N(X beta, V + tau² I): (Q_E - (n - p)) / tr(P),
+  // with Q_E and P = W - WX(X'WX)^-1 X'W evaluated at tau² = 0 (metafor rma.uni method="DL" for 1x1
+  // blocks; the same moment equation with correlated within-study blocks). Replaces an approximate denominator
+  // tr(V^-1) - df, which was used whenever the design had more than one column (every dose model).
+  const p = X[0].length, nObs = y.length;
+  if (V_blocks.length <= 1 || nObs <= p) return 0;
+  const f = tau2BlockPieces(X, y, V_blocks, 0);
+  if (!f || !Number.isFinite(f.Q) || !(f.trP > 0)) return 0;
+  return Math.max(0, (f.Q - (nObs - p)) / f.trP);
 }
 
 /**
@@ -3466,44 +3486,75 @@ function normCDF(x) {
 }
 
 function normCDFinv(p) {
-  // Beasley-Springer-Moro approximation
-  const a = [-3.969683, -1.963510, 0.5742055, 0.6938985, -1.220525, 1.380257, -0.6726213, -0.4548294, 0.2459106];
-  const b = [0.0132309, 0.0416717, 0.0097009, -0.0013922, -0.0320185, -0.0098922, 0.0019939, 0.0013942, -0.0015587];
-
-  const q = Math.min(Math.max(p, 1e-10), 1 - 1e-10);
-  if (q <= 0.02425) {
-    return (a[0] + a[1] / (a[2] + q)) / ((a[3] + q) / (a[4] + q) - (a[5] + q) / (a[6] + q) + (a[7] + q) / (a[8] + q));
+  // Standard normal quantile: Wichura (1988) AS 241 PPND16, relative accuracy ~1e-16 (the algorithm of R's qnorm).
+  // Replaces a garbled Beasley-Springer-Moro evaluation that returned 3.542 for p = 0.975 and +33.08 for p = 0.01.
+  if (!(p > 0)) return p === 0 ? -Infinity : NaN;
+  if (!(p < 1)) return p === 1 ? Infinity : NaN;
+  const q = p - 0.5;
+  if (Math.abs(q) <= 0.425) {
+    const r = 0.180625 - q * q;
+    return q * (((((((2509.0809287301226727 * r + 33430.575583588128105) * r + 67265.770927008700853) * r +
+      45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r + 133.14166789178437745) * r +
+      3.387132872796366608) / (((((((5226.495278852854561 * r + 28729.085735721942674) * r + 39307.89580009271061) * r +
+      21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r + 42.313330701600911252) * r + 1);
   }
-
-  const r = Math.sqrt(-2 * Math.log(1 - q));
-  const num = (((((b[5]*r + b[4])*r + b[3])*r + b[2])*r + b[1])*r + b[0]);
-  const den = (((((b[8]*r + b[7])*r + b[6])*r + 1))*r + 1);
-  return r - num / den;
+  let r = Math.sqrt(-Math.log(q < 0 ? p : 1 - p));
+  let z;
+  if (r <= 5) {
+    r -= 1.6;
+    z = (((((((7.7454501427834140764e-4 * r + 0.0227238449892691845833) * r + 0.24178072517745061177) * r +
+      1.27045825245236838258) * r + 3.64784832476320460504) * r + 5.7694972214606914055) * r + 4.6303378461565452959) * r +
+      1.42343711074968357734) / (((((((1.05075007164441684324e-9 * r + 5.475938084995344946e-4) * r +
+      0.0151986665636164571966) * r + 0.14810397642748007459) * r + 0.68976733498510000455) * r + 1.6763848301838038494) * r +
+      2.05319162663775882187) * r + 1);
+  } else {
+    r -= 5;
+    z = (((((((2.01033439929228813265e-7 * r + 2.71155556874348757815e-5) * r + 0.0012426609473880784386) * r +
+      0.026532189526576123093) * r + 0.29656057182850489123) * r + 1.7848265399172913358) * r + 5.4637849111641143699) * r +
+      6.6579046435011037772) / (((((((2.04426310338993978564e-15 * r + 1.4215117583164458887e-7) * r +
+      1.8463183175100546818e-5) * r + 7.868691311456132591e-4) * r + 0.0148753612908506148525) * r + 0.13692988092273580531) * r +
+      0.59983220655588793769) * r + 1);
+  }
+  return q < 0 ? -z : z;
 }
 
 /**
- * Compute t-distribution critical value using approximation
- * Reference: Abramowitz & Stegun, Handbook of Mathematical Functions
+ * Compute the t-distribution critical value (quantile)
  *
  * @param {number} df - Degrees of freedom
  * @param {number} p - Cumulative probability (e.g., 0.975 for 95% two-sided)
  * @returns {number} - t critical value
  */
 function tCriticalValue(df, p) {
-  if (df <= 0) return normCDFinv(p);
-  if (df > 100) return normCDFinv(p);  // Approximate as normal for large df
+  // Student-t quantile qt(p, df): inverts the exact upper tail AlmTail.ptUpper (shared/upper-tail.js) by bisection to
+  // floating-point resolution. Replaces a 3-term Cornish-Fisher expansion on a broken normal quantile (qt(0.975, 4)
+  // came out 10.14; R 2.776) that also switched to the normal for df > 100.
+  if (!(df > 0) || !Number.isFinite(df)) return normCDFinv(p);
+  if (!(p > 0 && p < 1)) return p === 1 ? Infinity : (p === 0 ? -Infinity : NaN);
+  if (p === 0.5) return 0;
+  const upper = p > 0.5 ? 1 - p : p;            // target upper-tail probability for |t|
+  let lo = 0, hi = Math.max(1, Math.abs(normCDFinv(p)));
+  for (let i = 0; i < 2000 && AlmTail.ptUpper(hi, df) > upper; i++) { lo = hi; hi *= 2; }
+  for (let i = 0; i < 2000; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (mid <= lo || mid >= hi) break;
+    if (AlmTail.ptUpper(mid, df) > upper) lo = mid; else hi = mid;
+  }
+  const t = 0.5 * (lo + hi);
+  return p > 0.5 ? t : -t;
+}
 
-  // Use approximation based on normal quantile
-  const z = normCDFinv(p);
-
-  // Cornish-Fisher expansion for t-distribution
-  const g1 = (z * z * z + z) / 4;
-  const g2 = (5 * z * z * z * z * z + 16 * z * z * z + 3 * z) / 96;
-  const g3 = (3 * z * z * z * z * z * z * z + 19 * z * z * z * z * z + 17 * z * z * z - 15 * z) / 384;
-
-  const t = z + g1 / df + g2 / (df * df) + g3 / (df * df * df);
-
-  return t;
+// 95% prediction interval (log scale) for the true effect in a new study: est -/+ t_{k-1} * sqrt(se^2 + tau2), with
+// k = number of studies -- the convention adopted for this repo (Cochrane Handbook v6.5; metafor predict() for a
+// test = "knha" fit; the coverage simulation's piDF). Previously t on (k minus 2) df, IntHout 2016. Undefined for k < 2.
+function predictionIntervalLog(est, se, tau2, nStudies) {
+  const k = Number(nStudies);
+  const t2 = Number.isFinite(tau2) ? Math.max(0, tau2) : 0;
+  if (!(k >= 2) || !Number.isFinite(est) || !Number.isFinite(se)) return { lower: NaN, upper: NaN, df: NaN, crit: NaN };
+  const df = Math.floor(k) - 1;
+  const crit = tCriticalValue(df, 0.975);
+  const half = crit * Math.sqrt(se * se + t2);
+  return { lower: est - half, upper: est + half, df, crit };
 }
 
 // ================================================================
@@ -3930,17 +3981,19 @@ function updateCoefficientsTable(r) {
   const labels = modelType === 'linear'
     ? ['Intercept (β₀)', 'Linear (β₁)']
     : ['Intercept (β₀)', 'Linear (β₁)', 'Quadratic (β₂)'];
-  const zValue = normCDFinv(1 - (1 - currentCI/100) / 2);
+  // HK/SJ: SE * sqrt(max(1, Q_RE / (n - p))), t on n - p df (metafor test = "adhoc"); else Wald z.
+  const inf = getInferenceSettings(r, currentCI);
+  const zValue = inf.crit;
 
-  let html = '<table><thead><tr><th>Term</th><th class="num">β</th><th class="num">SE</th><th class="num">' + currentCI + '% CI</th><th class="num">z</th><th class="num">p</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>Term</th><th class="num">β</th><th class="num">SE</th><th class="num">' + currentCI + '% CI</th><th class="num">' + inf.statLabel + '</th><th class="num">p</th></tr></thead><tbody>';
 
   for (let i = 0; i < r.beta.length; i++) {
     const beta = r.beta[i];
-    const se = r.se[i];
+    const se = Number.isFinite(r.se[i]) ? r.se[i] * inf.seScale : r.se[i];
     const ciLower = Number.isFinite(beta) && Number.isFinite(se) ? beta - zValue * se : NaN;
     const ciUpper = Number.isFinite(beta) && Number.isFinite(se) ? beta + zValue * se : NaN;
     const zStat = Number.isFinite(beta) && Number.isFinite(se) && se > 0 ? beta / se : NaN;
-    const pVal = Number.isFinite(zStat) ? 2 * AlmTail.pnormUpper(Math.abs(zStat)) : NaN;
+    const pVal = inferencePValue(zStat, inf);
     const label = labels[i] || `Parameter β${i}`;
 
     html += `<tr>
@@ -4002,14 +4055,10 @@ function updateInterpretationLegacy(r) {
     trendInterp = 'no significant evidence of a dose-response relationship';
   }
 
-  // Calculate prediction interval (IntHout et al. BMJ 2016)
-  // PI = estimate ± t_{k-1} * sqrt(SE² + τ²)
-  const tau2 = r.tau2 || 0;
-  const k = r.nStudies || 2;
-  const piSE = Math.sqrt(r.se[1] * r.se[1] + tau2);
-  const tCrit = tCriticalValue(Math.max(k - 2, 1), 0.975);
-  const piLower = Math.exp(r.beta[1] - tCrit * piSE);
-  const piUpper = Math.exp(r.beta[1] + tCrit * piSE);
+  // Prediction interval: estimate -/+ t_{k-1} * sqrt(SE^2 + tau2) (predictionIntervalLog)
+  const pi = predictionIntervalLog(r.beta[1], r.se[1], r.tau2, r.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
   const tau2MethodText = getTau2MethodText();
 
   let html = `<p><strong>Summary of Findings:</strong> The pooled analysis shows a ${direction} in risk with increasing dose. `;
@@ -4017,11 +4066,15 @@ function updateInterpretationLegacy(r) {
   html += `There is ${trendInterp} (p = ${pLinear < 0.001 ? '<0.001' : pLinear.toFixed(3)}).</p>`;
 
   // Add prediction interval
+  if (!Number.isFinite(piLower) || !Number.isFinite(piUpper)) {
+    html += '<p><strong>Prediction Interval:</strong> Not estimable: a prediction interval needs at least 2 studies (t on k - 1 df).</p>';
+  } else {
   html += `<p><strong>Prediction Interval:</strong> The 95% prediction interval for the true effect in a new study is [${piLower.toFixed(2)}, ${piUpper.toFixed(2)}]. `;
   if (piLower < 1 && piUpper > 1) {
     html += `This interval includes 1.0, suggesting substantial uncertainty about the direction of effect in future studies.</p>`;
   } else {
     html += `This interval ${piLower > 1 ? 'is entirely above' : 'is entirely below'} 1.0, suggesting consistent direction of effect expected in future studies.</p>`;
+  }
   }
 
   html += `<p><strong>Heterogeneity:</strong> Heterogeneity is ${hInterp} (I2 = ${r.I2.toFixed(1)}%, Q = ${r.Q.toFixed(2)}, df = ${r.df}, p = ${formatPValue(r.Qp)}). ${pInterp}.</p>`;
@@ -4087,8 +4140,8 @@ function updateInterpretation(r) {
     pInterp = 'no significant evidence of heterogeneity';
   }
 
-  const zLinear = inference.se > 0 ? contrast.logRR / inference.se : NaN;
-  const pLinear = 2 * AlmTail.pnormUpper(Math.abs(zLinear));
+  // p-value on the same reference distribution as the CI (t on n - p df under HK/SJ, else z).
+  const pLinear = inference.pValue;
   let trendInterp = '';
   if (!Number.isFinite(pLinear)) {
     trendInterp = 'insufficient information for a stable trend test';
@@ -4102,12 +4155,9 @@ function updateInterpretation(r) {
     trendInterp = 'no significant evidence of a dose-response relationship';
   }
 
-  const tau2 = r.tau2 || 0;
-  const k = r.nStudies || 2;
-  const piSE = Math.sqrt(inference.se * inference.se + tau2);
-  const tCrit = tCriticalValue(Math.max(k - 2, 1), 0.975);
-  const piLower = Math.exp(contrast.logRR - tCrit * piSE);
-  const piUpper = Math.exp(contrast.logRR + tCrit * piSE);
+  const pi = predictionIntervalLog(contrast.logRR, inference.se, r.tau2, r.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
   const tau2MethodText = getTau2MethodText();
 
   let html = `<p><strong>Summary of Findings:</strong> The pooled analysis shows a ${direction} in risk with increasing dose. `;
@@ -4116,18 +4166,23 @@ function updateInterpretation(r) {
   html += `There is ${trendInterp} (p = ${Number.isFinite(pLinear) ? (pLinear < 0.001 ? '<0.001' : pLinear.toFixed(3)) : 'NA'}).</p>`;
 
   if (modelType === 'quadratic' && Number.isFinite(r.beta?.[2]) && Number.isFinite(r.se?.[2]) && r.se[2] > 0) {
-    const zCurv = r.beta[2] / r.se[2];
-    const pCurv = 2 * AlmTail.pnormUpper(Math.abs(zCurv));
+    const infCurv = getInferenceSettings(r, currentCI);
+    const seCurv = r.se[2] * infCurv.seScale;
+    const pCurv = inferencePValue(r.beta[2] / seCurv, infCurv);
     html += `<p><strong>Curvature:</strong> The quadratic curvature term is ${r.beta[2].toFixed(4)} `;
-    html += `(SE ${r.se[2].toFixed(4)}, p = ${pCurv < 0.001 ? '<0.001' : pCurv.toFixed(3)}), `;
+    html += `(SE ${seCurv.toFixed(4)}, p = ${pCurv < 0.001 ? '<0.001' : pCurv.toFixed(3)}), `;
     html += `${pCurv < 0.05 ? 'supporting a non-linear relationship.' : 'without strong evidence of non-linearity.'}</p>`;
   }
 
+  if (!Number.isFinite(piLower) || !Number.isFinite(piUpper)) {
+    html += '<p><strong>Prediction Interval:</strong> Not estimable: a prediction interval needs at least 2 studies (t on k - 1 df).</p>';
+  } else {
   html += `<p><strong>Prediction Interval:</strong> The 95% prediction interval for the true effect in a new study is [${piLower.toFixed(2)}, ${piUpper.toFixed(2)}]. `;
   if (piLower < 1 && piUpper > 1) {
     html += 'This interval includes 1.0, suggesting substantial uncertainty about the direction of effect in future studies.</p>';
   } else {
     html += `This interval ${piLower > 1 ? 'is entirely above' : 'is entirely below'} 1.0, suggesting consistent direction of effect expected in future studies.</p>`;
+  }
   }
 
   html += `<p><strong>Heterogeneity:</strong> Heterogeneity is ${hInterp} (I2 = ${r.I2.toFixed(1)}%, Q = ${r.Q.toFixed(2)}, df = ${r.df}, p = ${formatPValue(r.Qp)}). ${pInterp}.</p>`;
@@ -4289,14 +4344,16 @@ function updateDoseResponsePlot(points, r, canvasId = 'livePlotCanvas') {
 
   const maxDoseObserved = Math.max(...points.map(p => Number.isFinite(p.dose) ? p.dose : 0), 0);
   const doseMax = Math.max(1, maxDoseObserved * 1.1);
-  const zValue = normCDFinv(1 - (1 - currentCI/100) / 2);
+  // Pointwise CI band at the user's CI level; HK/SJ-scaled SE with t on n - p df when HK/SJ is on.
+  const bandInf = getInferenceSettings(r, currentCI);
+  const zValue = bandInf.crit;
 
   const curvePoints = [];
   for (let i = 0; i <= 100; i++) {
     const dose = doseMax * i / 100;
     const contrast = computeDoseContrast(r, modelType, dose, 0);
-    const lower = contrast.logRR - zValue * contrast.seLogRR;
-    const upper = contrast.logRR + zValue * contrast.seLogRR;
+    const lower = contrast.logRR - zValue * contrast.seLogRR * bandInf.seScale;
+    const upper = contrast.logRR + zValue * contrast.seLogRR * bandInf.seScale;
     curvePoints.push({ dose, mean: contrast.logRR, lower, upper });
   }
 
@@ -5110,22 +5167,61 @@ function updateHKSJ(enabled) {
   logAudit('hksj_changed', { enabled: useHKSJ });
 }
 
+// Knapp-Hartung (HK/SJ) for this model, y ~ N(X b, V + tau2 I) with one random effect per observation, follows
+// metafor rma.mv(random = ~ 1 | obs, test = "adhoc"): s2 = Q_RE / (n - p) floored at 1 (Knapp & Hartung 2003 ad hoc
+// correction), SE * sqrt(s2), and t on n - p df (n observations, p coefficients). Q_RE is the residual quadratic form
+// at the FITTED tau2 -- not the Cochran Q test statistic (result.Q, at tau2 = 0); results without QRE (e.g. the
+// simulation fallback, tau2 = 0) use Q. Previously s2 = Q_RE / (k - 1) with t on k - 1 df (k = studies).
+function hksjResidualQ(result) {
+  if (!result) return NaN;
+  return Number.isFinite(result.QRE) ? result.QRE : result.Q;
+}
+
+function hksjDf(result) {
+  if (!result) return NaN;
+  if (Number.isFinite(result.df) && result.df > 0) return result.df;
+  const p = Array.isArray(result.beta) ? result.beta.length : NaN;
+  return Number.isFinite(result.nPoints) && result.nPoints > p ? result.nPoints - p : NaN;
+}
+
+// Inference settings shared by every interval and test of the main model (and of subgroup fits): with HK/SJ on,
+// SEs are multiplied by sqrt(max(1, Q_RE / (n - p))) and critical values / p-values use t on n - p df (metafor
+// rma.mv test = "adhoc"); otherwise Wald z. ciPct is the user's CI level. Previously only the dose 1 vs 0 CI used
+// this: the coefficient table, report coefficients, curve band and trend p-value stayed Wald z, and subgroup CIs
+// used a fixed 95% z.
+function getInferenceSettings(result, ciPct = currentCI) {
+  const alpha = 1 - (Number.isFinite(ciPct) ? ciPct : 95) / 100;
+  const qRE = hksjResidualQ(result);
+  const dfHK = hksjDf(result);
+  if (useHKSJ && Number.isFinite(qRE) && dfHK > 0) {
+    return { seScale: Math.sqrt(Math.max(1, qRE / dfHK)), crit: tCriticalValue(dfHK, 1 - alpha / 2), df: dfHK,
+      method: 'HK/SJ', statLabel: 't' };
+  }
+  return { seScale: 1, crit: normCDFinv(1 - alpha / 2), df: Infinity, method: 'Wald', statLabel: 'z' };
+}
+
+// Two-sided p-value of a Wald-type statistic under the reference distribution of the inference settings.
+function inferencePValue(stat, settings) {
+  if (!Number.isFinite(stat)) return NaN;
+  return settings && Number.isFinite(settings.df) ? AlmTail.p2t(stat, settings.df) : AlmTail.p2norm(stat);
+}
+
 function getContrastInference(result, modelType, dose = 1, referenceDose = 0, ciPct = currentCI) {
   const contrast = computeDoseContrast(result, modelType, dose, referenceDose);
+  const settings = getInferenceSettings(result, ciPct);
   let se = contrast.seLogRR;
-  const alpha = 1 - (Number.isFinite(ciPct) ? ciPct : 95) / 100;
-  let crit = normCDFinv(1 - alpha / 2);
+  let crit = normCDFinv(1 - (1 - (Number.isFinite(ciPct) ? ciPct : 95) / 100) / 2);
   let method = 'Wald';
-
-  if (useHKSJ && Number.isFinite(result?.Q) && Number.isFinite(se) && se > 0) {
-    const k = Math.max(result?.nStudies || 1, 1);
-    const qHK = Math.max(1, result.Q / Math.max(k - 1, 1));
-    se = se * Math.sqrt(qHK);
-    crit = tCriticalValue(Math.max(k - 1, 1), 1 - alpha / 2);
+  let df = Infinity;
+  if (settings.method === 'HK/SJ' && Number.isFinite(se) && se > 0) {
+    se = se * settings.seScale;
+    crit = settings.crit;
     method = 'HK/SJ';
+    df = settings.df;
   }
-
-  return { contrast, se, crit, method };
+  const stat = se > 0 ? contrast.logRR / se : NaN;
+  const pValue = inferencePValue(stat, { df });
+  return { contrast, se, crit, method, df, stat, pValue };
 }
 
 // ================================================================
@@ -5169,12 +5265,11 @@ function runMethodComparison() {
     let beta1_se = contrast.seLogRR;
     let critValue = normCDFinv(1 - (1 - currentCI/100) / 2);
 
-    if (m.hk && Number.isFinite(r.Q) && Number.isFinite(beta1_se)) {
-      // Hartung-Knapp adjustment (Hartung & Knapp, Stat Med 2001)
-      const k = r.nStudies;
-      const qHK = Math.max(1, r.Q / Math.max(k - 1, 1));
+    if (m.hk && Number.isFinite(hksjResidualQ(r)) && hksjDf(r) > 0 && Number.isFinite(beta1_se)) {
+      // Knapp-Hartung with the ad hoc floor (metafor rma.mv test = "adhoc"): s2 = Q_RE / (n - p), t on n - p df
+      const qHK = Math.max(1, hksjResidualQ(r) / hksjDf(r));
       beta1_se = beta1_se * Math.sqrt(qHK);
-      critValue = tCriticalValue(k - 1, 1 - (1 - currentCI/100) / 2);
+      critValue = tCriticalValue(hksjDf(r), 1 - (1 - currentCI/100) / 2);
     }
 
     const ciLower = Math.exp(contrast.logRR - critValue * beta1_se);
@@ -5407,9 +5502,13 @@ function resetWizard() {
 function generateRCode() {
   if (!analysisResults) { showToast('Run analysis first', 'error'); return; }
 
-  const r = analysisResults.results;
-  const points = analysisResults.points;
-  const modelType = normalizeMainModel(analysisResults.modelType || currentMainModel || 'quadratic');
+  // Export exactly the analysis on screen: the ACTIVE (non-excluded) points and the fit on them. Previously every
+  // point was exported, including excluded studies, while tau2 came from the fit on the active ones.
+  let state;
+  try { state = getActiveAnalysisState(); } catch (err) { showToast(err && err.message ? err.message : String(err), 'error'); return; }
+  const r = state.result;
+  const points = state.activePoints;
+  const modelType = state.modelType;
   const isLinearModel = modelType === 'linear';
   const modelLabel = getMainModelLabel(modelType);
   const designMatrixCode = isLinearModel
@@ -5417,8 +5516,8 @@ function generateRCode() {
     : 'cbind(1, study_data$dose, study_data$dose^2)';
   const metaforMods = isLinearModel ? '~ dose' : '~ dose + I(dose^2)';
   const coefficientOutputLines = isLinearModel
-    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
-    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
+    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
+    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
   const formatRValue = (v) => (Number.isFinite(v) ? v : 'NA');
   const escapeRString = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const toRVector = (values, isString = false) => {
@@ -5439,7 +5538,10 @@ function generateRCode() {
     Number.isFinite(p.ref_cases) || Number.isFinite(p.ref_total)
   );
   const rMethod = 'REML';
-  const rMethodLabel = useREML ? 'REML' : 'DL (fixed tau2 from app)';
+  // DL with no manual tau2: the script re-estimates tau2 (same moment estimator) from the exported data;
+  // a manual tau2 is exported as fixed.
+  const tau2FromDL = !useREML && (currentTau2 === null || currentTau2 === undefined);
+  const rMethodLabel = useREML ? 'REML' : (tau2FromDL ? 'DL (tau2 re-estimated in R)' : 'fixed tau2 from app');
   const tau2Fixed = Number.isFinite(r?.tau2) ? r.tau2 : 0;
   const useREMLFlag = useREML ? 'TRUE' : 'FALSE';
   const forceDiagFlag = document.getElementById('rForceDiag')?.checked ? 'TRUE' : 'FALSE';
@@ -5457,12 +5559,13 @@ function generateRCode() {
 # ================================================================
 
 library(metafor)
+Z975 <- qnorm(0.975)
 
 # --------------------------------------------------------
 # DATA INPUT
 # --------------------------------------------------------
 dr_data <- data.frame(
-  study_id = ${toRVector(points.map(p => p.id))},
+  study_id = ${toRVector(points.map(p => p.id), true)},
   author = ${toRVector(points.map(p => p.author), true)},
   dose = ${toRVector(points.map(p => p.dose))},
   logRR = ${toRVector(logRRValues)},
@@ -5474,7 +5577,11 @@ dr_data <- data.frame(
 )
 
 use_reml <- ${useREMLFlag}
-tau2_fixed <- ${tau2Fixed.toFixed(6)}
+# tau2 used by the app; with tau2_estimate_dl = TRUE the script re-estimates it (DerSimonian-Laird) instead
+tau2_app <- ${String(tau2Fixed)}
+tau2_fixed <- tau2_app
+tau2_estimate_dl <- ${tau2FromDL ? 'TRUE' : 'FALSE'}
+ci_level <- ${Number.isFinite(currentCI) ? currentCI : 95}
 ridges <- list(base = 1e-10, se_floor = ${seFloor.toExponential(6)})
 force_diag <- ${forceDiagFlag}
 
@@ -5564,6 +5671,8 @@ if (length(V_list) < 2) {
 }
 
 dr_model <- do.call(rbind, model_rows)
+# One random effect per observation (non-reference dose contrast): Var(y) = V + tau2 I, the app's model.
+dr_model$obs <- seq_len(nrow(dr_model))
 study_ids_model <- unique(dr_model$study_id)
 n_model_studies <- length(study_ids_model)
 
@@ -5615,7 +5724,7 @@ if (use_reml && !force_diag) {
         yi = dr_model$logRR,
         V = V_total,
         mods = ${metaforMods},
-        random = ~ 1 | study_id,
+        random = ~ 1 | obs,
         data = dr_model,
         method = "${rMethod}"
       )
@@ -5632,7 +5741,7 @@ if (use_reml && is.null(fit)) {
       yi = dr_model$logRR,
       V = V_diag_vec,
       mods = ${metaforMods},
-      random = ~ 1 | study_id,
+      random = ~ 1 | obs,
       data = dr_model,
       method = "${rMethod}"
     ),
@@ -5655,15 +5764,25 @@ if (use_reml && is.null(fit)) {
 }
 
 if (use_reml) {
-  summary(fit)
+  print(fit)
 
   beta <- as.numeric(coef(fit))
   se <- sqrt(diag(vcov(fit)))
-  tau2 <- fit$tau2
+  tau2 <- fit$sigma2
   Q <- fit$QE
   df_q <- if (!is.null(fit$k) && !is.null(fit$p)) fit$k - fit$p else NA
 } else {
   # Fixed tau2 GLS to mirror app's DL-based tau2 estimate
+  if (tau2_estimate_dl) {
+    # DerSimonian-Laird moment estimator for y ~ N(X b, V + tau2 I), as the app: (Q_E - (n - p)) / tr(P),
+    # P = W - W X (X'W X)^-1 X'W at tau2 = 0
+    V_dl <- as.matrix(if (force_diag) V_total_diag else V_total)
+    W_dl <- solve(V_dl)
+    P_dl <- W_dl - W_dl %*% X_total %*% solve(t(X_total) %*% W_dl %*% X_total, t(X_total) %*% W_dl)
+    Q_dl <- as.numeric(t(y_total) %*% P_dl %*% y_total)
+    tau2_fixed <- max(0, (Q_dl - (nrow(X_total) - ncol(X_total))) / sum(diag(P_dl)))
+    cat("\\nDL tau2 re-estimated in R:", format(tau2_fixed, digits = 8), "(app:", format(tau2_app, digits = 8), ")\\n")
+  }
   V_total_tau <- as.matrix(if (force_diag) V_total_diag else V_total)
   diag(V_total_tau) <- diag(V_total_tau) + tau2_fixed
   Vinv <- tryCatch(solve(V_total_tau), error = function(e) NULL)
@@ -5701,6 +5820,14 @@ if (use_reml) {
     Q <- as.numeric(t(res) %*% Vinv %*% res)
     df_q <- (n_model_studies - 1) * ncol(X_total)
   }
+  # Cochran Q test (as metafor QE / dosresmeta qtest): residual quadratic form with fixed-effect GLS weights
+  # (tau2 = 0), df = n - p. The residual at tau2_fixed above is not chi2(n - p) under H0.
+  V_q <- as.matrix(if (force_diag) V_total_diag else V_total)
+  Vinv_q <- solve(V_q)
+  beta_q <- solve(t(X_total) %*% Vinv_q %*% X_total + diag(ridge, nrow = ncol(X_total)), t(X_total) %*% Vinv_q %*% y_total)
+  res_q <- y_total - X_total %*% beta_q
+  Q <- as.numeric(t(res_q) %*% Vinv_q %*% res_q)
+  df_q <- nrow(X_total) - ncol(X_total)
 }
 
 # --------------------------------------------------------
@@ -5718,14 +5845,48 @@ pval_q <- if (!is.null(Q) && is.finite(Q) && !is.na(df_q)) pchisq(Q, df_q, lower
 cat("I²:", ifelse(is.na(I2), "NA", round(I2, 1)), "%\\n")
 cat("Q:", ifelse(is.null(Q), "NA", Q), "df =", ifelse(is.na(df_q), "NA", df_q), "p =", ifelse(is.na(pval_q), "NA", format.pval(pval_q)), "\\n")
 
-# Confidence intervals for pooled RR
-rr <- ifelse(is.na(beta[2]), NA, exp(beta[2]))
-ci_lower <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] - Z975 * se[2]))
-ci_upper <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] + Z975 * se[2]))
+# Pooled estimate = the app's: the dose 1 vs 0 contrast c'b (c = row(1) - row(0) of the design), with SE
+# sqrt(c' Var(b) c); with HK/SJ on the SE is multiplied by sqrt(s2), s2 = max(1, Q_RE / (n - p)), Q_RE =
+# e' (V + tau2 I)^-1 e at the fitted b, and the CI uses t on n - p df (Knapp-Hartung with the ad hoc floor, as
+# metafor rma.mv test = "adhoc"); otherwise Wald z. Level = the app's CI level.
+use_hksj <- ${useHKSJ ? 'TRUE' : 'FALSE'}
+pi_c <- ${isLinearModel ? 'c(0, 1)' : 'c(0, 1, 1)'}
+pi_vb <- if (use_reml) vcov(fit) else varMatrix
+pi_est <- sum(pi_c * beta)
+pi_se <- sqrt(max(0, drop(t(pi_c) %*% pi_vb %*% pi_c)))
+hk_df <- nrow(X_total) - ncol(X_total)
+hk_s2 <- 1
+hk_on <- use_hksj && hk_df > 0
+if (hk_on) {
+  V_fit <- as.matrix(if (force_diag) V_total_diag else V_total)
+  diag(V_fit) <- diag(V_fit) + tau2
+  e_fit <- y_total - X_total %*% beta
+  Q_RE <- as.numeric(t(e_fit) %*% solve(V_fit, e_fit))
+  hk_s2 <- max(1, Q_RE / hk_df)
+  cat("HK/SJ: s2 = max(1, Q_RE / (n - p)) =", round(hk_s2, 4), "on", hk_df, "df; the CI and PI use the scaled SE\\n")
+}
+pi_se <- pi_se * sqrt(hk_s2)
+ci_crit <- if (hk_on) qt(1 - (1 - ci_level / 100) / 2, hk_df) else qnorm(1 - (1 - ci_level / 100) / 2)
+rr <- exp(pi_est)
+ci_lower <- exp(pi_est - ci_crit * pi_se)
+ci_upper <- exp(pi_est + ci_crit * pi_se)
+trend_stat <- if (pi_se > 0) pi_est / pi_se else NA
+p_trend <- if (is.na(trend_stat)) NA else if (hk_on) 2 * pt(-abs(trend_stat), hk_df) else 2 * pnorm(-abs(trend_stat))
 
 cat("\\n=== POOLED ESTIMATE ===\\n")
+cat("Dose 1 vs 0 contrast (", if (hk_on) paste0("HK/SJ, t on ", hk_df, " df") else "Wald z", ")\\n", sep = "")
 cat("RR:", ifelse(is.na(rr), "NA", round(rr, 3)), "\\n")
-cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(is.na(ci_upper), "NA", round(ci_upper, 3)), "]\\n")
+cat(ci_level, "% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(is.na(ci_upper), "NA", round(ci_upper, 3)), "]\\n", sep = "")
+cat("Trend p-value:", ifelse(is.na(p_trend), "NA", format.pval(p_trend)), "\\n")
+
+# 95% prediction interval for the true dose 1 vs 0 relative risk in a new study (as the app reports it):
+# exp(c'b -/+ qt(0.975, k - 1) * sqrt(SE^2 + tau2)), k = number of studies (Cochrane Handbook v6.5); NA for k < 2.
+# SE is the (HK/SJ-scaled when on) SE of c'b above.
+pi_df <- n_model_studies - 1
+pi_crit <- if (pi_df >= 1) qt(0.975, pi_df) else NA
+pi_lower <- exp(pi_est - pi_crit * sqrt(pi_se^2 + tau2))
+pi_upper <- exp(pi_est + pi_crit * sqrt(pi_se^2 + tau2))
+cat("95% PI (new study, dose 1 vs 0; t on", pi_df, "df): [", ifelse(is.na(pi_lower), "NA", round(pi_lower, 3)), ",", ifelse(is.na(pi_upper), "NA", round(pi_upper, 3)), "]\\n")
 
 # --------------------------------------------------------
 # PLOTS
@@ -5733,7 +5894,7 @@ cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(
 # Forest plot
 if (use_reml) {
   forest(fit, main = "Dose-Response Meta-Analysis",
-         xlab = "Log Relative Risk", slab = dr_data$author)
+         xlab = "Log Relative Risk", slab = paste(dr_model$author, dr_model$dose))
 } else {
   cat("\\nForest plot skipped (fit not available in fixed tau2 mode).\\n")
 }
@@ -6238,7 +6399,7 @@ function buildSubgroupReportSection(subgroupResults) {
     <p><strong>Between-subgroup heterogeneity:</strong> Q = ${formatReportNumber(subgroupResults.QBetween, 2)} (df = ${formatReportNumber(subgroupResults.dfBetween, 0)}, p = ${formatPValue(subgroupResults.pBetween)})</p>
   `;
 
-  html += '<table><thead><tr><th>Subgroup</th><th class="num">Studies</th><th class="num">Points</th><th class="num">Beta1 (SE)</th><th class="num">RR@20 (95% CI)</th><th class="num">Tau2</th><th class="num">I2 (%)</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th>Subgroup</th><th class="num">Studies</th><th class="num">Points</th><th class="num">Beta1 (SE)</th><th class="num">RR@20 (' + (subgroups[0]?.ciLevel ?? 95) + '% CI)</th><th class="num">Tau2</th><th class="num">I2 (%)</th></tr></thead><tbody>';
   subgroups.forEach(sg => {
     const rrCi = Array.isArray(sg.rrCI) && sg.rrCI.length >= 2
       ? `${formatReportNumber(sg.rr, 3)} [${formatReportNumber(sg.rrCI[0], 3)}, ${formatReportNumber(sg.rrCI[1], 3)}]`
@@ -6247,7 +6408,7 @@ function buildSubgroupReportSection(subgroupResults) {
       <td>${escapeHTML(String(sg.name || 'Unknown'))}</td>
       <td class="num">${formatReportNumber(sg.nStudies, 0)}</td>
       <td class="num">${formatReportNumber(sg.nPoints, 0)}</td>
-      <td class="num">${formatReportNumber(sg.beta?.[1], 4)} (${formatReportNumber(sg.se?.[1], 4)})</td>
+      <td class="num">${formatReportNumber(sg.beta?.[1], 4)} (${formatReportNumber(Number.isFinite(sg.se?.[1]) ? sg.se[1] * (sg.seScale ?? 1) : NaN, 4)})</td>
       <td class="num">${rrCi}</td>
       <td class="num">${formatReportNumber(sg.tau2, 4)}</td>
       <td class="num">${formatReportNumber(sg.I2, 1)}</td>
@@ -6571,13 +6732,13 @@ function buildAnalysisReportPayload() {
   const rr = Math.exp(inference.contrast.logRR);
   const ciLower = Math.exp(inference.contrast.logRR - inference.crit * inference.se);
   const ciUpper = Math.exp(inference.contrast.logRR + inference.crit * inference.se);
-  const piSE = Math.sqrt(Math.max(0, inference.se * inference.se + (result.tau2 || 0)));
-  const piCrit = tCriticalValue(Math.max((result.nStudies || 2) - 2, 1), 0.975);
-  const piLower = Math.exp(inference.contrast.logRR - piCrit * piSE);
-  const piUpper = Math.exp(inference.contrast.logRR + piCrit * piSE);
-  const zTrend = inference.se > 0 ? (inference.contrast.logRR / inference.se) : NaN;
-  const pTrend = Number.isFinite(zTrend) ? 2 * AlmTail.pnormUpper(Math.abs(zTrend)) : NaN;
-  const zValue = normCDFinv(1 - (1 - currentCI / 100) / 2);
+  const pi = predictionIntervalLog(inference.contrast.logRR, inference.se, result.tau2, result.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
+  const zTrend = inference.stat;
+  const pTrend = inference.pValue;
+  const coefInf = getInferenceSettings(result, currentCI);
+  const zValue = coefInf.crit;
 
   const coefficientLabels = modelType === 'linear'
     ? ['Intercept (beta0)', 'Linear (beta1)']
@@ -6585,7 +6746,7 @@ function buildAnalysisReportPayload() {
   const coefficients = [];
   for (let i = 0; i < (result.beta || []).length; i++) {
     const beta = result.beta[i];
-    const se = result.se?.[i];
+    const se = Number.isFinite(result.se?.[i]) ? result.se[i] * coefInf.seScale : result.se?.[i];
     const z = Number.isFinite(beta) && Number.isFinite(se) && se > 0 ? beta / se : NaN;
     coefficients.push({
       term: coefficientLabels[i] || `Parameter beta${i}`,
@@ -6594,7 +6755,7 @@ function buildAnalysisReportPayload() {
       ciLower: Number.isFinite(beta) && Number.isFinite(se) ? beta - zValue * se : NaN,
       ciUpper: Number.isFinite(beta) && Number.isFinite(se) ? beta + zValue * se : NaN,
       z,
-      p: Number.isFinite(z) ? 2 * AlmTail.pnormUpper(Math.abs(z)) : NaN
+      p: inferencePValue(z, coefInf)
     });
   }
 
@@ -6621,6 +6782,7 @@ function buildAnalysisReportPayload() {
     ciLevel: currentCI,
     tau2Mode: getTau2MethodText(),
     inferenceMethod: inference.method,
+    coefficientStatLabel: coefInf.statLabel,
     nStudies: studies.length,
     nPoints: activePoints.length,
     nExcludedStudies: excludedStudies.size,
@@ -6793,7 +6955,7 @@ function buildAnalysisReportHTML(payload) {
 
   <h3>Coefficient Estimates</h3>
   <table>
-    <thead><tr><th>Term</th><th class="num">Beta</th><th class="num">SE</th><th class="num">${payload.ciLevel}% CI</th><th class="num">z</th><th class="num">p</th></tr></thead>
+    <thead><tr><th>Term</th><th class="num">Beta</th><th class="num">SE</th><th class="num">${payload.ciLevel}% CI</th><th class="num">${payload.coefficientStatLabel || 'z'}</th><th class="num">p</th></tr></thead>
     <tbody>${coeffRows}</tbody>
   </table>
 
@@ -7196,12 +7358,7 @@ function getVarMatrixValue(varMatrix, i, j, p) {
 function buildPredictorRow(result, modelType, dose) {
   if (modelType === 'linear') return [1, dose];
   if (modelType === 'spline' && Array.isArray(result.knots) && result.knots.length >= 3) {
-    const knots = result.knots;
-    const row = [1, dose];
-    for (let k = 1; k < knots.length - 1; k++) {
-      row.push(computeSplineTerm(dose, knots[k], knots[0], knots[knots.length - 1]));
-    }
-    return row;
+    return [1, dose, ...rcsTerms(dose, result.knots)];
   }
   if (modelType === 'exponential') {
     const alpha = Number.isFinite(result.alpha) ? result.alpha : 0.1;
@@ -7308,6 +7465,9 @@ function performSubgroupAnalysis(variable, modelType) {
     const contrast = computeDoseContrast(result, modelType, contrastDose, 0);
     const rr = Math.exp(contrast.logRR);
     const rrSE = Math.abs(rr * contrast.seLogRR);
+    // CI at the user's CI level, HK/SJ-scaled (t on the subgroup fit's n - p df) when HK/SJ is on -- as the main
+    // model. The between-subgroup Q below keeps the unscaled contrast SEs (Wald), as before.
+    const sgInf = getInferenceSettings(result, currentCI);
 
     subgroupResults.push({
       name: subgroup,
@@ -7327,9 +7487,13 @@ function performSubgroupAnalysis(variable, modelType) {
       rr: rr,
       rrSE: rrSE,
       rrCI: [
-        Math.exp(contrast.logRR - Z975 * contrast.seLogRR),
-        Math.exp(contrast.logRR + Z975 * contrast.seLogRR)
+        Math.exp(contrast.logRR - sgInf.crit * sgInf.seScale * contrast.seLogRR),
+        Math.exp(contrast.logRR + sgInf.crit * sgInf.seScale * contrast.seLogRR)
       ],
+      ciCrit: sgInf.crit,
+      ciLevel: currentCI,
+      seScale: sgInf.seScale,
+      inferenceMethod: sgInf.method,
       p: contrast.p,
       parameterCount: Array.isArray(result.beta) ? result.beta.length : contrast.p,
       modelType: modelType,
@@ -7591,7 +7755,7 @@ function updateSubgroupDoseResponsePlot(results) {
       const dose = minDose + (i / 100) * doseRange;
       const contrast = computeDoseContrast(sg, modelType, dose, 0);
       if (!Number.isFinite(contrast.logRR)) continue;
-      const rrLower = Math.exp(contrast.logRR - Z975 * contrast.seLogRR);
+      const rrLower = Math.exp(contrast.logRR - (sg.ciCrit ?? Z975) * (sg.seScale ?? 1) * contrast.seLogRR);
       const x = scaleX(dose);
       const y = scaleY(rrLower);
       if (i === 0) ctx.moveTo(x, y);
@@ -7601,7 +7765,7 @@ function updateSubgroupDoseResponsePlot(results) {
       const dose = minDose + (i / 100) * doseRange;
       const contrast = computeDoseContrast(sg, modelType, dose, 0);
       if (!Number.isFinite(contrast.logRR)) continue;
-      const rrUpper = Math.exp(contrast.logRR + Z975 * contrast.seLogRR);
+      const rrUpper = Math.exp(contrast.logRR + (sg.ciCrit ?? Z975) * (sg.seScale ?? 1) * contrast.seLogRR);
       const x = scaleX(dose);
       const y = scaleY(rrUpper);
       if (i === 100) ctx.moveTo(x, y);
@@ -7817,7 +7981,7 @@ function exportSubgroupResults() {
       content += `    β₂ (Quadratic): ${sg.beta[2].toFixed(4)} (SE: ${sg.se[2].toFixed(4)})\n`;
     }
     content += `  Relative Risk (at dose=20): ${sg.rr.toFixed(3)} (SE: ${sg.rrSE.toFixed(3)})\n`;
-    content += `  95% CI: [${sg.rrCI[0].toFixed(3)}, ${sg.rrCI[1].toFixed(3)}]\n`;
+    content += `  ${sg.ciLevel ?? 95}% CI: [${sg.rrCI[0].toFixed(3)}, ${sg.rrCI[1].toFixed(3)}]\n`;
     content += `  Between-study variance (Tau²): ${sg.tau2 !== null && sg.tau2 !== undefined ? (sg.tau2 < 0.0001 ? '<0.0001' : sg.tau2.toFixed(4)) : 'N/A'}\n`;
     content += `  Heterogeneity (I²): ${sg.I2.toFixed(1)}%\n`;
     content += `  Q statistic: ${sg.Q.toFixed(2)} (p=${formatPValue(sg.Qp)})\n\n`;
@@ -8057,9 +8221,10 @@ function fitLinearSimulationFallback(points) {
     se: [seIntercept, seSlope],
     tau2: 0,
     Q: Number.isFinite(rss) ? rss : df,
+    df,
     nStudies,
     seHKSJ: [seIntercept, seSlope],
-    dfHKSJ: Math.max(1, nStudies - 1),
+    dfHKSJ: df,
     piDF: Math.max(1, nStudies - 1),
     simFallback: true
   };
@@ -8286,12 +8451,13 @@ function getSimulationBatchSize(nSim, fastMode) {
 }
 
 function withHKSJ(result) {
-  if (!result || !result.se || !Number.isFinite(result.Q)) return result;
+  if (!result || !result.se || !Number.isFinite(hksjResidualQ(result))) return result;
   if (!result.nStudies) return result;
 
   if (!result.seHKSJ || !result.dfHKSJ) {
-    const df = Math.max(1, result.nStudies - 1);
-    const q = Math.max(1, result.Q / df);
+    const df = hksjDf(result);
+    if (!(df > 0)) return result;
+    const q = Math.max(1, hksjResidualQ(result) / df);
     result.seHKSJ = result.se.map(s => s * Math.sqrt(q));
     result.dfHKSJ = df;
     result.qHKSJ = q;

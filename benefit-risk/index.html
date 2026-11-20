@@ -95,6 +95,13 @@
         <h2>Caveats (read before deciding)</h2>
         <div class="assum"><strong>MCDA is a structured value judgement, not a fact.</strong> The <em>weights</em> encode whose preferences matter and should be elicited/varied, not guessed. The partial value functions are <em>linear</em> over the observed range (a simplification). SMAA propagates the <em>statistical</em> uncertainty in each effect (mean ± SE) but not structural/model uncertainty. EVPI is on the 0–1 value scale; multiply by the affected population and decision horizon for a population EVPI. Vary the weights and re-run before acting.</div>
       </section>
+      <section class="panel" id="r-panel" aria-label="Check in R">
+        <h2>Check in R</h2>
+        <p class="hint">Recompute every number shown above in R, from the inputs currently analysed: download a self-contained script for desktop R, or run the same script here in WebR (in-browser R, pinned and SHA-256 verified; the first run downloads the R bundle, then it is cached). No R packages are needed (base R replays the page's seeded draws exactly). Both print each value next to R's and end with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" id="btn-rscript">Download R script</button><button type="button" id="btn-webr">Verify in R (WebR)</button></div>
+        <p id="r-status" class="hint" role="status" aria-live="polite"></p>
+        <pre id="r-out" hidden style="max-height:24rem;overflow:auto;white-space:pre;font-size:.72rem;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;margin:0"></pre>
+      </section>
     </section>
   </main>
 
@@ -140,7 +147,7 @@
     }
 
     function run() {
-      window.__lastBR = null;
+      window.__lastBR = null; window.__lastBRInput = null;   // both cleared unless this run succeeds (R check reads them)
       var criteria = parseCriteria($("f-criteria").value);
       var treatments = parsePerf($("f-perf").value, criteria);
       var iters = parseInt($("f-iters").value, 10) || 10000;
@@ -152,6 +159,7 @@
       var r = window.AlmBenefitRisk.analyze({ criteria: criteria, treatments: treatments, iterations: iters, seed: seed });
       if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; return; }
       window.__lastBR = r;
+      window.__lastBRInput = { criteria: criteria, treatments: treatments, iterations: iters, seed: seed };
 
       var top = r.smaa[0];
       var second = r.smaa[1];
@@ -194,6 +202,8 @@
     window.__almBenefitRisk = { run: function () { run(); return window.__lastBR || null; } };
   })();
   </script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-verify.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

@@ -1,0 +1,173 @@
+'use strict';
+// CSV / TSV upload (Data > drop zone / #fileInput) must load every column as written in the file.
+// parseDelimited split each row with line.match(/("([^"]|"")*"|[^,]*)/g). `[^,]*` also matches the empty string, so
+// after every field the regex yields an empty match at the comma position: "S1,1,11.148881" -> ["S1","","1","",
+// "11.148881",""], and the row loaded as {study:"S1", treat:"", y:1}. Every column after the first was shifted onto an
+// empty match or onto the previous column's value, so a CSV upload never gave the data a JSON upload gives. The TSV
+// branch matched /[^\t]+/g, which drops empty fields and shifts the next value left. Headers were split on the bare
+// delimiter, so a quoted header containing the delimiter became two columns; "" escapes were not unescaped; a quoted
+// field spanning lines was cut into two rows; numbers were read with parseFloat, so "1.5abc" became 1.5 and a quoted
+// decimal-comma value "11,148881" became 11 without any warning. parseCSV (an unused second copy) had the same regex.
+//   node dev/tests/csv_upload.test.cjs [path/to/ipd-meta-pro.html]
+const path = require('node:path');
+const { loadPage } = require('./p60_page_loader.cjs');
+const pageFile = process.argv[2] || path.join(__dirname, '..', '..', 'ipd-meta-pro.html');
+const { run, sandbox } = loadPage(pageFile);
+let passed = 0, failed = 0;
+const check = (name, ok, detail) => { if (ok) passed++; else failed++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (ok ? '' : '  [' + detail + ']')); };
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+const parse = (text, delim) => { sandbox.__t = text; sandbox.__d = delim; return JSON.parse(JSON.stringify(run('parseDelimited(__t, __d)'))); };
+
+const cases = [
+  { name: 'plain comma CSV (the uploaded IPD rows)', text: 'study,treat,y\nS1,1,11.148881\nS2,0,-0.5\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 11.148881 }, { study: 'S2', treat: 0, y: -0.5 }] },
+  { name: 'quoted fields with commas, "" escapes, empty fields; quoted header with a comma',
+    text: 'study,"arm, label",y,note\n"S, 1",1,11.5,"He said ""hi"""\nS2,,3.25,\n"S3",0,-2,plain\n',
+    headers: ['study', 'arm, label', 'y', 'note'],
+    data: [{ study: 'S, 1', 'arm, label': 1, y: 11.5, note: 'He said "hi"' }, { study: 'S2', 'arm, label': '', y: 3.25, note: '' }, { study: 'S3', 'arm, label': 0, y: -2, note: 'plain' }] },
+  { name: 'CRLF line ends, blank line and trailing newline', text: 'study,treat,y\r\nS1,1,11.148881\r\nS1,0,9.5\r\n\r\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 11.148881 }, { study: 'S1', treat: 0, y: 9.5 }] },
+  { name: 'no trailing newline', text: 'study,treat,y\nS1,1,2',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 2 }] },
+  { name: 'UTF-8 byte-order mark before the header', text: '﻿study,treat,y\nS1,1,11.148881\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 11.148881 }] },
+  { name: 'tab-delimited (.tsv) with empty fields', text: 'study\ttreat\ty\tnote\nS1\t1\t11.148881\t\nS1\t\t9.5\tx\n', delim: '\t',
+    headers: ['study', 'treat', 'y', 'note'], data: [{ study: 'S1', treat: 1, y: 11.148881, note: '' }, { study: 'S1', treat: '', y: 9.5, note: 'x' }] },
+  { name: 'tab-delimited content in a .csv file (delimiter detected from the header)', text: 'study\ttreat\ty\nS1\t1\t2.5\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 2.5 }] },
+  { name: 'semicolon-delimited with decimal commas (European Excel export)', text: 'study;treat;y\nS1;1;11,148881\nS1;0;-9,5\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: 11.148881 }, { study: 'S1', treat: 0, y: -9.5 }] },
+  { name: 'quoted field spanning two lines', text: 'study,treat,note,y\nS1,1,"line one\nline two",4.5\nS2,0,x,1e-3\n',
+    headers: ['study', 'treat', 'note', 'y'], data: [{ study: 'S1', treat: 1, note: 'line one\nline two', y: 4.5 }, { study: 'S2', treat: 0, note: 'x', y: 0.001 }] },
+  { name: 'text that only starts with a number stays text; NA stays text', text: 'study,treat,y\nS1,1,1.5abc\nS1,0,NA\n',
+    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: '1.5abc' }, { study: 'S1', treat: 0, y: 'NA' }] },
+  { name: 'number forms: padded, signed, leading dot, exponent, quoted number', text: 'a,b,c,d,e,f\n 2 ,+3,.5,1E3,"42",-\n',
+    headers: ['a', 'b', 'c', 'd', 'e', 'f'], data: [{ a: 2, b: 3, c: 0.5, d: 1000, e: 42, f: '-' }] },
+  // (a short row "S1,1" under 3 headers used to load with y = ''; a row with the wrong number of fields is now refused
+  // with its line -- see "ragged rows" below -- because the same mechanism silently dropped extra fields)
+  { name: 'U+2212 minus sign is a minus (comma file and semicolon decimal-comma file)', text: 'study,y,z\nS1,−1.5,−2e-3\n',
+    headers: ['study', 'y', 'z'], data: [{ study: 'S1', y: -1.5, z: -0.002 }] },
+  { name: 'U+2212 minus with a decimal comma (semicolon file)', text: 'study;y\nS1;−1,5\n',
+    headers: ['study', 'y'], data: [{ study: 'S1', y: -1.5 }] }
+];
+for (const c of cases) {
+  const r = parse(c.text, c.delim);
+  check('parseDelimited: ' + c.name, same(r.headers, c.headers) && same(r.data, c.data),
+    'headers ' + JSON.stringify(r.headers) + ' data ' + JSON.stringify(r.data));
+}
+
+// A decimal comma inside a comma-delimited file is ambiguous (11,148881 could be a thousands separator); it must not be
+// read as 11. It stays text and the parse reports which column holds such values.
+{
+  const r = parse('study,treat,y\nS1,1,"11,148881"\nS1,0,"9,5"\n');
+  check('comma CSV with quoted decimal commas: not truncated to 11, reported', r.data[0].y === '11,148881' && r.data[1].y === '9,5' &&
+    Array.isArray(r.warnings) && r.warnings.some(w => /\by\b/.test(w) && /decimal comma/i.test(w)), JSON.stringify(r));
+}
+
+// The unused second copy must not keep the broken regex.
+sandbox.__t = 'study,treat,y\nS1,1,11.148881\n';
+check('parseCSV (second copy) gives the same row', same(JSON.parse(JSON.stringify(run('parseCSV(__t).data'))), [{ study: 'S1', treat: 1, y: 11.148881 }]),
+  JSON.stringify(run('parseCSV(__t).data')));
+
+// End to end through handleFile (the drop zone / #fileInput handler) with a FileReader that returns the file text.
+sandbox.FileReader = function () { const self = this; this.readAsText = function (f) { self.onload({ target: { result: f.__text } }); }; this.readAsArrayBuffer = this.readAsText; };
+run('window.__notes = []; showNotification = function (m, t) { __notes.push(String(t) + ": " + String(m)); }; APP.data = null;');
+sandbox.__file = { name: 'ipd_rows.csv', __text: 'study,treat,y\nS1,1,11.148881\nS1,0,9.5\nS2,1,10.25\n' };
+run('handleFile(__file)');
+const loaded = JSON.parse(JSON.stringify(run('APP.data')));
+check('handleFile on a .csv: APP.data holds the file\'s values', same(loaded, [{ study: 'S1', treat: 1, y: 11.148881 }, { study: 'S1', treat: 0, y: 9.5 }, { study: 'S2', treat: 1, y: 10.25 }]),
+  JSON.stringify(loaded) + ' notes ' + JSON.stringify(run('__notes')));
+run('APP.data = null; __notes.length = 0;');
+sandbox.__file = { name: 'eu.csv', __text: 'study,treat,y\nS1,1,"11,148881"\n' };
+run('handleFile(__file)');
+const notes = JSON.parse(JSON.stringify(run('__notes')));
+check('handleFile on a .csv with quoted decimal commas: the user is told', notes.some(n => /^warning/.test(n) && /decimal comma/i.test(n)), JSON.stringify(notes));
+
+// An unterminated quote: the reader stayed inside the quoted field to the end of the text, so every later line became
+// part of one field and the rows after the stray quote silently vanished (4 data rows loaded as 2, no message). The
+// file must be refused, naming the line where the quote opened, and nothing must be loaded.
+{
+  const text = 'study,treat,y\nS1,1,11.5\nS2,"0,9.5\nS3,1,10.25\nS4,0,8.75\n';
+  let threw = null, r = null;
+  try { r = parse(text); } catch (e) { threw = String(e && e.message || e); }
+  check('parseDelimited: unterminated quote is refused with the line where it opened (line 3), not swallowed',
+    threw !== null && /unterminated|never closed/i.test(threw) && /\bline 3\b/.test(threw), threw === null ? 'no error; data ' + JSON.stringify(r && r.data) : threw);
+  let threw2 = null;
+  try { parse('study\ttreat\ty\nS1\t1\t2\nS2\t0\t"3\n', '\t'); } catch (e) { threw2 = String(e && e.message || e); }
+  check('parseDelimited: unterminated quote in the last field of a .tsv is refused (line 3)', threw2 !== null && /\bline 3\b/.test(threw2), String(threw2));
+  run('APP.data = null; __notes.length = 0;');
+  sandbox.__file = { name: 'stray.csv', __text: text };
+  run('handleFile(__file)');
+  const n2 = JSON.parse(JSON.stringify(run('__notes')));
+  check('handleFile on a .csv with an unterminated quote: error shown with the line number, nothing loaded',
+    run('APP.data') === null && n2.some(n => /^error/.test(n) && /\bline 3\b/.test(n)) && !n2.some(n => /^success/.test(n)), JSON.stringify(n2) + ' data ' + JSON.stringify(run('APP.data')));
+}
+
+// Delimiter detection read only the first PHYSICAL line. A quoted header field holding a line break was cut before its
+// closing quote, the quote-stripping regex then left the comma inside it, and comma was chosen for a semicolon file:
+// every row loaded as one string. Detection must read the first logical record with the same quote-state scan.
+{
+  const r = parse('"study,\nlabel";treatment;outcome\nS1;1;2\nS2;0;3\n');
+  check('delimiter detection: quoted header field with a comma and a line break, semicolon file -> 3 columns, 2 rows',
+    r.delimiter === ';' && same(r.headers, ['study,\nlabel', 'treatment', 'outcome']) &&
+    same(r.data, [{ 'study,\nlabel': 'S1', treatment: 1, outcome: 2 }, { 'study,\nlabel': 'S2', treatment: 0, outcome: 3 }]), JSON.stringify(r));
+  const r2 = parse('"a;\nb",c,d\n1,2,3\n');
+  check('delimiter detection: quoted header field with a semicolon and a line break, comma file -> comma',
+    r2.delimiter === ',' && same(r2.headers, ['a;\nb', 'c', 'd']) && same(r2.data, [{ 'a;\nb': 1, c: 2, d: 3 }]), JSON.stringify(r2));
+  let threw3 = null;
+  try { parse('"study;treat;y\nS1;1;2\n'); } catch (e) { threw3 = String(e && e.message || e); }
+  check('delimiter detection: unterminated quote in the header is refused (line 1)', threw3 !== null && /\bline 1\b/.test(threw3), String(threw3));
+}
+
+// Review of PR #535 (rev535). Each of these was silent, or failed, before.
+const refusal = (text, delim) => { try { const r = parse(text, delim); return { ok: r }; } catch (e) { return { err: String(e && e.message || e) }; } };
+{
+  // MAJOR-1: records.push(...readAll()) spread every row as call arguments: "Maximum call stack size exceeded" above
+  // ~120-150k rows. 250,000 rows must load.
+  const N = 250000; const parts = ['study,treat,y'];
+  for (let i = 0; i < N; i++) parts.push('S' + (i % 50) + ',' + (i % 2) + ',' + (i / 1000));
+  const t0 = Date.now(); const r = refusal(parts.join('\n') + '\n'); const ms = Date.now() - t0;
+  check('250,000-row CSV loads (no call-stack overflow)', r.ok && r.ok.data.length === N && r.ok.data[N - 1].y === (N - 1) / 1000, (r.err || ('n ' + (r.ok && r.ok.data.length))) + ' ' + ms + ' ms');
+}
+{
+  // MINOR-1: comma and semicolon tie on the header (1 separator each); comma was kept, headers garbled, y = 5, silent.
+  const r = refusal('"Study, year";"log OR, adj"\nA;1,5\nB;-0,25\n');
+  check('delimiter tie broken by well-formed quoting across the first records -> semicolon',
+    r.ok && r.ok.delimiter === ';' && same(r.ok.headers, ['Study, year', 'log OR, adj']) && same(r.ok.data, [{ 'Study, year': 'A', 'log OR, adj': 1.5 }, { 'Study, year': 'B', 'log OR, adj': -0.25 }]),
+    JSON.stringify(r));
+  const r2 = refusal('a,b;c\n1,2;3\n4,5;6\n');
+  check('delimiter that cannot be decided (comma and semicolon fit equally) is refused, naming both', !!r2.err && /delimiter/i.test(r2.err) && /comma/i.test(r2.err) && /semicolon/i.test(r2.err), JSON.stringify(r2));
+}
+{
+  // MINOR-2: rows with the wrong number of fields were accepted; an unquoted decimal comma "S2,1,5" gave y = 1.
+  const r = refusal('study,y\nS1,2\nS2,1,5\n');
+  check('row with too many fields refused with its line (3) and the decimal-comma hint', !!r.err && /\bline 3\b/.test(r.err) && /decimal comma/i.test(r.err), JSON.stringify(r));
+  const r2 = refusal('study,treat,y\nS1,1,2\nS1,1\n');
+  check('row with too few fields refused with its line (3)', !!r2.err && /\bline 3\b/.test(r2.err) && /3 fields|has 2/i.test(r2.err), JSON.stringify(r2));
+  const r3 = refusal('study,note,y\nS1,"two\nlines",2\nS2,x\n');
+  check('line number counts physical lines inside a quoted multi-line field (bad row on line 4)', !!r3.err && /\bline 4\b/.test(r3.err), JSON.stringify(r3));
+}
+{
+  // MINOR-3: duplicate header names: the later column overwrote the earlier one (y,y,v / 1,2,3 -> y = 2).
+  const r = refusal('y,y,v\n1,2,3\n');
+  check('duplicate column names refused, naming the column', !!r.err && /duplicate/i.test(r.err) && /"y"|\by\b/.test(r.err), JSON.stringify(r));
+}
+{
+  // Excel "sep=;" first line was read as the header.
+  const r = refusal('sep=;\nstudy;y\nS1;1,5\n');
+  check('Excel "sep=;" line honoured and stripped, with a note', r.ok && r.ok.delimiter === ';' && same(r.ok.headers, ['study', 'y']) && same(r.ok.data, [{ study: 'S1', y: 1.5 }]) &&
+    r.ok.warnings.some(w => /sep=/.test(w)), JSON.stringify(r));
+  const r2 = refusal('sep=,\nstudy,y\nS1,"2\n');
+  check('after a "sep=" line, line numbers are still file lines (unterminated quote on line 3)', !!r2.err && /\bline 3\b/.test(r2.err), JSON.stringify(r2));
+}
+{
+  run('APP.data = null; __notes.length = 0;');
+  sandbox.__file = { name: 'ragged.csv', __text: 'study,y\nS1,2\nS2,1,5\n' };
+  run('handleFile(__file)');
+  const n3 = JSON.parse(JSON.stringify(run('__notes')));
+  check('handleFile on a ragged CSV: error with the line, nothing loaded', run('APP.data') === null && n3.some(n => /^error/.test(n) && /\bline 3\b/.test(n)), JSON.stringify(n3));
+}
+
+console.log(passed + '/' + (passed + failed) + ' PASS');
+process.exitCode = failed ? 1 : 0;

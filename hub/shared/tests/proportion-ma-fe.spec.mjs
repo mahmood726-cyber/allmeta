@@ -9,9 +9,10 @@
  * effects pool (tau2>0, se>0.28). FE must now be the fixed-effect pool.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
 test('proportion-ma FE option is the fixed-effect pool (tau2=0), not DL', async ({ page }) => {
-  await page.goto('http://localhost:8088/proportion-ma/index.html', { waitUntil: 'load' });
+  await page.goto(ALM_BASE_URL + '/proportion-ma/index.html', { waitUntil: 'load' });
   const r = await page.evaluate(() => {
     const run = (est) => {
       document.getElementById('src').value = '12,150\n8,40\n30,200\n3,100\n25,120';

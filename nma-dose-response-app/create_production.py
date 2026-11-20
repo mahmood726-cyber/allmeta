@@ -1,3 +1,15 @@
+"""SUPERSEDED (2026-11-12): `npm run build` (build.js) now builds app.min.js and generates
+index.prod.html and nma-studio-standalone.html from the current index.html.
+
+This script produced an index.prod.html that drifted from index.html (an April-2026 page with
+no ../shared/upper-tail.js or ../shared/ma-core.js tag), adds a Google Fonts preconnect the
+offline/CSP policy removed, and its app.js -> app.min.js swap no longer matches index.html
+(which loads app.js with `defer`), so it would ship the unminified script. It refuses to run.
+"""
+import sys
+
+sys.exit("create_production.py is superseded: run `npm run build` in nma-dose-response-app/")
+
 import re
 
 # Read index.html

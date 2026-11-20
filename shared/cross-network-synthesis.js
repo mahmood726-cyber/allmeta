@@ -30,8 +30,9 @@
  *
  * Reference: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Sutton,
  * Higgins 2008 (Stat Med 27:625-650) on incorporating expert opinion +
- * non-RCT evidence; Efthimiou et al. 2017 "GetReal in network meta-
- * analysis" (Res Synth Methods 8:23-39).
+ * non-RCT evidence; Efthimiou et al. "GetReal in network meta-analysis:
+ * a review of the methodology", Res Synth Methods 2016;7:236-263; Efthimiou et al.
+ * "Combining randomized and non-randomized evidence in NMA", Stat Med 2017;36:1210-1226.
  */
 (function (global) {
   "use strict";
@@ -204,16 +205,41 @@
         muSyn = NaN; seSyn = NaN;
       } else {
         muSyn = swyA / swA;
-        // Propagate the shared δ-offset estimation variance ONCE per stream
-        // (δ is a single shared estimate, correlated across its stream):
-        //   Var(μ_syn) = 1/swA
-        //     + (w_ipd_total/swA)² · var(δ_ipd)
-        //     + (w_obs_total/swA)² · var(δ_obs),   var(δ_stream) ≈ 1/w_total
-        var varDeltaIpd = wIpdTotal > 0 ? 1 / wIpdTotal : 0;
-        var varDeltaObs = wObsTotal > 0 ? 1 / wObsTotal : 0;
-        var varSyn = 1 / swA
-          + (wIpdTotal / swA) * (wIpdTotal / swA) * varDeltaIpd
-          + (wObsTotal / swA) * (wObsTotal / swA) * varDeltaObs;
+        // Exact variance of μ_syn as a linear combination of the observed y.
+        // δ̂_s = Σ u_j y_j / Σ u_j − μ̂_RCT (u_j = 1/(v_j+τ²)) re-uses the RCT
+        // data, so the adjusted values y_j − δ̂_s are correlated with the RCTs
+        // and with each other; pooling them as independent (even with a
+        // separate 1/w var(δ) term) understated the SE below the anchor's
+        // (lane audit6: default A_vs_B 0.071 vs anchor 0.083; R design-offset
+        // meta-regression 0.0829). With b_j = 1/(v_j+τ²+σ²_s), B_s = Σ b_j:
+        //   coef(RCT i) = w_i (1 + Σ_s B_s / W_R) / swA
+        //   coef(s, j)  = (b_j − B_s u_j / U_s) / swA
+        //   Var = Σ coef² · Var(y),  Var(y) = v+τ² (RCT), v+τ²+σ²_s (stream s).
+        // σ²_s = 0 gives exactly the anchor's 1/W_R (the stream adds nothing).
+        var WR = 0;
+        for (var q = 0; q < rcts.length; q++) WR += 1 / (rcts[q].vi + tau2Rct);
+        var streamsIn = [];
+        if (ipds.length >= 2) streamsIn.push({ rows: ipds, s2: sigma2Ipd });
+        if (obs.length >= 2) streamsIn.push({ rows: obs, s2: sigma2Obs });
+        var sumB = 0;
+        streamsIn.forEach(function (st) {
+          st.U = 0; st.B = 0;
+          st.rows.forEach(function (r) { st.U += 1 / (r.vi + tau2Rct); st.B += 1 / (r.vi + tau2Rct + st.s2); });
+          sumB += st.B;
+        });
+        var varSyn = 0;
+        for (var q2 = 0; q2 < rcts.length; q2++) {
+          var vr = rcts[q2].vi + tau2Rct;
+          var ar = (1 / vr) * (1 + sumB / WR) / swA;
+          varSyn += ar * ar * vr;
+        }
+        streamsIn.forEach(function (st) {
+          st.rows.forEach(function (r) {
+            var vs = r.vi + tau2Rct + st.s2;
+            var as = (1 / vs - st.B * (1 / (r.vi + tau2Rct)) / st.U) / swA;
+            varSyn += as * as * vs;
+          });
+        });
         seSyn = Math.sqrt(varSyn);
       }
 

@@ -8,8 +8,9 @@
  * oracle with a hand-computed kappa.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/prisma-screen/';
+const APP_URL = ALM_BASE_URL + '/prisma-screen/';
 const TOL = 1e-6;
 
 test.describe('prisma-screen', () => {

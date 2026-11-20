@@ -161,6 +161,18 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
             <option value="exp">Exponentiate axis labels (OR, RR, HR from log)</option>
           </select>
         </label>
+        <label>
+          <span class="lbl">Effect measure</span>
+          <select id="f-measure" aria-label="Effect measure" title="Sent with “→ GRADE”: names the measure in GRADE SoF and lets its integrity panel run the E-value check.">
+            <option value="">Not specified</option>
+            <option value="OR">Odds ratio (data are log OR)</option>
+            <option value="RR">Risk ratio (data are log RR)</option>
+            <option value="HR">Hazard ratio (data are log HR)</option>
+            <option value="MD">Mean difference</option>
+            <option value="SMD">Standardised mean difference</option>
+            <option value="RD">Risk difference</option>
+          </select>
+        </label>
         <div class="row-2">
           <label>
             <span class="lbl">Null value (on input scale)</span>
@@ -227,8 +239,46 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       scale: "f-scale",
       nullVal: "f-null",
       title: "f-title",
-      effect: "f-effect"
+      effect: "f-effect",
+      measure: "f-measure"
     };
+    const EXAMPLE_TITLE = "Example meta-analysis (logOR)";
+    const RATIO_MEASURES = { OR: 1, RR: 1, HR: 1 };
+    const KNOWN_MEASURES = { OR: 1, RR: 1, HR: 1, MD: 1, SMD: 1, RD: 1 };
+    // A measure set by the example or a hero dataset describes THOSE rows only: it is cleared as soon
+    // as the data are replaced, so pasted studies are never sent to GRADE under the example's measure.
+    // A measure the user picks themselves stays.
+    let _measureFor = null;
+    let _heroTitle = null;
+    function setAutoMeasure(m) {
+      document.getElementById("f-measure").value = m;
+      _measureFor = m ? document.getElementById("f-data").value : null;
+    }
+    function loadExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = EXAMPLE_TITLE;
+      setAutoMeasure("OR");
+    }
+    // A hero dataset carries its own measure (shared/canonical-datasets.js). Name it, and replace
+    // the title only when it is still empty or the default example's (BCG is a log RR, not a log OR).
+    function onHeroLoaded(ds) {
+      if (!ds) return;
+      const m = String(ds.measure || "").toUpperCase();
+      const known = KNOWN_MEASURES[m] ? m : "";
+      setAutoMeasure(known);
+      const ti = document.getElementById("f-title");
+      const cur = (ti.value || "").trim();
+      // Replace an empty title, the example's, or one a previous hero load wrote; keep a typed one.
+      if (!cur || cur === EXAMPLE_TITLE || (_heroTitle !== null && cur === _heroTitle)) {
+        ti.value = (ds.name || "Benchmark dataset") + (known ? " (" + (RATIO_MEASURES[known] ? "log " : "") + known + ")" : "");
+        _heroTitle = ti.value;
+      }
+      render();
+    }
+    window.__almForestHeroLoaded = onHeroLoaded;
+    // A restored snapshot (autosave / undo) carries the user's own measure: it must not be cleared
+    // as the example's or a hero's when the restore dispatches 'input' on #f-data.
+    window.__almForestMeasureIsUsers = function () { _measureFor = null; };
 
     const EXAMPLE = "# Example: logOR for all-cause mortality\nTrial A 2018, -0.22, 0.11\nTrial B 2019, -0.31, 0.14\nTrial C 2020, 0.04, 0.19\nTrial D 2021, -0.18, 0.09\nTrial E 2022, -0.42, 0.17\nTrial F 2023, -0.09, 0.13";
 
@@ -871,8 +921,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     }
 
     function onExample() {
-      document.getElementById("f-data").value = EXAMPLE;
-      document.getElementById("f-title").value = "Example meta-analysis (logOR)";
+      loadExample();
       render();
     }
 
@@ -908,7 +957,13 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         return;
       }
       if (!window.MaPooled) { Toast.show("Pooled-bus helper not loaded.", "error"); return; }
-      const ratio = (readState().scale === "exp");
+      // A named measure decides the scale: OR/RR/HR rows are log ratios (the input contract), so the
+      // pooled ratio is exponentiated whatever the axis shows, and the measure is sent so grade-sof
+      // labels it and its integrity panel can run the E-value check. With no measure named, the
+      // axis choice decides, as before, and no measure is claimed.
+      const st = readState();
+      const measure = KNOWN_MEASURES[st.measure] ? st.measure : "";
+      const ratio = measure ? !!RATIO_MEASURES[measure] : (st.scale === "exp");
       const tx = v => ratio ? Math.exp(v) : v;
       const title = (document.getElementById("f-title").value || "").trim();
       const result = {
@@ -919,6 +974,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         k: pool.k || _lastStudies.length,
         model: _lastRE ? "random" : "fixed",
       };
+      if (measure) result.measure = measure;
       if (title) result.label = title;
       const n = MaPooled.add(result);
       if (n) Toast.show(n + " outcome" + (n === 1 ? "" : "s") + " queued for GRADE. Open GRADE SoF → “Load pooled from bus”.", "warn");
@@ -940,6 +996,10 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", render);
       }
+      document.getElementById("f-data").addEventListener("input", function () {
+        if (_measureFor !== null && document.getElementById("f-data").value !== _measureFor) { document.getElementById("f-measure").value = ""; _measureFor = null; }
+      });
+      document.getElementById("f-measure").addEventListener("change", function () { _measureFor = null; });
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
@@ -995,7 +1055,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     }
 
     const loaded = loadSaved();
-    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example meta-analysis (logOR)"; }
+    if (!loaded) loadExample();
     attach();
     render();
   })();
@@ -1096,7 +1156,8 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         scale:   sc ? sc.value : 'linear',
         nullVal: nv ? nv.value : '0',
         title:   ti ? ti.value : '',
-        effect:  ef ? ef.value : 'Effect (log scale)'
+        effect:  ef ? ef.value : 'Effect (log scale)',
+        measure: (document.getElementById('f-measure') || {}).value || ''
       };
     };
 
@@ -1114,6 +1175,9 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (nv)  nv.value  = isEmpty ? '0'      : (snap.nullVal != null ? snap.nullVal : '0');
       if (ti)  ti.value  = isEmpty ? ''        : (snap.title   != null ? snap.title   : '');
       if (ef)  ef.value  = isEmpty ? 'Effect (log scale)' : (snap.effect != null ? snap.effect : 'Effect (log scale)');
+      var me = document.getElementById('f-measure');
+      if (me)  me.value  = isEmpty ? '' : (snap.measure != null ? snap.measure : '');
+      if (window.__almForestMeasureIsUsers) window.__almForestMeasureIsUsers();
       // Dispatch input on f-data to trigger the engine's render() listener.
       if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     };
@@ -1315,6 +1379,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         container: "#alm-hero-mount",
         textarea: "#f-data",
         adapter: "forest",
+        onAfterLoad: function (ds) { if (window.__almForestHeroLoaded) window.__almForestHeroLoaded(ds); },
       });
     }
   });

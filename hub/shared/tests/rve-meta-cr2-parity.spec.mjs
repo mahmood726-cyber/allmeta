@@ -18,7 +18,8 @@
  * to ≤1e-5 (qt/pt round-tripping included).
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/rve-meta/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/rve-meta/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>|ERR_CONNECTION_REFUSED/;
 
 function rowsOf(d) {

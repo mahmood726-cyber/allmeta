@@ -10,8 +10,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const LIMIT_URL = 'http://localhost:8088/limit-ma/';
+const LIMIT_URL = ALM_BASE_URL + '/limit-ma/';
 const O = JSON.parse(readFileSync(
   new URL('../../../limit-ma/tests/fixtures/limit-oracle.json', import.meta.url), 'utf-8'));
 

@@ -14,8 +14,9 @@
  * Run from hub/shared/tests/:  npx playwright test cross-design-bus.spec.mjs
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/cross-design/';
+const URL = ALM_BASE_URL + '/cross-design/';
 
 async function waitForBus(page) {
   await page.waitForFunction(

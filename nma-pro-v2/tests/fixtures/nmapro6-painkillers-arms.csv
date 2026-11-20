@@ -1,0 +1,13 @@
+study,treat1,mean1,sd1,n1,treat2,mean2,sd2,n2
+Pain-1,Ibuprofen,3.2,1.8,60,Placebo,5.1,2.0,60
+Pain-2,Ibuprofen,3.5,1.9,50,Placebo,5.3,2.1,50
+Pain-3,Naproxen,3.0,1.7,55,Placebo,5.0,2.0,55
+Pain-4,Naproxen,3.3,1.8,45,Placebo,4.8,1.9,45
+Pain-5,Diclofenac,2.8,1.6,65,Placebo,5.2,2.1,65
+Pain-6,Diclofenac,3.1,1.7,50,Placebo,5.0,2.0,50
+Pain-7,Ibuprofen,3.4,1.9,40,Naproxen,3.1,1.7,40
+Pain-8,Ibuprofen,3.6,2.0,55,Diclofenac,3.0,1.6,55
+Pain-9,Naproxen,3.2,1.8,45,Diclofenac,2.9,1.6,45
+Pain-10,Ibuprofen,3.3,1.8,70,Placebo,5.1,2.0,70
+Pain-11,Naproxen,3.1,1.7,60,Diclofenac,2.8,1.5,60
+Pain-12,Diclofenac,2.9,1.6,50,Placebo,4.9,2.0,50

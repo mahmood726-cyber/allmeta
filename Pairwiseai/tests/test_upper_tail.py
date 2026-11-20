@@ -35,6 +35,18 @@ def test_p_values_equal_r_upper_tails():
     assert bad == []
 
 
+
+def test_zero_df_heterogeneity_p_is_1_not_0():
+    # With no residual df the statistic is rounding noise (one study: Q = 1.75e-32; meta-regression with
+    # k = 2 and one covariate: QE ~ 1e-31). AlmTail.pchisqUpper follows R at df = 0 (0 for any x > 0), which
+    # would report p = 0 -- decisive heterogeneity -- for an untestable Q. metafor gives QEp = 1.
+    v = _run_harness()
+    # (and a meta-regression with no covariates: model QM = 2.9e-31 on 0 df)
+    for k in ('het_k1', 'mr_sat', 'mr_nocov'):
+        assert v[k]['df'] == 0, k
+        assert v[k]['Q'] < 1e-20, k
+        assert v[k]['p'] == 1, '%s: p = %r on 0 df' % (k, v[k]['p'])
+
 def test_page_loads_upper_tail():
     html = PAGE.read_text(encoding='utf-8')
     i = html.find('<script src="../shared/upper-tail.js"></script>')

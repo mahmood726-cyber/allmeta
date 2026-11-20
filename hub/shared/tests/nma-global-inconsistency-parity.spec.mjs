@@ -9,8 +9,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/nma-global-inconsistency/';
+const APP_URL = ALM_BASE_URL + '/nma-global-inconsistency/';
 const O = JSON.parse(readFileSync(
   new URL('../../../nma-global-inconsistency/tests/fixtures/ngi-oracle.json', import.meta.url),
   'utf-8'));

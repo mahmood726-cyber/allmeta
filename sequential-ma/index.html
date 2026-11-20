@@ -43,6 +43,8 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="rcheck.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -82,6 +84,10 @@
         <select id="f-futility"><option value="0">No</option><option value="1">Yes (β=0.20)</option></select>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute boundaries</button>
+      <div style="display:flex;gap:0.5rem;margin-top:0.6rem">
+        <button type="button" id="btn-verify-in-r" title="Run an independent R check of every number in the table in your browser (WebR)" style="flex:1;background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.6rem;font-weight:600;cursor:pointer;">Verify in R</button>
+        <button type="button" id="btn-r-script" title="Download an R script that recomputes every number in the table from these inputs" style="flex:1;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;padding:0.45rem 0.6rem;cursor:pointer;">Download R script</button>
+      </div>
     </section>
     <section class="panel">
       <h2>Per-look decisions</h2>
@@ -163,6 +169,7 @@
     }
     function run() {
       var rowsParsed = parse(document.getElementById("src").value);
+      lastState = null;
       if (!rowsParsed.length) return;
       var looks;
       if (rowsParsed[0].kind === "tz") looks = rowsParsed.map(function (r) { return { t: r.t, z: r.z }; });
@@ -173,6 +180,8 @@
       var r;
       try { r = AlmSequentialMA.computeBoundary(looks, { alpha: alpha, family: family, futility: futility, beta: 0.20 }); }
       catch (e) { document.getElementById("overall").textContent = "Cannot compute boundaries: " + e.message; return; }
+      // What the R user path re-checks: the rows this run analysed, its settings and the result it displays.
+      lastState = { rows: rowsParsed, alpha: alpha, family: family, futility: futility, result: r };
       var color = r.decision === "reject-H0" ? "var(--accent)" : r.decision === "futility" ? "var(--warn)" : "var(--ink)";
       document.getElementById("overall").innerHTML = 'Overall decision: <span style="color:' + color + '">' + r.decision + '</span> (' + family + ' family, α=' + alpha + ')';
       var html = "";
@@ -193,6 +202,12 @@
       drawPlot(r);
       window.__almLastSequentialMA = function () { return r; };
     }
+    var lastState = null;
+    if (window.AlmSeqRCheck) AlmSeqRCheck.attach({ verifyBtn: "#btn-verify-in-r", downloadBtn: "#btn-r-script",
+      filename: "sequential-ma-check.R", packages: [],
+      // Re-render from the current input first, so R checks exactly the table on screen.
+      getState: function () { run(); return lastState; },
+      current: function () { return lastState; } });
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("f-family").addEventListener("change", run);
     document.getElementById("f-alpha").addEventListener("input", run);

@@ -19,7 +19,8 @@
  * app keeps UM.FS as the default and offers CM.EL as the verified exact option.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/rare-events-glmm/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/rare-events-glmm/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>|ERR_CONNECTION_REFUSED/;
 
 function rowsOf(d) { return d.ai.map((a, i) => ({ events_T: a, n_T: d.n1i[i], events_C: d.ci[i], n_C: d.n2i[i] })); }

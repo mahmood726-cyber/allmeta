@@ -5,7 +5,8 @@
  * (only logit was). Verified end-to-end against meta::metaprop(sm="PFT", method.tau="PM").
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://127.0.0.1:8080/proportion-ma/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/proportion-ma/index.html';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
 // meta::metaprop(event, n, sm="PFT", method.tau="PM") on the prop-tiny fixture:

@@ -9,7 +9,8 @@
  *   α=(-6.1660890350,0.0215854747) SE=(6.6766755594,0.1288608723)  logLik=-6.9485391888
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/meta-regression/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/meta-regression/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
 const ABLAT = [44, 55, 42, 52, 13, 44, 19, 13, 27, 42, 18, 33, 33];

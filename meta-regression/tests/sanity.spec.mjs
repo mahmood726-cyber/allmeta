@@ -19,8 +19,9 @@
  *   - readiness sentinel is _almLastFitted (not _almLastFE as in forest/funnel)
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const MR_URL = 'http://localhost:8088/meta-regression/';
+const MR_URL = ALM_BASE_URL + '/meta-regression/';
 
 /**
  * Wait until all 6 alm modules have registered on window.alm.

@@ -71,7 +71,6 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('2b example dataset: the benchmark selector loads and analyses BCG with its latitude moderator (k = 13)', async ({ page }) => {
-    test.fail(true, 'ISSUE: the "Try with" BCG loader writes three-column "label, logRR, SE" lines (no moderator), so every line is rejected ("need 4 columns", k = 0) and the analysis is not re-run.');
     await page.goto(PAGE);
     await page.locator('#alm-hero-mount select').selectOption('bcg'); // action 1
     await expect(kShown(page)).toHaveText('13');

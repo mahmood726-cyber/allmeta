@@ -166,22 +166,24 @@
     }
 
     function loadExample() {
-      // GLP-1 obesity network — BMI balanced; HbA1c flags the obesity-vs-T2D
-      // population mixing at the oral-semaglutide node (glp1-obesity-mbnma WS-C).
-      $("f-transit").value = "trial, node, Baseline BMI, HbA1c (%), Mean age\n"
-        + "STEP-1, semaglutide-wk, 37.9, 5.7, 46\n"
-        + "STEP-3, semaglutide-wk, 38.0, 5.8, 46\n"
-        + "SURMOUNT-1, tirzepatide, 38.0, 5.7, 45\n"
-        + "SURMOUNT-2, tirzepatide, 38.0, 5.9, 46\n"
-        + "PIONEER-obese, semaglutide-oral, 33.0, 7.8, 57\n"
-        + "PIONEER-T2D, semaglutide-oral, 32.0, 8.1, 58";
+      // Illustrative values only (hypothetical trials A1..C2), shaped like a GLP-1 network that
+      // mixes obesity-only and type 2 diabetes populations: BMI balanced; HbA1c flags the node
+      // whose trials enrolled people with T2D. Not baseline data of any named trial.
+      $("f-transit").value = "# illustrative example - hypothetical trials, not real baseline data\n"
+        + "trial, node, Baseline BMI, HbA1c (%), Mean age\n"
+        + "Trial A1, semaglutide-wk, 37.9, 5.7, 46\n"
+        + "Trial A2, semaglutide-wk, 38.0, 5.8, 46\n"
+        + "Trial B1, tirzepatide, 38.0, 5.7, 45\n"
+        + "Trial B2, tirzepatide, 38.0, 5.9, 46\n"
+        + "Trial C1 (T2D), semaglutide-oral, 33.0, 7.8, 57\n"
+        + "Trial C2 (T2D), semaglutide-oral, 32.0, 8.1, 58";
       $("f-rep").value = "# modifier, trial mean, target mean, target SD\n"
         + "Mean age (yr), 49, 49.5, 12\n"
         + "Mean BMI (kg/m2), 36.5, 36.0, 5\n"
         + "% with diabetes, 20, 26, 12\n"
         + "% female, 70, 52, 8";
       run();
-      toast("Example loaded — GLP-1 obesity network (HbA1c flags T2D/obesity mixing).");
+      toast("Illustrative example loaded (hypothetical trials) — HbA1c flags T2D/obesity mixing.");
     }
 
     $("btn-run").addEventListener("click", run);

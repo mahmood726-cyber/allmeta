@@ -731,7 +731,24 @@
       "gosh": "GOSH subset analysis", "gosh-metareg": "GOSH meta-regression subsets",
       "cross-design": "a cross-design synthesis"
     };
-    function showSourceBanner(from) {
+    // Lane estho: the apps above whose page has a "Validate this analysis in R" control
+    // (shared/alm-validate.js with a live adapter). The banner pointed every app at that
+    // control, and tsa, pet-peese, copas, bayesian-ma, bayesian-mcmc, bma-tau-priors,
+    // cross-design and gosh-metareg have none. webr-validator/tests/test_estimator_handoff.py
+    // checks this set against the pages.
+    const HAS_LIVE_R_CHECK = new Set(["mh-peto", "multilevel-ma", "meta-regression", "dose-response-ma",
+      "dta-sroc", "nma", "proportion-ma", "pubbias-tests", "limit-ma", "gosh"]);
+    // Apps whose own model is something else but whose page also shows ONE inverse-variance
+    // row. They send that row's estimator and test; when they did (method in the URL), the
+    // banner names the row R should equal. Keyed by the estimator sent.
+    const SAME_ROW = {
+      "tsa": { FE: ["estimate and 95% CI", "the \"Pooled μ\" card (the fixed-effect pool after the last study); the boundaries, required information size and TSA-adjusted CI are not checked here"] },
+      "pet-peese": { FE: ["estimate, SE and 95% CI", "the \"FE meta-analysis\" row; the PET, PEESE and trim-and-fill rows are not checked here"] },
+      "copas": { REML: ["estimate, SE and τ (√τ²)", "the \"Unadjusted random-effects pooled effect\" row only to within REML convergence: copas stops REML where metafor's default rma() does (threshold 1e-5), this page iterates to 1e-12, so the two can differ from about the 6th decimal place; the selection-model results are not checked here"],
+                 DL: ["estimate, SE and τ (√τ²)", "the \"Unadjusted random-effects pooled effect\" row; the selection-model results are not checked here"] },
+      "bayesian-ma": { PM: ["τ²", "the \"τ² strategy\" card (the Paule-Mandel plug-in τ²); the posterior, credible interval and probabilities are not checked here"] }
+    };
+    function showSourceBanner(from, sent) {
       const el = document.getElementById("source-banner");
       if (!el || !from || !/^[a-z0-9-]{1,40}$/.test(from)) return;
       const meth = document.getElementById("f-method").value;
@@ -739,10 +756,15 @@
         "an inverse-variance random-effects pool (metafor rma, τ² " + meth) +
         ", test " + document.getElementById("f-test").value + ")";
       const own = NOT_IV_POOL[from];
+      const row = sent && SAME_ROW[from] && Object.prototype.hasOwnProperty.call(SAME_ROW[from], meth) ? SAME_ROW[from][meth] : null;
       el.textContent = own
         ? "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
-          " shared. That is NOT " + from + "'s own model (" + own + "), so its numbers are not expected to " +
-          "equal the app's headline. To check " + from + " itself, use \"Validate this analysis in R\" on that page."
+          " shared. That is NOT " + from + "'s own model (" + own + ")" +
+          (row ? ". With the model " + from + " sent, R's " + row[0] + " should equal " + row[1] + "."
+               : ", so its numbers are not expected to equal the app's headline.") +
+          (HAS_LIVE_R_CHECK.has(from)
+            ? " To check " + from + " itself, use \"Validate this analysis in R\" on that page."
+            : " " + from + " has no in-browser R check of its own model, so nothing here checks that model.")
         : "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
           " shared, and compares it with the same fit computed in the browser.";
       el.hidden = false;
@@ -759,11 +781,13 @@
         // so the R fit here is the same model rather than this page's PM/z default.
         const m = params.get("method"), t = params.get("test");
         if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS", "FE"].includes(m)) document.getElementById("f-method").value = m;
+        // Whether the app sent its model (a banner may then name the row R should equal).
+        const sent = !!m && document.getElementById("f-method").value === m;
         if (t && ["z", "knha", "adhoc"].includes(t)) document.getElementById("f-test").value = t;
         const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
-        showSourceBanner(params.get("from"));
+        showSourceBanner(params.get("from"), sent);
       } catch (e) { /* silent — noisy alert on deep-link is worse than no-op */ }
     })();
   })();

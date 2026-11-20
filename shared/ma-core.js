@@ -47,9 +47,20 @@
   function tau2PM(yi, vi) {
     var k = yi.length, df = k - 1; if (df < 1) return 0;
     if (_wsums(yi, vi, 0).Q <= df) return 0;
+    // Bracket by doubling until Q(hi) <= df. No absolute cap: the former `hi > 1e9` break returned
+    // 2^30 for every PM tau2 above it (e.g. raw-scale outcomes). Bisection then runs until the
+    // interval stops shrinking in floating point (a relative criterion), not a fixed step count;
+    // for any bracket the old 200 steps already reached, the result is bit-for-bit the same.
     var lo = 0, hi = 1, guard = 0;
-    while (_wsums(yi, vi, hi).Q > df && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m; }
+    while (_wsums(yi, vi, hi).Q > df) {
+      hi *= 2;
+      if (++guard > 1100 || !isFinite(hi)) throw new RangeError("Paule-Mandel tau2 could not be bracketed");
+    }
+    for (var i = 0; i < 2300; i++) {
+      var m = (lo + hi) / 2;
+      if (m <= lo || m >= hi) break;
+      if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m;
+    }
     return (lo + hi) / 2;
   }
 

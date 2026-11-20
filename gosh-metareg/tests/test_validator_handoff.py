@@ -63,6 +63,11 @@ def test_validate_and_continue_hand_over_the_page():
 def test_refused_input_hands_over_nothing():
     # Codex review (rc5): a getter that only parses would open the validator on input
     # the page itself refuses to analyse. It must return [] unless the page shows a
-    # result (here: '!_lastMetaregGosh'); openInWebR / the Continue bar then refuse to open.
+    # result; openInWebR / the Continue bar then refuse to open. Since lane fix556 the
+    # guard is the _analysedRows snapshot: run() clears it on entry and sets it only
+    # when a result is drawn (behaviour: truthcert-receipt-page-studies-2.spec.mjs).
     body = re.search(r"window\.__almValidatorStudies = function \(\) \{(.*?)\n\s*\};", SRC, re.S).group(1)
-    assert '!_lastMetaregGosh' in body, body
+    assert re.search(r"_analysedRows\s*\?.*:\s*\[\]", body), body
+    run_src = SRC[SRC.index("function run("):]
+    first_assign = re.search(r"_analysedRows\s*=\s*([^;]+);", run_src)
+    assert first_assign and first_assign.group(1).strip() == "null", "run() must clear _analysedRows before drawing"

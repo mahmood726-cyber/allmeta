@@ -11,8 +11,9 @@
  *   npx playwright test workbench-verify-in-r.spec.mjs --reporter=list
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const URL = 'http://localhost:8088/workbench/';
+const URL = ALM_BASE_URL + '/workbench/';
 
 const INPUT = [
   'Trial A, -0.22, 0.11',

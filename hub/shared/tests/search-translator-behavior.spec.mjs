@@ -5,8 +5,9 @@
  * translation bug corrupts a systematic-review search strategy.
  */
 import { test, expect } from '@playwright/test';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 
-const APP_URL = 'http://localhost:8088/search-translator/';
+const APP_URL = ALM_BASE_URL + '/search-translator/';
 
 test.describe('search-translator', () => {
   test('loads, no console errors, hook present', async ({ page }) => {

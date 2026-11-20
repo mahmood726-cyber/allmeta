@@ -1,13 +1,14 @@
 import { test, expect } from './validation-fixture.mjs';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
 const root = new URL('../../../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('dta-sroc/validate/MANIFEST.json', root), 'utf8'));
 const corpus = Object.fromEntries(manifest.files.map(f => [f.path, JSON.parse(readFileSync(new URL('dta-sroc/'+f.path, root),'utf8'))]));
 const APP=process.env.DTA_VALIDATE_FILE ? new URL('dta-sroc/index.html',root).href : '/dta-sroc/index.html';
 async function open(page) {
  const external=[];
- const origin=new URL(APP,test.info().project.use.baseURL || 'http://localhost:8088').origin;
+ const origin=new URL(APP,test.info().project.use.baseURL || ALM_BASE_URL).origin;
  page.on('request',r=>{const u=new URL(r.url()); if(/^https?:$/.test(u.protocol)&&u.origin!==origin)external.push(r.url());});
  await page.goto(APP);
  return external;

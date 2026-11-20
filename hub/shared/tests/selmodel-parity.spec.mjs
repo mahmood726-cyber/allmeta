@@ -7,7 +7,8 @@
  * Engine verified to ~1e-6 in Node; browser asserted ≤1e-4. Also wired into pubbias-tests.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/pubbias-tests/index.html';
+const ALM_BASE_URL = (process.env.ALM_BASE_URL || 'http://localhost:8088').replace(/\/+$/, '');
+const URL = ALM_BASE_URL + '/pubbias-tests/index.html';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 const YI = [0.10,0.30,0.35,0.65,0.45,0.80,0.55,1.05,0.70,1.20,0.90,1.40];
 const SEI = [0.30,0.28,0.20,0.35,0.18,0.40,0.15,0.45,0.12,0.50,0.10,0.55];

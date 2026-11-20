@@ -158,7 +158,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Open the WebR Validator on these studies: it re-fits a FREQUENTIST metafor pool (Paule-Mandel), which checks only the plug-in τ² shown here, not the posterior. To check the posterior in R use &quot;Verify this analysis in R (WebR)&quot; below." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R (frequentist pool)</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <button type="button" id="btn-reset">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
@@ -388,8 +388,13 @@
     }
 
     var _lastPost = null;
+    var _rcheck = null;
+    window.__almRCheckInputs = function () { return _rcheck; };
     window._almLastBayes = function () { return _lastPost; };
     function render() {
+      // Clear first: if this render fails (e.g. the Paule-Mandel tau^2 cannot be bracketed and throws),
+      // the R check must not be offered the previous analysis as if it were the current one.
+      _lastPost = null; _rcheck = null;
       const state = readState();
       const parsed = parseStudies(state.data);
       const mu0 = parseFloat(state.mu0);
@@ -405,6 +410,11 @@
       if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
         const post = posterior(parsed.studies, mu0, tau0, t.tau2);
         _lastPost = { mu: post.mu, lo: post.lo, hi: post.hi, k: parsed.studies.length };
+        // What the R check (r-check.js) recomputes: the inputs analysed and every displayed number.
+        _rcheck = { studies: parsed.studies.map(x => ({ label: x.label, est: x.est, se: x.se })),
+          mu0, tau0, tauMethod: state.tauMethod, tau2Manual: parseFloat(state.tau2Manual),
+          threshold: parseFloat(state.threshold), rope: parseFloat(state.rope),
+          page: { k: parsed.studies.length, tau2: t.tau2, mu: post.mu, lo: post.lo, hi: post.hi, pLess: null, pInside: null } };
         parts.push(statCard("Posterior mean", fmt(post.mu, 3)));
         parts.push(statCard("95% CrI (τ²-conditional)", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
         if (parsed.studies.length < 10 && t.tau2 > 0) {
@@ -413,16 +423,18 @@
         const threshold = parseFloat(state.threshold);
         if (isFinite(threshold)) {
           const pLess = normCDF((threshold - post.mu) / post.sd);
+          _rcheck.page.pLess = pLess;
           parts.push(statCard("P(θ < " + fmt(threshold, 2) + ")", fmt(pLess, 3)));
         }
         const rope = parseFloat(state.rope);
         if (isFinite(rope) && rope > 0) {
           const pInside = normCDF((rope - post.mu) / post.sd) - normCDF((-rope - post.mu) / post.sd);
+          _rcheck.page.pInside = pInside;
           parts.push(statCard("P(|θ| < " + fmt(rope, 2) + ")", fmt(pInside, 3)));
         }
         svg = buildSvg(state, parsed.studies, post, mu0, tau0);
       } else {
-        _lastPost = null;
+        _lastPost = null; _rcheck = null;
         svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies and a valid prior (τ₀ > 0).</text></svg>";
       }
 
@@ -541,6 +553,11 @@
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // What the TruthCert receipt signs (lane rcpt): the studies this page's own parser reads
+    // from the input, the same rows its analysis pools.
+    window.__almReceiptStudies = function () {
+      return parseStudies(document.getElementById("f-data").value).studies;
+    };
     // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
@@ -548,6 +565,13 @@
       // Only when the page shows a posterior for the current input (valid prior, k >= 1).
       render();
       return _lastPost ? parseStudies(document.getElementById("f-data").value).studies : [];
+    };
+    // The validator cannot fit this page's posterior, but under the "PM" strategy its
+    // plug-in tau^2 is metafor's Paule-Mandel tau^2, so send PM (lane estho). Under fixed
+    // effect or a manual tau^2 nothing is sent: no validator fit equals a number here.
+    window.__almValidatorModel = function () {
+      const e = document.getElementById("f-tau-method");
+      return e && e.value === "PM" ? { method: "PM", test: "z" } : {};
     };
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
@@ -588,6 +612,8 @@
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
+  <script src="../shared/webr-runner.js"></script>
+  <script src="r-check.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
 <script>
@@ -599,10 +625,15 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
-      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma", textarea: "#f-data", format: "label-est-se" });
+      // Sign the studies this page analysed (its own parseStudies), not a re-read of the textarea
+      // with the shared splitter, which read a label with a comma as numbers (lane rcpt).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma",
+        getStudies: function () { return window.__almReceiptStudies ? window.__almReceiptStudies() : []; } });
     }
   });
 })();
@@ -622,6 +653,7 @@
         // Push the studies on screen (not an earlier session's bus) and, for the validator,
         // this page's model where it is an inverse-variance pool.
         getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+        getValidatorModel: function () { return window.__almValidatorModel && window.__almValidatorModel(); },
       });
     }
   });

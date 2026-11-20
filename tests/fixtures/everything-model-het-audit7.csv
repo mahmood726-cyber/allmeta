@@ -1,0 +1,14 @@
+study,time,outcome,yi,vi
+S1,2020,primary,-0.60,0.010
+S1,2020,secondary,-0.45,0.012
+S2,2020,primary,-0.10,0.011
+S2,2020,secondary,-0.02,0.012
+S3,2021,primary,-0.40,0.014
+S3,2021,secondary,-0.20,0.015
+S4,2021,primary,0.05,0.011
+S4,2021,secondary,0.10,0.013
+S5,2022,primary,-0.55,0.013
+S5,2022,secondary,-0.50,0.014
+S6,2022,primary,-0.15,0.012
+S6,2022,secondary,-0.05,0.013
+S7,2020,primary,-0.35,0.012

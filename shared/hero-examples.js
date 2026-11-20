@@ -17,7 +17,8 @@
  *     textarea: "#src",              // the target textarea
  *     adapter: "forest",              // "forest" | "glmm" | "cross-design" |
  *                                     // "cross-network" | "sequential" |
- *                                     // "personalised" | "effect-se-label"
+ *                                     // "personalised" | "effect-se-label" |
+ *                                     // "bma" (label, yi, vi) | "meta-regression"
  *     onAfterLoad: () => …,           // optional callback (re-render plot)
  *     extras: { "f-rho": "0.5" },     // optional field setters after load
  *   });
@@ -52,6 +53,9 @@
     bma: [
       { key: "bcg", label: "BCG vaccine (Berkey 1995, log-RR)" },
     ],
+    "meta-regression": [
+      { key: "bcg", label: "BCG vaccine (Berkey 1995, log-RR vs latitude)" },
+    ],
   };
 
   function _adapterFn(adapter) {
@@ -59,8 +63,9 @@
     var D = global.AlmDatasets;
     switch (adapter) {
       case "effect-se-label": return D.toEffectSeLabelText;
-      case "forest":
-      case "bma":          return D.toForestPlotText;
+      case "forest":       return D.toForestPlotText;
+      case "bma":          return D.toLabelEffectVarianceText;
+      case "meta-regression": return D.toMetaRegressionText;
       case "glmm":         return D.toGlmmTextarea;
       case "cross-design": return D.toCrossDesignText;
       case "cross-network":return D.toCrossNetworkText;
