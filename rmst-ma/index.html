@@ -61,7 +61,7 @@
   </section>
 </main>
 <footer>
-  Inverse-variance random/fixed-effect pooling of RMST differences via <code>shared/ma-core.js</code> (DL/PM/REML τ², t<sub>k−1</sub> prediction interval), identical to <code>metafor::rma(yi = rmst_diff, sei)</code> (verified — <code>rmst-ma-parity.spec.mjs</code>). RMST methodology: Royston &amp; Parmar 2013, <em>BMC Med Res Methodol</em> 13:152; pooling per Weir et al. 2018, <em>Stat Med</em> 37:2105. Pool differences (not ratios); always report the horizon τ*.
+  Inverse-variance random/fixed-effect pooling of RMST differences via <code>shared/ma-core.js</code> (DL/PM/REML τ², Wald 95% CI). The estimate, SE, CI, τ² and I² follow <code>metafor::rma(yi = rmst_diff, sei, method)</code> (z test); agreement is checked on the example to 4&ndash;5 decimals (<code>rmst-ma-parity.spec.mjs</code>) and per analysis at display precision by <em>Check in R</em> below. The 95% prediction interval uses t(k−1) (Cochrane Handbook v6.5), not the normal quantile of metafor&rsquo;s <code>predict()</code> default. RMST methodology: Royston &amp; Parmar 2013, <em>BMC Med Res Methodol</em> 13:152; pooling per Weir et al. 2018, <em>Stat Med</em> 37:2105. Pool differences (not ratios); always report the horizon τ*.
 </footer>
 <script>
   (function () {
