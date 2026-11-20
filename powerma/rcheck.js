@@ -116,7 +116,7 @@
         if (!res.ok) {
           var pk = /Package not in pinned repository: (\S+)/.exec(res.error || "");
           status.textContent = "R did not run.";
-          out.innerHTML = '<strong style="color:#a02929">' + esc(pk ? "The R package " + pk[1] + " is not available in WebR, so the in-browser check cannot run. Use Download R script and run it in R." : "WebR error: " + res.error) + "</strong>";
+          out.innerHTML = '<strong style="color:#a02929">' + esc(pk ? "The R package " + pk[1] + " is not in this site's pinned WebR package repository, so nothing was run in the browser. Use Download R script and run it in R." : "WebR error: " + res.error) + "</strong>";
           return;
         }
         var line = (/^(MATCH \d+\/\d+|MISMATCH .*)$/m.exec(res.stdout) || [null, "no MATCH line (R output incomplete)"])[1];

@@ -163,7 +163,7 @@
         var lines = r.stdout.trim().split(/\r?\n/), last = lines[lines.length - 1] || "";
         var ver = Object.keys(r.versions).map(function (k) { return k + " " + r.versions[k]; }).join("; ");
         status.textContent = (/^(MATCH|MISMATCH|NOT CHECKED)\b/.test(last) ? last : "No MATCH/MISMATCH/NOT CHECKED line in R output") + "  —  " + ver +
-          (/NOTE: package survival is not available/.test(r.stdout) ? "  (package survival is not available in WebR: K-M summaries use base R here; the downloadable script uses survival::survfit)" : "");
+          (/NOTE: package survival is not available/.test(r.stdout) ? "  (package survival is not in this site's pinned WebR package repository: K-M summaries use base R here; the downloadable script uses survival::survfit)" : "");
       } catch (e) { status.textContent = "WebR error: " + (e.message || e); }
       finally { btn.disabled = false; }
     });

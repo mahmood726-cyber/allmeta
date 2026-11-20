@@ -218,8 +218,8 @@
       var missing = REQUIRED_PACKAGES.filter(function (p) { return have.indexOf(p) < 0; });
       if (missing.length) {
         setStatus("Verify in R cannot run in this browser: the R package " + missing.join(", ") +
-          ", which this check uses (as the P22 validation did), is not available in WebR (it is not in this site's pinned WebR package repository)." +
-          " Nothing was run. Use \"Download R script\" and run it in R with " + missing.join(", ") + " installed; its last line is MATCH n/n or MISMATCH.");
+          ", which this check uses (as the P22 validation did), is not in this site's pinned WebR package repository, so nothing was run in the browser." +
+          " Use \"Download R script\" and run it in R with " + missing.join(", ") + " installed; its last line is MATCH n/n or MISMATCH.");
         return;
       }
       setStatus("Loading WebR (first run downloads R; this can take a few minutes)...");

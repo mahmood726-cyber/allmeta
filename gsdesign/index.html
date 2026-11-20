@@ -125,7 +125,7 @@
 
     <section class="panel full" id="rcheck-panel" aria-label="Check in R">
       <h2>Check in R</h2>
-      <p class="foot">Both controls use the design of the boundaries shown above. The R script refits it with <code>gsDesign::gsDesign</code> and prints every displayed boundary quantity next to the page's value with an honest MATCH/MISMATCH line (the Monte Carlo simulation is not checked: different random-number generators). gsDesign is not available in WebR, so <em>Verify in R</em> can only report that; the downloaded script is the check.</p>
+      <p class="foot">Both controls use the design of the boundaries shown above. The R script refits it with <code>gsDesign::gsDesign</code> and prints every displayed boundary quantity next to the page's value with an honest MATCH/MISMATCH line (the Monte Carlo simulation is not checked: different random-number generators). gsDesign is not in this site's pinned WebR package repository, so nothing is checked in the browser (<em>Verify in R</em> reports NOT CHECKED); the downloaded R script checks it in R.</p>
       <button type="button" id="btn-rscript">Download R script</button>
       <button type="button" id="btn-rverify">Verify in R (WebR)</button>
       <p id="rcheck-status" class="foot" aria-live="polite"></p>

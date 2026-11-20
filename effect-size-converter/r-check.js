@@ -348,7 +348,7 @@
     webrPackages().then(function (have) {
       var missingReq = REQUIRED_PACKAGES.filter(function (p) { return have.indexOf(p) < 0; });
       if (missingReq.length) {
-        setStatus("Verify in R cannot run in this browser: the R package " + missingReq.join(", ") + " is not available in WebR. Nothing was run. Use \"Download R script\" and run it in R.");
+        setStatus("Verify in R cannot run in this browser: the R package " + missingReq.join(", ") + " is not in this site's pinned WebR package repository, so nothing was run in the browser. Use \"Download R script\" and run it in R.");
         return;
       }
       var missing = OPTIONAL_PACKAGES.filter(function (p) { return have.indexOf(p) < 0; });
@@ -364,7 +364,7 @@
         showVerdict(verdictOf(res.stdout) || "MISMATCH (R printed no verdict line)");
         setStatus((res.versions && res.versions.R || "R") + " in WebR " + (res.versions && res.versions.webR || "") +
           (res.versions && res.versions.metafor ? ", metafor " + res.versions.metafor : "") + ", ran the same script as the download." +
-          (missing.length ? " Not available in WebR: " + missing.join(", ") + " (the E-value lines show NOT CHECKED; run the downloaded script in R with " + missing.join(", ") + " installed to check them)." : ""));
+          (missing.length ? " Not in this site's pinned WebR package repository: " + missing.join(", ") + " (the E-value lines show NOT CHECKED; run the downloaded script in R with " + missing.join(", ") + " installed to check them)." : ""));
       });
     }).catch(function (e) {
       setStatus("Verify in R could not run: " + (e && e.message || e) + ". The downloaded R script remains the check.");
