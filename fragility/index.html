@@ -161,7 +161,14 @@
         tbody.innerHTML = "<tr><td>Paste at least one valid 2×2 study" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
         return;
       }
-      var r = window.AlmFragility.fragility(p.studies, { measure: measure });
+      var r;
+      // a numerical failure in the engine must replace the result, never leave the
+      // previous analysis's table on screen beside the new input
+      try { r = window.AlmFragility.fragility(p.studies, { measure: measure }); }
+      catch (e) {
+        tbody.innerHTML = "<tr><td>Not computed: the calculation failed for these data (" + esc(e && e.message || e) + ").</td></tr>";
+        return;
+      }
       var ratio = (measure !== "RD");
       var tx = function (v) { return v == null ? null : ratio ? Math.exp(v) : v; };
       if (r.pooled && r.pooled.est != null && p.studies.length >= 2) _rstate = { measure: measure, studies: p.studies, labels: p.labels,
