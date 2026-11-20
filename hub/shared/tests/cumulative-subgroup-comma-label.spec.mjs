@@ -79,4 +79,19 @@ test.describe('cumulative-subgroup unquoted comma label', () => {
     expect(g.banner).toBe('');
     expect(g.studies).toEqual([['A', 0.1, 0.1, null, '1'], ['B', 0.2, 0.2, null, '2'], ['C', 0.3, 0.15, 2015, null]]);
   });
+
+  // Review of PR #590: year and group are optional, so a row that omits them does not make the
+  // rows that have them "split labels".
+  test('optional year/group columns may be absent on some rows', async ({ page }) => {
+    await ready(page);
+    const g = await run(page, 'A, 0.1, 0.1, 1\nB, 0.2, 0.2, 2\nC, 0.3, 0.15');
+    expect(g.banner).toBe('');
+    expect(g.studies).toEqual([['A', 0.1, 0.1, null, '1'], ['B', 0.2, 0.2, null, '2'], ['C', 0.3, 0.15, null, null]]);
+    const y = await run(page, 'A, 0.1, 0.1, 1992.5, G1\nB, 0.2, 0.2, 2010.1,\nC, 0.3, 0.15, 2012, G2');
+    expect(y.banner).toBe('');
+    expect(y.studies).toEqual([['A', 0.1, 0.1, 1992.5, 'G1'], ['B', 0.2, 0.2, 2010.1, null], ['C', 0.3, 0.15, 2012, 'G2']]);
+    const h = await run(page, 'label, est, se, group\nA, 0.1, 0.1, 1\nC, 0.3, 0.15');
+    expect(h.banner).toBe('');
+    expect(h.studies).toEqual([['A', 0.1, 0.1, null, '1'], ['C', 0.3, 0.15, null, null]]);
+  });
 });

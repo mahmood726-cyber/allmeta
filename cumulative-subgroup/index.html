@@ -205,7 +205,13 @@
       const studies=[], warnings=[], refused=[];
       const src = String(text||""), lines = [], lineNo = [];
       // Each record keeps the line it starts on (blank lines are not records but still count).
-      for (const m of src.matchAll(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g)) { lines.push(m[0]); lineNo.push(src.slice(0, m.index).split("\n").length); }
+      // Newlines are counted once, with a cursor (re-splitting the whole prefix per record was
+      // quadratic: 10,000 rows took seconds on every keystroke; review of PR #590).
+      let cursor = 0, physical = 1;
+      for (const m of src.matchAll(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g)) {
+        for (; cursor < m.index; cursor++) if (src.charCodeAt(cursor) === 10) physical++;
+        lines.push(m[0]); lineNo.push(physical);
+      }
       const rows = lines.map(function (line) {
         const raw = line.trim();
         if (!raw || raw.startsWith("#")) return null;
@@ -222,18 +228,37 @@
       // An unquoted comma inside a label splits it, so that row carries one field more than its
       // neighbours and every later column moves one place right ("Smith, 2020, 0.22, 0.11" was read
       // as est 2020, se 0.22, year 0.11). Such a row cannot be read as written and is refused with its
-      // line (same rule as PR #542/#549): it has more filled fields than the fewest of the rows that
-      // read cleanly, its 3rd and 4th fields are numbers, and the 4th is not a 4-digit whole year.
+      // line (same rule as PR #542/#549): it has more filled fields than the input's own width, its
+      // 3rd and 4th fields are numbers, and the 4th is not a 4-digit whole year.
+      // The width is the header row's when there is one (a header names the optional year/group
+      // columns, so a row may omit them), else the most common width of the rows that read cleanly
+      // (the narrowest of those on a tie). It is NOT the narrowest row: year and group are
+      // optional, so "A,0.1,0.1,1 / B,0.2,0.2,2 / C,0.3,0.15" is valid and was refused (review of
+      // PR #590). A row as wide as most rows cannot be told from a split label by its shape; a header
+      // row settles it either way.
       const isNum = v => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(String(v||"").trim());
       const filled = p => { let n = p.length; while (n > 3 && p[n-1] === "") n--; return n; };
-      const clean = rows.filter(p => p && p.length >= 3 && isNum(p[1]) && isNum(p[2])).map(filled);
-      const fewest = clean.length ? Math.min.apply(null, clean) : Infinity;
+      let header = -1;
+      for (let i=0;i<rows.length && i<3;i++) {
+        const p = rows[i];
+        if (!p) continue;
+        if (p.length >= 3 && p.every(f => !isNum(f))) header = i;
+        break;   // only the first record can be the header (later ones would follow data or another header)
+      }
+      let width;
+      if (header >= 0) width = filled(rows[header]);
+      else {
+        const count = new Map();
+        for (const p of rows) if (p && p.length >= 3 && isNum(p[1]) && isNum(p[2])) { const n = filled(p); count.set(n, (count.get(n) || 0) + 1); }
+        width = Infinity; let best = 0;
+        for (const [n, c] of count) if (c > best || (c === best && n < width)) { best = c; width = n; }
+      }
       for (let i=0;i<rows.length;i++) {
         const parts = rows[i];
         if (!parts) continue;
         if (parts.length < 3) { warnings.push("Line "+lineNo[i]+": <3 columns"); continue; }
-        if (filled(parts) > fewest && isNum(parts[2]) && isNum(parts[3]) && !(Number.isInteger(Number(parts[3])) && Math.abs(Number(parts[3])) >= 1000)) {
-          refused.push("Line "+lineNo[i]+": "+filled(parts)+" fields where other rows have "+fewest+"; a comma inside an unquoted label shifts the columns, so quote the label, e.g. \""+parts[0].slice(0,20)+", "+parts[1].slice(0,20)+"\"");
+        if (filled(parts) > width && isNum(parts[2]) && isNum(parts[3]) && !(Number.isInteger(Number(parts[3])) && Math.abs(Number(parts[3])) >= 1000)) {
+          refused.push("Line "+lineNo[i]+": "+filled(parts)+" fields where "+(header >= 0 ? "the header has " : "most rows have ")+width+". If a comma inside an unquoted label shifts the columns, quote the label, e.g. \""+parts[0].slice(0,20)+", "+parts[1].slice(0,20)+"\"; if the extra fields are the optional year and group, start the input with a header row naming every column, e.g. label, est, se, year, group");
           continue;
         }
         // Last column can be group (non-numeric) or year (numeric) or SE.
