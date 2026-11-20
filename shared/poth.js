@@ -29,7 +29,14 @@
   // sucras: array of SUCRA or P-score values in [0,1] (one per treatment).
   // Returns { poth, n, s2, s2max, meanSucra } or null if n < 2 / invalid.
   function poth(sucras) {
-    var s = (sucras || []).filter(function (v) { return typeof v === "number" && isFinite(v); });
+    // LIM-P23 F05: refuse the whole vector when any entry is not a number in [0, 1]; dropping
+    // it would silently change n (and so S2max), and a hole or a string is not a score.
+    if (!Array.isArray(sucras)) return null;
+    for (var k = 0; k < sucras.length; k++) {
+      var x = sucras[k];
+      if (!(k in sucras) || typeof x !== "number" || !isFinite(x) || x < 0 || x > 1) return null;
+    }
+    var s = sucras.slice();
     var n = s.length;
     if (n < 2) return null;
     var sumSq = 0, sum = 0;
@@ -45,7 +52,23 @@
   // prob treatment i has rank r+1). SUCRA_i = (1/(n-1)) Σ_{r<n-1} cumⱼ≤r P[i][j].
   // Provided so POTH can be computed from raw rank probabilities too.
   function sucraFromRankProbs(P) {
-    var n = P.length;
+    // LIM-P23 F07: the formula ignores the last column, so a malformed matrix would still
+    // give plausible-looking SUCRAs. Require an n x n (n >= 2) matrix of finite, nonnegative
+    // probabilities whose rows (treatments) and columns (ranks) each sum to 1.
+    var TOL = 1e-6;
+    if (!Array.isArray(P) || P.length < 2) throw new RangeError("rank-probability matrix must have at least 2 treatments");
+    var n = P.length, col = [];
+    for (var c = 0; c < n; c++) col.push(0);
+    P.forEach(function (row, i) {
+      if (!Array.isArray(row) || row.length !== n) throw new RangeError("rank-probability matrix must be square (row " + (i + 1) + ")");
+      var sum = 0;
+      row.forEach(function (v, j) {
+        if (typeof v !== "number" || !isFinite(v) || v < 0) throw new RangeError("rank probabilities must be finite and nonnegative (row " + (i + 1) + ")");
+        sum += v; col[j] += v;
+      });
+      if (Math.abs(sum - 1) > TOL) throw new RangeError("rank probabilities of treatment " + (i + 1) + " must sum to 1");
+    });
+    col.forEach(function (v, j) { if (Math.abs(v - 1) > TOL) throw new RangeError("probabilities of rank " + (j + 1) + " must sum to 1 over treatments"); });
     return P.map(function (row) {
       var cum = 0, acc = 0;
       for (var r = 0; r < n - 1; r++) { cum += row[r]; acc += cum; }
