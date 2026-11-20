@@ -635,6 +635,21 @@
       if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return false; }
       if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return false; }
       if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return false; }
+      // LIM-P20 A01: an entered value that cannot be used must refuse, never read as blank.
+      // A number input holding unparseable text reports value "" with validity.badInput.
+      const bad = id => { const e = document.getElementById(id); return !!(e && e.validity && e.validity.badInput); };
+      if (bad("ctx-p0")) { render([], "Baseline risk is not a number: correct it or clear the field."); return false; }
+      if (bad("ctx-sd")) { render([], "Pooled SD is not a number: correct it or clear the field."); return false; }
+      if (type === "SMD") {
+        const n1s = document.getElementById("der-n1").value.trim(), n2s = document.getElementById("der-n2").value.trim();
+        if (bad("der-n1") || bad("der-n2") || n1s !== "" || n2s !== "") {
+          const okN = s => /^\d+$/.test(s) && Number.isSafeInteger(Number(s)) && Number(s) >= 2;
+          if (!(okN(n1s) && okN(n2s))) {
+            render([], "Group sizes n1 and n2 must both be whole numbers of at least 2 (or both left blank); the Hedges correction and the MD SE need both.");
+            return false;
+          }
+        }
+      }
       const rows = convert(type, est, se, p0, sd);
       const warn = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
@@ -857,6 +872,13 @@
       if (!rows || !rows.length) return;
       try {
         var r = rows[0];
+        // LIM-P20 A01: Number('') and Number(null) are 0, so a blank cell must be refused
+        // before conversion, never read as a mean, SD or n of zero.
+        ['m1', 'sd1', 'n1', 'm2', 'sd2', 'n2'].forEach(function (k) {
+          var s = r[k];
+          if (s == null || String(s).trim() === '' || !isFinite(Number(s)))
+            throw new RangeError('column ' + k + ' is blank or not a number in the first row.');
+        });
         var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
           Number(r.m2), Number(r.sd2), Number(r.n2));
         if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
