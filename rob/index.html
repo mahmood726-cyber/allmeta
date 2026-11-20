@@ -190,7 +190,12 @@
     function load() { try { var p = JSON.parse(localStorage.getItem(KEY)); if (p && Array.isArray(p.studies)) return p; } catch (e) {} return null; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
     function uid() { return "s" + (state.studies.length + 1) + "_" + state.studies.reduce(function (a) { return a + 1; }, 0) + "_" + (state._n = (state._n || 0) + 1); }
-    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    // esc: also escapes the apostrophe -- several attributes are single-quoted (title='...'), where
+    // "O'Brien" used to end the attribute early.
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    // csvCell: formula-leading cells (= + @ tab CR) get a ' prefix (a leading minus is left alone so
+    // negative numbers stay numbers); quote when the cell holds a quote, comma, LF or bare CR.
+    function csvCell(c) { var s = String(c == null ? "" : c); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 
     var NAMES = { low: "Low", some: "Some concerns", high: "High", moderate: "Moderate", serious: "Serious", critical: "Critical", crit: "Critical", ni: "No info", unclear: "Unclear" };
     var ROB2_OPTS = [["low", "Low"], ["some", "Some concerns"], ["high", "High"]];
@@ -543,7 +548,7 @@
         });
         rows.push([st.label, st.framework, "overall", "Overall", overallVerdict(st), "", "", ""]);
       });
-      var csv = rows.map(function (r) { return r.map(function (c) { var s = String(c == null ? "" : c); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }).join("\n");
+      var csv = rows.map(function (r) { return r.map(csvCell).join(","); }).join("\n");
       downloadBlob(csv, "rob-assessment.csv", "text/csv");
     });
 
