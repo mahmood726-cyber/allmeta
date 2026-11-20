@@ -237,7 +237,7 @@
       document.getElementById("interp").innerHTML =
         "To " + tvTxt + ", an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
         + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
-      drawPlot(r);
+      drawPlot(r, measure);
     }
 
     function run() {
@@ -291,12 +291,18 @@
         "To fully explain away the point estimate, an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
         + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
 
-      drawPlot(r);
+      drawPlot(r, measure);
     }
 
-    function drawPlot(r) {
-      // Log-scale axis from RR=1 to a bit past the point E-value.
-      var maxV = Math.max(r.point, r.rr.point, 3) * 1.15;
+    function drawPlot(r, measure) {
+      // Log-scale axis from RR=1 to a bit past the point E-value AND the plotted marker
+      // (LIM-P22 F14: with a non-null true value 1/RR can exceed the E-value).
+      var obs = r.rr.point > 0 ? (r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point) : 1;
+      var maxV = Math.max(r.point, obs, 3) * 1.15;
+      var rd = measure === "RD";  // for a risk difference the marker is EValue's bias factor, not a risk ratio
+      document.getElementById("plot").setAttribute("aria-label", rd
+        ? "Bias factor (risk-difference method) and E-value on a log scale"
+        : "Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale");
       var W = 600, H = 150, padL = 30, padR = 20, y = 70;
       var x = function (v) { return padL + (Math.log(v) / Math.log(maxV)) * (W - padL - padR); };
       var parts = [];
@@ -310,7 +316,7 @@
       // observed RR marker
       if (r.rr.point > 0) {
         parts.push("<circle cx='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' cy='" + y + "' r='5' fill='var(--accent)'/>");
-        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>" + (r.rr.point >= 1 ? "RR" : "1/RR = " + fmt(1 / r.rr.point)) + "</text>");
+        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>" + (rd ? "bias factor" : r.rr.point >= 1 ? "RR" : "1/RR = " + fmt(1 / r.rr.point)) + "</text>");
       }
       // E-value marker
       parts.push("<line x1='" + x(r.point) + "' y1='" + (y - 28) + "' x2='" + x(r.point) + "' y2='" + (y + 8) + "' stroke='var(--warn)' stroke-width='2'/>");
