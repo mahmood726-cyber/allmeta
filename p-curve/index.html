@@ -650,16 +650,22 @@
         inp.invalid.slice(0, 5).map(t => `<code>${t.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch])}</code>`).join(", ") +
         (inp.invalid.length > 5 ? ", …" : ""));
       if (note) note.innerHTML = parts.join("; ") + ".";
-      if (nSig < 3) {
-        document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">Need at least 3 significant (p &lt; 0.05) p-values.</td></tr>`;
-        document.getElementById("pu-body").innerHTML = `<tr><td colspan="2">Not computed (fewer than 3 significant p-values).</td></tr>`;
+      const refuse = (why) => {
+        document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">${why}</td></tr>`;
+        document.getElementById("pu-body").innerHTML = `<tr><td colspan="2">Not computed (${why.replace(/\.$/, "")}).</td></tr>`;
         document.getElementById("plot").innerHTML = "";
         _lastResults = null;
-        return;
-      }
+      };
+      if (nSig < 3) return refuse("Need at least 3 significant (p &lt; 0.05) p-values.");
       const testType = document.getElementById("test").value;
-      const dfVal = parseInt(document.getElementById("df").value, 10);
-      const useT = (testType === "t" && Number.isFinite(dfVal) && dfVal >= 1);
+      // The common df is used exactly as typed: Number(), not parseInt() (which made 30.9 -> 30 and 1e2 -> 1),
+      // and a t-test without a usable df is refused instead of silently becoming the z family.
+      const dfText = String(document.getElementById("df").value).trim();
+      const dfVal = dfText === "" ? NaN : Number(dfText);
+      if (testType === "t" && !(Number.isInteger(dfVal) && dfVal >= 1)) {
+        return refuse("For the t-test the common df must be a whole number of at least 1.");
+      }
+      const useT = testType === "t";
       const A = analyze(raw, useT ? "t" : "z", dfVal);
 
       _lastResults = Object.assign({
