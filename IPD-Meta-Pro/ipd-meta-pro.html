@@ -239,6 +239,8 @@
 
                     <button class="dropdown-item" onclick="HelpSystem.showFeatureGuide()">&#x2B50; Feature Guide</button>
 
+                    <button class="dropdown-item" id="helpMenuVerifyInR" onclick="openValidationPanel()" title="Check this page's numbers against R: run the analysis in WebR, or download an R script that prints page value, R value and MATCH / MISMATCH">&#x2714;&#xFE0F; Statistical Validation (Verify in R)</button>
+
                     <div class="dropdown-divider"></div>
 
                     <button class="dropdown-item" onclick="HelpSystem.showKeyboardShortcuts()">&#x2328;&#xFE0F; Keyboard Shortcuts</button>
@@ -2382,7 +2384,7 @@
 
     
 
-    <div class="modal-overlay" id="helpModal">
+    <div class="modal-overlay" id="helpModal" data-persistent="true">
 
         <div class="modal" style="max-width: 900px; max-height: 90vh;">
 
@@ -25423,9 +25425,13 @@ const ModalManager = {
 
  closeAll: function() {
 
+  // A static overlay of the page's own markup (data-persistent: #helpModal, which holds the Statistical
+  // Validation / Verify-in-R panel) is hidden, never removed: removing it made the panel unreachable until
+  // reload after any ModalManager dialog (Method Guide, results dialogs; review of PR #639).
   document.querySelectorAll('.modal-overlay').forEach(m => {
 
-   m.remove();
+   if (m.hasAttribute('data-persistent')) m.classList.remove('active');
+   else m.remove();
 
   });
 
@@ -28715,7 +28721,10 @@ const SessionManager = {
 
     showModal: function(title, content, size = 'medium') {
 
-        const modalId = 'helpModal';
+        // Its own overlay, created on first use. It used to be #helpModal, whose innerHTML it rewrote: the
+        // first Help menu item destroyed the Statistical Validation (Verify in R) tab that lives there
+        // (dev/tests/webr_panel_reachable_ui.test.cjs).
+        const modalId = 'helpSystemModal';
 
         // Save previously focused element for focus restoration
         this._previousFocus = document.activeElement;
@@ -28893,7 +28902,7 @@ const SessionManager = {
 
     closeModal: function() {
 
-        const modal = document.getElementById('helpModal');
+        const modal = document.getElementById('helpSystemModal');
 
         if (modal) {
 
@@ -39594,6 +39603,26 @@ function runMetaRegression(moderatorArg) {
  document.getElementById('helpModal').classList.add('active');
 
  }
+
+// Help > "Statistical Validation (Verify in R)": the only control that opens the WebR panel (Validate Current
+// Analysis, Download R script), which lives in #helpModal's Statistical Validation tab. Before it, showHelp()
+// had no caller in the UI, so a user could not reach the panel at all.
+function openValidationPanel() {
+ document.querySelectorAll('.dropdown').forEach(function (d) {
+  d.classList.remove('open');
+  var t = d.querySelector('.dropdown-toggle');
+  if (t) t.setAttribute('aria-expanded', 'false');
+ });
+ if (!document.getElementById('helpModal') || !document.getElementById('webrBtnCurrent')) {
+  // never expected (ModalManager.closeAll keeps #helpModal); say so rather than throw on a null element
+  if (typeof showNotification === 'function') showNotification('The validation panel is not available; please reload the page.', 'warning');
+  return;
+ }
+ showHelp();
+ var tab = document.querySelector('#helpTabs .inner-tab[onclick*="\'validation\'"]');
+ if (tab) { tab.click(); tab.setAttribute('aria-selected', 'true'); tab.focus(); }
+ else switchHelpTab('validation');
+}
 
 
 
@@ -77813,15 +77842,20 @@ function displayValidationResults(results) {
     return '"' + out + '"';
   }
 
-  // A page value as an R literal, coerced the way the panel's compareResults coerces it
-  // (global isFinite / arithmetic). null/undefined -> NULL ("the page gives no value").
+  // A page value as an R literal. A number is embedded as it is (NaN / Inf too: R then prints NOT
+  // CHECKED, "a value is not finite"); a string is embedded only when it is a decimal number. Anything
+  // else -- null/undefined, "", "  ", a boolean, an array, an object, "abc", "0x10" -- is NULL ("the
+  // page gives no value", NOT CHECKED). It used to be coerced with Number() and the global isFinite(),
+  // so "" / [] / false became 0 and a page that gave no tau2 printed a false [MATCH] against R's
+  // tau2 = 0 (dev/tests/webr_rscript_missing_page_value.test.cjs).
+  var R_DECIMAL_RE = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
   function rNumLiteral(v) {
     if (v === null || v === undefined) return 'NULL';
     if (typeof v !== 'number') {
-      if (typeof v === 'object' && !Array.isArray(v)) return 'NULL';
-      var n = Number(v);
-      if (!isFinite(v)) return 'NULL';
-      v = n;
+      if (typeof v !== 'string') return 'NULL';
+      var s = v.trim();
+      if (!R_DECIMAL_RE.test(s)) return 'NULL';
+      v = Number(s);
     }
     if (v !== v) return 'NaN';
     if (v === Infinity) return 'Inf';

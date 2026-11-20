@@ -89,3 +89,23 @@ test("honesty: a tampered page value makes R print MISMATCH", { skip: SKIP }, as
   assert.match(out, /^MISMATCH \d+\/\d+/m);
   assert.match(out, /^fisher_chisq .* DIFFERS$/m);
 });
+
+// Pasted data with extremely small p-values (8 significant trials of metadat::dat.bcg,
+// two-sided p down to 2.2e-24). The page shows p-uniform 3.6609 [1.9658, 5.4623]; the
+// script must reproduce it. qnorm(1 - p/2) rounds 1 - 2.2e-24 to 1 and returns Inf, so
+// puniform returned NA for est/CI and the script printed MISMATCH 14/17 (seen on the
+// live page, Nov 2026). The upper-tail quantile qnorm(p/2, lower.tail = FALSE) is finite.
+// Requires puniform in R_LIBS: without it the five p-uniform quantities are NOT CHECKED
+// and this test cannot test anything, so it is skipped rather than passed.
+let HAVE_PU = false;
+if (READY) {
+  try { HAVE_PU = /^TRUE/.test(execFileSync(RSCRIPT, ["--vanilla", "-e", "cat(requireNamespace('puniform', quietly=TRUE))"], { encoding: "utf8", env: process.env })); } catch (e) { HAVE_PU = false; }
+}
+test("pasted tiny p-values: p-uniform est/CI are finite in R and R prints MATCH 17/17", { skip: SKIP || (HAVE_PU ? false : "needs puniform in R_LIBS") }, async () => {
+  const tiny = ["0.000325564", "0.0364664", "2.18074e-24", "3.0833e-21", "0.000598463", "0.0481541", "3.88081e-07", "0.00231883"];
+  const { s } = await scriptFor(async (p) => { await p.fill("#src", tiny.join("\n")); await p.click("#btn-run"); });
+  assert.match(s, /2\.18074e-24/);
+  const out = runR(s);
+  assert.match(out, /^pu_est\s+3\.66\d*\s+3\.66\d*\s+\S+\s+ok$/m, "p-uniform estimate not reproduced:\n" + out);
+  assert.match(out, /^MATCH 17\/17/m, out);
+});

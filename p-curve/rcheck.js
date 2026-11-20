@@ -80,11 +80,12 @@
     L.push("r[\"flat_full_p\"] <- pnorm(r[[\"flat_full_z\"]])");
     L.push("r[\"flat_half_z\"] <- if (kh) stouffer(pbound(1 - S2(crit(half), ncp) / S2(crit(0.025), ncp))) else NA");
     L.push("r[\"flat_half_p\"] <- if (kh) pnorm(r[[\"flat_half_z\"]]) else NA");
-    L.push("# p-uniform: puniform(yi = z, vi = 1, side = \"right\", method = \"P\"), z = qnorm(1 - p/2)");
+    L.push("# p-uniform: puniform(yi = z, vi = 1, side = \"right\", method = \"P\"), z = qnorm(p/2, lower.tail = FALSE)");
+    L.push("#   (upper-tail form: qnorm(1 - p/2) is Inf for p < ~1e-16, which made puniform return NA)");
     L.push("pu_names <- c(\"pu_est\", \"pu_ci_lb\", \"pu_ci_ub\", \"pu_L0\", \"pu_pval0\")");
     L.push("have_pu <- suppressWarnings(requireNamespace(\"puniform\", quietly = TRUE))");
     L.push("if (have_pu) {");
-    L.push("  pu <- puniform::puniform(yi = qnorm(1 - p / 2), vi = rep(1, k), side = \"right\", method = \"P\")");
+    L.push("  pu <- puniform::puniform(yi = qnorm(p / 2, lower.tail = FALSE), vi = rep(1, k), side = \"right\", method = \"P\")");
     L.push("  num1 <- function(x) if (length(x) == 1 && is.numeric(x)) as.numeric(x) else NA");
     L.push("  r[pu_names] <- c(num1(pu$est), num1(pu$ci.lb), num1(pu$ci.ub), num1(pu$L.0), num1(pu$pval.0))");
     L.push("}");

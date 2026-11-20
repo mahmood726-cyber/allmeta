@@ -224,6 +224,27 @@ def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_dis
     assert "MISMATCH 3/6 agree" in out, out
 
 
+# Review of PR #630 (Codex F2 / agy A1): the PM call left tau2.max at metafor's default, the larger of
+# 100 and 10 * mad(yi)^2, and metafor stops ("Value of 'tau2.max' too low") when the root lies above it,
+# while the page's search (shared/ma-core.js tau2PM) doubles its upper bracket until Q(hi) <= k - 1.
+# Requirement: for data the page analyses, the downloaded script runs and agrees with the display.
+# OUTLIER: mad(yi) = 0, so metafor's bound is 100; the page's tau2 is 3332.3333.
+# SPREAD: mad(yi) = 1.48 (bound 100), one far study; the page's tau2 is far above 100.
+OUTLIER_ACTIONS = [{"fill": "#f-data", "value": "A, 0, 1\nB, 0, 1\nC, 100, 1"}, {"wait": 500}]
+SPREAD_ACTIONS = [{"fill": "#f-data", "value": "A, 0, 1\nB, 1, 1\nC, 2, 1\nD, 300, 1"}, {"wait": 500}]
+
+
+@pytest.mark.parametrize("name, actions", [("outlier", OUTLIER_ACTIONS), ("spread", SPREAD_ACTIONS)])
+def test_pm_tau2_above_metafors_default_bound_still_runs_and_agrees(server, tmp_path, name, actions):
+    res = drive(server, actions)
+    assert res["downloaded"], res["status"]
+    rc, out = run_r(res["script"], tmp_path, "pm-" + name)
+    assert_match(rc, out)
+    R = r_values(out)
+    assert R["tau^2 (plug-in)"] > 100, out      # the case really is above metafor's default bound
+    check_dom_against_r(res["dom"], R)
+
+
 # Review of PR #630 (Codex F2 reproduction B / agy A1, second half; XREV-631 lane fix631): metafor's PM
 # tol (1e-12) is an ABSOLUTE tolerance on tau^2, so on data in tiny units (tau^2 ~ 1e-16) R stopped at
 # 7.07e-13 while the page solves to 2.32e-16, and the displayed probability then disagreed (0.539 vs

@@ -225,3 +225,81 @@ def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_dis
     assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
                        "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
     assert "MISMATCH 3/6 agree" in out, out
+
+
+# Review of PR #630 (Codex F1 / agy A2): the R reference formed the mu-integrated likelihood as
+# l0 + B^2/(2A); for precise studies with a non-zero effect the two terms are ~sum(w y^2) and cancel
+# (y = c(1, 1), se = 2^-30: H1FE 0 instead of 18.10996, H1RE 232.67 instead of 0.15830), and its tau
+# integral, on a fixed grid from 1e-6, could not resolve structure at tau ~ se (integrate() stopped with
+# an error). Requirement: the R reference itself is right for such data, checked against closed forms
+# computed here independently of r-check.js (two identical studies: cov = s2 I + 11', s2 = v + tau^2).
+PRECISE_ACTIONS = [{"fill": "#f-data", "value": "A, 1, 0.000001\nB, 1.00001, 0.000001"}, {"wait": 800}]
+
+
+def test_R_reference_has_no_cancellation_for_precise_studies(tmp_path):
+    oracle = re.search(r"var ORACLE_R = \[(.*?)\]\.join", RCHECK, re.S).group(1)
+    rsrc = "\n".join(json.loads("[" + oracle.rstrip().rstrip(",") + "]"))
+    pre = "yi <- c(1, 1); sei <- rep(2^-30, 2)\n"
+    post = r"""
+vv <- 2^-60
+lH1FE <- -log(2 * pi) - 0.5 * log(vv * (vv + 2)) - 1 / (vv + 2)
+g <- function(t) { s2 <- vv + t^2; -log(2 * pi) - 0.5 * log(s2) - 0.5 * log(s2 + 2) - 1 / (s2 + 2) + log(2) + dnorm(t, 0, 1, log = TRUE) }
+f <- function(t) exp(g(t) - g(0)); br <- c(0, 10^seq(-14, 1, by = 0.25), Inf); s <- 0
+for (i in seq_len(length(br) - 1)) s <- s + integrate(f, br[i], br[i + 1], rel.tol = 1e-12, abs.tol = 0)$value
+lH1RE <- g(0) + log(s)
+cat(sprintf("H1FE %.15g %.15g\nH1RE %.15g %.15g\nmuH1FE %.15g\n", lml[["H1FE"]], lH1FE, lml[["H1RE"]], lH1RE, mH1FE))
+"""
+    rc, out = run_r(pre + rsrc + post, tmp_path, "oracle-precise")
+    assert rc == 0, out
+    vals = {m.group(1): [float(x) for x in m.group(2).split()] for m in re.finditer(r"^(H1FE|H1RE|muH1FE) (.+)$", out, re.M)}
+    assert abs(vals["H1FE"][0] - vals["H1FE"][1]) < 1e-9 and abs(vals["H1FE"][1] - 18.109964760109) < 1e-9, out
+    assert abs(vals["H1RE"][0] - vals["H1RE"][1]) < 1e-9 and abs(vals["H1RE"][1] - 0.158301161195) < 1e-9, out
+    assert abs(vals["muH1FE"][0] - 1) < 1e-12, out
+
+
+def test_precise_studies_download_runs_in_R_and_agrees_with_the_display(server, tmp_path):
+    # Before the fix this script stopped inside integrate() (exit 1) for these two studies.
+    res = drive(server, PRECISE_ACTIONS)
+    assert res["downloaded"], res["status"]
+    assert "1.00001" in res["script"] and "0.000001" in res["script"], res["script"][:1500]
+    rc, out = run_r(res["script"], tmp_path, "precise")
+    assert_match(rc, out)
+    # H0FE's log marginal likelihood here is -1.00001e12: R prints it to 12 significant digits, which
+    # cannot fix the mantissa of exp(l) (that needs l to ~1e-4 absolute, i.e. 16 digits), so the
+    # 4-digit mantissa string cannot be rebuilt from the printout. Those cells are compared on the full-
+    # precision page value by the script's own chk() above (log scale, half a displayed unit), and every
+    # other cell is checked against the display here. (At this magnitude even double precision fixes the
+    # 4th digit only to about one unit: exact 2.6076e-434298824859, page 2.607.)
+    R = r_values(out)
+    bad, n = DOM_CHECK(res["dom"], R)
+    huge = {m for m in MODELS if abs(R["log marginal lik. " + m]) > 1e9}
+    assert huge == {"H0FE"}, huge
+    assert all(b[0] in huge for b in bad), bad
+    assert n - len(bad) >= MIN_DOM_CHECKS - len(huge), (n, bad)
+
+
+# User path (LEDGER 17 Nov 11:20): the "Download full RoBMA R script" file stopped in fresh Rscript at its
+# first line, install.packages('RoBMA') with no repos, because a fresh non-interactive R has no CRAN
+# mirror set ("trying to use CRAN without setting a mirror"). Requirement: every install.packages()
+# call in that script names a repository. Checked on R's own parse of the script (no package is
+# installed and nothing is downloaded by this test).
+def test_full_RoBMA_script_names_a_CRAN_mirror(tmp_path):
+    _need(shutil.which("node"), "node not on PATH")
+    js = ("const R = require(%s); process.stdout.write(R.buildRCode([0.1, 0.3], [0.2, 0.25]))"
+          % json.dumps(str(ROOT / "shared" / "robma.js")))
+    code = subprocess.run(["node", "-e", js], capture_output=True, text=True, encoding="utf-8", timeout=60, check=True).stdout
+    (tmp_path / "full.R").write_text(code, encoding="utf-8")
+    walker = r"""
+f <- function(e) if (is.call(e)) {
+  if (identical(e[[1]], as.name("install.packages"))) cat("INSTALL_CALL repos =", "repos" %in% names(e), "\n")
+  for (i in seq_along(e)[-1]) if (is.call(e[[i]])) f(e[[i]]) }
+for (e in parse(file = commandArgs(TRUE)[1])) f(e)
+"""
+    rs = shutil.which("Rscript")
+    _need(rs, "Rscript not on PATH")
+    (tmp_path / "walk.R").write_text(walker, encoding="utf-8")
+    r = subprocess.run([rs, "--vanilla", str(tmp_path / "walk.R"), str(tmp_path / "full.R")],
+                       capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr
+    calls = re.findall(r"^INSTALL_CALL repos = (TRUE|FALSE)", r.stdout, re.M)
+    assert calls and all(c == "TRUE" for c in calls), (calls, code)

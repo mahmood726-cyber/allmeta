@@ -147,7 +147,7 @@
       "# Full robust Bayesian meta-analysis (effect × heterogeneity × publication bias).",
       "# The in-app result covers the effect/heterogeneity model-averaging; RoBMA adds",
       "# weight-function & PET-PEESE bias models via MCMC. RoBMA needs JAGS (mcmc-jags.sourceforge.io).",
-      "install.packages('RoBMA')  # once",
+      "if (!requireNamespace('RoBMA', quietly = TRUE)) install.packages('RoBMA', repos = 'https://cloud.r-project.org')  # once; a fresh Rscript has no CRAN mirror set",
       "library(RoBMA)",
       "y  <- c(" + yi.join(", ") + ")",
       "se <- c(" + sei.join(", ") + ")",
