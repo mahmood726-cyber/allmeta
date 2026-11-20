@@ -134,7 +134,8 @@
     if (btn) btn.disabled = false;
     // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
     if (my !== verifyGen || current() !== snap) { out.textContent = ""; set(STALE); return; }
-    if (!res.ok) { set("WebR failed: " + res.error); return; }
+    // Whatever WebR did, nothing was checked in the browser: say so, not just the runtime error.
+    if (!res.ok) { set("NOT CHECKED: WebR failed (" + res.error + "). gsDesign is not in this site's pinned WebR package repository, so nothing was run; use Download R script and run it in R with gsDesign installed."); return; }
     out.textContent = res.stdout;
     var last = (res.stdout.match(/^(MATCH|MISMATCH|NOT CHECKED \d).*$/m) || ["(no MATCH line in R output)"])[0];
     set("R finished (" + res.versions.R + ", webR " + res.versions.webR + "): " + last);
