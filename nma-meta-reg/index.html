@@ -279,6 +279,9 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         '<div class="card"><span class="k">QE (df)</span><span class="v">' + fmt(fit.QE, 3) + ' (' + fit.QEdf + ')</span></div>' +
         '<div class="card"><span class="k">Dropped multi-arm contrasts</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason === "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">x̄ (covariate mean)</span><span class="v">' + fmt(fit.xMean, 2) + '</span></div>' +
+        // Rows the engine excludes before fitting (missing value, sei <= 0, trtA = trtB) are counted too:
+        // the R script checks the same count, and the page used to show only the multi-arm drops.
+        '<div class="card"><span class="k">Invalid rows excluded</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason !== "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(fit.tau2, 4) + '</span></div>' +
         '<div class="card"><span class="k">n rows</span><span class="v">' + fit.n + '</span></div>' +
         '<div class="card"><span class="k">p (params)</span><span class="v">' + fit.p + '</span></div>' +
