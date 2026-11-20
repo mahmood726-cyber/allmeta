@@ -38194,6 +38194,11 @@ function runAnalysis() {
  showNotification('The Run Analysis button fits the two-stage model. Choose "Two-Stage" here, or fit one-stage models from the One-Stage analyses.', 'warning');
  return;
  }
+ if (APP.config.analysisApproach !== 'two-stage') {
+ // LIM-P60 L01: "Both approaches" used to run the two-stage fit alone, with no one-stage model and no message
+ showNotification('The Run Analysis button fits the two-stage model only; it does not fit both approaches. Choose "Two-Stage" here, and fit one-stage models from the One-Stage analyses.', 'warning');
+ return;
+ }
 
  APP.config.effectMeasure = document.getElementById('effectMeasure').value;
 
