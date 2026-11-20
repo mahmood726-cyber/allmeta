@@ -146,6 +146,7 @@
 
     function run() {
       window.__lastTransport = null; window.__lastTransportInput = null;   // cleared unless this run succeeds (test hook + R check read them)
+      $("plot").innerHTML = "";   // every refusal path must leave no plot of an earlier analysis
       var rows = parseData($("f-data").value);
       var target = num($("f-target").value);
       var log = $("f-log").checked;

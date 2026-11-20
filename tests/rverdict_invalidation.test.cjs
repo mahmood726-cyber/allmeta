@@ -46,6 +46,7 @@ const VERS = { R: "R version 4.5.1", webR: "0.5.5", metafor: "4.8-0" };
 
 const APPS = {
   robma: { A: "0", verify: "#btn-r-webr", B: set("#f-data", "A, 0.30, 0.12\nB, 0.12, 0.20\nC, 0.55, 0.18"), show: ["#r-check-status", "#r-check-out"] },
+  transportability: { A: click("#btn-example"), verify: "#btn-webr", B: set("#f-target", "35"), show: ["#r-status", "#r-out"] },
 };
 
 async function open(app) {

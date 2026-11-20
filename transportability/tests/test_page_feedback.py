@@ -84,3 +84,12 @@ def test_exp_overflow_is_not_shown_as_infinity():
 def test_example_p_value_display_unchanged():
     o = page((EXAMPLE, "31", False))[0]
     assert "(p=0.019)" in o["msg"], o["msg"]
+
+
+# F13 (page half; the R-verdict half is in tests/rverdict_invalidation.test.cjs): an invalid target left the
+# previous analysis's plot on screen. Requirement: every refusal leaves no plot.
+def test_invalid_target_clears_the_previous_plot():
+    o = page((EXAMPLE, "31", False), (EXAMPLE, "", False), (EXAMPLE, "31abc", False))
+    assert o[0]["ok"] and "<svg" in o[0]["plot"]
+    for x in o[1:]:
+        assert not x["ok"] and x["plot"] == "", x
