@@ -70,8 +70,13 @@ def expected(case):
 
 def export_expected(case, fields, payload):
     values=fixture(case['k'])
-    studies=[dict(label=f'Distinct_{i+11}',est=v,se=se,moderator=None,group=None,year=None) for i,(v,se) in enumerate(values)]
-    return dict(chart_matches_display=True,results=payload,receipt=None if payload is None else dict(studies=[],method='GOSH all-subsets meta-analysis stability',label='gosh-plot',results=payload),input_receipt=studies,bus=[dict(s,measure=None) for s in studies])
+    # The TruthCert receipt and bus Save carry the studies the displayed result was computed on,
+    # and nothing when the page refused the input (PR #579). This used to expect the textarea
+    # re-read by the shared reader -- refused rows included -- which is the defect #579 fixes.
+    if payload is None:
+        return dict(chart_matches_display=True,results=None,receipt=None,input_receipt=[],bus=[])
+    studies=[dict(label=f'Distinct_{i+11}',est=v,se=se) for i,(v,se) in enumerate(values)]
+    return dict(chart_matches_display=True,results=payload,receipt=dict(studies=[],method='GOSH all-subsets meta-analysis stability',label='gosh-plot',results=payload),input_receipt=studies,bus=[dict(s,moderator=None,group=None,year=None,measure=None) for s in studies])
 
 
 def observed(case):
