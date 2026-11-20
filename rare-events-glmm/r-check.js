@@ -106,6 +106,10 @@
 
   // attach({ getState, mount }) — getState() returns the buildScript state or null.
   var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
+  var resets = [];
+  // invalidate(): the page re-ran or its inputs changed. A finished verdict describes the
+  // earlier analysis, so it is cleared; a run still in flight is made stale.
+  function invalidate() { resets.forEach(function (f) { f(); }); }
   function attach(opts) {
     var verifyGen = 0;   // a later Verify, or a re-run of the analysis, makes an earlier run's answer stale
     var host = document.querySelector(opts.mount);
@@ -118,6 +122,7 @@
       '<div id="rcheck-status" class="note" role="status" style="margin-top:.4rem"></div>' +
       '<pre id="rcheck-out" style="white-space:pre-wrap;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;max-height:28rem;overflow:auto;display:none"></pre>';
     var status = host.querySelector("#rcheck-status"), out = host.querySelector("#rcheck-out");
+    resets.push(function () { verifyGen++; status.textContent = ""; out.textContent = ""; out.style.display = "none"; host.querySelector("#rcheck-webr").disabled = false; });
     host.querySelector("#rcheck-dl").addEventListener("click", function () {
       var st = opts.getState();
       if (!st) { status.textContent = "Nothing to check: fit the GLMM first (at least 2 valid studies)."; return; }
@@ -145,7 +150,7 @@
     return true;
   }
 
-  var api = { buildScript: buildScript, attach: attach };
+  var api = { buildScript: buildScript, attach: attach, invalidate: invalidate };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRareGlmmRCheck = api;
 })(typeof window !== "undefined" ? window : globalThis);

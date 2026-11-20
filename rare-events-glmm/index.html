@@ -172,9 +172,21 @@ Trial 8, 1, 210, 3, 215</textarea>
 
     var _rstate = null; // inputs + displayed numbers for the R check (r-check.js)
     window.__almRareRState = function () { return _rstate; };
+    function resetR() { if (window.AlmRareGlmmRCheck && AlmRareGlmmRCheck.invalidate) AlmRareGlmmRCheck.invalidate(); }
+    // Any change to the inputs (typing, a loaded benchmark, a restored draft) makes the
+    // displayed fit, the R snapshot and any R verdict describe a different analysis.
+    function invalidate() {
+      _rstate = null;
+      window.__almLastRareEventsGLMM = null;
+      resetR();
+      document.querySelector("#compare tbody").innerHTML = "";
+      document.getElementById("summary").innerHTML =
+        '<div class="card" style="grid-column:1/-1">Inputs changed: press <strong>Fit GLMM</strong> to analyse them.</div>';
+    }
     function run() {
       _rstate = null;
       window.__almLastRareEventsGLMM = null;
+      resetR();
       document.querySelector("#compare tbody").innerHTML = "";
       var parsed = parse(document.getElementById("src").value), rows = parsed.rows;
       if (parsed.errors.length) {
@@ -270,6 +282,7 @@ Trial 8, 1, 210, 3, 215</textarea>
 
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("f-model").addEventListener("change", run);
+    document.getElementById("src").addEventListener("input", invalidate);
     run();
   })();
   </script>
@@ -309,6 +322,8 @@ Trial 8, 1, 210, 3, 215</textarea>
         container: "#alm-hero-mount",
         textarea: "#src",
         adapter: "glmm",
+        // a loaded benchmark is fitted at once (its input event only invalidates)
+        onAfterLoad: function () { document.getElementById("btn-run").click(); },
       });
     }
   });
