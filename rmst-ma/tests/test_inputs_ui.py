@@ -68,6 +68,7 @@ CASES = [
     # pooling that throws: make ma-core's pool throw for this run only
     {"id": "L04-throw", "js": "window.AlmMaCore.pool = function () { throw new RangeError('planted failure'); };",
      "text": GOOD},
+    {"id": "L04-overflow", "text": "A, 1e308, 1\nB, 1.7e308, 1\nC, 1.7e308, 1"},
 ]
 
 
@@ -119,3 +120,9 @@ def test_L04_failed_fit_clears_display(driven):
     assert d["last"] is None and d["rstate"] is None
     assert d["rows"] == 0 and d["forest"] == 0
     assert "k = " not in d["headline"] and "planted failure" in d["headline"], d["headline"]
+
+
+def test_L04_non_finite_result_not_displayed(driven):
+    d = driven["L04-overflow"]
+    assert d["last"] is None and d["rows"] == 0 and d["forest"] == 0
+    assert "k = " not in d["headline"], d["headline"]

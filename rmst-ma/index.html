@@ -94,7 +94,11 @@
         var label = p[0] || ("Trial " + (rows.length + 1));
         if (!isFinite(diff)) { refuse("RMST difference \"" + p[p.length - 2] + "\" is not a decimal number"); return; }
         if (!(isFinite(se) && se > 0)) { refuse("SE \"" + p[p.length - 1] + "\" is not a positive decimal number"); return; }
-        rows.push({ label: label, diff: diff, se: se, v: se * se });
+        // The variance SE^2 must itself be a positive finite number: 1e200 squares to Infinity and 1e-200 to 0,
+        // either of which made ma-core's weights throw (or go non-finite) for the whole analysis.
+        var v = se * se;
+        if (!(isFinite(v) && v > 0)) { refuse("SE " + p[2] + " squared is outside the numerical range; rescale the time units"); return; }
+        rows.push({ label: label, diff: diff, se: se, v: v });
       });
       return rows;
     }
@@ -109,7 +113,17 @@
       var method = document.getElementById("f-method").value;
       var head = document.getElementById("headline"), body = document.getElementById("res-body");
       if (rows.length < 2) { head.textContent = "Enter at least 2 trials."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; _rstate = null; return; }
-      var r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var r;
+      try { r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true }); }
+      catch (e) {
+        // A failed fit must not leave the PREVIOUS analysis on screen as if it were this one.
+        head.textContent = "Pooling failed for these inputs: " + (e && e.message || String(e)); body.innerHTML = ""; document.getElementById("forest-host").innerHTML = "";
+        return;
+      }
+      if (![r.mu, r.se, r.ciLo, r.ciHi, r.tau2].every(isFinite)) {
+        head.textContent = "Pooling failed for these inputs: the result is outside the numerical range (rescale the time units)."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = "";
+        return;
+      }
       var w = rows.map(function (s) { return 1 / (s.v + r.tau2); }), sw = w.reduce(function (a, b) { return a + b; }, 0);
       head.innerHTML = "k = " + rows.length + " · pooled RMST difference = <strong>" + fmt(r.mu) + "</strong> [" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]"
         + " · τ² = " + fmt(r.tau2, 4) + " · I² = " + fmt(r.I2, 1) + "%"
