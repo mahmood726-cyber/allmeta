@@ -233,8 +233,11 @@
         var two = $("sided").value === "2", fut = !two && $("fut").value !== "none";
         var opts = {
           alpha: alpha, infoFracs: frac, spend: $("spend").value,
-          param: parseFloat($("param").value), twoSided: two,
-          futility: fut ? "betaspend" : "none", futSpend: $("fut").value, futParam: parseFloat($("fparam").value),
+          // O'Brien-Fleming and Pocock take no parameter on this page (their box is hidden):
+          // a value left in the hidden box (from another family or a link) must not reach the design.
+          param: needsParam($("spend").value) ? parseFloat($("param").value) : 1, twoSided: two,
+          futility: fut ? "betaspend" : "none", futSpend: $("fut").value,
+          futParam: fut && needsParam($("fut").value) ? parseFloat($("fparam").value) : 1,
           binding: $("bind").value === "1", beta: 1 - power
         };
         var tb = $("tb"); tb.textContent = "";
