@@ -243,7 +243,13 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var treatments = Array.from(new Set(rows.reduce(function (acc, r) {
         acc.push(r.trtA); acc.push(r.trtB); return acc;
       }, []))).sort();
-      if (refTrt && treatments.includes(refTrt)) {
+      // An entered reference must be an exact treatment label: an unknown one used to be ignored silently
+      // (the first sorted label was fitted instead). A blank field still selects the first sorted label.
+      if (refTrt && !treatments.includes(refTrt)) {
+        showFail("reference treatment '" + refTrt + "' is not a treatment in the data (" + treatments.join(", ") + ").");
+        return;
+      }
+      if (refTrt) {
         treatments = [refTrt].concat(treatments.filter(function (t) { return t !== refTrt; }));
       }
       var fit;
