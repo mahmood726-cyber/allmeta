@@ -245,3 +245,12 @@ def test_L19_radio_groups_named_focus_visible_and_domain_text():
     assert o["role"] == "radiogroup" and "retraction" in o["label"], o
     assert o["focus"], o
     assert o["cell"].strip() == "Not set", o
+
+
+def test_L20_footer_cites_the_article_number_and_scopes_its_claims():
+    """L20: the reference gave the DOI suffix as the article number (BMJ 2026;394:e100611 per Crossref), and
+    the footer called the pooling engine "audited" although the P50 validation excluded pooling."""
+    html = (ROOT / "inspect-sr" / "index.html").read_text(encoding="utf-8")
+    assert "BMJ 2026;394:e100611" in html and "394:bmj-2026-100611" not in html
+    assert "audited" not in html
+    assert "user testing" in html   # the 45-minute figure is the preprint's user-testing time, not this page's
