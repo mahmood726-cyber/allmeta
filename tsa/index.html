@@ -160,6 +160,7 @@
         <button type="button" id="btn-reset">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
+      <div id="rcheck-mount"></div>
     </section>
 
     <section class="panel preview-wrap" aria-label="Preview">
@@ -345,7 +346,13 @@
 
     function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
 
+    // Inputs + displayed numbers of the current analysis, for "Check in R" (tsa/r-check.js); null when the
+    // page shows no analysis (no studies or no valid RIS setup). A new object per render, so an R answer for
+    // an earlier analysis is recognised as stale.
+    let rState = null;
+    window.__almTsaRState = function () { return rState; };
     function render() {
+      rState = null;
       const state = readState();
       const parsed = parseStudies(state.data);
       const ris = computeRIS(state);
@@ -363,6 +370,12 @@
           parts.push(statCard("Current info", fmt(cur.cumInfo, 1) + " (" + fmt(100*cur.cumInfo/ris, 1) + "%)"));
           parts.push(statCard("Cumulative Z", fmt(cur.z, 2)));
           parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-Z975 *cur.cumSE,3) + ", " + fmt(cur.cumMu+Z975 *cur.cumSE,3) + "]"));
+          rState = { studies: parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se })),
+            ris: { mode: state.risMode === "manual" ? "manual" : "auto", delta: parseFloat(state.delta), alpha: parseFloat(state.alpha),
+                   power: parseFloat(state.power), manual: parseFloat(state.risManual), D: Math.max(1, parseFloat(state.diversity) || 1) },
+            alpha: alpha,
+            page: { k: parsed.studies.length, ris: ris, info: cur.cumInfo, pct: 100*cur.cumInfo/ris, z: cur.z, mu: cur.cumMu,
+                    lo: cur.cumMu-Z975*cur.cumSE, hi: cur.cumMu+Z975*cur.cumSE, bnd: null, crossed: null, tlo: null, thi: null } };
           // Boundary at the current look; once the information has passed the RIS (t >= 1) all alpha is spent, and
           // later looks are compared with the final boundary (the boundary of the first look with t >= 1).
           let bAll = null;
@@ -377,6 +390,8 @@
           // TSA-adjusted confidence interval (TSA program; RTSA inference()): estimate +/- the monitoring
           // boundary at the current look times the SE, on the analysis scale like the naive interval above.
           if (isFinite(bnd)) parts.push(statCard("TSA-adjusted CI", "[" + fmt(cur.cumMu - bnd * cur.cumSE, 3) + ", " + fmt(cur.cumMu + bnd * cur.cumSE, 3) + "]"));
+          if (isFinite(bnd)) Object.assign(rState.page, { bnd: bnd, crossed: Math.abs(cur.z) > bnd,
+            tlo: cur.cumMu - bnd * cur.cumSE, thi: cur.cumMu + bnd * cur.cumSE });
           }
         }
       }
@@ -569,6 +584,11 @@
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
+<script src="../shared/webr-runner.js"></script>
+<script src="r-check.js"></script>
+<script>
+  if (window.AlmTsaRCheck) AlmTsaRCheck.attach({ mount: "#rcheck-mount", filename: "tsa-r-check.R", getState: function () { return window.__almTsaRState(); } });
+</script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
 <script>
