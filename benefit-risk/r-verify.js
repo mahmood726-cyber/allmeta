@@ -140,7 +140,7 @@
     "if (requireNamespace(\"smaa\", quietly = TRUE)) {",
     "  ra <- smaa::smaa.ra(smaa::smaa.ranks(Vmat))   # smaa.ranks: a rank per draw; smaa.ra: P(rank r), rows = treatments",
     "  for (k in 1:K) chk(paste0(\"smaa::smaa.ra P(rank 1): \", trt[k]), page_pbest[k], unname(ra[k, 1]))",
-    "} else cat(\"(smaa package not installed: optional smaa.ranks cross-check skipped; base-R checks above stand)\\n\")",
+    "} else cat(\"(smaa package not installed: optional smaa.ra cross-check skipped; base-R checks above stand)\\n\")",
     "",
     "cat(if (.bad == 0L) sprintf(\"MATCH %d/%d\\n\", .n, .n) else sprintf(\"MISMATCH %d of %d checks differ\\n\", .bad, .n))"
   ].join("\n");
