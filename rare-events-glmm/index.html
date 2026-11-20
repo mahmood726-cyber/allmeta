@@ -274,7 +274,17 @@ Trial 8, 1, 210, 3, 215</textarea>
       document.querySelector("#compare tbody").innerHTML =
         '<tr><td>UM.RS</td><td colspan="3" style="color:var(--muted)">Run the R script above (random study effects — glmer/Laplace).</td></tr>';
       var copyBtn = document.getElementById("umrs-copy");
-      copyBtn.addEventListener("click", function () { var ta = document.getElementById("umrs-code"); ta.select(); try { navigator.clipboard.writeText(ta.value); copyBtn.textContent = "Copied ✓"; } catch (e) { copyBtn.textContent = "Select + copy"; } });
+      // writeText() is asynchronous: report "Copied" only once it resolves, and the manual
+      // route (the script is selected; Download .R) when it is refused or unavailable.
+      copyBtn.addEventListener("click", function () {
+        var ta = document.getElementById("umrs-code"); ta.select();
+        var fail = function () { copyBtn.textContent = "Not copied: press Ctrl+C (selected) or Download .R"; };
+        try {
+          if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") return fail();
+          copyBtn.textContent = "Copying…";
+          Promise.resolve(navigator.clipboard.writeText(ta.value)).then(function () { copyBtn.textContent = "Copied ✓"; }, fail);
+        } catch (e) { fail(); }
+      });
       document.getElementById("umrs-dl").addEventListener("click", function () {
         var blob = new Blob([code], { type: "text/plain" }), url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "rare-events-UM-RS.R"; document.body.appendChild(a); a.click();
