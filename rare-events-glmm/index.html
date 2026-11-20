@@ -108,22 +108,30 @@ Trial 8, 1, 210, 3, 215</textarea>
   (function () {
     "use strict";
 
+    // Every non-comment row must be "label, events_T, n_T, events_C, n_C" with whole,
+    // exactly representable counts. A row that is not is never truncated (parseInt read
+    // "2.7" as 2, "1e1" as 1, "-0.5" as 0), padded or dropped: it is reported by line and
+    // blocks the fit. A first data line of column names (no digits in the count fields) is
+    // skipped as a header.
     function parse(text) {
-      var rows = [];
-      var lines = text.split(/\r?\n/);
+      var rows = [], errors = [], seenData = false;
+      var lines = text.split(/\r\n|\r|\n/);
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 5) continue;
-        var label = parts[0];
-        var eT = parseInt(parts[1], 10), nT = parseInt(parts[2], 10);
-        var eC = parseInt(parts[3], 10), nC = parseInt(parts[4], 10);
-        if (!isFinite(eT) || !isFinite(nT) || !isFinite(eC) || !isFinite(nC)) continue;
-        if (nT <= 0 || nC <= 0 || eT < 0 || eC < 0 || eT > nT || eC > nC) continue;
-        rows.push({ label: label, events_T: eT, n_T: nT, events_C: eC, n_C: nC });
+        var parts = line.split(/\s*,\s*/), where = "line " + (i + 1);
+        if (!seenData && parts.length === 5 && parts.slice(1).every(function (s) { return !/\d/.test(s); })) { seenData = true; continue; }
+        seenData = true;
+        if (parts.length !== 5) { errors.push(where + ": expected 5 comma-separated fields (label, events_T, n_T, events_C, n_C), found " + parts.length); continue; }
+        var c = parts.slice(1);
+        if (!c.every(function (s) { return /^\d+$/.test(s) && Number.isSafeInteger(Number(s)); })) {
+          errors.push(where + ": counts must be whole non-negative numbers written with digits only (got " + c.join(", ") + ")"); continue;
+        }
+        var eT = Number(c[0]), nT = Number(c[1]), eC = Number(c[2]), nC = Number(c[3]);
+        if (nT <= 0 || nC <= 0 || eT > nT || eC > nC) { errors.push(where + ": each arm needs a total above 0 and no more events than its total"); continue; }
+        rows.push({ label: parts[0], events_T: eT, n_T: nT, events_C: eC, n_C: nC });
       }
-      return rows;
+      return { rows: rows, errors: errors };
     }
 
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
@@ -168,7 +176,14 @@ Trial 8, 1, 210, 3, 215</textarea>
       _rstate = null;
       window.__almLastRareEventsGLMM = null;
       document.querySelector("#compare tbody").innerHTML = "";
-      var rows = parse(document.getElementById("src").value);
+      var parsed = parse(document.getElementById("src").value), rows = parsed.rows;
+      if (parsed.errors.length) {
+        var escE = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Not fitted: correct these rows first (nothing was skipped or rounded).<br>' +
+          parsed.errors.map(escE).join("<br>") + '</div>';
+        return;
+      }
       if (rows.length < 2) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
