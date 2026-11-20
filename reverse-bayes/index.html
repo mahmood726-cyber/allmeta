@@ -138,6 +138,9 @@
         } else {
           theta = est; s = (hi - lo) / (2 * 1.959963984540054);
         }
+        // The SE is recovered from the interval, which therefore has to be the estimate's own interval: an estimate
+        // outside it (e.g. 2 with -1 to 1) would otherwise get a verdict from an SE that describes nothing.
+        if (!(est >= lo && est <= hi)) return refuse("The estimate must lie inside its 95% interval (low &le; estimate &le; high).");
         var r = window.AlmReverseBayes.analyze(theta, s, { alpha: alpha });
         if (r.error) return refuse(r.error);
         // Inputs and result of the analysis now on screen, for the R check (rcheck.js).
