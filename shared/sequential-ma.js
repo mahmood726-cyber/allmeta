@@ -287,6 +287,10 @@
         for (var kp = kEnd + 1; kp < t.length; kp++) fut.za.push(-Infinity);
       }
     }
+    // A requested futility design that could not be solved (inflation root not bracketed) must not be reported as a
+    // completed analysis with every futility boundary silently null (LIM-P46 F12).
+    if (fut && (!Number.isFinite(fut.R) || fut.za.some(function (x) { return Number.isNaN(x); })))
+      throw new Error("the non-binding futility design could not be solved for these looks (information inflation not found); no decisions were computed");
     var decisionTaken = null, out = [];
     for (var k = 0; k < sorted.length; k++) {
       var z = sorted[k].z, b = eff[k], l = null;

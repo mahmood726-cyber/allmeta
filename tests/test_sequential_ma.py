@@ -197,3 +197,26 @@ def test_alpha_total_spent_does_not_exceed_alpha():
         console.log(JSON.stringify({{ total: total }}));
     """)
     assert out["total"] <= 0.05 + 1e-9
+
+
+def test_unsolved_futility_design_is_refused_not_silently_dropped():
+    # Requirement: when futility is requested and the non-binding futility design cannot be solved (inflation root not
+    # bracketed: here the design's last look is at t = 1.2), the engine must say so. It used to return
+    # infoInflation NaN, every futility boundary null and an efficacy/continue decision, i.e. an apparently complete
+    # futility analysis with no futility in it (LIM-P46 F12).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        let msg = null, res = null;
+        try {{ res = M.computeBoundary([{{ t: 0.5, z: 1 }}, {{ t: 1.2, z: 2 }}],
+                                       {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true }}); }}
+        catch (e) {{ msg = e.message; }}
+        console.log(JSON.stringify({{ msg, inflation: res && res.infoInflation }}));
+    """)
+    assert out["msg"] and "futility" in out["msg"], out
+    # a solvable design is unaffected
+    ok = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary([{{ t: 0.5, z: 1 }}, {{ t: 1, z: 2 }}], {{ alpha: 0.05, futility: true }});
+        console.log(JSON.stringify(r.infoInflation));
+    """)
+    assert abs(ok - 1.0607421394929404) < 1e-12

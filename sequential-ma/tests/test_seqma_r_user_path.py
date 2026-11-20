@@ -89,7 +89,25 @@ def test_look_past_full_information_with_futility_reports_instead_of_crashing(tm
     search started at R = 0.9, found no root, and NA reached `if`). Requirement: the script always finishes with a
     verdict line, and never calls the comparison a MATCH for a futility boundary it could not compute."""
     rows = [{"kind": "tz", "t": 0.5, "z": 1.0}, {"kind": "tz", "t": 1.2, "z": 2.0}]
-    res = _node_script([{"rows": rows, "alpha": 0.05, "family": "OBF", "futility": True}], tmp_path)[0]
+    # Since LIM-P46 F12 the ENGINE refuses this design (its futility inflation cannot be solved), so the page shows
+    # "Cannot compute boundaries" and offers nothing to check. The R-side requirement still stands for a page that
+    # displays no futility boundary although futility was requested: the script is built here from exactly the result
+    # the engine used to return (efficacy boundaries, every futility boundary null) and must not report a plain MATCH.
+    if NODE is None:
+        pytest.skip("node not installed")
+    js = r"""
+const S = require(process.argv[1] + '/shared/sequential-ma.js'), C = require(process.argv[1] + '/sequential-ma/rcheck.js');
+const rows = JSON.parse(process.argv[2]), looks = rows.map(r => ({ t: r.t, z: r.z })), fs = require('fs');
+let refused = null; try { S.computeBoundary(looks, { alpha: 0.05, family: 'OBF', futility: true, beta: 0.2 }); } catch (e) { refused = e.message; }
+const r = S.computeBoundary(looks, { alpha: 0.05, family: 'OBF', futility: false, beta: 0.2 });
+r.drift = 2.801585218112968; r.infoInflation = NaN; r.looks.forEach(l => { l.futility_boundary = null; });
+fs.writeFileSync(process.argv[3], C.buildRScript({ rows, alpha: 0.05, family: 'OBF', futility: true, result: r }));
+console.log(JSON.stringify({ refused, looks: r.looks }));
+"""
+    pr = subprocess.run([NODE, "-e", js, str(ROOT), json.dumps(rows), str(tmp_path / "case0.R")], capture_output=True, text=True, timeout=120)
+    assert pr.returncode == 0, pr.stderr
+    res = json.loads(pr.stdout)
+    assert res["refused"] and "futility" in res["refused"], res
     out = _rscript(tmp_path / "case0.R")
     last = out.strip().splitlines()[-1]
     assert re.match(r"^(MATCH \d+/\d+|MATCH \d+/\d+, NOT CHECKED \d+|MISMATCH \d+/\d+ agree(, NOT CHECKED \d+)?)$", last), out
