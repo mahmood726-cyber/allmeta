@@ -71,6 +71,9 @@
       var tm = (lo + hi) / 2, gm = g(tm); if (gm > best) { best = gm; mode = tm; }
     }
     var M = best;
+    // No finite integrand value anywhere (e.g. a variance that overflowed to Inf): exp(g - M) would be
+    // exp(-Inf - -Inf) = NaN, which adaptive Simpson never accepts, recursing to depth 50 per panel (a hang).
+    if (!isFinite(M)) return h ? { log: M, mean: NaN } : { log: M };
     var f = function (t) { return Math.exp(g(t) - M); };
     var I = (mode > 0 ? _adaptiveSimpson(f, 0, mode) : 0) + (mode < upper ? _adaptiveSimpson(f, mode, upper) : 0);
     var out = { log: M + Math.log(I) };
