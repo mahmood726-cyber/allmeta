@@ -152,6 +152,8 @@
     window.__almFragilityRState = function () { return _rstate; };
     function run() {
       _rstate = null;
+      // any re-run makes a displayed R verdict describe an earlier analysis
+      if (window.AlmFragilityRCheck && AlmFragilityRCheck.invalidate) AlmFragilityRCheck.invalidate();
       var measure = document.getElementById("measure").value;
       var p = parse(document.getElementById("data").value);
       var tbody = document.getElementById("tbody");

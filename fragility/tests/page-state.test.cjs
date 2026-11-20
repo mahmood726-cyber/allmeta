@@ -50,3 +50,19 @@ test("L04: an engine exception replaces the previous result", { skip }, async ()
   assert.match(r.after, /failed/i);
   assert.strictEqual(r.state, null);
 });
+
+test("L17: a finished R verdict is cleared when the analysis re-runs", { skip }, async () => {
+  const r = await withPage((page) => page.evaluate(async () => {
+    const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+    window.AlmWebR = { runR: () => Promise.resolve({ ok: true, stdout: "stub\nMATCH 8/8\n", versions: { webR: "stub" } }) };
+    const status = () => document.getElementById("rcheck-status").textContent;
+    const out = () => document.getElementById("rcheck-out").textContent;
+    document.getElementById("rcheck-webr").click(); await sleep(50);
+    const shown = status();
+    const m = document.getElementById("measure"); m.value = "RR"; m.dispatchEvent(new Event("change")); await sleep(50);
+    return { shown, afterStatus: status(), afterOut: out() };
+  }));
+  assert.match(r.shown, /MATCH 8\/8/, "stub verdict not shown: " + r.shown);
+  assert.doesNotMatch(r.afterStatus, /MATCH/, "OR verdict still shown after switching to RR");
+  assert.doesNotMatch(r.afterOut, /MATCH/);
+});
