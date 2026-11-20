@@ -32,15 +32,27 @@
     return "Very High";
   }
 
+  // Dictionaries have no prototype, so every token is an ordinary id: with {} "__proto__"
+  // was lost and inherited names ("constructor", "toString") read as cited everywhere.
+  function dict() { return Object.create(null); }
+
   function overlap(reviews) {
-    var revs = (reviews || []).filter(function (r) { return r && Array.isArray(r.study_ids); });
+    var revs = reviews || [];
+    // A review record must list its studies: one without ids would change c (and the CCA)
+    // if it were filtered out, so it is refused by name instead.
+    var empty = [];
+    revs.forEach(function (r, ix) {
+      var ids = r && Array.isArray(r.study_ids) ? r.study_ids.filter(function (id) { return String(id).trim() !== ""; }) : [];
+      if (!ids.length) empty.push((r && r.label) || ("Review " + (ix + 1)));
+    });
+    if (empty.length) return { ok: false, error: "every review needs at least one study id; none listed for: " + empty.join(", ") };
     var c = revs.length;
     if (c < 2) return { ok: false, error: "need ≥2 reviews to quantify overlap" };
 
     var sets = revs.map(function (r) {
-      var s = {}; r.study_ids.forEach(function (id) { id = String(id).trim(); if (id) s[id] = true; }); return s;
+      var s = dict(); r.study_ids.forEach(function (id) { id = String(id).trim(); if (id) s[id] = true; }); return s;
     });
-    var all = {}; sets.forEach(function (s) { for (var k in s) all[k] = true; });
+    var all = dict(); sets.forEach(function (s) { for (var k in s) all[k] = true; });
     var r = Object.keys(all).length;
     var nTotal = 0; sets.forEach(function (s) { nTotal += Object.keys(s).length; });
     var denom = r * c - r;
@@ -54,7 +66,7 @@
       for (jj = 0; jj < c; jj++) { var cnt = 0; for (k in sets[jj]) if (sets[i][k]) cnt++; matrix[i][jj] = cnt; }
     }
     // per-study citation frequency + the multiply-cited ones
-    var freq = {}; for (k in all) { var f = 0; for (i = 0; i < c; i++) if (sets[i][k]) f++; freq[k] = f; }
+    var freq = dict(); for (k in all) { var f = 0; for (i = 0; i < c; i++) if (sets[i][k]) f++; freq[k] = f; }
     var shared = Object.keys(freq).filter(function (id) { return freq[id] > 1; })
       .sort(function (a, b) { return freq[b] - freq[a]; });
 
@@ -83,7 +95,8 @@
     var out = [];
     lines.forEach(function (l) {
       var ids = l.rest.split(delim).map(function (s) { return s.replace(/\s+/g, " ").trim(); }).filter(Boolean);
-      if (ids.length) out.push({ label: l.label, study_ids: ids });
+      // a "Label:" line with no ids is kept (empty) so overlap() refuses it by name
+      if (ids.length || l.label) out.push({ label: l.label, study_ids: ids });
     });
     return out;
   }
