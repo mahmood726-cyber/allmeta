@@ -159,6 +159,9 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var host = document.getElementById("summary"); host.innerHTML = ""; host.appendChild(card);
     }
 
+    // User-derived strings (treatment labels, messages) go into HTML/SVG markup only escaped, so a label like
+    // "<b>B</b>" is shown as typed and pasted markup cannot become live elements.
+    function esc(v) { return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
 
     function drawPredictionPlot(predictions, treatments, refTrt) {
@@ -206,7 +209,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
           '<text x="' + (padL - 6) + '" y="' + (Y(yv) + 3) + '" text-anchor="end" font-size="11" fill="currentColor">' + yv.toFixed(2) + '</text>');
       }
       svg.insertAdjacentHTML("beforeend",
-        '<text x="20" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 20 ' + ((padT + H - padB) / 2) + ')">Effect (β̂ vs ' + refTrt + ')</text>');
+        '<text x="20" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 20 ' + ((padT + H - padB) / 2) + ')">Effect (β̂ vs ' + esc(refTrt) + ')</text>');
       // each non-reference treatment: a line + CI ribbon
       for (var k = 1; k < treatments.length; k++) {
         var col = colors[(k - 1) % colors.length];
@@ -222,7 +225,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         var ly = padT + 14 + (k - 1) * 16;
         svg.insertAdjacentHTML("beforeend",
           '<rect x="' + (W - padR - 90) + '" y="' + (ly - 8) + '" width="10" height="10" fill="' + col + '"/>' +
-          '<text x="' + (W - padR - 75) + '" y="' + ly + '" font-size="11" fill="currentColor">' + treatments[k] + ' vs ' + refTrt + '</text>');
+          '<text x="' + (W - padR - 75) + '" y="' + ly + '" font-size="11" fill="currentColor">' + esc(treatments[k]) + ' vs ' + esc(refTrt) + '</text>');
       }
     }
 
@@ -261,20 +264,16 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var fit;
       try {
         fit = AlmNmaMetaReg.fit(rows, treatments, { method: document.getElementById("f-method").value, predictAt: predicts.length ? predicts : undefined });
-      } catch (e) {
-        document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + e.message + '</div>';
-        return;
-      }
+      } catch (e) { showFail(e.message); return; }
       document.getElementById("summary").innerHTML =
-        '<div class="card"><span class="k">Method</span><span class="v">' + fit.method + '</span></div>' +
+        '<div class="card"><span class="k">Method</span><span class="v">' + esc(fit.method) + '</span></div>' +
         '<div class="card"><span class="k">QE (df)</span><span class="v">' + fmt(fit.QE, 3) + ' (' + fit.QEdf + ')</span></div>' +
         '<div class="card"><span class="k">Dropped multi-arm contrasts</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason === "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">x̄ (covariate mean)</span><span class="v">' + fmt(fit.xMean, 2) + '</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(fit.tau2, 4) + '</span></div>' +
         '<div class="card"><span class="k">n rows</span><span class="v">' + fit.n + '</span></div>' +
         '<div class="card"><span class="k">p (params)</span><span class="v">' + fit.p + '</span></div>' +
-        '<div class="card"><span class="k">Reference</span><span class="v">' + treatments[0] + '</span></div>' +
+        '<div class="card"><span class="k">Reference</span><span class="v">' + esc(treatments[0]) + '</span></div>' +
         '<div class="card"><span class="k">Treatments</span><span class="v">' + treatments.length + '</span></div>';
       // Predictions beyond the covariate values of the analysed rows are extrapolations: say so.
       var obsX = rows.filter(function (r) { return isFinite(r.yi) && isFinite(r.sei) && r.sei > 0 && isFinite(r.covariate) && r.trtA !== r.trtB; })
@@ -292,7 +291,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var bHtml = "";
       for (var k = 1; k < treatments.length; k++) {
         var b = fit.beta_at_mean[treatments[k]];
-        bHtml += "<tr><td>" + treatments[k] + " vs " + treatments[0] + "</td><td>" + fmt(b.estimate, 4) + "</td><td>" + fmt(b.se, 4) + "</td><td>" + fmt(b.ci_lo, 3) + ", " + fmt(b.ci_hi, 3) + "</td></tr>";
+        bHtml += "<tr><td>" + esc(treatments[k]) + " vs " + esc(treatments[0]) + "</td><td>" + fmt(b.estimate, 4) + "</td><td>" + fmt(b.se, 4) + "</td><td>" + fmt(b.ci_lo, 3) + ", " + fmt(b.ci_hi, 3) + "</td></tr>";
       }
       document.querySelector("#beta tbody").innerHTML = bHtml;
 
@@ -300,13 +299,13 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var gHtml = "";
       for (var k2 = 1; k2 < treatments.length; k2++) {
         var g = fit.gamma[treatments[k2]];
-        gHtml += "<tr><td>" + treatments[k2] + " vs " + treatments[0] + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + fmt(g.se, 4) + "</td><td>" + fmt(g.ci_lo, 3) + ", " + fmt(g.ci_hi, 3) + "</td></tr>";
+        gHtml += "<tr><td>" + esc(treatments[k2]) + " vs " + esc(treatments[0]) + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + fmt(g.se, 4) + "</td><td>" + fmt(g.ci_lo, 3) + ", " + fmt(g.ci_hi, 3) + "</td></tr>";
       }
       document.querySelector("#gamma tbody").innerHTML = gHtml;
 
       // predictions
       var phead = "<tr><th>Covariate</th>";
-      for (var k3 = 1; k3 < treatments.length; k3++) phead += "<th>" + treatments[k3] + " vs " + treatments[0] + "</th>";
+      for (var k3 = 1; k3 < treatments.length; k3++) phead += "<th>" + esc(treatments[k3]) + " vs " + esc(treatments[0]) + "</th>";
       phead += "</tr>";
       // Replace contents of #pred-head-host so the stable ID survives re-renders.
       document.getElementById("pred-head-host").innerHTML = phead;
