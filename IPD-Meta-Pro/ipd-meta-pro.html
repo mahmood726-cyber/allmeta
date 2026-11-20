@@ -35847,8 +35847,17 @@ function runAdoptionBoosterAfterDataLoad(source, options) {
  const alreadyAnalyzed = !!(APP.results && APP.results.pooled) && APP.lastAnalysisDataFingerprint === fingerprint;
  const qcPassForRun = qcReport ? !!qcReport.pass : true;
  const enoughStudies = report.studyCount >= 2;
+ // No column is named as the outcome (ipd80AutoMapVariables: outcomeConfident false): no analysis is run by itself;
+ // the user is asked to map the columns (dev/tests/auto_map_identifier_columns.test.cjs).
+ const outcomeIdentified = !(mapReport && mapReport.outcomeConfident === false);
 
- if (allowAutoRun && !alreadyAnalyzed && !APP.analysisRunning && qcPassForRun && enoughStudies && typeof runAnalysis === 'function') {
+ if (!outcomeIdentified) {
+ report.skippedReason = report.skippedReason || 'outcome_not_identified';
+ const guess = mapReport.outcomeGuess;
+ showNotification(guess
+ ? 'No column is named as the outcome, so no analysis was run. Suggested outcome variable: "' + guess + '" (' + mapReport.outcomeType + '). Check the outcome type and the Event/Outcome column mapping, then press Run Analysis.'
+ : 'No column is named as the outcome, so no analysis was run. Map the columns: choose the outcome type and the Event/Outcome variable, then press Run Analysis.', 'warning');
+ } else if (allowAutoRun && !alreadyAnalyzed && !APP.analysisRunning && qcPassForRun && enoughStudies && typeof runAnalysis === 'function') {
  const preservePanel = APP.config.firstRunAdoptionBoosterPreservePanel !== false;
  const activeTab = preservePanel ? document.querySelector('.nav-tab.active') : null;
  const activePanel = activeTab && activeTab.dataset ? activeTab.dataset.panel : '';
@@ -38016,6 +38025,22 @@ function ipdConfiguredStudyEstimates(data, config, surface) {
  return { refused: false, outcomeType: type, measure: IPD_STUDY_MEASURES[type], estimates: estimates };
 }
 
+// The analysis settings as the form shows them now (the controls runAnalysis reads), recorded with each
+// successful run (APP.analysisFormSnapshot) so Help > Statistical Validation can say when the analysis it validates
+// was not produced by the settings now on the form.
+function ipdReadAnalysisFormSettings() {
+ const ids = { outcomeType: 'outcomeType', analysisApproach: 'analysisApproach', effectMeasure: 'effectMeasure',
+  reMethod: 'reMethod', confLevel: 'confLevel', useHKSJ: 'useHKSJ', studyVar: 'varStudy', treatmentVar: 'varTreatment',
+  timeVar: 'varTime', eventVar: 'varEvent' };
+ const out = {};
+ Object.keys(ids).forEach(function(k) {
+  const el = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById(ids[k]) : null;
+  if (!el) { out[k] = null; return; }
+  out[k] = (k === 'useHKSJ') ? !!el.checked : String(el.value == null ? '' : el.value);
+ });
+ return out;
+}
+
 function runAnalysis() {
 
  // Prevent concurrent analysis requests
@@ -38029,6 +38054,9 @@ function runAnalysis() {
  }
 
  APP.analysisRunning = true;
+ // true until this run produces APP.results: a refused (one-stage, QC, SOP, arm mapping, < 2 studies) or failed Run
+ // leaves the earlier results on the page, and Help > Statistical Validation says so (webrStaleAnalysisWhy).
+ APP.lastRunRefused = true;
 
 
 
@@ -38392,6 +38420,8 @@ function runAnalysis() {
  });
  APP.lastResults = APP.results;
  APP.analysisSettings = { ...APP.config };
+ APP.lastRunRefused = false;
+ APP.analysisFormSnapshot = ipdReadAnalysisFormSettings();
 
  APP.lastAnalysisDataFingerprint = analysisDataFingerprint;
  APP.lastAnalysisAt = new Date().toISOString();
@@ -41252,6 +41282,8 @@ function clearData() {
  APP.results = null;
  APP.lastResults = null;
  APP.analysisSettings = null;
+ APP.analysisFormSnapshot = null;
+ APP.lastRunRefused = false;
 
  document.getElementById('dataPreviewCard').style.display = 'none';
 
@@ -77505,6 +77537,7 @@ function displayValidationResults(results) {
       console.error('[WebR] runWebRValidation error:', err);
     } finally {
       validationRunning = false;
+      updateWebRStaleWarning();
       // Re-enable buttons
       var hasResults = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled);
       if (webrBtnCurrent)   webrBtnCurrent.disabled   = !hasResults;
@@ -77781,6 +77814,44 @@ function displayValidationResults(results) {
     if (!diff.length) return null;
     return diff.map(function(k) { return k + ': analysed ' + JSON.stringify(saved[k]) + ', form ' + JSON.stringify(cfg[k]); }).join('; ');
   }
+  // ─── Warning: the analysis validated is not the one the form describes ────
+  // Validate Current Analysis and the downloaded R script check APP.results, the last SUCCESSFUL analysis, with the
+  // settings saved with it. After a refused Run (e.g. one-stage selected: runAnalysis returns before analysing) or
+  // a form changed since, the panel still validated that earlier analysis as "All PASS" and only the R script's
+  // header NOTE said so (user path, Lee 2004 PONV upload). This warning is shown above the results; it changes no
+  // number, verdict or count (dev/tests/webr_stale_analysis_warning_ui.test.cjs).
+  function webrStaleAnalysisWhy() {
+    if (typeof APP === 'undefined' || !APP || !APP.results || !APP.results.pooled) return null;
+    var why = [];
+    if (APP.lastRunRefused === true) why.push('the last Run Analysis was refused or did not finish, so the page still shows an earlier analysis');
+    var saved = (APP.analysisSettings && typeof APP.analysisSettings === 'object' && APP.lastResults === APP.results) ? APP.analysisSettings : null;
+    if (!saved) {
+      why.push('the settings these results were computed under are not recorded (restored by undo, from a saved session, or after the batch workflow)');
+      return why;
+    }
+    var snap = APP.analysisFormSnapshot;
+    if (snap && typeof snap === 'object' && typeof ipdReadAnalysisFormSettings === 'function') {
+      var now = ipdReadAnalysisFormSettings();
+      var survival = snap.outcomeType === 'survival' || now.outcomeType === 'survival';
+      var diff = Object.keys(snap).filter(function(k) { return (k !== 'timeVar' || survival) && snap[k] !== now[k]; });
+      if (diff.length) why.push('form now differs from the analysed settings: ' + diff.map(function(k) { return k + ' ' + JSON.stringify(now[k]) + ' (analysed ' + JSON.stringify(snap[k]) + ')'; }).join('; '));
+    } else {
+      var note = rCheckSettingsNote(APP.config || {}, saved);
+      if (note) why.push('settings last submitted differ from the analysed ones: ' + note);
+    }
+    return why.length ? why : null;
+  }
+  function updateWebRStaleWarning() {
+    var el = document.getElementById('webrStaleWarning');
+    if (!el) return;
+    var why = webrStaleAnalysisWhy();
+    if (!why) { el.style.display = 'none'; el.textContent = ''; return; }
+    el.innerHTML = '<strong>Warning: the analysis validated here was not produced by the current form settings.</strong> ' +
+      escapeHtml(why.join('; ').replace(/^./, function(c) { return c.toUpperCase(); })) + '. Validate Current Analysis and the R script check the last successful analysis, with the settings it was run with. Press Run Analysis with the settings on the form, then validate again.';
+    el.style.display = '';
+  }
+  window.updateWebRStaleWarning = updateWebRStaleWarning;
+
   // The saved settings belong to APP.results only while APP.results is still the object that run
   // produced: runAnalysis() sets APP.lastResults = APP.results next to APP.analysisSettings, and
   // Clear data nulls both. Undo/redo and a loaded session replace APP.results (and APP.config) without
@@ -78395,6 +78466,8 @@ function displayValidationResults(results) {
         ' JS engine to detect numeric drift. Reviewer-only — no app computations are affected.',
       '</p>',
 
+      '<div id="webrStaleWarning" role="alert" style="display:none;margin:0 0 12px;padding:8px 12px;border-left:4px solid var(--accent-warning,#b26a00);background:var(--bg-tertiary,#fff4e5);color:var(--text-primary,#222);font-size:13px;"></div>',
+
       '<div style="margin-bottom:10px;">',
         '<button id="webrBtnCurrent" class="webr-btn webr-btn-primary" disabled',
           ' onclick="runWebRValidation(\'current\')"',
@@ -78457,6 +78530,7 @@ function displayValidationResults(results) {
 
     // ─── 5. Lazy button-enable via MutationObserver ────────────────────────
     function checkCurrentBtn() {
+      updateWebRStaleWarning();
       var btn = document.getElementById('webrBtnCurrent');
       if (!btn) return;
       var hasResults = !!(typeof APP !== 'undefined' && APP && APP.results && APP.results.pooled);
@@ -88841,6 +88915,9 @@ function runBeyondR40(method) {
         }
         for (let i = 0; i < keys.length; i++) {
             const k = keys[i];
+            // never an identifier (patient_id, record, a different integer on every row): with no preferred name
+            // this returned the first numeric column, patient_id (dev/tests/auto_map_identifier_columns.test.cjs)
+            if (typeof ipd80IsIdentifierField === 'function' && ipd80IsIdentifierField(k, data)) continue;
             const vals = data.slice(0, 200).map(r => Number(r[k])).filter(v => Number.isFinite(v));
             if (vals.length >= Math.min(20, Math.max(5, Math.floor(data.length * 0.1)))) return k;
         }
@@ -91339,6 +91416,52 @@ function ipd80LooksBinaryField(field) {
     return p.binaryLikeRate >= 0.95;
 }
 
+// An identifier column is never an outcome or an automatically chosen covariate. User path (Lee 2004 acupoint PONV
+// upload: patient_id, study_id, treatment, nausea, age, female): no column name contains an outcome keyword, so the
+// continuous branch of ipd80AutoMapVariables took the first numeric column that was not study/treatment/time/year,
+// patient_id, and the post-upload booster pooled a mean difference of patient numbers
+// (dev/tests/auto_map_identifier_columns.test.cjs).
+// By name: id / patient / subject / record / row / serial ..., or a name ending in _id, _no, _number, _code, _key.
+function ipd80IsIdentifierName(field) {
+    const tokens = String(field || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    const norm = tokens.join('');
+    if (!norm) return false;
+    const whole = ['id', 'ids', 'uid', 'uuid', 'pid', 'ptid', 'usubjid', 'subjid', 'mrn', 'row', 'rowid', 'rownum', 'rowno',
+        'index', 'idx', 'serial', 'seq', 'patient', 'patients', 'subject', 'subjects', 'participant', 'participants', 'record',
+        'records', 'case', 'caseid'];
+    if (whole.includes(norm)) return true;
+    if (tokens.length > 1 && ['id', 'ids', 'uid', 'uuid', 'no', 'nr', 'num', 'number', 'code', 'key'].includes(tokens[tokens.length - 1])) return true;
+    return /^(patient|subject|subj|participant|record|case|person|pt|study|trial|site|center|centre)(id|no|nr|num|number|code|key)$/.test(norm);
+}
+// By name, or by its values: a column with a different integer (or text) value on every one of at least 20 rows.
+function ipd80IsIdentifierField(field, dataRows) {
+    if (ipd80IsIdentifierName(field)) return true;
+    const rows = Array.isArray(dataRows) ? dataRows : (Array.isArray(APP.data) ? APP.data : []);
+    const limit = Math.min(rows.length, 12000);
+    const seen = new Set();
+    let nonMissing = 0;
+    for (let i = 0; i < limit; i++) {
+        const v = rows[i] ? rows[i][field] : undefined;
+        if (v == null || v === '') continue;
+        nonMissing += 1;
+        const n = Number(v);
+        if (Number.isFinite(n) && !Number.isInteger(n)) return false;   // a measured (non-integer) value is not an id
+        const key = String(v).trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+    }
+    return nonMissing >= 20;
+}
+// Column names that are patient characteristics (covariates), not outcomes: used only when no column is named as an
+// outcome, to see whether exactly one candidate outcome column is left.
+function ipd80LooksCovariateName(field) {
+    const tokens = String(field || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    const words = ['age', 'sex', 'female', 'male', 'gender', 'bmi', 'weight', 'height', 'race', 'ethnicity', 'ethnic',
+        'smoker', 'smoking', 'site', 'centre', 'center', 'country', 'region', 'baseline', 'year', 'dob', 'education',
+        'married', 'employed', 'diabetes', 'hypertension'];
+    return tokens.some(function(t) { return words.includes(t) || t.indexOf('baseline') === 0; });
+}
+
 function ipd80PickField(columns, patterns, avoidPatterns, options) {
     const pats = (patterns || []).map(ipd80NormalizeFieldName).filter(Boolean);
     const avoids = (avoidPatterns || []).map(ipd80NormalizeFieldName).filter(Boolean);
@@ -91419,7 +91542,8 @@ function ipd80GetCurrentVars() {
     };
 }
 
-function ipd80InferOutcomeType(columns) {
+function ipd80InferOutcomeType(allColumns) {
+    const columns = (allColumns || []).filter(function(c) { return !ipd80IsIdentifierName(c); });
     const timeCandidate = ipd80PickField(columns,
         ['time_months', 'followup', 'follow_up', 'survival_time', 'os_time', 'pfs_time', 'time'],
         ['study_year', 'year', 'days_from_randomization']
@@ -91455,7 +91579,7 @@ function ipd80AutoMapVariables(options) {
     const decl = APP.declaredOutcome;
     const declaredOk = !!(decl && decl.outcomeType && decl.fingerprint && typeof computeCurrentDataFingerprint === 'function' &&
         decl.fingerprint === computeCurrentDataFingerprint());
-    const outcome = declaredOk ? decl.outcomeType : ipd80InferOutcomeType(columns);
+    let outcome = declaredOk ? decl.outcomeType : ipd80InferOutcomeType(columns);
     const outcomeEl = document.getElementById('outcomeType');
     if (outcomeEl && outcomeEl.value !== outcome) {
         outcomeEl.value = outcome;
@@ -91474,41 +91598,64 @@ function ipd80AutoMapVariables(options) {
         return ipd80FieldProfile(col, 3000).numericMostly;
     });
 
+    // Outcome candidates never include an identifier column (ipd80IsIdentifierName).
+    const outcomeCols = columns.filter(function(col) { return !ipd80IsIdentifierName(col); });
     let timeVar = '';
     let eventVar = '';
+    // false when no column is named as the outcome: the booster then does not run an analysis by itself
+    let outcomeConfident = true;
+    let outcomeGuess = '';
     if (outcome === 'survival') {
         timeVar = ipd80PickField(columns,
             ['time_months', 'time', 'followup', 'follow_up', 'survival_time', 'os_time', 'pfs_time'],
             ['study_year', 'year', 'enroll', 'calendar']
         );
-        eventVar = ipd80PickField(columns,
+        eventVar = ipd80PickField(outcomeCols,
             ['event', 'status', 'death', 'mortality', 'failure', 'recurrence'],
             ['study_year', 'year', 'time']
         );
+        outcomeConfident = !!(timeVar && eventVar);
     } else if (outcome === 'binary') {
-        eventVar = ipd80PickField(columns,
+        eventVar = ipd80PickField(outcomeCols,
             ['event', 'outcome', 'response', 'mortality', 'mace', 'status', 'remission'],
             ['study_year', 'year', 'time']
         );
         if (eventVar && !ipd80LooksBinaryField(eventVar)) {
-            const binaryCandidates = columns.filter(ipd80LooksBinaryField);
+            const binaryCandidates = outcomeCols.filter(ipd80LooksBinaryField);
             eventVar = ipd80PickField(binaryCandidates,
                 ['event', 'outcome', 'response', 'mortality', 'mace', 'status', 'remission'],
                 ['study_year', 'year', 'time']
             ) || eventVar;
         }
+        outcomeConfident = !!eventVar;
     } else {
-        eventVar = ipd80PickField(numericCols,
+        eventVar = ipd80PickField(numericCols.filter(function(col) { return !ipd80IsIdentifierName(col); }),
             ['change', 'delta', 'endpoint', 'outcome', 'score', 'value', 'measure'],
             ['study', 'trial', 'treatment', 'arm', 'group', 'time', 'year'],
             { numericOnly: true }
         );
         if (!eventVar) {
-            eventVar = numericCols.find(function(col) {
+            // No column is named as an outcome. This used to take the first numeric column that was not
+            // study/treatment/time/year (patient_id in the user's file). Now: a suggestion only when exactly one
+            // column is left after removing identifiers (by name or by a different integer on every row), the study
+            // and treatment columns and patient characteristics; never confident, so nothing is run by itself.
+            outcomeConfident = false;
+            const left = numericCols.filter(function(col) {
                 const n = ipd80NormalizeFieldName(col);
-                return !(n.includes('study') || n.includes('trial') || n.includes('treatment') ||
-                    n.includes('arm') || n.includes('group') || n.includes('time') || n.includes('year'));
-            }) || '';
+                if (col === studyVar || col === treatmentVar) return false;
+                if (n.includes('study') || n.includes('trial') || n.includes('treatment') ||
+                    n.includes('arm') || n.includes('group') || n.includes('time') || n.includes('year')) return false;
+                return !ipd80IsIdentifierField(col) && !ipd80LooksCovariateName(col);
+            });
+            eventVar = left.length === 1 ? left[0] : '';
+            outcomeGuess = eventVar;
+            if (eventVar && !declaredOk && ipd80LooksBinaryField(eventVar)) {
+                outcome = 'binary';
+                if (outcomeEl && outcomeEl.value !== outcome) {
+                    outcomeEl.value = outcome;
+                    if (typeof updateOutcomeVars === 'function') updateOutcomeVars();
+                }
+            }
         }
     }
 
@@ -91524,6 +91671,12 @@ function ipd80AutoMapVariables(options) {
     ipd80SetSelectValue('varTreatment', mapped.varTreatment);
     if (outcome === 'survival') ipd80SetSelectValue('varTime', mapped.varTime);
     ipd80SetSelectValue('varEvent', mapped.varEvent);
+    if (!mapped.varEvent) {
+        // nothing identified: an identifier left on the outcome control (e.g. pre-selected by an earlier mapping) is
+        // cleared to "-- Select --", so a Run cannot analyse it; a column the user chose is kept
+        const evEl = document.getElementById('varEvent');
+        if (evEl && evEl.value && ipd80IsIdentifierField(evEl.value)) evEl.value = '';
+    }
 
     const required = outcome === 'survival'
         ? ['varStudy', 'varTreatment', 'varTime', 'varEvent']
@@ -91534,6 +91687,8 @@ function ipd80AutoMapVariables(options) {
         generatedAt: new Date().toISOString(),
         outcomeType: outcome,
         outcomeTypeSource: declaredOk ? ('declared by ' + decl.source) : 'inferred from column names',
+        outcomeConfident: outcomeConfident,
+        outcomeGuess: outcomeGuess,
         mapped: mapped,
         required: required,
         missing: missing,
@@ -91837,6 +91992,12 @@ function runIPD80FastPath() {
     if (!mapReport.pass) {
         ipd80UpdatePanelStatus('map', 'warn', 'Missing ' + mapReport.missing.join(', '));
         showNotification('IPD80 Fast Path stopped: incomplete variable mapping', 'warning');
+        return;
+    }
+    if (mapReport.outcomeConfident === false) {
+        // no column is named as the outcome: a suggested column is not analysed without the user confirming it
+        ipd80UpdatePanelStatus('map', 'warn', 'Outcome not identified from column names');
+        showNotification('IPD80 Fast Path stopped: no column is named as the outcome. Check the Event/Outcome column mapping, then press Run Analysis.', 'warning');
         return;
     }
     ipd80UpdatePanelStatus('map', 'pass', 'Auto-mapping complete');
