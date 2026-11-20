@@ -155,9 +155,9 @@
     L.push(ORACLE_R);
     L.push("cat(\"robma R check:\", length(yi), \"studies; models H0FE H1FE H0RE H1RE\\n\")");
     L.push("## The page shows the marginal likelihoods as exp(log value) to 4 significant digits and each BF as");
-    L.push("## exp(log BF) to 2 decimals (4 significant digits from 1e21 up): half a displayed unit, on the log scale.");
+    L.push("## exp(log BF) to 2 decimals (4 significant digits from 1e21 up, and below 0.005): half a displayed unit, on the log scale.");
     L.push("half_sig4 <- function(L) { l10 <- L / log(10); 5e-4 / 10^(l10 - floor(l10)) }");
-    L.push("half_bf <- function(L) if (!is.finite(L)) 5e-4 else if (L >= log(1e21)) half_sig4(L) else 0.005 / exp(L)");
+    L.push("half_bf <- function(L) if (!is.finite(L)) 5e-4 else if (L >= log(1e21) || sprintf(\"%.2f\", exp(L)) == \"0.00\") half_sig4(L) else 0.005 / exp(L)");
     L.push("for (j in 1:4) chk(paste(\"log marginal lik.\", names(lml)[j]), lml[[j]], page$logml[j], half = half_sig4(page$logml[j]))");
     L.push("for (j in 1:4) chk(paste(\"posterior prob.\", names(lml)[j]), post[[j]], page$post[j])");
     L.push("chk(\"log BF10 (effect)\", logBFe, page$logBFe, half = half_bf(page$logBFe))");

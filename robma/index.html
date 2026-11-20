@@ -73,7 +73,12 @@
     }
     // a Bayes factor: 2 dp as before; toFixed returns the raw round-trip string from 1e21 up, so a finite BF that
     // large is written from its log in the toExponential(3) form above (the value itself is unchanged)
-    function fmtBF(bf, logBf) { return (typeof bf === "number" && isFinite(bf) && bf >= 1e21) ? fmtExpLog(logBf) : fmt(bf, 2); }
+    // A BF whose 2-dp form would carry no information is written from its log instead: one that overflowed
+    // to Inf (finite log BF) and one below 0.005 (which toFixed(2) shows as "0.00"). Only a non-finite log BF is "-".
+    function fmtBF(bf, logBf) {
+      if (typeof logBf === "number" && isFinite(logBf) && !(typeof bf === "number" && isFinite(bf) && bf < 1e21 && fmt(bf, 2) !== "0.00")) return fmtExpLog(logBf);
+      return fmt(bf, 2);
+    }
     function bfWord(bf) { return bf > 100 ? "extreme" : bf > 10 ? "strong" : bf > 3 ? "moderate" : bf > 1 ? "weak" : "favours null"; }
     var _last = null, _yi = [], _sei = [];
     window._almLastRoBMA = function () { return _last; };

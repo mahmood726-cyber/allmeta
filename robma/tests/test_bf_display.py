@@ -83,6 +83,39 @@ def test_bf_just_below_1e21_keeps_two_decimals():
     assert het_bf(r["headline"]) == (9.99e20).__format__(".2f")
 
 
-def test_non_finite_bf_still_dash():
+# Rewritten 2026-11-20 (limitation sweep P56 F12, lane lim8). This test used to assert that a BF which
+# overflowed to Inf, with a FINITE log BF of 900, is shown as a dash -- it defended the defect: the page knew
+# the value (exp(900) ~ 7.3e390) and showed nothing. Requirement now: the BF is written from its finite log;
+# only a BF whose log is not finite is a dash.
+def test_overflowed_bf_with_finite_log_is_written_from_the_log():
     r = page(BCG, {"bfHetero": float("inf"), "logBfHetero": 900.0})
-    assert het_bf(r["headline"]) == "\u2014"
+    assert het_bf(r["headline"]) == "7.329e+390"
+
+
+def test_non_finite_log_bf_is_not_shown():
+    # A non-finite log BF is refused as a numerical failure (P56 F07) -- never shown, dashed or labelled.
+    js = PRELUDE + r"""
+const a=sb.AlmRoBMA.analysis; sb.AlmRoBMA.analysis=function(y,s){ return Object.assign(a(y,s), {bfHetero:Infinity, logBfHetero:Infinity}); };
+$('f-data').value=%s; $('f-data').oninput();
+process.stdout.write(JSON.stringify({text:$('headline').textContent, last:sb._almLastRoBMA()}));
+""" % json.dumps(BCG)
+    out = subprocess.run([NODE, "-e", js], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert out.returncode == 0, out.stderr
+    r = json.loads(out.stdout)
+    # (this file's mock DOM keeps textContent and innerHTML apart, so the refusal is read from textContent)
+    assert r["last"] is None and r["text"].startswith("Not analysed"), r
+
+
+@pytest.mark.parametrize("bf,logbf,shown", [
+    (1e-5, -11.512925464970229, "1.000e-5"),     # toFixed(2) gave "0.00"
+    (0.0, -800.0, "3.668e-348"),                  # underflowed to 0: was "0.00"
+    (0.004, -5.521460917862246, "4.000e-3"),      # just below the 2-dp resolution: was "0.00"
+])
+def test_tiny_bf_is_written_from_its_log_not_as_zero(bf, logbf, shown):
+    r = page(BCG, {"bfEffect": bf, "logBfEffect": logbf})
+    assert eff_bf(r["headline"]) == shown
+
+
+def test_bf_at_two_dp_resolution_keeps_two_decimals():
+    r = page(BCG, {"bfEffect": 0.006, "logBfEffect": -5.115995809754082})
+    assert eff_bf(r["headline"]) == "0.01"
