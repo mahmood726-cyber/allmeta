@@ -188,7 +188,13 @@
     var state = load() || { studies: [] };
 
     function load() { try { var p = JSON.parse(localStorage.getItem(KEY)); if (p && Array.isArray(p.studies)) return p; } catch (e) {} return null; }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    // save(): storage can be denied or full; the work stays on the page, but the user must be told it
+    // will not survive a reload (once per failure streak, not on every edit).
+    var _saveWarned = false;
+    function save() {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); _saveWarned = false; }
+      catch (e) { if (!_saveWarned) { _saveWarned = true; toast("Assessments not saved: this browser blocked or filled its storage. Export CSV / push to synthesis to keep them."); } }
+    }
     function uid() { return "s" + (state.studies.length + 1) + "_" + state.studies.reduce(function (a) { return a + 1; }, 0) + "_" + (state._n = (state._n || 0) + 1); }
     // esc: also escapes the apostrophe -- several attributes are single-quoted (title='...'), where
     // "O'Brien" used to end the attribute early.
@@ -636,10 +642,11 @@
     }
 
     // BYO-key (optional). Minimal; deterministic core does not need this.
-    document.getElementById("ai-key").value = localStorage.getItem("rob-ai-key") || "";
+    // guarded: an unguarded read here threw when storage is denied and stopped the rest of the page script
+    try { document.getElementById("ai-key").value = localStorage.getItem("rob-ai-key") || ""; } catch (e) {}
     document.getElementById("btn-ai-run").addEventListener("click", function () {
       var key = document.getElementById("ai-key").value.trim();
-      if (key) localStorage.setItem("rob-ai-key", key);
+      if (key) { try { localStorage.setItem("rob-ai-key", key); } catch (e) { toast("Key not saved: browser storage is blocked."); return; } }
       toast("BYO-key live calls are a thin wrapper — for reliability, prefer the handoff export/import above. (Key saved locally.)");
     });
 
