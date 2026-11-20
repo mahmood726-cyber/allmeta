@@ -348,7 +348,7 @@
           if (p1 > 0 && p1 < 1) {
             const rr = p1 / p0;
             const or = (p1 / (1 - p1)) / (p0 / (1 - p0));
-            push("RR (implied)", rr, NaN, "point only; SE on RR requires 2×2 table");
+            push("RR (implied)", rr, NaN, "point only; no SE is propagated (p₀ is treated as fixed and its uncertainty is unknown)");
             push("OR (implied)", or, NaN, "point only");
           }
         }
@@ -364,7 +364,7 @@
           push("SMD (Hedges' g)", est, se, "already bias-corrected (metafor::escalc SMD); no second J applied");
           if (Number.isFinite(J) && J > 0) {
             push("SMD (Cohen's d, recovered)", est / J, se / J,
-              "inverse of exact Hedges correction; requires independent group sizes");
+              (df > 100000 ? "inverse of the large-df Hedges approximation J = 1 − 3/(4df − 1)" : "inverse of exact Hedges correction") + "; requires independent group sizes");
             if (Number.isFinite(pooledSd) && pooledSd > 0)
               push("MD", est / J * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
                 "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (metafor::escalc MD, vtype HO)");
@@ -372,7 +372,7 @@
         } else {
           push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
           if (Number.isFinite(J) && J > 0)
-            push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
+            push("SMD (Hedges' g)", est * J, se * J, (df > 100000 ? "large-df approximation J = 1 − 3/(4df − 1)" : "exact small-sample correction") + " J(df=" + df + ")");
           if (Number.isFinite(pooledSd) && pooledSd > 0) {
             if (Number.isFinite(J) && J > 0)
               push("MD", est * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
@@ -666,7 +666,11 @@
         : type === "SMD"
         ? "The logit OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
-      const warn = (warn0 + rangeNote).trim();
+      // LIM-P20 A09: explain conversions that are omitted rather than leaving them silently absent.
+      let omitNote = "";
+      if (type === "RD" && Number.isFinite(p0) && !(p0 + est > 0 && p0 + est < 1))
+        omitNote = " Implied p₁ = p₀ + RD = " + (p0 + est).toFixed(3) + " is outside (0,1), so the implied RR and OR are not shown.";
+      const warn = (warn0 + rangeNote + omitNote).trim();
       render(rows, warn);
       return true;
     }
