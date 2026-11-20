@@ -63,3 +63,15 @@ def test_F02_numeric_prefixes_are_not_numbers(pg):
     rows = analysed(pg)
     assert not any(r[0] == "Trial K" for r in rows), rows
     assert "line 5" in pg.text_content("#input-issues"), pg.text_content("#input-issues")
+
+
+def test_F03_rows_left_out_are_named(pg):
+    """F03: rows with a missing value or SE <= 0 disappeared without a word while the analysis went on.
+    Requirement: every row left out is listed with its line number and reason; comments/blank lines are
+    not rows and are not listed."""
+    pg.fill("#f-data", "# a comment\n" + EX + "\n\nTrial N, -3.0, -0.10, -0.05\nTrial M, , -0.10, 0.10")
+    txt = pg.text_content("#input-issues")
+    assert "line 7" in txt and "line 8" in txt and "line 1" not in txt, txt
+    assert len(analysed(pg)) == 4
+    pg.fill("#f-data", EX)
+    assert pg.text_content("#input-issues").strip() == ""

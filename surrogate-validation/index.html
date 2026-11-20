@@ -125,7 +125,10 @@
         var nn = [c[1], c[2], c[3]].filter(function (x) { return x !== "" && num(x) == null; });
         if (nn.length) return bad('"' + nn[0] + '" is not a number');
         var s = num(c[1]), f = num(c[2]), e = num(c[3]);
-        if (s != null && f != null && e != null && e > 0) pairs.push({ label: c[0], s: s, f: f, seF: e });
+        // Rows used to vanish here without a word while the analysis went on with the rest.
+        if (s == null || f == null || e == null) return bad("missing value");
+        if (!(e > 0)) return bad("SE not > 0");
+        pairs.push({ label: c[0], s: s, f: f, seF: e });
       });
       return pairs;
     }
