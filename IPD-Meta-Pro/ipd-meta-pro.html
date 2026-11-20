@@ -2384,7 +2384,7 @@
 
     
 
-    <div class="modal-overlay" id="helpModal">
+    <div class="modal-overlay" id="helpModal" data-persistent="true">
 
         <div class="modal" style="max-width: 900px; max-height: 90vh;">
 
@@ -25425,9 +25425,13 @@ const ModalManager = {
 
  closeAll: function() {
 
+  // A static overlay of the page's own markup (data-persistent: #helpModal, which holds the Statistical
+  // Validation / Verify-in-R panel) is hidden, never removed: removing it made the panel unreachable until
+  // reload after any ModalManager dialog (Method Guide, results dialogs; review of PR #639).
   document.querySelectorAll('.modal-overlay').forEach(m => {
 
-   m.remove();
+   if (m.hasAttribute('data-persistent')) m.classList.remove('active');
+   else m.remove();
 
   });
 
@@ -39609,6 +39613,11 @@ function openValidationPanel() {
   var t = d.querySelector('.dropdown-toggle');
   if (t) t.setAttribute('aria-expanded', 'false');
  });
+ if (!document.getElementById('helpModal') || !document.getElementById('webrBtnCurrent')) {
+  // never expected (ModalManager.closeAll keeps #helpModal); say so rather than throw on a null element
+  if (typeof showNotification === 'function') showNotification('The validation panel is not available; please reload the page.', 'warning');
+  return;
+ }
  showHelp();
  var tab = document.querySelector('#helpTabs .inner-tab[onclick*="\'validation\'"]');
  if (tab) { tab.click(); tab.setAttribute('aria-selected', 'true'); tab.focus(); }

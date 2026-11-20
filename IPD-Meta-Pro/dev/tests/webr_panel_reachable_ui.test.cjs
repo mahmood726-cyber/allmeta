@@ -40,7 +40,8 @@ const FAKE_WEBR = 'export class WebR { async init() {} async installPackages() {
     await page.waitForFunction(() => typeof window.runWebRValidation === 'function', null, { timeout: 60000 });
     // a real mouse click; Playwright's actionability wait can time out on a loaded machine, then the same
     // mouse click is sent without it (still a click at the element's position, never a JS call)
-    const click = async (sel) => { try { await page.click(sel, { timeout: 10000 }); } catch (e) { await page.click(sel, { force: true, timeout: 10000 }); } };
+    // (noWaitAfter: a heavy handler such as loading an example can block the page past Playwright's post-click wait)
+    const click = async (sel) => { try { await page.click(sel, { timeout: 15000 }); } catch (e) { await page.click(sel, { force: true, noWaitAfter: true, timeout: 30000 }); } };
     const btnVisible = () => page.evaluate(() => { const x = document.getElementById('webrBtnCurrent'); if (!x) return 'absent'; const r = x.getBoundingClientRect(); return x.offsetParent !== null && r.width > 0 && r.height > 0 ? 'visible' : 'hidden'; });
     const menuItems = () => page.$$eval('#helpDropdown .dropdown-item', (els) => els.map((e) => e.textContent.trim()));
     const openFromHelp = async (re) => {
@@ -76,6 +77,48 @@ const FAKE_WEBR = 'export class WebR { async init() {} async installPackages() {
     }
     const again = await openFromHelp(/Statistical Validation|Verify in R/i);
     check('after every other Help item: the entry still reaches a visible #webrBtnCurrent', again !== null && (await btnVisible()) === 'visible', await btnVisible());
+    if (again !== null) await closeTop();
+
+    // 3. dialogs from ModalManager (review of PR #639): its closeAll() removed EVERY .modal-overlay, the static
+    //    #helpModal included, so after the main-page "Method Guide" button or a results dialog (TruthCert, via
+    //    showResultsModal) Help > Statistical Validation threw "Cannot read properties of null (reading
+    //    'classList')" and the panel was gone until reload. Open both with clicks, then reach the panel and
+    //    CLICK "Validate Current Analysis" and see a current-analysis run finish (WebR stubbed).
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e.message || e)));
+    const visibleSel = (sel) => page.evaluate((s) => { const x = document.querySelector(s); return !!(x && x.offsetParent !== null && x.getBoundingClientRect().width > 0); }, sel);
+    // as a user: load the SGLT2 example (this shows the analysis card with the Method Guide button)
+    await click('button[onclick="loadExampleData(\'binary\')"]');
+    await page.waitForFunction(() => { const c = document.getElementById('analysisSettingsCard'); return c && c.style.display !== 'none'; }, null, { timeout: 120000 });
+    await page.waitForTimeout(1500);
+    for (const [name, sel] of [['Method Guide (main page)', 'button[onclick="showMethodGuide()"]'], ['TruthCert (results dialog)', '#truthCertBtn']]) {
+      check('precondition: the ' + name + ' button is visible', await visibleSel(sel));
+      await click(sel);
+      await page.waitForTimeout(600);
+      // ModalManager dialogs carry their title in an <h2>, HelpSystem ones in .modal-title
+      const title = await page.evaluate(() => { const m = document.querySelector('.modal-overlay.active .modal-title, .modal-overlay.active h2'); return m ? m.textContent.trim() : null; });
+      check('control: ' + name + ' opens its dialog', !!title, 'title ' + JSON.stringify(title));
+      // closed with the Escape key (ModalManager's own close handler): its x can sit outside the viewport
+      if (title) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
+      check('control: ' + name + ' dialog closed', await page.evaluate(() => !document.querySelector('.modal-overlay.active')));
+      check('after ' + name + ': #webrBtnCurrent still exists', (await btnVisible()) !== 'absent', await btnVisible());
+    }
+    // then run the analysis (the results tab replaces the data tab, so Method Guide was clicked first)
+    await click('button[onclick="runAnalysis()"]');
+    await page.waitForFunction(() => typeof APP !== 'undefined' && APP.results && APP.results.pooled && APP.lastResults === APP.results, null, { timeout: 120000 });
+    await page.waitForTimeout(1000);
+    const nErr = errors.length;
+    const third = await openFromHelp(/Statistical Validation|Verify in R/i);
+    check('after Method Guide and TruthCert: Help > Statistical Validation shows #webrBtnCurrent', third !== null && (await btnVisible()) === 'visible', await btnVisible());
+    check('... without a page error', errors.length === nErr, errors.slice(nErr).join(' | '));
+    if ((await btnVisible()) === 'visible') {
+      // the analysis run above is the current analysis; the auto-started reference run on first tab visit must finish before the button is enabled
+      await page.waitForFunction(() => { const x = document.getElementById('webrBtnCurrent'); return x && !x.disabled; }, null, { timeout: 120000 });
+      await click('#webrBtnCurrent');
+      await page.waitForFunction(() => { const r = window._webrInternals.getLastResults(); const x = document.getElementById('webrBtnCurrent'); return r && r.mode === 'current' && x && !x.disabled; }, null, { timeout: 120000 }).catch(() => {});
+      const run = await page.evaluate(() => { const r = window._webrInternals.getLastResults(); return r ? { mode: r.mode, overall: r.overall } : null; });
+      check('clicking #webrBtnCurrent runs the current-analysis validation', !!run && run.mode === 'current', JSON.stringify(run));
+    }
   } catch (e) { console.log('FAIL threw: ' + (e.stack || e)); failed++; }
   finally { await browser.close(); server.close(); }
   console.log(failed ? failed + ' FAILED' : 'ALL PASS');
