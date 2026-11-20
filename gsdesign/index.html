@@ -178,18 +178,24 @@
       }
       function readHash() {
         var h = location.hash.replace(/^#/, ""); if (!h) return false;
+        // Decode every pair before applying any, so a malformed link (bad % encoding) changes nothing
+        // and is reported, instead of throwing out of initialisation half-applied.
+        var pairs;
+        try {
+          pairs = h.split("&").map(function (kv) { var p = kv.split("="); return [decodeURIComponent(p[0]), decodeURIComponent(p[1] || "")]; });
+        } catch (e) { return { sim: false, bad: true }; }
         var sim = false;
-        h.split("&").forEach(function (kv) {
-          var p = kv.split("="), k = decodeURIComponent(p[0]), v = decodeURIComponent(p[1] || "");
-          if (k === "sim") sim = v === "1";
-          else if (FIELDS.indexOf(k) >= 0 && $(k)) $(k).value = v;
+        pairs.forEach(function (p) {
+          if (p[0] === "sim") sim = p[1] === "1";
+          else if (FIELDS.indexOf(p[0]) >= 0 && $(p[0])) $(p[0]).value = p[1];
         });
         return { sim: sim };
       }
       function writeHash(sim) {
         var parts = FIELDS.map(function (k) { return k + "=" + encodeURIComponent($(k).value); });
         if (sim) parts.push("sim=1");
-        history.replaceState(null, "", "#" + parts.join("&"));
+        try { history.replaceState(null, "", "#" + parts.join("&")); return true; }
+        catch (e) { return false; }   // e.g. a browser that refuses history updates for local files
       }
       function numList(s) {
         return s.split(/[,;\s]+/).filter(function (x) { return x !== ""; }).map(Number);
@@ -263,7 +269,7 @@
         draw(b, two);
         $("note").textContent = "Final-look Z = " + last.z_eff.toFixed(4) + "; total α spent = " + last.cumAlpha.toFixed(5) +
           (two ? " (two-sided)" : "") + "; design as gsDesign test.type " + d.testType + ".";
-        writeHash(false);
+        if (!writeHash(false)) $("note").textContent += " The browser refused to update the address, so these settings are not saved in the link.";
       }
       function draw(b, twoSided) {
         var svg = $("plot"); while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -356,14 +362,18 @@
           // The design's bounds control type I error for planned sizes, or for re-estimated sizes only with the
           // inverse-normal combination test; the pooled statistic after data-driven re-estimation is not calibrated.
           (ssr && dsg.method === "groupSequential" ? " Warning: with sample-size re-estimation the pooled-data statistic is not calibrated to these bounds, so type I error is not controlled at α; read the rejection rate at mean difference 0 as the actual type I error, or use the inverse normal combination test." : "");
-        writeHash(true);
+        if (!writeHash(true)) $("simnote").textContent += " The browser refused to update the address, so these settings are not saved in the link.";
       }
       ["spend", "fut", "sided"].forEach(function (id) { $(id).addEventListener("change", sync); });
       $("run").addEventListener("click", run);
       $("simrun").addEventListener("click", simulate);
       var h = readHash();
       sync(); run();
-      if (h && h.sim) simulate();
+      if (h && h.bad) {
+        var bad = document.createElement("span"); bad.className = "err";
+        bad.textContent = " The link's settings could not be read (malformed % encoding in the address), so the defaults are shown.";
+        $("summary").appendChild(bad);
+      } else if (h && h.sim) simulate();
     })();
   </script>
   <script src="../shared/webr-runner.js"></script>
