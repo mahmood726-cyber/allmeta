@@ -769,7 +769,9 @@
   //   require mode-detection; single-mode covers the most common academic use case.
   // =======================================================================
   (function () {
-    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+    // LIM-P20 A11: the hub modules are optional; only their wiring is skipped without them.
+    // The adapters and the independent E-value widget below must still run.
+    var hasAlm = !!window.alm;
 
     // ---- adapter shims --------------------------------------------------
 
@@ -922,7 +924,7 @@
     };
 
     // ---- module init -----------------------------------------------------
-
+    if (hasAlm) {
     window.alm.csvUpload({
       target: '#alm-csv-mount',
       columns: [
@@ -990,6 +992,7 @@
         }
       });
     }
+    }  // hasAlm
   })();
   </script>
 <script src="r-check.js"></script>
