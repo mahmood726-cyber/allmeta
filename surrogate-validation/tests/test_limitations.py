@@ -54,3 +54,12 @@ def test_F01_quoted_labels_and_wrong_field_counts(pg):
     assert ["Smith, 2020", -5.0, -0.2, 0.1] in rows, rows
     assert not any(r[0] == "Trial X" for r in rows), rows
     assert "line 6" in pg.text_content("#input-issues"), pg.text_content("#input-issues")
+
+
+def test_F02_numeric_prefixes_are_not_numbers(pg):
+    """F02: parseFloat read "1kg" as 1 and "-0.2 (log HR)" as -0.2. Requirement: a field must be a whole
+    decimal/scientific number; anything else refuses the row, named by line."""
+    pg.fill("#f-data", EX + "\nTrial K, -3kg, -0.10, 0.10")
+    rows = analysed(pg)
+    assert not any(r[0] == "Trial K" for r in rows), rows
+    assert "line 5" in pg.text_content("#input-issues"), pg.text_content("#input-issues")

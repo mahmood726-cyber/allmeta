@@ -95,7 +95,8 @@
     var $ = function (id) { return document.getElementById(id); };
     var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-    function num(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+    // A whole-field decimal/scientific number, else null ("1kg" and "-0.2 (log HR)" used to be read by parseFloat as 1 and -0.2).
+    function num(v) { var t = String(v == null ? "" : v).trim(); return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t) && isFinite(+t) ? +t : null; }
 
     // One CSV line -> fields. A double-quoted field keeps its commas ("Smith, 2020"); "" inside quotes is
     // a literal quote. Returns null for an unterminated quote. (Rows used to be split on every comma, so a
@@ -121,6 +122,8 @@
         var c = csvFields(ln), bad = function (why) { lastIssues.push("line " + (i + 1) + ": " + why); };
         if (!c) return bad("unterminated quote");
         if (c.length !== 4) return bad(c.length + " fields (need exactly 4: label, surrogate, final, SE)");
+        var nn = [c[1], c[2], c[3]].filter(function (x) { return x !== "" && num(x) == null; });
+        if (nn.length) return bad('"' + nn[0] + '" is not a number');
         var s = num(c[1]), f = num(c[2]), e = num(c[3]);
         if (s != null && f != null && e != null && e > 0) pairs.push({ label: c[0], s: s, f: f, seF: e });
       });
