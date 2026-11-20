@@ -100,7 +100,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Effect-Size Converter</h1>
-    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. Everything runs in your browser.</p>
+    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. The conversions run in your browser; the optional extraction panel sends the pasted text to a local AI service (Ollama) on your own computer.</p>
   </header>
   <main id="main-content">
     <section class="panel" aria-label="Inputs">
@@ -696,18 +696,22 @@
   "ci_lower": 0.59,
   "ci_upper": 0.95,
   "ci_scale": "log or raw (log for ratios like OR/RR/HR)",
+  "smd_kind": "for SMD only: d (uncorrected Cohen's d) or g (Hedges' g)",
   "notes": "short caveat (e.g. rare events, subgroup-only)"
 }`,
       onResult: (r) => {
         if (!r) return;
         const el = id => document.getElementById(id);
         // A new extraction must never inherit precision from the previous effect.
-        ["in-se", "der-t", "der-f", "der-f-sign", "der-n1", "der-n2", "der-p", "der-lo", "der-hi"]
+        // LIM-P20 A04: nor its context (baseline risk, pooled SD) from the previous effect.
+        ["in-se", "der-t", "der-f", "der-f-sign", "der-n1", "der-n2", "der-p", "der-lo", "der-hi", "ctx-p0", "ctx-sd"]
           .forEach(id => { el(id).value = ""; });
         render([], null);
         // Clamp / sanitise LLM-supplied numerics to biomedical-plausible ranges.
+        // LIM-P20 A04: a model string must be a whole number ("0.75 (approx)" is not 0.75).
+        const NUMTOK = /^\s*[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*$/;
         const clampNum = (v, max = 1e6) => {
-          const n = typeof v === "number" ? v : parseFloat(v);
+          const n = typeof v === "number" ? v : (typeof v === "string" && NUMTOK.test(v) ? Number(v) : NaN);
           if (!Number.isFinite(n) || Math.abs(n) > max) return null;
           return n;
         };
@@ -722,6 +726,10 @@
             throw new RangeError("Ratio estimates (OR/RR/HR/IRR) must be greater than 0.");
           if (type === "RD" && !(est >= -1 && est <= 1))
             throw new RangeError("Risk difference must be between -1 and +1.");
+          // LIM-P20 A04: an SMD's identity decides whether J is applied; never inherit it.
+          const smdKind = typeof r.smd_kind === "string" ? r.smd_kind.trim().toLowerCase() : "";
+          if (type === "SMD" && !["d", "g"].includes(smdKind))
+            throw new RangeError("For an SMD, the extraction must say whether it is Cohen's d or Hedges' g; enter it by hand otherwise.");
           const scale = r.ci_scale ? (/log/i.test(String(r.ci_scale)) ? "log" : "raw")
             : (ratio ? "log" : "raw");
           let se = clampNum(r.se);
@@ -735,6 +743,7 @@
           }
           // Commit only an estimate paired with its own validated precision.
           el("in-type").value = type;
+          if (type === "SMD") el("in-smd-kind").value = smdKind;
           el("in-est").value = String(est);
           el("in-se").value = String(se);
           el("der-scale").value = scale;
