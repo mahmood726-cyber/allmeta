@@ -136,7 +136,7 @@
       <h2>Adaptive simulation — two-group comparison of means</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0 0.8rem">
         <label><span class="lbl">Standard deviation σ</span><input id="sd" type="number" step="any" value="5" aria-label="Standard deviation σ"></label>
-        <label><span class="lbl">Maximum total N (planned)</span><input id="nmax" type="number" step="any" value="60" aria-label="Maximum total N (planned)"></label>
+        <label><span class="lbl">Planned total N</span><input id="nmax" type="number" step="any" value="60" aria-label="Planned total N"></label>
         <label><span class="lbl">Mean differences</span><input id="alts" type="text" value="0, 1, 2, 3, 4" aria-label="Mean differences"></label>
         <label><span class="lbl">Test statistic</span><select id="comb" aria-label="Test statistic"><option value="inverseNormal" selected>Inverse normal combination</option><option value="groupSequential">Group sequential (pooled data)</option></select></label>
         <label><span class="lbl">Sample-size re-estimation</span><select id="ssr" aria-label="Sample-size re-estimation"><option value="0" selected>Off (planned sizes)</option><option value="1">On: conditional power</option></select></label>
@@ -337,7 +337,8 @@
         try { res = G.simulateMeans(dsg, opts); } catch (e) { fail("Cannot simulate this design: " + e.message); return; }
         var head = ["Mean difference", "Rejection probability", "Early stop", "Futility stop", "Expected N"];
         for (k = 0; k < K; k++) head.push("Reject at look " + (k + 1));
-        if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1));
+        // Stage means condition on reaching the stage; with re-estimation the planned N is not a cap.
+        if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1) + " (if reached)");
         var tr0 = document.createElement("tr");
         head.forEach(function (h) { var c = document.createElement("th"); c.textContent = h; tr0.appendChild(c); });
         th.appendChild(tr0);
@@ -347,7 +348,7 @@
           td("" + r.alternative); td(r.overallReject.toFixed(4)); td(r.earlyStop.toFixed(4)); td(r.futilityStop.toFixed(4));
           td(r.expectedNumberOfSubjects.toFixed(1));
           r.rejectPerStage.forEach(function (p) { td(p.toFixed(4)); });
-          if (ssr) for (var j = 1; j < K; j++) td(r.sampleSizes[j].toFixed(1));
+          if (ssr) for (var j = 1; j < K; j++) td(r.iterations[j] > 0 ? r.sampleSizes[j].toFixed(1) : "—");   // no trial reached it
           tb.appendChild(tr);
         });
         $("simnote").textContent = "Simulated " + opts.maxNumberOfIterations + " trials per mean difference (seed " + opts.seed +
