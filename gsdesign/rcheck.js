@@ -123,7 +123,7 @@
     if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { set("WebR runner (../shared/webr-runner.js) did not load; use Download R script."); return; }
     if (btn) btn.disabled = true;
     out.textContent = "";
-    set("Starting WebR (first run downloads R, about a minute)... Note: package gsDesign is NOT in the pinned WebR repository, so nothing can be checked in the browser; use Download R script and run it in desktop R with gsDesign installed.");
+    set("Starting WebR (first run downloads R, about a minute)... Note: gsDesign is not in this site's pinned WebR package repository, so nothing can be checked in the browser; use Download R script and run it in R with gsDesign installed.");
     var res = await global.AlmWebR.runR({ script: script, packages: [], onStatus: function (t) { set(t); } });
     if (btn) btn.disabled = false;
     // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.

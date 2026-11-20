@@ -530,7 +530,7 @@ cat(if (n_ok == n_all) sprintf("MATCH %d/%d\n", n_ok, n_all) else sprintf("MISMA
                 if (!res.ok) throw new Error(res.error);
                 const last = res.stdout.trim().split('\n').pop() || '';
                 st.textContent = 'WebR ' + res.versions.webR + ' · ' + res.versions.R + ' — base-R checks: ' + last
-                    + '. heemod is not available in WebR, so its trace check did not run here; the downloadable R script runs it where heemod 1.1.0 is installed.';
+                    + '. heemod is not in this site\'s pinned WebR package repository, so its trace check did not run here; the downloadable R script runs it where heemod 1.1.0 is installed.';
                 out.textContent = res.stdout;
             } catch (e) { if (my === token) st.textContent = 'R check could not run: ' + e.message; }
             finally { btn.disabled = false; }
