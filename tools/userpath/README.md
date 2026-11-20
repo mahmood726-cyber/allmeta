@@ -58,3 +58,19 @@ aria-modal, modal/overlay/... classes); a fixed full-screen app shell is recorde
 `overlays.json` (`coveringNonDialog`) and never pressed. Tests:
 `node --test tools/userpath/tests/userpath.test.cjs tools/userpath/tests/planted-rev637.test.cjs`
 (Node 24 does not take a bare directory; browser tests skip without PLAYWRIGHT_CORE).
+
+PR #637 round 3 (2026-11-20, lane uptool2): the in-page "Verify in R" score is FAIL-CLOSED instead
+of a list of patched cases. PASS needs ALL of: (1) the control's new output (lines added since the
+click, from its own region when it has one) has MATCH n/n, n > 0, as its LAST verdict line; (2) that
+output has no MISMATCH(ES), no NOT CHECKED verdict (a NOT CHECKED row only when the final MATCH line
+declares "k more NOT CHECKED"), and no error/refusal line (`Error in`, `Error:`, `ERROR`, `FAIL`,
+`Fehler`, failed, refused, unavailable, "is not a function"); (3) no busy text is new or changed since
+the click anywhere on the page or its status/live regions (busy text that was there before the click
+and is unchanged is ignored: HTA's static "Loading..."); (4) the page was unchanged for 10 s
+(`STABLE_MS`); (5) every earlier control was idle before the click (no busy text new since the
+baseline read before the first control). A wrong or unfinished result is FAIL; an unattributable
+one (earlier run still busy, pre-click busy text that changed during the run, unstable page) or one
+that checked nothing is UNKNOWN. Exit 4 = no FAIL but at least one UNKNOWN. Tests:
+`node --test tools/userpath/tests/userpath.test.cjs tools/userpath/tests/planted-rev637.test.cjs
+tools/userpath/tests/rev637b.test.cjs tools/userpath/tests/rev637b-overlay.test.cjs
+tools/userpath/tests/failclosed-round3.test.cjs` (rev637b* written by the round-2 reviewer).

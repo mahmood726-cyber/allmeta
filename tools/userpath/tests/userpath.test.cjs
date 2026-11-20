@@ -159,7 +159,8 @@ test("MINOR 1: a result outside this control's own output region is not its resu
   assert.strictEqual(j(verify, bad).verdict, "FAIL");
 });
 test("MINOR 1: with no region, a page still busy before the click makes a new MATCH unattributable", () => {
-  assert.strictEqual(j(verify, { kind: "inpage", before: "", text: "MATCH 8/8\n", busyBefore: true }).verdict, "FAIL");
+  // round 3: an unattributable result is UNKNOWN (exit 4), never PASS
+  assert.strictEqual(j(verify, { kind: "inpage", before: "", text: "MATCH 8/8\n", busyBefore: true }).verdict, "UNKNOWN");
   assert.strictEqual(j(verify, { kind: "inpage", before: "", text: "MATCH 8/8\n", busyBefore: false }).verdict, "PASS");
 });
 test("MAJOR 2: appUrl resolves the URL and refuses encoded dot segments", () => {
@@ -199,11 +200,11 @@ test("settle: static 'Loading...' prose in the page tail does not block an idle,
   const v = U.judge(verify, { kind: "inpage", before: "Check in R" + tail, text: t, stillBusy: mod.exports.lb(), busyBefore: false });
   assert.strictEqual(v.verdict, "PASS", v.why);
   // and the same page with the status regions busy before the click is still not attributed
-  assert.strictEqual(U.judge(verify, { kind: "inpage", before: "Check in R" + tail, text: t, stillBusy: false, busyBefore: true }).verdict, "FAIL");
+  assert.strictEqual(U.judge(verify, { kind: "inpage", before: "Check in R" + tail, text: t, stillBusy: false, busyBefore: true }).verdict, "UNKNOWN");
 });
 test("judge: a known idle busyBefore is not overridden by a static 'Loading...' line", () => {
   const before = "Check in R\nKeyboard Shortcuts\nLoading...";
   assert.strictEqual(U.judge(verify, { kind: "inpage", before, text: before + "\nMATCH 3/3", busyBefore: false }).verdict, "PASS");
-  // unknown busyBefore keeps the conservative text heuristic (reviewer case 1b)
-  assert.strictEqual(U.judge(verify, { kind: "inpage", before, text: before + "\nMATCH 3/3" }).verdict, "FAIL");
+  // unknown busyBefore: busy text before the click cannot be shown idle -> UNKNOWN (reviewer case 1b)
+  assert.strictEqual(U.judge(verify, { kind: "inpage", before, text: before + "\nMATCH 3/3" }).verdict, "UNKNOWN");
 });

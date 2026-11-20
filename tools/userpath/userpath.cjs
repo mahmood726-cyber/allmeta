@@ -2,11 +2,11 @@
 // node userpath.cjs <app> <outdir> [--pasted <file> [--textarea <css>]] [--base <url>] [--steps <json>] [--skip-default 1] [--entry <file>]
 // Exit 2 (verdict.json) when any R control fails on the user path: an alert instead
 // of a validator tab, a validator without "BROWSER VS R (MATCH)", an in-page panel
-// with a failed quantity or refusal, or an error. UNKNOWN verdicts need inspection.
+// with a failed quantity or refusal, or an error. Exit 4 = no FAIL but an UNKNOWN (inspect it).
 // An in-page result counts only if it is new after that control and checks >0 quantities;
 // a panel still busy when the wait runs out is a FAIL (blocked). Exit 3 = no R control exercised.
-// A "Verify in R" that runs R IN the page (no validator tab) is scored by the MATCH/MISMATCH
-// line it newly printed; one that printed none did not complete and is a FAIL.
+// A "Verify in R" that runs R IN the page (no validator tab) is scored FAIL-CLOSED: PASS only
+// when its new output ends with MATCH n/n and every condition in judgeInpageVerdict holds.
 // Known onboarding overlays are closed by their own close controls after every page load;
 // one that stays up is recorded in verdict.json (overlays.json has the detail).
 // Captures: displayed text after default run, every R-related control's result
@@ -94,18 +94,41 @@ function judge(c, r) {
 //   MISMATCH:   "MISMATCH (7 of 8 quantities agree)", "MISMATCH 9/11 agree", "MISMATCH 3/4",
 //               "MISMATCH (nothing could be checked)", benefit-risk "MISMATCH 2 of 5 checks differ",
 //               IPD-Meta-Pro "MISMATCH (2 of 10 compared quantities outside the panel tolerance ...)".
-//               ANY new line with the word MISMATCH makes the control FAIL, whatever else printed
-//               (a "Section: MATCH 3/3" next to it does not rescue it).
 //   NOT CHECKED: "NOT CHECKED (no estimate was compared ...)", "NOT CHECKED: no quantity ...".
-// Help text ("ends with MATCH n/n or MISMATCH") has no counts and is stripped before the test.
+// Help text ("ends with MATCH n/n or MISMATCH") has no counts and is stripped before any test.
+//
+// SCORING IS FAIL-CLOSED (PR #637 round 3; rounds 1 and 2 each patched one case and opened
+// another false PASS). A "Verify in R" that ran in the page is PASS only if ALL of these hold:
+//   1. its NEW output -- lines present after the click that were not there before it (a multiset
+//      difference), taken from the control's own output region when it has one, else the whole
+//      page -- has MATCH n/n with n > 0 as its LAST verdict line;
+//   2. nothing in that new output says MISMATCH(ES), is a NOT CHECKED verdict (or mentions NOT
+//      CHECKED when the final MATCH line does not itself declare "k more NOT CHECKED"), or is an
+//      error / refusal line (ERROR_CS, ERROR_CI);
+//   3. no busy text is NEW or CHANGED since the click ANYWHERE on the page (body lines and the
+//      status/live regions). Busy text that was there before the click and is still there,
+//      unchanged, is ignored: HTA's static help "Loading Data" / "Loading..." (live 2026-11-20);
+//   4. the page was unchanged for STABLE_MS when it was read (settle(); r.stableMs);
+//   5. every earlier control was idle before this click: no busy text new since the baseline
+//      taken before the first control (r.busyBefore === false). If the harness did not record it,
+//      any busy text in the page before the click makes the result unattributable.
+// A result that is wrong or did not finish is FAIL; one that cannot be attributed to this control,
+// or checked nothing, is UNKNOWN. Nothing else is ever PASS.
+const STABLE_MS = 10000;
 const HELP_PHRASE = /\b(?:MATCH(?: n\/n)?\s+)?or\s+MISMATCH\b/g;
+const MISMATCH_RE = /\bMISMATCH(?:ES)?\b/;
 const MATCH_RE = /(?:^|:\s+)MATCH (\d+)\/(\d+)(?:\s+of\s+(\d+))?/;
-const NOTCHECKED_RE = /(?:^|:\s+)NOT CHECKED(?: \(|: )(?:no |nothing)/;
+const NC_VERDICT_RE = /(?:^|:\s+)NOT CHECKED\b/;          // "NOT CHECKED ..." / "x: NOT CHECKED ..." is a verdict
+const NC_DECLARED_RE = /\((\d+) more NOT CHECKED\b/;      // "MATCH 8/8 (2 more NOT CHECKED: see above)"
+// Error / refusal lines. Case-sensitive part: R's "Error in f(...)", "Error: ...", "ERROR", a FAIL
+// cell, German R messages; a lower-case "error" is common prose ("standard error:"), so it is not used.
+const ERROR_CS = /^Error\b|\bError:|\bERROR\b|\bFAIL(?:ED|URE|S)?\b|\bFehler\b|is not a function/;
+const ERROR_CI = /\bfailed\b|\brefused\b|\bunavailable\b/i;
 function classifyLine(line) {
   const s = String(line).trim();
-  if (/\bMISMATCH\b/.test(s.replace(HELP_PHRASE, ""))) {
+  if (MISMATCH_RE.test(s.replace(HELP_PHRASE, ""))) {
     const v = { line: s, kind: "MISMATCH", match: null, total: null, differ: null };
-    const slash = /MISMATCH\s+\(?(\d+)\/(\d+)/.exec(s);
+    const slash = /MISMATCH(?:ES)?\s+\(?(\d+)\/(\d+)/.exec(s);
     const of = /(\d+) of (\d+)/.exec(s);
     if (slash) { v.match = +slash[1]; v.total = +slash[2]; }
     else if (of && /\bagree/.test(s)) { v.match = +of[1]; v.total = +of[2]; }
@@ -113,47 +136,80 @@ function classifyLine(line) {
     return v;
   }
   const m = MATCH_RE.exec(s);
-  if (m) return { line: s, kind: "MATCH", match: +m[1], total: m[3] != null ? +m[3] : +m[2], of: m[3] != null ? +m[2] : null };
-  if (NOTCHECKED_RE.test(s)) return { line: s, kind: "NOT CHECKED", match: null, total: null };
+  if (m) {
+    const d = NC_DECLARED_RE.exec(s);
+    return { line: s, kind: "MATCH", match: +m[1], total: m[3] != null ? +m[3] : +m[2], of: m[3] != null ? +m[2] : null, notChecked: d ? +d[1] : 0 };
+  }
+  if (NC_VERDICT_RE.test(s)) return { line: s, kind: "NOT CHECKED", match: null, total: null };
   return null;
 }
 const linesOf = (s) => String(s || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+// status/live region text arrives joined with " | " (statusText); split it into its parts too
+const statusLines = (s) => String(s || "").split(/\r?\n|\s\|\s/).map((l) => l.trim()).filter(Boolean);
 function verdictLines(s) { return linesOf(s).map(classifyLine).filter(Boolean); }
-// Result lines present after the click that were not already there before it (multiset of lines).
-function freshVerdictLines(before, after) {
-  const old = linesOf(before);
-  return linesOf(after).filter((l) => { const i = old.indexOf(l); if (i >= 0) { old.splice(i, 1); return false; } return true; })
-    .map(classifyLine).filter(Boolean);
+// Lines of `after` that were not in `before` (multiset: a line printed again counts once per extra copy).
+function freshLines(before, after, split) {
+  const sp = split || linesOf;
+  const old = sp(before);
+  return sp(after).filter((l) => { const i = old.indexOf(l); if (i >= 0) { old.splice(i, 1); return false; } return true; });
 }
-// Something on the page was still in progress when this control was pressed: a result that
-// appears later may be that earlier run's, not this control's (reviewer case 1b).
-const PROGRESS_LINE = /^.*\b(installing|loading|booting|running|downloading|fitting|starting|initiali[sz]ing|verifying)\b[^\n]*(\.\.\.|…)\s*$/im;
+function freshVerdictLines(before, after) { return freshLines(before, after).map(classifyLine).filter(Boolean); }
+const isBusy = (l) => BUSY_RE.test(l);
+// Busy lines added (new or changed) and gone (changed or removed) between two snapshots.
+function busyChange(before, after, split) {
+  const sp = split || linesOf;
+  return { added: freshLines(before, after, sp).filter(isBusy), gone: freshLines(after, before, sp).filter(isBusy) };
+}
+// Busy text added in the status/live regions. Without a "before" reading, any busy status counts.
+function statusBusyAdded(stBefore, stAfter) {
+  if (stAfter == null) return [];
+  if (stBefore == null) return statusLines(stAfter).filter(isBusy);
+  return busyChange(stBefore, stAfter, statusLines).added;
+}
 function judgeInpageVerdict(r) {
-  // Prefer the control's own output region (nearest enclosing block with a status/output
-  // element, captured before and after the click); fall back to the whole page.
   const own = r.region && r.region.text != null;
-  const before = own ? r.region.before : r.before, text = own ? r.region.text : (r.text || "");
+  const outBefore = own ? r.region.before : r.before, outAfter = own ? r.region.text : (r.text || "");
   const where = own ? "" : " (page text; no output region found for this control)";
-  // an error this control produced (not one already there) is a failure whatever else printed
-  const ERR = /is not a function|Validation refused|live R comparison unavailable/gi;
-  const errs = (x) => (String(x || "").match(ERR) || []).length;
-  if (errs(text) > errs(before)) return { verdict: "FAIL", why: "in-page refusal or error" + where };
-  const fresh = freshVerdictLines(before, text);
+  const q = (l) => JSON.stringify(String(l).slice(0, 160));
   const counts = (x) => { const o = { match: x.match, total: x.total }; if (x.differ != null) o.differ = x.differ; return o; };
-  const mm = fresh.find((x) => x.kind === "MISMATCH");
+  // 5. every earlier control idle before this click
+  if (r.busyBefore === true)
+    return { verdict: "UNKNOWN", why: "a run was still in progress before this control was pressed (busy text new since the baseline), so a new result cannot be attributed to it" + where };
+  if (r.busyBefore === undefined) {
+    const b = linesOf(r.before).filter(isBusy).concat(statusLines(r.statusBefore).filter(isBusy));
+    if (b.length) return { verdict: "UNKNOWN", why: "busy text was on the page before the click and the harness did not record that earlier controls were idle: " + q(b[0]) + where };
+  }
+  // 3a. busy text that was there before the click and changed or went away during this window:
+  // something else was running while this control's result was being read.
+  const gone = busyChange(r.before, r.text).gone.concat(r.statusAfter != null && r.statusBefore != null ? busyChange(r.statusBefore, r.statusAfter, statusLines).gone : []);
+  if (gone.length) return { verdict: "UNKNOWN", why: "busy text already on the page before the click changed during the run (another run may have finished in this window): " + q(gone[0]) + where };
+  const fresh = freshLines(outBefore, outAfter);
+  const verdicts = fresh.map(classifyLine).filter(Boolean);
+  // 2. MISMATCH and errors in the new output fail it, whatever else printed
+  const mm = verdicts.find((x) => x.kind === "MISMATCH");
   if (mm) return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + mm.line + where }, counts(mm));
-  if (r.stillBusy) return { verdict: "FAIL", why: "in-page R comparison still running when the wait ran out (blocked)" + where };
-  const v = fresh[fresh.length - 1]; // the final result line decides
+  const err = fresh.find((l) => ERROR_CS.test(l) || ERROR_CI.test(l));
+  if (err) return { verdict: "FAIL", why: "in-page R comparison did not complete: error or refusal in its new output: " + q(err) + where };
+  // 3b. busy text new or changed since the click, anywhere on the page: still running
+  const added = busyChange(r.before, r.text).added.concat(statusBusyAdded(r.statusBefore, r.statusAfter));
+  if (r.stillBusy || added.length)
+    return { verdict: "FAIL", why: "in-page R comparison still running when read (blocked)" + (added.length ? ": " + q(added[0]) : "") + where };
+  // 4. stable for the window
+  if (typeof r.stableMs === "number" && r.stableMs < STABLE_MS)
+    return { verdict: "UNKNOWN", why: `page was still changing when read (stable ${r.stableMs} ms < ${STABLE_MS} ms)` + where };
+  // 1. the LAST verdict line decides
+  const v = verdicts[verdicts.length - 1];
   if (!v) return { verdict: "FAIL", why: "in-page R comparison did not complete (no new MATCH/MISMATCH line)" + where };
-  // busyBefore (from the live/status regions, recorded by the live harness) decides when known;
-  // the progress-line text heuristic is only for callers that did not record it, because page
-  // prose can end in a static "Loading..." (HTA).
-  if (!own && (r.busyBefore === true || (r.busyBefore === undefined && PROGRESS_LINE.test(String(before || "")))))
-    return { verdict: "FAIL", why: "a run was still in progress when this control was pressed, so the new result line cannot be attributed to it: " + v.line };
   if (v.kind === "NOT CHECKED") return { verdict: "UNKNOWN", why: "in-page R comparison checked nothing: " + v.line + where };
   if (!(v.total > 0)) return Object.assign({ verdict: "UNKNOWN", why: "in-page R comparison: " + v.line + " (0 quantities checked)" + where }, counts(v));
-  if (v.match === v.total && v.of == null) return Object.assign({ verdict: "PASS", why: "in-page R comparison: " + v.line + where }, counts(v));
-  return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + v.line + where }, counts(v));
+  if (v.match !== v.total || v.of != null) return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + v.line + where }, counts(v));
+  // a NOT CHECKED verdict anywhere, or an undeclared NOT CHECKED mention, is not a full pass
+  if (verdicts.some((x) => x.kind === "NOT CHECKED")) return { verdict: "UNKNOWN", why: "a NOT CHECKED verdict in the new output: " + verdicts.find((x) => x.kind === "NOT CHECKED").line + where };
+  if (!(v.notChecked > 0) && fresh.some((l) => /\bNOT CHECKED\b/.test(l)))
+    return { verdict: "UNKNOWN", why: "NOT CHECKED in the new output, not declared by the final MATCH line: " + q(fresh.find((l) => /\bNOT CHECKED\b/.test(l))) + where };
+  const o = Object.assign({ verdict: "PASS", why: "in-page R comparison: " + v.line + where }, counts(v));
+  if (v.notChecked > 0) o.notChecked = v.notChecked;
+  return o;
 }
 
 async function bodyText(p) { try { return await p.evaluate(() => document.body.innerText); } catch (e) { return "(unreadable: " + e.message + ")"; } }
@@ -162,17 +218,25 @@ const BUSY_RE = /booting|installing|loading|verifying sha|running|fitting|please
 async function statusText(p) {
   try { return await p.evaluate(() => [...document.querySelectorAll("[role=status],[aria-live],[aria-busy=true]")].map((e) => e.innerText || "").join(" | ")); } catch (e) { return ""; }
 }
-// True once the page's status / live regions read idle on two polls in a row; false if they
-// still read busy when maxMs runs out.
-async function waitIdle(p, maxMs) {
+// Busy text on the page now that was not in `baseline` ({body, status}, read before the first
+// control was pressed): page lines and status/live-region parts, new or changed. Static busy
+// prose that was already there (HTA's "Loading...") is not counted.
+async function busyNow(p, baseline) {
+  const b = baseline || {};
+  return busyChange(b.body, await bodyText(p)).added.concat(statusBusyAdded(b.status == null ? "" : b.status, await statusText(p)));
+}
+// True once nothing busy is new since `baseline` on two polls in a row (every earlier control
+// is idle); false if something still is when maxMs runs out.
+async function waitIdle(p, maxMs, baseline) {
   const t0 = Date.now(); let idle = 0;
   while (Date.now() - t0 < maxMs) {
-    if (BUSY_RE.test(await statusText(p))) idle = 0; else if (++idle >= 2) return true;
+    if ((await busyNow(p, baseline)).length) idle = 0; else if (++idle >= 2) return true;
     await p.waitForTimeout(1000);
   }
   return false;
 }
 let lastSettleBusy = false; // true when settle() gave up while the page still looked busy
+let lastSettleStableMs = null; // how long the page had been unchanged when settle() returned
 // Onboarding overlays that cover an app on first visit. Each is closed by the control a user
 // would press; the harness never removes DOM itself. HTA (P43) opened with both of these over
 // the page, so every later click was intercepted and both R controls were "not visible"
@@ -273,8 +337,8 @@ function overlayVerdicts(tag, rep) {
     : { tag, overlay: true, control: "overlay " + x.name, verdict: "UNKNOWN", why: "a page-covering element stayed up after dismissal (inspect overlays.json)" });
 }
 
-async function settle(p, maxMs, re, before) {
-  lastSettleBusy = false;
+async function settle(p, maxMs, re, before, statusBefore) {
+  lastSettleBusy = false; lastSettleStableMs = null;
   // wait until text stops changing for 8 s or matches a terminal pattern
   const t0 = Date.now(); let last = "", stableSince = Date.now(), lastBusy = false;
   while (Date.now() - t0 < maxMs) {
@@ -295,14 +359,17 @@ async function settle(p, maxMs, re, before) {
       // In-page run (reviewer MAJOR 1): a new result line is NOT a finish while the page still
       // reads busy -- "Stage 1: MATCH 3/3" can print while stage 2 runs and ends in MISMATCH.
       // Finish only when the page is idle AND stable, so the line judged is the final one.
-      // Busy is read from the live/status regions only. The page tail is prose: HTA ends with
-      // static help text "Loading Data" / "Loading...", which held this wait busy for 420 s
-      // after R had printed MATCH 14/14 (live run 2026-11-20).
-      const busyIn = BUSY_RE.test(st);
+      // Busy = busy text NEW or CHANGED since the click, in the page lines or the status/live
+      // regions (round 3). Busy text already there before the click and unchanged is ignored:
+      // HTA ends with static help "Loading Data" / "Loading...", which held a page-tail test busy
+      // for 420 s after R had printed MATCH 14/14 (live 2026-11-20); reading only the live
+      // regions instead missed "Stage 2: running WebR ..." printed in plain page text (rev637b).
+      const busyIn = busyChange(before, t).added.length > 0 || statusBusyAdded(statusBefore, st).length > 0;
       lastBusy = busyIn;
       const fresh = freshVerdictLines(before, t).length > 0;
-      if (!busyIn && fresh && Date.now() - stableSince > 8000) return t;
-      if (!busyIn && Date.now() - stableSince > 30000) return t; // idle with no result: judged as not completed
+      const stable = Date.now() - stableSince;
+      if (!busyIn && fresh && stable >= STABLE_MS) { lastSettleStableMs = stable; return t; }
+      if (!busyIn && stable > 30000) { lastSettleStableMs = stable; return t; } // idle with no result: judged as not completed
       continue;
     }
     const done = /Browser vs R \((Match|Mismatch|WebR failed)\)|live R quantities (passed|failed)|Validation refused/i.test(t);
@@ -315,6 +382,7 @@ async function settle(p, maxMs, re, before) {
     if (!busy && Date.now() - stableSince > 20000) return t;
   }
   lastSettleBusy = lastBusy;
+  lastSettleStableMs = Date.now() - stableSince;
   return last;
 }
 
@@ -364,6 +432,10 @@ async function main() {
 
   async function exerciseR(tag) {
     const results = [];
+    // Baseline for "every earlier control is idle": the page as it stands before the first
+    // control is pressed. Busy text in it (static help prose, HTA's "Loading...") is ignored;
+    // busy text that is new since it means something is still running.
+    const baseline = { body: await bodyText(page), status: await statusText(page) };
     const controls = await page.evaluate((src) => {
       const re = new RegExp(src, "i");
       const els = [...document.querySelectorAll("button, a, [role=button]")];
@@ -383,9 +455,10 @@ async function main() {
           r.error = "not visible"; results.push(r);
           verdicts.push(Object.assign({ tag, control: c.id || c.text }, judge(c, r))); continue;
         }
-        // Reviewer MINOR 1: never press a control while an earlier one is still running, or that
-        // run's late result is read as this control's. Wait for the live regions to go idle.
-        r.busyBefore = !(await waitIdle(page, 420000));
+        // Never press a control while an earlier one is still running, or that run's late result
+        // is read as this control's: wait until no busy text is new since the baseline. If the
+        // wait runs out the result is UNKNOWN (not attributable), never PASS.
+        r.busyBefore = !(await waitIdle(page, 420000, baseline));
         if (r.busyBefore) note(`${tag}: page still busy before ${c.id || c.text}; its result will not be attributed`);
         // The control's own output region: nearest ancestor (<= 4 levels, not body/main) holding a
         // status / live / output / pre element. Its text is judged instead of the whole page.
@@ -403,7 +476,7 @@ async function main() {
         const regionBefore = hasRegion ? await regionText() : null;
         const popupP = ctx.waitForEvent("page", { timeout: 8000 }).catch(() => null);
         const dlP = page.waitForEvent("download", { timeout: 8000 }).catch(() => null);
-        const before = await bodyText(page);
+        const before = await bodyText(page), statusBefore = await statusText(page);
         await handle.click({ timeout: 8000 });
         const [popup, dl] = await Promise.all([popupP, dlP]);
         if (dl) {
@@ -442,8 +515,9 @@ async function main() {
           await popup.close().catch(() => {});
         } else if (!dl) {
           r.kind = "inpage";
-          const after = await settle(page, 420000, /(estimate|tau|rma|metafor|error|failed|match|pass|fail)/i, before);
-          r.text = after; r.before = before; r.stillBusy = lastSettleBusy; // full text kept
+          const after = await settle(page, 420000, /(estimate|tau|rma|metafor|error|failed|match|pass|fail)/i, before, statusBefore);
+          r.text = after; r.before = before; r.stillBusy = lastSettleBusy; r.stableMs = lastSettleStableMs; // full text kept
+          r.statusBefore = statusBefore; r.statusAfter = await statusText(page);
           if (hasRegion) { const rt = await regionText(); if (rt != null) r.region = { key: regionKey, before: regionBefore, text: rt }; }
           await page.screenshot({ path: path.join(out, `${tag}-${c.id || "inpage"}.png`), fullPage: true }).catch(() => {});
         }
@@ -506,13 +580,15 @@ async function main() {
   const rV = verdicts.filter((v) => !v.overlay); // overlay entries are not R controls
   note(`verdict: ${rV.filter((v) => v.verdict === "PASS").length}/${rV.length} R controls PASS` +
     (failedV.length ? "; FAIL: " + failedV.map((v) => v.tag + "/" + v.control + " (" + v.why + ")").join("; ") : ""));
-  // Exit 3: no R control was exercised at all, so nothing was verified.
-  process.exitCode = failedV.length ? 2 : rV.length ? 0 : 3;
+  // Exit 3: no R control was exercised at all, so nothing was verified. Exit 4 (round 3): no
+  // FAIL but at least one UNKNOWN -- an unattributable or empty result is not a clean run.
+  const unknownV = verdicts.filter((v) => v.verdict === "UNKNOWN");
+  process.exitCode = failedV.length ? 2 : !rV.length ? 3 : unknownV.length ? 4 : 0;
   if (!rV.length) note("no R control exercised: nothing verified (exit 3)");
   fs.writeFileSync(path.join(out, "console.txt"), consoleLog.join("\n"));
   fs.writeFileSync(path.join(out, "failed-requests.txt"), failed.join("\n"));
   await browser.close();
   note("done");
 }
-module.exports = { judge, appUrl, dismissOverlays, overlayVerdicts, verdictLines, freshVerdictLines };
+module.exports = { judge, appUrl, dismissOverlays, overlayVerdicts, verdictLines, freshVerdictLines, busyChange, STABLE_MS };
 if (require.main === module) main().catch((e) => { note("FATAL " + (e.stack || e)); process.exit(1); });
