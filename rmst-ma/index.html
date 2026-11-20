@@ -107,6 +107,7 @@
       // Clear first: if this run fails (e.g. the pooling throws), neither the R check nor the export may
       // offer the previous analysis as if it were the current one.
       _last = null; _rstate = null;
+      if (window.AlmRmstRCheck) window.AlmRmstRCheck.invalidate();   // a shown R verdict belongs to the previous analysis
       var rejected = [];
       var rows = parse(document.getElementById("f-data").value, rejected);
       showRejected(rejected, rows.length);

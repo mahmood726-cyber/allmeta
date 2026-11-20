@@ -117,10 +117,17 @@
         out.textContent = r.stdout;
       });
     });
+    // invalidate(): the page calls this whenever it re-runs its analysis. A verdict already on screen
+    // was for the earlier analysis, so it is removed (an in-flight run becomes stale via verifyGen).
+    api.invalidate = function () {
+      verifyGen++;
+      if (out.textContent || out.style.display !== "none") { out.textContent = ""; out.style.display = "none"; status.textContent = "Analysis changed: the earlier R verdict was removed. Press Verify in R again."; }
+      host.querySelector("#rcheck-webr").disabled = false;
+    };
     return true;
   }
 
-  var api = { buildScript: buildScript, attach: attach };
+  var api = { buildScript: buildScript, attach: attach, invalidate: function () {} };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRmstRCheck = api;
 })(typeof window !== "undefined" ? window : globalThis);

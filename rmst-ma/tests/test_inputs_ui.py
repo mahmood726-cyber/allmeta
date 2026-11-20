@@ -41,6 +41,7 @@ const srv = http.createServer((q, r) => {
       await p.goto('http://127.0.0.1:' + srv.address().port + '/rmst-ma/', { waitUntil: 'load' });
       await p.waitForTimeout(200);
       if (c.js) await p.evaluate(c.js);
+      if (c.click) { await p.click(c.click); await p.waitForTimeout(300); }
       if (c.text != null) { await p.fill('#f-data', c.text); await p.dispatchEvent('#f-data', 'input'); }
       await p.waitForTimeout(200);
       out[c.id] = await p.evaluate(() => ({
@@ -59,6 +60,8 @@ const srv = http.createServer((q, r) => {
 """
 
 GOOD = "A, 1.2, 0.4\nB, 0.8, 0.5\nC, 2.1, 0.6"
+STUB = ("window.AlmWebR = { runR: function () { return Promise.resolve({ ok: true, stdout: 'R says\\nMATCH 9/9', "
+        "versions: { webR: 'stub' } }); } };")
 CASES = [
     {"id": "default", "text": None},
     {"id": "L02", "text": "A, 1.2, 0.4\nB, 0.8\nC, x, 0.6\nD, 0.5, -1\nE, 1.5, 0.55"},
@@ -68,6 +71,9 @@ CASES = [
     # pooling that throws: make ma-core's pool throw for this run only
     {"id": "L04-throw", "js": "window.AlmMaCore.pool = function () { throw new RangeError('planted failure'); };",
      "text": GOOD},
+    # L14: a completed R verdict (stubbed WebR runner) must not survive an edit of the analysis
+    {"id": "L14-control", "js": STUB, "click": "#rcheck-webr", "text": None},
+    {"id": "L14-edit", "js": STUB, "click": "#rcheck-webr", "text": GOOD},
     {"id": "L04-overflow", "text": "A, 1e308, 1\nB, 1.7e308, 1\nC, 1.7e308, 1"},
 ]
 
@@ -126,3 +132,13 @@ def test_L04_non_finite_result_not_displayed(driven):
     d = driven["L04-overflow"]
     assert d["last"] is None and d["rows"] == 0 and d["forest"] == 0
     assert "k = " not in d["headline"], d["headline"]
+
+
+def test_L14_stub_verdict_shown_without_edit(driven):
+    # control: the stubbed runner's verdict is displayed when nothing changes
+    assert "MATCH 9/9" in driven["L14-control"]["rout"]
+
+
+def test_L14_completed_verdict_cleared_by_edit(driven):
+    d = driven["L14-edit"]
+    assert "MATCH" not in d["rout"] and "MATCH" not in d["rstatus"], (d["rout"], d["rstatus"])
