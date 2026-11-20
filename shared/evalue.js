@@ -48,15 +48,20 @@
     // Non-null true value or an SMD standard error: EValue's evalues.RR/OR/HR/MD
     // semantics (eValuesTrue below). Without either, the legacy path is unchanged.
     if (opts["true"] != null || opts.se != null) return eValuesTrue(measure, point, lo, hi, opts);
-    if (lo != null && hi != null) {
+    // Validate EACH supplied limit, also when its companion is blank: a lone lower
+    // limit above the estimate is as impossible as a reversed complete interval
+    // (EValue's evalues.RR refuses both: "Point estimate should be inside confidence interval").
+    if (lo != null || hi != null) {
       var scale = (measure || "RR").toUpperCase();
-      if (!Number.isFinite(point) || !Number.isFinite(lo) || !Number.isFinite(hi))
+      var ratioScale = scale !== "SMD" && scale !== "D";
+      var given = [lo, hi].filter(function (b) { return b != null; });
+      if (!Number.isFinite(point) || given.some(function (b) { return !Number.isFinite(b); }))
         throw new RangeError("Invalid confidence interval: estimate and bounds must be finite numbers.");
-      if (scale !== "SMD" && scale !== "D" && !(point > 0 && lo > 0 && hi > 0))
+      if (ratioScale && !(point > 0 && given.every(function (b) { return b > 0; })))
         throw new RangeError("Invalid confidence interval: ratio estimates and bounds must be positive.");
-      if (lo > hi)
+      if (lo != null && hi != null && lo > hi)
         throw new RangeError("Invalid confidence interval: lower bound must not exceed upper bound.");
-      if (point < lo || point > hi)
+      if ((lo != null && point < lo) || (hi != null && point > hi))
         throw new RangeError("Invalid confidence interval: bounds must contain the point estimate.");
     }
     var rare = !!opts.rare;
