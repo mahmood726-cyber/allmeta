@@ -165,7 +165,17 @@
       var host = $("result");
       if (pairs.length < 3) { host.innerHTML = '<p class="hint">Need ≥3 trials with (surrogate, final, SE).</p>'; $("plot").innerHTML = ""; return; }
       var r = window.AlmSurrogate.analyze({ pairs: pairs });
-      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; $("plot").innerHTML = ""; return; }
+      // Finite input does not guarantee finite arithmetic (an SE of 1e-170 squares to 0, so its weight is
+      // Infinity): the engine then returned NaN with ok:true and the page showed NaN or a false "too little
+      // signal" refusal. Any non-finite number refuses the whole result, clears the plot and offers no R script.
+      var bad = ["slope", "intercept", "Q", "i2", "r2_naive", "pearson", "r2_adj", "ste", "loo_min", "loo_max"].filter(function (key) {
+        return r[key] != null && !isFinite(r[key]);
+      }).concat(r.loo.some(function (l) { return l.r2 != null && !isFinite(l.r2); }) ? ["leave-one-out R²"] : []);
+      if (bad.length) {
+        host.innerHTML = '<p class="hint">Not computed: numerical range exceeded (' + esc(bad.join(", ")) + " not finite). Check for extremely small or large SEs or effects, or rescale.</p>";
+        $("plot").innerHTML = ""; return;
+      }
       window.__lastSurrogate = r;
       window.__lastSurrogatePairs = pairs;   // read by r-verify.js (R script / WebR check)
       var cls = r.adj_degenerate ? "bad" : (r.r2_adj >= 0.7 ? "ok" : "warn");

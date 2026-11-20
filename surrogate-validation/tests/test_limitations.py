@@ -75,3 +75,17 @@ def test_F03_rows_left_out_are_named(pg):
     assert len(analysed(pg)) == 4
     pg.fill("#f-data", EX)
     assert pg.text_content("#input-issues").strip() == ""
+
+
+def test_F06_numerical_failure_is_refused_and_clears_the_plot(pg):
+    """F06: SEs whose squares overflow the weights (1e-170 -> 1/SE^2 = Infinity) gave NaN results with
+    ok:true; the page displayed NaN, and a refusal never cleared the previous plot. Requirement: a result
+    with any non-finite number is refused with a message, the plot is cleared and no R script is offered."""
+    pg.fill("#f-data", EX)
+    assert pg.inner_html("#plot") != ""
+    pg.fill("#f-data", EX.replace("0.06", "1e-170"))
+    assert "NaN" not in pg.text_content("#result"), pg.text_content("#result")
+    assert "numerical" in pg.text_content("#result").lower()
+    assert pg.inner_html("#plot") == ""
+    assert pg.evaluate("() => window.__lastSurrogate") is None
+    assert pg.errs == []
