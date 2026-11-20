@@ -162,3 +162,21 @@ def test_f19_rounding_and_tie_rule_is_stated(page):
     _run(page, "0.6004, A\n0.6, B\n0.3996, C\n0.4, D")
     txt = page.inner_text("#out").lower()
     assert "unrounded" in txt and "ties" in txt
+
+
+# ---- F15: page and R script apply the same, stated [0, 1] cap ------------------------------
+
+def test_f15_capped_value_is_stated_and_r_agrees(page, tmp_path):
+    import glob, os, shutil, subprocess
+    _run(page, "1, A\n0.67, B\n0.33, C\n0, D")   # rounded thirds: uncapped POTH 1.004
+    assert page.inner_text("#out .big") == "1.000"
+    assert "capped" in page.inner_text("#out").lower()
+    rs = next((c for c in [os.environ.get("RSCRIPT"), shutil.which("Rscript")] +
+               sorted(glob.glob("C:/Program Files/R/R-*/bin/Rscript.exe"), reverse=True) if c and Path(c).exists()), None)
+    if rs is None:
+        pytest.skip("Rscript not found")
+    f = tmp_path / "poth-check.R"
+    f.write_text(page.evaluate("window.AlmRCheck.script()"), encoding="utf-8", newline="\n")
+    r = subprocess.run([rs, "--vanilla", str(f)], capture_output=True, text=True, timeout=120)
+    lines = [l for l in r.stdout.splitlines() if l.strip()]
+    assert lines and lines[-1].startswith("MATCH"), r.stdout[-800:] + r.stderr[-300:]

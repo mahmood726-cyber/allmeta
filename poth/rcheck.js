@@ -139,7 +139,11 @@
       "# S2 = (1/n) sum (SUCRA_i - 0.5)^2, S2max = (n+1) / (12 (n-1)), POTH = S2 / S2max.",
       "# The pack validates against the CRAN poth package 0.3-0, which is not in this site's WebR repository,",
       "# so both R paths use this closed form in base R.",
-      "S2 <- mean((s - 0.5)^2); S2max <- (n + 1) / (12 * (n - 1)); poth <- S2 / S2max",
+      "S2 <- mean((s - 0.5)^2); S2max <- (n + 1) / (12 * (n - 1)); poth_raw <- S2 / S2max",
+      "# LIM-P23 F15: the page (shared/poth.js) reports POTH capped to [0, 1]; scores more spread than any",
+      "# single ranking allows (e.g. rounded values) give poth_raw > 1. Apply the same stated cap and print both.",
+      "poth <- min(1, max(0, poth_raw))",
+      "if (poth_raw > 1) cat(sprintf(\"Uncapped POTH = %.6f > 1: these scores are more spread than any single ranking allows; POTH is capped at 1, as on the page.\n\", poth_raw))",
       "cat(sprintf(\"POTH = %.6f (n = %d treatments, mean SUCRA = %.6f)\n\", poth, n, mean(s)))",
       "chk(\"n treatments\", " + rnum(p.n) + ", n, 0)",
       "chk(\"percent input (1 = yes)\", " + (p.pct ? 1 : 0) + ", as.numeric(pct), 0)"

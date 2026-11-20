@@ -177,6 +177,8 @@
         + "<div class='scale-row'><span>0 — no hierarchy</span><span>median 0.67</span><span>1 — certain</span></div>"
         + "<table><thead><tr><th>Treatment</th><th>SUCRA</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>"
         + "<p class='hint' style='margin-top:0.5rem'>n = " + r.n + " treatments" + (p.pct ? " · values read as percentages (÷100)" : "") + " · mean SUCRA = " + r.meanSucra.toFixed(3) + (Math.abs(r.meanSucra - 0.5) > 0.02 ? " (SUCRAs should centre on 0.5 — check inputs)" : "")
+          // LIM-P23 F15: say when the displayed value is capped (shared/poth.js clamps to [0, 1]).
+          + (r.s2 / r.s2max > 1 + 1e-12 ? " · uncapped POTH = " + (r.s2 / r.s2max).toFixed(3) + " > 1: these scores are more spread than any single ranking allows (rounded values?), so POTH is shown capped at 1" : "")
           // LIM-P23 F19: the table and POTH are rounded for display; order and band are not.
           + " · values shown to 3 decimals; the order and the band use the unrounded values, and exact ties keep the input order</p>";
     }
