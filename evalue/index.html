@@ -111,7 +111,7 @@
         <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
-      <p id="interp"></p>
+      <p id="interp" role="status" aria-live="polite"></p>
       <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
       <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale"></svg>
       <h2 style="margin-top:1rem">Check these numbers in R</h2>
@@ -251,7 +251,8 @@
       window.__almLastEValue = function () { return null; };
       function refuse(reason) {
         tbody.textContent = "Analysis refused: " + reason;
-        document.getElementById("interp").textContent = "";
+        // LIM-P22 F23: the polite live region announces refusals as well as results.
+        document.getElementById("interp").textContent = "Analysis refused: " + reason;
         document.getElementById("plot").replaceChildren();
       }
       layout(measure);
