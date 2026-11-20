@@ -121,6 +121,8 @@
       function fmt(x, d) { return (x == null || !isFinite(x)) ? "—" : (+x).toFixed(d == null ? 3 : d); }
 
       function run() {
+        // A completed R verdict describes the analysis it was run on: every new analysis removes it (rcheck.js).
+        if (window.RevBayesRCheck && typeof window.RevBayesRCheck.invalidate === "function") window.RevBayesRCheck.invalidate();
         var scale = $("scale").value;
         var est = parseFloat($("est").value), lo = parseFloat($("lo").value), hi = parseFloat($("hi").value);
         var alpha = parseFloat($("alpha").value);
