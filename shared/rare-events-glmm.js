@@ -131,6 +131,31 @@
    *   { theta, se_theta, tau2, OR, OR_lo, OR_hi, k, n_zero_cell_studies,
    *     warnings: [] }
    */
+  // Arm-level complete separation: every informative study (double-zero and
+  // double-all-events studies set aside) has no events in the same arm, or events in
+  // every participant of the same arm. The odds-ratio MLE is then infinite in every
+  // model here; metafor::rma.glmm refuses these data ("Cannot fit ML model"), whereas
+  // the optimisers below stop at a finite point and would report it. Returns the
+  // refusal message, or null. Not a proof that every separation pattern is detected.
+  function _armSeparation(rows) {
+    var inf = rows.filter(function (r) {
+      return !((r.events_T === 0 && r.events_C === 0) || (r.events_T === r.n_T && r.events_C === r.n_C));
+    });
+    if (!inf.length) return null;
+    var all = function (p) { return inf.every(p); };
+    var arm = all(function (r) { return r.events_T === 0; }) ? "every treatment arm has 0 events"
+      : all(function (r) { return r.events_C === 0; }) ? "every control arm has 0 events"
+        : all(function (r) { return r.events_T === r.n_T; }) ? "every treatment arm has events in all participants"
+          : all(function (r) { return r.events_C === r.n_C; }) ? "every control arm has events in all participants" : null;
+    return arm ? "Complete separation: " + arm + " (studies with no events or only events in both arms set aside), so the odds ratio has no finite maximum-likelihood estimate. Not fitted." : null;
+  }
+
+  function _zeroCellCount(rows) {
+    return rows.filter(function (r) {
+      return r.events_T === 0 || r.events_T === r.n_T || r.events_C === 0 || r.events_C === r.n_C;
+    }).length;
+  }
+
   function fit(rowsIn, opts) {
     opts = opts || {};
     var rows = rowsIn.filter(function (r) {
@@ -141,6 +166,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (!rows.length) return { ok: false, error: "no valid rows" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, error: sep, k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
 
     // Initial guess: per-study MH-style logOR (with +0.5 only on zeros),
     // then take the mean as θ_0.
@@ -304,6 +331,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (!rows.length) return { ok: false, error: "no valid rows" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, model: "UM.FS", error: sep, k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
 
     // Seed from the conditional fit so we start near the optimum.
     var seed = fit(rowsIn, opts);
@@ -450,6 +479,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (rows.length < 2) return { ok: false, error: "need ≥ 2 valid studies", model: "CM.EL" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, error: sep, model: "CM.EL", k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
     var sts = rows.map(_cmelPrep);
     // Studies whose margin allows no variation (m1=0, or support size 1) carry no
     // information about ψ; drop them from the likelihood (they are constants).
