@@ -13863,6 +13863,17 @@ for(let i=0;i<3;i++)addSurvRow();
 })();
 document.getElementById('addStudyBtn').addEventListener('click',addStudy);
 document.getElementById('loadDemoBtn')?.addEventListener('click',loadDemo);
+// First-visit UX: the page used to open with zero studies, so every plot
+// area sat empty until the user found Load Dataset + Run Analysis. Auto-load
+// the demo network and run it so plots show immediately. Opt out with ?empty=1.
+window.addEventListener('load',()=>setTimeout(async()=>{
+  try{
+    if(/[?&]empty=1/.test(location.search))return;
+    if(AppState.studies&&AppState.studies.length>0)return;
+    loadDemo();
+    await runAnalysis();
+  }catch(e){console.error('Auto-demo failed:',e)}
+},400));
 document.getElementById('clearAllBtn').addEventListener('click',clearAll);
 
 // ---- ma-comparisons-v1 bus interop (C-2 NMA-shape) -------------------------
