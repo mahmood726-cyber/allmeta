@@ -88,7 +88,7 @@
     var bs = "padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer;font:inherit";
     host.innerHTML = '<h2 style="margin-top:1rem">Check in R</h2>' +
       '<div style="display:flex;gap:.5rem;flex-wrap:wrap">' +
-      '<button type="button" id="rcheck-dl" style="' + bs + '" title="Download an R script that refits the current analysis with metafor and compares every displayed number">Download R script</button>' +
+      '<button type="button" id="rcheck-dl" style="' + bs + '" title="Download an R script that refits the current analysis with metafor and compares, at display precision, the pooled estimate, SE, 95% CI, tau^2, I^2, 95% PI and study weights (not the study CIs or the forest geometry)">Download R script</button>' +
       '<button type="button" id="rcheck-webr" style="' + bs + '" title="Run the same R script in your browser (WebR; first run downloads R, a few minutes)">Verify in R (WebR)</button></div>' +
       '<div id="rcheck-status" class="note" role="status" style="margin-top:.4rem"></div>' +
       '<pre id="rcheck-out" style="white-space:pre-wrap;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.5rem;max-height:28rem;overflow:auto;display:none"></pre>';

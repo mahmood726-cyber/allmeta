@@ -21,3 +21,11 @@ def test_L11_no_unqualified_identity_with_metafor():
     assert "identical to" not in foot
     assert "t k−1" in foot or "t(k−1)" in foot or "t k-1" in foot
     assert "predict" in foot
+
+
+def test_L12_r_check_scope_stated():
+    # Requirement: the R check compares the pooled estimate, SE, CI, tau^2, I^2, PI and study weights
+    # (r-check.js buildScript), not study CIs or plotted geometry -- the button must not claim "every".
+    assert "every displayed number" not in RCHECK
+    m = re.search(r'id="rcheck-dl"[^>]*title="([^"]*)"', RCHECK)
+    assert m and "weights" in m.group(1) and "study CIs" in m.group(1), m and m.group(1)
