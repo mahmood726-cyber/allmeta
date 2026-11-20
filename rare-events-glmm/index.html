@@ -226,7 +226,8 @@ Trial 8, 1, 210, 3, 215</textarea>
         "di <- c(" + di + ")",
         'res <- rma.glmm(measure="OR", ai=ai, bi=bi, ci=ci, di=di, model="UM.RS")',
         "summary(res)                 # logOR, SE, CI, tau^2 (study-level), sigma^2",
-        'predict(res, transf=exp)     # pooled OR with 95% CI'
+        'predict(res, transf=exp)     # pooled OR with 95% CI',
+        'cat("\\nNOT A CHECK: the page displays no UM.RS numbers (R-only model), so there is nothing to compare; the metafor fit above is the result.\\n")'
       ].join("\n");
     }
     function renderUMRS(rows) {
