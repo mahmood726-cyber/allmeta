@@ -558,9 +558,12 @@
     }
     function puniformP(z) {
       const k = z.length, tol = 1e-12;
-      const maxz = Math.max(...z);
+      // Loops, not Math.max(...z): spread arguments overflow the call stack for large k (RangeError).
+      // Same value as the spread form, including NaN propagation.
+      const arrMax = (xs) => xs.reduce((a, b) => Math.max(a, b), -Infinity);
+      const maxz = arrMax(z);
       const bo = [maxz - 38, maxz + 3];
-      const boExtLb = Math.max(...z.map(zi => (-(700 - 0.5 * (zi - PU_ZCV) ** 2) / (zi - PU_ZCV) + PU_ZCV)));
+      const boExtLb = arrMax(z.map(zi => (-(700 - 0.5 * (zi - PU_ZCV) ** 2) / (zi - PU_ZCV) + PU_ZCV)));
       const f = (target) => (d) => puSumQ(z, d) - target;
       let est = puBisect(f(k / 2), bo[0], bo[1], tol);
       if (Number.isNaN(est)) est = puBisect(f(k / 2), boExtLb, bo[1], tol);
