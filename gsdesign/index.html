@@ -351,7 +351,10 @@
           tb.appendChild(tr);
         });
         $("simnote").textContent = "Simulated " + opts.maxNumberOfIterations + " trials per mean difference (seed " + opts.seed +
-          "). Monte Carlo standard error of a probability p is about √(p(1−p)/" + opts.maxNumberOfIterations + ").";
+          "). Monte Carlo standard error of a probability p is about √(p(1−p)/" + opts.maxNumberOfIterations + ")." +
+          // The design's bounds control type I error for planned sizes, or for re-estimated sizes only with the
+          // inverse-normal combination test; the pooled statistic after data-driven re-estimation is not calibrated.
+          (ssr && dsg.method === "groupSequential" ? " Warning: with sample-size re-estimation the pooled-data statistic is not calibrated to these bounds, so type I error is not controlled at α; read the rejection rate at mean difference 0 as the actual type I error, or use the inverse normal combination test." : "");
         writeHash(true);
       }
       ["spend", "fut", "sided"].forEach(function (id) { $(id).addEventListener("change", sync); });
