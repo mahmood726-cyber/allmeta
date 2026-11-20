@@ -383,7 +383,9 @@
     function resolveTau2(state, studies) {
       const m = state.tauMethod;
       if (m === "0") return { tau2: 0, label: "fixed effect" };
-      if (m === "manual") { const v = parseFloat(state.tau2Manual); return { tau2: isFinite(v) && v >= 0 ? v : 0, label: "manual" }; }
+      // An invalid manual entry is refused, not analysed as tau^2 = 0 under the label "manual" (LIM-P47 L09).
+      if (m === "manual") { const raw = String(state.tau2Manual == null ? "" : state.tau2Manual).trim(), v = raw === "" ? NaN : Number(raw);
+        return Number.isFinite(v) && v >= 0 ? { tau2: v, label: "manual" } : { tau2: NaN, label: "manual (invalid: enter a finite τ² ≥ 0)" }; }
       return { tau2: tau2PM(studies), label: "PM (empirical Bayes)" };
     }
 
@@ -407,7 +409,7 @@
       parts.push(statCard("τ² strategy", t.label + " = " + fmt(t.tau2, 4)));
 
       let svg = "";
-      if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
+      if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0 && Number.isFinite(t.tau2)) {
         const post = posterior(parsed.studies, mu0, tau0, t.tau2);
         _lastPost = { mu: post.mu, lo: post.lo, hi: post.hi, k: parsed.studies.length };
         // What the R check (r-check.js) recomputes: the inputs analysed and every displayed number.
@@ -435,7 +437,7 @@
         svg = buildSvg(state, parsed.studies, post, mu0, tau0);
       } else {
         _lastPost = null; _rcheck = null;
-        svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies and a valid prior (τ₀ > 0).</text></svg>";
+        svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies, a valid prior (τ₀ > 0) and a valid τ².</text></svg>";
       }
 
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
