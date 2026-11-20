@@ -1,0 +1,9 @@
+<!doctype html>
+<!-- A fixed, full-screen APP SHELL (no dialog role, no modal/overlay class) with a "Close" button
+     that closes a side panel. The harness must not press it (reviewer MINOR 4). -->
+<html><head><style>
+#app { position: fixed; inset: 0; z-index: 1; background: #fff; display: flex; }
+</style></head><body>
+<div id="app"><nav><button id="panel-close">Close</button></nav><main><button id="target">Run</button></main></div>
+<script>window.__shellClosed = false; document.getElementById("panel-close").addEventListener("click", () => { window.__shellClosed = true; });</script>
+</body></html>

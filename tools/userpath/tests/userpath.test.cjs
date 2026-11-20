@@ -1,5 +1,6 @@
 // Offline tests for tools/userpath/userpath.cjs.
-//   node --test tools/userpath/tests/
+//   node --test tools/userpath/tests/userpath.test.cjs tools/userpath/tests/planted-rev637.test.cjs
+// (Node 24 does not accept a bare directory here; see tools/userpath/README.md.)
 // The overlay test drives the system Chrome on a local fixture (no network). It needs
 // playwright-core: set PLAYWRIGHT_CORE to its path if it is not resolvable from here.
 // Without it that test is reported as SKIPPED by node:test -- a skipped test is not a pass.
@@ -54,7 +55,7 @@ test("in-page MISMATCH is a FAIL carrying its counts (all three wordings)", () =
   for (const [line, m, n] of [["MISMATCH (7 of 8 quantities agree)", 7, 8], ["MISMATCH 9/11 agree", 9, 11], ["MISMATCH 3/4", 3, 4]]) {
     const v = j(verify, { kind: "inpage", text: panelBefore + "R says: " + line + "\n", before: panelBefore });
     assert.strictEqual(v.verdict, "FAIL", line);
-    assert.match(v.why, /in-page R comparison: MISMATCH/, line);
+    assert.match(v.why, /in-page R comparison: .*MISMATCH/, line); // why quotes the whole line
     assert.deepStrictEqual([v.match, v.total], [m, n], line);
   }
 });
@@ -141,6 +142,40 @@ test("dismissOverlays on a page with no overlay does nothing", { skip: !chromium
     await p.setContent("<main><h1>App</h1><button id=x>Run</button></main>");
     const rep = await U.dismissOverlays(p);
     assert.deepStrictEqual([rep.dismissed, rep.remaining], [[], []]);
+    assert.deepStrictEqual(U.overlayVerdicts("default", rep), []);
+  } finally { await b.close().catch(() => {}); }
+});
+
+// ---- PR #637 review round -----------------------------------------------------------
+test("MINOR 1: a result outside this control's own output region is not its result", () => {
+  // page gained a MATCH (another panel's), the control's own region printed nothing
+  const r = { kind: "inpage", before: "x\n", text: "x\nOther panel: MATCH 8/8\n", region: { before: "Verify in R\n", text: "Verify in R\n" } };
+  assert.strictEqual(j(verify, r).verdict, "FAIL");
+  // the region itself printed it: that is this control's result
+  const ok = { kind: "inpage", before: "x\n", text: "x\nMATCH 8/8\n", region: { before: "Verify in R\n", text: "Verify in R\nMATCH 8/8\n" } };
+  assert.strictEqual(j(verify, ok).verdict, "PASS");
+  // a MISMATCH in the region fails even if the page also shows a MATCH elsewhere
+  const bad = { kind: "inpage", before: "", text: "MATCH 3/3\n", region: { before: "", text: "R says: MISMATCH 2/3\n" } };
+  assert.strictEqual(j(verify, bad).verdict, "FAIL");
+});
+test("MINOR 1: with no region, a page still busy before the click makes a new MATCH unattributable", () => {
+  assert.strictEqual(j(verify, { kind: "inpage", before: "", text: "MATCH 8/8\n", busyBefore: true }).verdict, "FAIL");
+  assert.strictEqual(j(verify, { kind: "inpage", before: "", text: "MATCH 8/8\n", busyBefore: false }).verdict, "PASS");
+});
+test("MAJOR 2: appUrl resolves the URL and refuses encoded dot segments", () => {
+  for (const e of ["%2e%2e/hub/index.html", ".%2E/hub/x.html", "..%2fhub", "./", ".", "//evil.example/x", "\\\\srv\\x", "C:/x.html"])
+    assert.throws(() => U.appUrl("https://h.io/allmeta/", "evalue", e), /--entry/, e);
+  assert.strictEqual(U.appUrl("https://h.io/allmeta/", "evalue", "sub/page.html"), "https://h.io/allmeta/evalue/sub/page.html");
+});
+test("MINOR 4: a fixed full-screen app shell is never pressed and gives no verdict", { skip: !chromium && "playwright-core not resolvable" }, async () => {
+  const b = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--headless=new"] });
+  try {
+    const p = await (await b.newContext({ viewport: { width: 1200, height: 800 } })).newPage();
+    await p.setContent(fixture("app-shell.html"));
+    const rep = await U.dismissOverlays(p);
+    assert.strictEqual(await p.evaluate(() => window.__shellClosed), false, "pressed the app shell's Close");
+    assert.deepStrictEqual([rep.dismissed, rep.remaining], [[], []]);
+    assert.strictEqual((rep.coveringNonDialog || []).length, 1);
     assert.deepStrictEqual(U.overlayVerdicts("default", rep), []);
   } finally { await b.close().catch(() => {}); }
 });

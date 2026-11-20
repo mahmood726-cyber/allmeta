@@ -44,3 +44,17 @@ load, known onboarding overlays (HTA tutorial and welcome) are closed by their o
 controls, never by removing DOM; any overlay left up is written to `overlays.json` and to
 `verdict.json` (`overlay: true`; a known one is a FAIL). Offline tests:
 `PLAYWRIGHT_CORE=<path> node --test tools/userpath/tests/userpath.test.cjs`.
+
+PR #637 review (2026-11-20): an in-page run ends only when the page is idle and stable (a new
+"Stage 1: MATCH 3/3" while R still runs is not a finish); any new line containing MISMATCH is a
+FAIL whatever else printed (IPD "MISMATCH (k of n compared quantities ...)", benefit-risk
+"MISMATCH k of n checks differ"); "MATCH a/b of N" is partial; "NOT CHECKED: no quantity ..." is
+UNKNOWN. Each control's result is read from its own output region (nearest ancestor, up to 4
+levels, holding a status/live/output/pre element) when one exists; before every press the harness
+waits for the live regions to go idle, and without a region a result after a busy page is not
+attributed. `--entry` is resolved with `new URL()` and must stay inside the app folder (encoded
+dots/slashes refused). Generic close buttons are pressed only in dialog-like elements (role=dialog,
+aria-modal, modal/overlay/... classes); a fixed full-screen app shell is recorded in
+`overlays.json` (`coveringNonDialog`) and never pressed. Tests:
+`node --test tools/userpath/tests/userpath.test.cjs tools/userpath/tests/planted-rev637.test.cjs`
+(Node 24 does not take a bare directory; browser tests skip without PLAYWRIGHT_CORE).

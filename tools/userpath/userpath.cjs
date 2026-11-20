@@ -24,9 +24,16 @@ const ENTRY = opt("entry", null);
 const ENTRY_MAP = { "IPD-Meta-Pro": "ipd-meta-pro.html" };
 function appUrl(base, appName, entry) {
   const e = entry || ENTRY_MAP[appName] || "";
-  // the entry is a file inside the app folder, never another folder or site
-  if (e && (/^[a-z][a-z0-9+.-]*:/i.test(e) || /(^|[\\/])\.\.([\\/]|$)/.test(e) || /^[\\/]/.test(e))) throw new Error("--entry must be a file inside the app folder: " + e);
-  return base + appName + "/" + e;
+  // The entry is a file inside the app folder, never another folder or site. Checked on the URL
+  // as the browser resolves it (so %2e%2e/ and .%2E/ dot segments cannot climb out), plus a
+  // refusal of any encoded dot/slash/backslash, schemes, and absolute or UNC-style paths.
+  const dir = new URL(appName + "/", base);
+  if (!e) return dir.href;
+  const bad = () => new Error("--entry must be a file inside the app folder: " + e);
+  if (/%(2e|2f|5c)/i.test(e) || /^[a-z][a-z0-9+.-]*:/i.test(e) || /^[\\/]/.test(e) || /(^|[\\/])\.\.?([\\/]|$)/.test(e)) throw bad();
+  const u = new URL(e, dir);
+  if (u.origin !== dir.origin || !u.pathname.startsWith(dir.pathname) || u.pathname === dir.pathname) throw bad();
+  return u.href;
 }
 const PASTED = opt("pasted", null);
 // The data box: an explicit --textarea selector, else the usual ids, else the tallest
@@ -80,40 +87,70 @@ function judge(c, r) {
   return { verdict: "UNKNOWN", why: "kind " + r.kind };
 }
 
-// The terminal line an in-page R check prints, in every wording the pages use:
-//   "MATCH 8/8 (2 more NOT CHECKED: see above)", "MISMATCH (7 of 8 quantities agree)",
-//   "MISMATCH 9/11 agree", "MISMATCH 3/4", "MISMATCH (nothing could be checked)",
-//   "NOT CHECKED (no estimate was compared ...)", optionally after "<prefix>: "
-//   ("R (WebR 0.5.5, ...): MATCH 11/11", "... base-R checks: MATCH 10/10.").
-// Help text such as "ends with MATCH n/n or MISMATCH" has no counts and is not a result.
-const VERDICT_LINE = /(?:^|:[ \t]+)(MATCH (\d+)\/(\d+)\b|MISMATCH(?: \((\d+) of (\d+) quantities agree\)| (\d+)\/(\d+)(?: agree)?\b| \(nothing could be checked\))|NOT CHECKED \((?:no estimate|nothing)[^)\n]*\))/gm;
-function verdictLines(s) {
-  return [...String(s || "").matchAll(VERDICT_LINE)].map((m) => ({
-    line: m[1], kind: m[1].startsWith("MATCH") ? "MATCH" : m[1].startsWith("MISMATCH") ? "MISMATCH" : "NOT CHECKED",
-    match: m[2] != null ? +m[2] : m[4] != null ? +m[4] : m[6] != null ? +m[6] : null,
-    total: m[3] != null ? +m[3] : m[5] != null ? +m[5] : m[7] != null ? +m[7] : null }));
+// In-page R check results, read LINE BY LINE from the text that is new since the click.
+// Wordings seen on the pages:
+//   MATCH:      "MATCH 8/8 (2 more NOT CHECKED: see above)", "R (WebR 0.5.5, ...): MATCH 11/11",
+//               "... base-R checks: MATCH 10/10."  ("MATCH a/b of N" means a/b of N in all)
+//   MISMATCH:   "MISMATCH (7 of 8 quantities agree)", "MISMATCH 9/11 agree", "MISMATCH 3/4",
+//               "MISMATCH (nothing could be checked)", benefit-risk "MISMATCH 2 of 5 checks differ",
+//               IPD-Meta-Pro "MISMATCH (2 of 10 compared quantities outside the panel tolerance ...)".
+//               ANY new line with the word MISMATCH makes the control FAIL, whatever else printed
+//               (a "Section: MATCH 3/3" next to it does not rescue it).
+//   NOT CHECKED: "NOT CHECKED (no estimate was compared ...)", "NOT CHECKED: no quantity ...".
+// Help text ("ends with MATCH n/n or MISMATCH") has no counts and is stripped before the test.
+const HELP_PHRASE = /\b(?:MATCH(?: n\/n)?\s+)?or\s+MISMATCH\b/g;
+const MATCH_RE = /(?:^|:\s+)MATCH (\d+)\/(\d+)(?:\s+of\s+(\d+))?/;
+const NOTCHECKED_RE = /(?:^|:\s+)NOT CHECKED(?: \(|: )(?:no |nothing)/;
+function classifyLine(line) {
+  const s = String(line).trim();
+  if (/\bMISMATCH\b/.test(s.replace(HELP_PHRASE, ""))) {
+    const v = { line: s, kind: "MISMATCH", match: null, total: null, differ: null };
+    const slash = /MISMATCH\s+\(?(\d+)\/(\d+)/.exec(s);
+    const of = /(\d+) of (\d+)/.exec(s);
+    if (slash) { v.match = +slash[1]; v.total = +slash[2]; }
+    else if (of && /\bagree/.test(s)) { v.match = +of[1]; v.total = +of[2]; }
+    else if (of) { v.differ = +of[1]; v.total = +of[2]; }
+    return v;
+  }
+  const m = MATCH_RE.exec(s);
+  if (m) return { line: s, kind: "MATCH", match: +m[1], total: m[3] != null ? +m[3] : +m[2], of: m[3] != null ? +m[2] : null };
+  if (NOTCHECKED_RE.test(s)) return { line: s, kind: "NOT CHECKED", match: null, total: null };
+  return null;
 }
-// Lines present after the click that were not already on the page before it (multiset).
+const linesOf = (s) => String(s || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+function verdictLines(s) { return linesOf(s).map(classifyLine).filter(Boolean); }
+// Result lines present after the click that were not already there before it (multiset of lines).
 function freshVerdictLines(before, after) {
-  const old = verdictLines(before).map((v) => v.line);
-  return verdictLines(after).filter((v) => { const i = old.indexOf(v.line); if (i >= 0) { old.splice(i, 1); return false; } return true; });
+  const old = linesOf(before);
+  return linesOf(after).filter((l) => { const i = old.indexOf(l); if (i >= 0) { old.splice(i, 1); return false; } return true; })
+    .map(classifyLine).filter(Boolean);
 }
+// Something on the page was still in progress when this control was pressed: a result that
+// appears later may be that earlier run's, not this control's (reviewer case 1b).
+const PROGRESS_LINE = /^.*\b(installing|loading|booting|running|downloading|fitting|starting|initiali[sz]ing|verifying)\b[^\n]*(\.\.\.|…)\s*$/im;
 function judgeInpageVerdict(r) {
-  const fresh = freshVerdictLines(r.before, r.text || "");
-  // an error this control produced (not one already on the page) is a failure whatever else printed
+  // Prefer the control's own output region (nearest enclosing block with a status/output
+  // element, captured before and after the click); fall back to the whole page.
+  const own = r.region && r.region.text != null;
+  const before = own ? r.region.before : r.before, text = own ? r.region.text : (r.text || "");
+  const where = own ? "" : " (page text; no output region found for this control)";
+  // an error this control produced (not one already there) is a failure whatever else printed
   const ERR = /is not a function|Validation refused|live R comparison unavailable/gi;
   const errs = (x) => (String(x || "").match(ERR) || []).length;
-  if (errs(r.text) > errs(r.before)) return { verdict: "FAIL", why: "in-page refusal or error" };
-  // A MISMATCH anywhere in what this control printed outranks a MATCH summary.
-  const v = fresh.find((x) => x.kind === "MISMATCH") || fresh[fresh.length - 1];
-  const counts = (x) => ({ match: x.match, total: x.total });
-  if (v && v.kind === "MISMATCH") return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + v.line }, counts(v));
-  if (r.stillBusy) return { verdict: "FAIL", why: "in-page R comparison still running when the wait ran out (blocked)" };
-  if (!v) return { verdict: "FAIL", why: "in-page R comparison did not complete (no new MATCH/MISMATCH line)" };
-  if (v.kind === "NOT CHECKED") return { verdict: "UNKNOWN", why: "in-page R comparison checked nothing: " + v.line };
-  if (!(v.total > 0)) return Object.assign({ verdict: "UNKNOWN", why: "in-page R comparison: " + v.line + " (0 quantities checked)" }, counts(v));
-  if (v.match === v.total) return Object.assign({ verdict: "PASS", why: "in-page R comparison: " + v.line }, counts(v));
-  return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + v.line }, counts(v));
+  if (errs(text) > errs(before)) return { verdict: "FAIL", why: "in-page refusal or error" + where };
+  const fresh = freshVerdictLines(before, text);
+  const counts = (x) => { const o = { match: x.match, total: x.total }; if (x.differ != null) o.differ = x.differ; return o; };
+  const mm = fresh.find((x) => x.kind === "MISMATCH");
+  if (mm) return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + mm.line + where }, counts(mm));
+  if (r.stillBusy) return { verdict: "FAIL", why: "in-page R comparison still running when the wait ran out (blocked)" + where };
+  const v = fresh[fresh.length - 1]; // the final result line decides
+  if (!v) return { verdict: "FAIL", why: "in-page R comparison did not complete (no new MATCH/MISMATCH line)" + where };
+  if (!own && (r.busyBefore || PROGRESS_LINE.test(String(before || ""))))
+    return { verdict: "FAIL", why: "a run was still in progress when this control was pressed, so the new result line cannot be attributed to it: " + v.line };
+  if (v.kind === "NOT CHECKED") return { verdict: "UNKNOWN", why: "in-page R comparison checked nothing: " + v.line + where };
+  if (!(v.total > 0)) return Object.assign({ verdict: "UNKNOWN", why: "in-page R comparison: " + v.line + " (0 quantities checked)" + where }, counts(v));
+  if (v.match === v.total && v.of == null) return Object.assign({ verdict: "PASS", why: "in-page R comparison: " + v.line + where }, counts(v));
+  return Object.assign({ verdict: "FAIL", why: "in-page R comparison: " + v.line + where }, counts(v));
 }
 
 async function bodyText(p) { try { return await p.evaluate(() => document.body.innerText); } catch (e) { return "(unreadable: " + e.message + ")"; } }
@@ -121,6 +158,16 @@ async function bodyText(p) { try { return await p.evaluate(() => document.body.i
 const BUSY_RE = /booting|installing|loading|verifying sha|running|fitting|please wait|starting webr|downloading|initialis|initializ|importing|using webr baseurl|---- running ----/i;
 async function statusText(p) {
   try { return await p.evaluate(() => [...document.querySelectorAll("[role=status],[aria-live],[aria-busy=true]")].map((e) => e.innerText || "").join(" | ")); } catch (e) { return ""; }
+}
+// True once the page's status / live regions read idle on two polls in a row; false if they
+// still read busy when maxMs runs out.
+async function waitIdle(p, maxMs) {
+  const t0 = Date.now(); let idle = 0;
+  while (Date.now() - t0 < maxMs) {
+    if (BUSY_RE.test(await statusText(p))) idle = 0; else if (++idle >= 2) return true;
+    await p.waitForTimeout(1000);
+  }
+  return false;
 }
 let lastSettleBusy = false; // true when settle() gave up while the page still looked busy
 // Onboarding overlays that cover an app on first visit. Each is closed by the control a user
@@ -149,7 +196,11 @@ async function coveringElements(p) {
       if (out.some((o) => o.el.contains(e))) continue;
       out.push({ el: e });
     }
-    return out.map((o) => { const e = o.el; return { id: e.id || null, cls: String(e.className || "").slice(0, 80), name: (e.id ? "#" + e.id : e.tagName.toLowerCase() + (e.className ? "." + String(e.className).split(/\s+/)[0] : "")), text: (e.innerText || "").trim().slice(0, 120) }; });
+    return out.map((o) => { const e = o.el;
+      const role = e.getAttribute("role");
+      const dialogish = role === "dialog" || role === "alertdialog" || e.getAttribute("aria-modal") === "true" || e.tagName === "DIALOG" ||
+        /modal|overlay|dialog|popup|lightbox|onboard|welcome|tutorial|tour|coachmark/i.test((e.id || "") + " " + String(e.className || ""));
+      return { id: e.id || null, dialogish, cls: String(e.className || "").slice(0, 80), name: (e.id ? "#" + e.id : e.tagName.toLowerCase() + (e.className ? "." + String(e.className).split(/\s+/)[0] : "")), text: (e.innerText || "").trim().slice(0, 120) }; });
   }).catch(() => []);
 }
 async function overlayUp(p, sel) {
@@ -186,6 +237,9 @@ async function dismissOverlays(p, logf) {
     // Page-covering elements no entry knows: try a close control a user would press.
     for (const c of await coveringElements(p)) {
       if (KNOWN_OVERLAYS.some((k) => c.id && k.root.startsWith("#" + c.id))) continue;
+      // Reviewer MINOR 4: press a close control only in something that looks like a dialog,
+      // never in a fixed full-screen app shell (its "Close" may close a panel or the app).
+      if (!c.dialogish) continue;
       const root = c.id ? p.locator("#" + c.id) : null;
       if (!root) continue;
       const btn = root.getByRole("button", { name: CLOSE_NAME }).first();
@@ -203,7 +257,8 @@ async function dismissOverlays(p, logf) {
   for (const k of KNOWN_OVERLAYS) if (await overlayUp(p, k.root)) rep.remaining.push({ name: k.name, known: true });
   for (const c of await coveringElements(p)) {
     if (KNOWN_OVERLAYS.some((k) => c.id && k.root.startsWith("#" + c.id))) continue;
-    rep.remaining.push({ name: c.name, known: false, text: c.text });
+    if (c.dialogish) rep.remaining.push({ name: c.name, known: false, text: c.text });
+    else (rep.coveringNonDialog = rep.coveringNonDialog || []).push({ name: c.name, text: c.text }); // recorded only: never pressed, not a verdict
   }
   for (const x of rep.remaining) say(`overlay NOT dismissed: ${x.name}${x.known ? " (known onboarding overlay)" : " (page-covering element)"}`);
   return rep;
@@ -233,16 +288,24 @@ async function settle(p, maxMs, re, before) {
     // Terminal states only: the validator status pill reads "Running R in WebR..."
     // while busy and Match / Mismatch / WebR failed when done.
     // In the page: a MATCH/MISMATCH line that was not there before the click is a finish.
-    const freshDone = before != null && freshVerdictLines(before, t).length > 0;
-    const done = freshDone || /Browser vs R \((Match|Mismatch|WebR failed)\)|live R quantities (passed|failed)|Validation refused/i.test(t);
+    if (before != null) {
+      // In-page run (reviewer MAJOR 1): a new result line is NOT a finish while the page still
+      // reads busy -- "Stage 1: MATCH 3/3" can print while stage 2 runs and ends in MISMATCH.
+      // Finish only when the page is idle AND stable, so the line judged is the final one.
+      const busyIn = BUSY_RE.test(t.slice(-4000)) || BUSY_RE.test(st);
+      lastBusy = busyIn;
+      const fresh = freshVerdictLines(before, t).length > 0;
+      if (!busyIn && fresh && Date.now() - stableSince > 8000) return t;
+      if (!busyIn && Date.now() - stableSince > 30000) return t; // idle with no result: judged as not completed
+      continue;
+    }
+    const done = /Browser vs R \((Match|Mismatch|WebR failed)\)|live R quantities (passed|failed)|Validation refused/i.test(t);
     const busy = !done && (BUSY_RE.test(t.slice(-4000)) || BUSY_RE.test(st));
     lastBusy = busy || BUSY_RE.test(st);
     // With a target pattern, any finished marker (validator or in-page panel) ends the wait.
     const terminal = done || /R finished\.|\d+\/\d+ live R|FAIL:/i.test(t);
     if (re && terminal && Date.now() - stableSince > 8000) return t;
-    // In-page run with no result line yet: a quiet page is not a finish until it has been quiet longer.
-    const quiet = before != null && !freshDone ? 30000 : 8000;
-    if (re && re.test(t) && Date.now() - stableSince > quiet && !busy) return t;
+    if (re && re.test(t) && Date.now() - stableSince > 8000 && !busy) return t;
     if (!busy && Date.now() - stableSince > 20000) return t;
   }
   lastSettleBusy = lastBusy;
@@ -314,6 +377,24 @@ async function main() {
           r.error = "not visible"; results.push(r);
           verdicts.push(Object.assign({ tag, control: c.id || c.text }, judge(c, r))); continue;
         }
+        // Reviewer MINOR 1: never press a control while an earlier one is still running, or that
+        // run's late result is read as this control's. Wait for the live regions to go idle.
+        r.busyBefore = !(await waitIdle(page, 420000));
+        if (r.busyBefore) note(`${tag}: page still busy before ${c.id || c.text}; its result will not be attributed`);
+        // The control's own output region: nearest ancestor (<= 4 levels, not body/main) holding a
+        // status / live / output / pre element. Its text is judged instead of the whole page.
+        const regionKey = "up" + results.length;
+        const hasRegion = await handle.evaluate((el, key) => {
+          let a = el.parentElement;
+          for (let lvl = 0; a && lvl < 4; lvl++, a = a.parentElement) {
+            if (/^(BODY|HTML|MAIN)$/.test(a.tagName)) return false;
+            const o = [...a.querySelectorAll("[role=status],[aria-live],output,pre")].filter((x) => !el.contains(x));
+            if (o.length) { a.setAttribute("data-up-region", key); return true; }
+          }
+          return false;
+        }, regionKey).catch(() => false);
+        const regionText = () => page.evaluate((key) => { const e = document.querySelector(`[data-up-region="${key}"]`); return e ? e.innerText : null; }, regionKey).catch(() => null);
+        const regionBefore = hasRegion ? await regionText() : null;
         const popupP = ctx.waitForEvent("page", { timeout: 8000 }).catch(() => null);
         const dlP = page.waitForEvent("download", { timeout: 8000 }).catch(() => null);
         const before = await bodyText(page);
@@ -357,6 +438,7 @@ async function main() {
           r.kind = "inpage";
           const after = await settle(page, 420000, /(estimate|tau|rma|metafor|error|failed|match|pass|fail)/i, before);
           r.text = after; r.before = before; r.stillBusy = lastSettleBusy; // full text kept
+          if (hasRegion) { const rt = await regionText(); if (rt != null) r.region = { key: regionKey, before: regionBefore, text: rt }; }
           await page.screenshot({ path: path.join(out, `${tag}-${c.id || "inpage"}.png`), fullPage: true }).catch(() => {});
         }
       } catch (e) { r.error = String(e.message || e).slice(0, 500); }
