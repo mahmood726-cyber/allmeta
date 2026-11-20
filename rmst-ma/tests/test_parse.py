@@ -50,3 +50,12 @@ def test_default_example_rows_unchanged():
     assert [(r["label"], r["diff"], r["se"]) for r in rows] == [
         ("Trial A", 1.2, 0.4), ("Trial B", 0.8, 0.5), ("Trial C", 2.1, 0.6),
         ("Trial D", 0.5, 0.45), ("Trial E", 1.5, 0.55), ("Trial F", 1.0, 0.3)]
+
+
+# L03: exactly three fields; a fourth column or decimal commas must not be re-read as other numbers
+@pytest.mark.parametrize("line", ["T1, 12, 1.2, 0.4", "T1, 1,2, 0,4", "Smith, 2010, 1.2, 0.4", "T1, 1.2"])
+def test_not_three_fields_refused(line):
+    out = _parse(line + "\nT2, 0.5, 0.3")
+    assert out["rows"] == [{"label": "T2", "diff": 0.5, "se": 0.3, "v": 0.09}]
+    assert [r["line"] for r in out["rejected"]] == [1]
+    assert "expected exactly 3" in out["rejected"][0]["reason"]

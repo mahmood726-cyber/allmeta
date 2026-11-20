@@ -41,7 +41,7 @@
 <main id="main">
   <section class="panel">
     <h2>Studies</h2>
-    <label>One row per trial: <code>label, RMST difference, SE</code> (same time units, same horizon τ*).
+    <label>One row per trial: <code>label, RMST difference, SE</code> &mdash; exactly three comma-separated fields, decimal points (same time units, same horizon τ*).
       <textarea id="f-data" spellcheck="false" aria-label="Study data" aria-describedby="parse-notes"></textarea>
     </label>
     <div id="parse-notes" class="note" role="status" aria-live="polite" hidden style="margin-top:.4rem;color:#9a3b1b"></div>
@@ -85,9 +85,13 @@
       String(text || "").split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         function refuse(reason) { rejected.push({ line: i + 1, text: t, reason: reason }); }
-        var p = t.split(/\s*,\s*/); if (p.length < 3) { refuse("has " + p.length + " field" + (p.length === 1 ? "" : "s") + "; expected label, RMST difference, SE"); return; }
-        var se = strictNum(p[p.length - 1]), diff = strictNum(p[p.length - 2]);
-        var label = p.slice(0, p.length - 2).join(", ") || ("Trial " + (rows.length + 1));
+        // Exactly three fields. With more, the last two used to be taken as difference and SE and the rest
+        // joined into the label, so a horizon column ("A, 12, 1.2, 0.4") or decimal commas ("A, 1,2, 0,4")
+        // were silently pooled as other numbers.
+        var p = t.split(/\s*,\s*/);
+        if (p.length !== 3) { refuse("has " + p.length + " field" + (p.length === 1 ? "" : "s") + "; expected exactly 3: label, RMST difference, SE (no extra columns, no commas in labels, decimal points not commas)"); return; }
+        var se = strictNum(p[2]), diff = strictNum(p[1]);
+        var label = p[0] || ("Trial " + (rows.length + 1));
         if (!isFinite(diff)) { refuse("RMST difference \"" + p[p.length - 2] + "\" is not a decimal number"); return; }
         if (!(isFinite(se) && se > 0)) { refuse("SE \"" + p[p.length - 1] + "\" is not a positive decimal number"); return; }
         rows.push({ label: label, diff: diff, se: se, v: se * se });
