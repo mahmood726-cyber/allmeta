@@ -18,16 +18,19 @@
   function rStrVec(a) { return "c(" + a.map(rStr).join(", ") + ")"; }
   var R_HELPERS = [
     "## ---- comparison helpers -------------------------------------------------",
-    "## chk(): |R - page| <= min(tol * max(1, |page|), 5e-4) with tol = 1e-6, so never looser than the",
-    "## page's displayed precision (3-4 decimals). A quantity the page shows as undefined (\"--\") matches",
+    "## chk(): |R - page| <= min(tol * max(min(1, scale), |page|), 5e-4) with tol = 1e-6, so never looser than the",
+    "## page's displayed precision (3-4 decimals). scale is the size of the quantity's units in the data (default 1):",
+    "## with max(1, |page|) the tolerance was an ABSOLUTE 1e-6 below 1, so on data in tiny units (1e-8) a mean or",
+    "## CrI passed whatever the page showed; min(1, scale) only ever tightens it (review, lane minors).",
+    "## A quantity the page shows as undefined (\"--\") matches",
     "## only an undefined R value of the same kind (NA/NaN with NA/NaN, Inf with the same signed Inf).",
     ".res <- data.frame(quantity = character(0), ok = logical(0), stringsAsFactors = FALSE)",
     "## half: half a unit of the digits the page shows for this quantity (default 5e-4 = 3 decimals); the cap",
     "## is never looser than the display, also for values shown to 4 decimals or as exp(log value).",
-    "chk <- function(q, r, page, tol = 1e-6, half = 5e-4) {",
+    "chk <- function(q, r, page, tol = 1e-6, half = 5e-4, scale = 1) {",
     "  r <- as.numeric(r); page <- as.numeric(page)",
     "  if (!is.finite(page) || !is.finite(r)) { ok <- (is.na(page) && is.na(r)) || identical(page, r); d <- NA_real_ }",
-    "  else { d <- abs(r - page); ok <- d <= min(tol * max(1, abs(page)), half) }",
+    "  else { d <- abs(r - page); ok <- d <= min(tol * max(min(1, scale), abs(page)), half) }",
     "  cat(sprintf(\"%-36s R = %-18.12g page = %-18.12g |diff| = %-9s %s\\n\", q, r, page,",
     "              if (is.na(d)) \"-\" else sprintf(\"%.2e\", d), if (ok) \"ok\" else \"DIFFERS\"))",
     "  .res[nrow(.res) + 1, ] <<- list(q, ok); invisible(ok) }",
@@ -125,12 +128,13 @@
     L.push("prec <- 1 / tau0^2 + sum(1 / (v + tau2))");
     L.push("post_mu <- (mu0 / tau0^2 + sum(yi / (v + tau2))) / prec; post_sd <- sqrt(1 / prec)");
     L.push("z <- qnorm(0.975)");
+    L.push("S <- max(abs(c(yi, sei)))   # the size of the data's units: mu and the CrI are on it, tau^2 on its square");
     L.push("cat(\"bayesian-ma R check:\", k, \"studies; tau^2 strategy\", tau_method, \"\\n\")");
     L.push("chk(\"k\", k, page$k, 0)");
-    L.push("chk(\"tau^2 (plug-in)\", tau2, page$tau2, half = 5e-5)   # shown to 4 decimals");
-    L.push("chk(\"posterior mean\", post_mu, page$mu)");
-    L.push("chk(\"95% CrI lower\", post_mu - z * post_sd, page$lo)");
-    L.push("chk(\"95% CrI upper\", post_mu + z * post_sd, page$hi)");
+    L.push("chk(\"tau^2 (plug-in)\", tau2, page$tau2, half = 5e-5, scale = S^2)   # shown to 4 decimals");
+    L.push("chk(\"posterior mean\", post_mu, page$mu, scale = S)");
+    L.push("chk(\"95% CrI lower\", post_mu - z * post_sd, page$lo, scale = S)");
+    L.push("chk(\"95% CrI upper\", post_mu + z * post_sd, page$hi, scale = S)");
     L.push("if (is.finite(threshold)) chk(sprintf(\"P(theta < %g)\", threshold), pnorm((threshold - post_mu) / post_sd), page$pLess)");
     L.push("if (is.finite(rope) && rope > 0) chk(sprintf(\"P(|theta| < %g)\", rope), pnorm((rope - post_mu) / post_sd) - pnorm((-rope - post_mu) / post_sd), page$pInside)");
     L.push("cat(\"R:\", R.version.string, if (tau_method == \"PM\" && k >= 2) paste(\"| metafor\", packageVersion(\"metafor\")) else \"\", \"\\n\")");
