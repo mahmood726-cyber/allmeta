@@ -648,7 +648,7 @@
       if (inp.n_numeric_excluded) parts.push(`${inp.n_numeric_excluded} excluded (not 0 &lt; p &lt; .05)`);
       if (inp.invalid.length) parts.push(`${inp.invalid.length} not read as numbers: ` +
         inp.invalid.slice(0, 5).map(t => `<code>${t.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch])}</code>`).join(", ") +
-        (inp.invalid.length > 5 ? ", …" : ""));
+        (inp.invalid.length > 5 ? `, … (first 5 shown)` : ""));
       if (note) note.innerHTML = parts.join("; ") + ".";
       const refuse = (why) => {
         document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">${why}</td></tr>`;
