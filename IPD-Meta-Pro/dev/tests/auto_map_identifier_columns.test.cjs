@@ -79,6 +79,65 @@ const ID_LIKE = /^(patient_id|subject|record_no|row)$/;
   check('... a column the user chose there is kept', run("document.getElementById('varEvent').value") === 'vomit', run("document.getElementById('varEvent').value"));
 }
 {
+  // Review of #644: a name ending in code/no/num/number/key is an identifier only after an id-like head (patient,
+  // subject, record, participant, ...). response_code, status_code and event_no are outcomes; a 0/1 column is never
+  // an identifier by its name alone.
+  const NL = String.fromCharCode(10);
+  const csv = (headers, n, gen) => [headers.join(',')].concat(Array.from({ length: n }, (_, k) => headers.map((h) => gen(h, k + 1)).join(','))).join(NL) + NL;
+  const base = (h, i) => h === 'pid' ? i : h === 'study_id' ? 'S' + (1 + i % 5) : h === 'treatment' ? Math.floor(i / 5) % 2 : null;
+  const bin = (i) => (i * 7) % 3 === 0 ? 1 : 0;
+  load(csv(['pid', 'study_id', 'treatment', 'response_code', 'baseline_score'], 30, (h, i) => base(h, i) ?? (h === 'response_code' ? bin(i) : 10 + (i * 3) % 17)));
+  let rep = JSON.parse(JSON.stringify(run('ipd80AutoMapVariables({ silent: true })')));
+  check('response_code (0/1) + baseline_score: binary outcome response_code, never the continuous baseline_score',
+    rep.outcomeType === 'binary' && rep.mapped.varEvent === 'response_code', JSON.stringify(rep));
+  for (const name of ['status_code', 'event_no']) {
+    load(csv(['pid', 'study_id', 'treatment', name, 'age'], 30, (h, i) => base(h, i) ?? (h === name ? bin(i) : 30 + i % 40)));
+    rep = JSON.parse(JSON.stringify(run('ipd80AutoMapVariables({ silent: true })')));
+    check(name + ' (0/1): binary outcome ' + name + ', confident', rep.outcomeType === 'binary' && rep.mapped.varEvent === name && rep.outcomeConfident === true, JSON.stringify(rep));
+  }
+  const names = { response_code: false, status_code: false, event_no: false, events_num: false, baseline_score: false, cost_key: false,
+    patient_no: true, patient_code: true, subject_number: true, record_num: true, participant_key: true, id_no: true, patient_id: true, pid: true };
+  for (const k of Object.keys(names)) {
+    sandbox.__n = k;
+    check('identifier by name: ' + k + ' -> ' + names[k], run('ipd80IsIdentifierName(__n)') === names[k], String(run('ipd80IsIdentifierName(__n)')));
+  }
+  load(csv(['pid', 'study_id', 'treatment', 'case', 'age'], 30, (h, i) => base(h, i) ?? (h === 'case' ? bin(i) : 30 + i % 40)));
+  check('a 0/1 column named "case" is not an identifier', run("ipd80IsIdentifierField('case')") === false, String(run("ipd80IsIdentifierField('case')")));
+}
+{
+  // Review of #644, minor 2: auto-map (also called by Fast Path and the SOP lock) never clears a column the user chose
+  // by hand on the Event control, even one that looks like an identifier; one left there by code is still cleared.
+  const NL = String.fromCharCode(10);
+  const rows = ['patient_id,study_id,treatment,nausea,vomit,cost,case'];
+  for (let i = 1; i <= 40; i++) rows.push([i, 'S' + (1 + i % 5), Math.floor(i / 5) % 2, i % 3 === 0 ? 1 : 0, i % 4 === 0 ? 1 : 0, 1000 + i * 37, i % 2].join(','));
+  load(rows.join(NL) + NL);
+  check('cost (a different integer on every row) looks like an identifier', run("ipd80IsIdentifierField('cost')") === true, '');
+  for (const v of ['cost', 'case', 'patient_id']) {
+    sandbox.__v = v;
+    run("(function () { var el = document.getElementById('varEvent'); el.value = __v; ipd80NoteUserSelect('varEvent', el.value); ipd80AutoMapVariables({ silent: true }); })()");
+    check('a column the user chose by hand on the Event control (' + v + ') is kept by auto-map', run("document.getElementById('varEvent').value") === v, run("document.getElementById('varEvent').value"));
+  }
+  // a choice made for another file does not protect the column in this one
+  run("ipd80NoteUserSelect('varEvent', 'patient_id')");
+  load(rows.join(NL).replace(/,S/g, ',T') + NL);
+  run("document.getElementById('varEvent').value = 'patient_id'; ipd80AutoMapVariables({ silent: true })");
+  check('... a hand choice made before a different file was loaded does not stop the identifier being cleared', run("document.getElementById('varEvent').value") === '', run("document.getElementById('varEvent').value"));
+  load(rows.join(NL) + NL);
+  run("ipd80NoteUserSelect('varEvent', 'vomit'); document.getElementById('varEvent').value = 'patient_id'; ipd80AutoMapVariables({ silent: true })");
+  check('... after the user then chose vomit, an identifier put there by code (not by the user) is still cleared', run("document.getElementById('varEvent').value") === '', run("document.getElementById('varEvent').value"));
+}
+{
+  // Review of #644, minor 3: weight (a patient characteristic) as the only candidate: nothing is suggested or run,
+  // and the warning tells the user to map the outcome.
+  const NL = String.fromCharCode(10);
+  const rows = ['pid,study_id,treatment,weight,age'];
+  for (let i = 1; i <= 30; i++) rows.push([i, 'S' + (1 + i % 5), Math.floor(i / 5) % 2, 60.5 + (i * 7) % 30, 30 + i % 40].join(','));
+  load(rows.join(NL) + NL);
+  const b = JSON.parse(JSON.stringify(run("runAdoptionBoosterAfterDataLoad('upload3', { silent: true })")));
+  check('weight-only file: no analysis run', run('__runCalls') === 0 && b.ranAnalysis === false, JSON.stringify(b));
+  check('... the warning says to map the outcome', run('__notes').some((n) => /^warning/.test(n) && /map the columns/i.test(n) && /outcome/i.test(n)), JSON.stringify(run('__notes')));
+}
+{
   // Beyond-R methods choose a covariate by themselves (numericCovariateField): with no preferred name (age, bmi, ...)
   // they took the first numeric column, i.e. patient_id. The identifier is skipped; the next numeric column is used.
   const NL = String.fromCharCode(10);

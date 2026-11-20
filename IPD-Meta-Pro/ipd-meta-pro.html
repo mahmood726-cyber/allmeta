@@ -551,7 +551,7 @@
 
                             <label class="form-label">Event/Outcome Variable</label>
 
-                            <select class="form-select" id="varEvent" aria-label="Event/Outcome Variable"></select>
+                            <select class="form-select" id="varEvent" aria-label="Event/Outcome Variable" onchange="ipd80NoteUserSelect('varEvent', this.value)"></select>
 
                         </div>
 
@@ -91421,7 +91421,10 @@ function ipd80LooksBinaryField(field) {
 // continuous branch of ipd80AutoMapVariables took the first numeric column that was not study/treatment/time/year,
 // patient_id, and the post-upload booster pooled a mean difference of patient numbers
 // (dev/tests/auto_map_identifier_columns.test.cjs).
-// By name: id / patient / subject / record / row / serial ..., or a name ending in _id, _no, _number, _code, _key.
+// By name: id / patient / subject / record / row / serial ..., a name ending in _id, or an id-like head (patient,
+// subject, record, participant, ...) followed by no / num / number / code / key. Not any name ending in code / no /
+// num: response_code, status_code, event_no are outcomes (review of #644: response_code (0/1) was dropped and the
+// continuous baseline_score was mapped and run). Name only; ipd80IsIdentifierByName also keeps a 0/1 column.
 function ipd80IsIdentifierName(field) {
     const tokens = String(field || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     const norm = tokens.join('');
@@ -91430,12 +91433,31 @@ function ipd80IsIdentifierName(field) {
         'index', 'idx', 'serial', 'seq', 'patient', 'patients', 'subject', 'subjects', 'participant', 'participants', 'record',
         'records', 'case', 'caseid'];
     if (whole.includes(norm)) return true;
-    if (tokens.length > 1 && ['id', 'ids', 'uid', 'uuid', 'no', 'nr', 'num', 'number', 'code', 'key'].includes(tokens[tokens.length - 1])) return true;
+    const last = tokens[tokens.length - 1];
+    if (tokens.length > 1 && ['id', 'ids', 'uid', 'uuid'].includes(last)) return true;
+    const head = tokens.slice(0, -1).join('');
+    if (tokens.length > 1 && ['no', 'nr', 'num', 'number', 'code', 'key'].includes(last) &&
+        /^(id|patient|subject|subj|participant|record|case|person|pt|study|trial|site|center|centre|row)$/.test(head)) return true;
     return /^(patient|subject|subj|participant|record|case|person|pt|study|trial|site|center|centre)(id|no|nr|num|number|code|key)$/.test(norm);
+}
+// Identifier by name, unless the column holds at most two distinct values (a 0/1 column such as "case" is an outcome
+// or a covariate, never an identifier by its name alone).
+function ipd80IsIdentifierByName(field, dataRows) {
+    if (!ipd80IsIdentifierName(field)) return false;
+    const rows = Array.isArray(dataRows) ? dataRows : (Array.isArray(APP.data) ? APP.data : []);
+    const limit = Math.min(rows.length, 12000);
+    const seen = new Set();
+    for (let i = 0; i < limit; i++) {
+        const v = rows[i] ? rows[i][field] : undefined;
+        if (v == null || v === '') continue;
+        seen.add(String(v).trim().toLowerCase());
+        if (seen.size > 2) return true;
+    }
+    return seen.size === 0;
 }
 // By name, or by its values: a column with a different integer (or text) value on every one of at least 20 rows.
 function ipd80IsIdentifierField(field, dataRows) {
-    if (ipd80IsIdentifierName(field)) return true;
+    if (ipd80IsIdentifierName(field)) return ipd80IsIdentifierByName(field, dataRows);
     const rows = Array.isArray(dataRows) ? dataRows : (Array.isArray(APP.data) ? APP.data : []);
     const limit = Math.min(rows.length, 12000);
     const seen = new Set();
@@ -91517,6 +91539,21 @@ function ipd80PickTreatmentField(columns) {
     });
 }
 
+// Records a value the user picked by hand on a mapping control (its onchange), so auto-map can tell it from one set by
+// code. Tied to the data loaded at the time: a choice made for another file does not count for this one.
+function ipd80DataFingerprintOrEmpty() {
+    try { return typeof computeCurrentDataFingerprint === 'function' ? String(computeCurrentDataFingerprint()) : ''; } catch (e) { return ''; }
+}
+function ipd80NoteUserSelect(selectId, value) {
+    if (!selectId) return;
+    APP.ipd80UserSelected = APP.ipd80UserSelected || {};
+    APP.ipd80UserSelected[selectId] = { value: value, fingerprint: ipd80DataFingerprintOrEmpty() };
+}
+function ipd80UserSelectedValue(selectId) {
+    const rec = APP.ipd80UserSelected ? APP.ipd80UserSelected[selectId] : null;
+    return rec && rec.fingerprint === ipd80DataFingerprintOrEmpty() ? rec.value : undefined;
+}
+
 function ipd80SetSelectValue(selectId, value) {
     const el = document.getElementById(selectId);
     if (!el || !value) return false;
@@ -91543,7 +91580,7 @@ function ipd80GetCurrentVars() {
 }
 
 function ipd80InferOutcomeType(allColumns) {
-    const columns = (allColumns || []).filter(function(c) { return !ipd80IsIdentifierName(c); });
+    const columns = (allColumns || []).filter(function(c) { return !ipd80IsIdentifierByName(c); });
     const timeCandidate = ipd80PickField(columns,
         ['time_months', 'followup', 'follow_up', 'survival_time', 'os_time', 'pfs_time', 'time'],
         ['study_year', 'year', 'days_from_randomization']
@@ -91598,8 +91635,8 @@ function ipd80AutoMapVariables(options) {
         return ipd80FieldProfile(col, 3000).numericMostly;
     });
 
-    // Outcome candidates never include an identifier column (ipd80IsIdentifierName).
-    const outcomeCols = columns.filter(function(col) { return !ipd80IsIdentifierName(col); });
+    // Outcome candidates never include an identifier column (ipd80IsIdentifierByName).
+    const outcomeCols = columns.filter(function(col) { return !ipd80IsIdentifierByName(col); });
     let timeVar = '';
     let eventVar = '';
     // false when no column is named as the outcome: the booster then does not run an analysis by itself
@@ -91629,7 +91666,7 @@ function ipd80AutoMapVariables(options) {
         }
         outcomeConfident = !!eventVar;
     } else {
-        eventVar = ipd80PickField(numericCols.filter(function(col) { return !ipd80IsIdentifierName(col); }),
+        eventVar = ipd80PickField(numericCols.filter(function(col) { return !ipd80IsIdentifierByName(col); }),
             ['change', 'delta', 'endpoint', 'outcome', 'score', 'value', 'measure'],
             ['study', 'trial', 'treatment', 'arm', 'group', 'time', 'year'],
             { numericOnly: true }
@@ -91670,12 +91707,14 @@ function ipd80AutoMapVariables(options) {
     ipd80SetSelectValue('varStudy', mapped.varStudy);
     ipd80SetSelectValue('varTreatment', mapped.varTreatment);
     if (outcome === 'survival') ipd80SetSelectValue('varTime', mapped.varTime);
-    ipd80SetSelectValue('varEvent', mapped.varEvent);
+    if (ipd80SetSelectValue('varEvent', mapped.varEvent) && APP.ipd80UserSelected) delete APP.ipd80UserSelected.varEvent;
     if (!mapped.varEvent) {
-        // nothing identified: an identifier left on the outcome control (e.g. pre-selected by an earlier mapping) is
-        // cleared to "-- Select --", so a Run cannot analyse it; a column the user chose is kept
+        // nothing identified: an identifier left on the outcome control by code (e.g. pre-selected on upload) is
+        // cleared to "-- Select --", so a Run cannot analyse it. A column the user chose by hand (ipd80NoteUserSelect,
+        // the control's onchange) is never cleared, whatever it looks like: Fast Path and the SOP lock call this too.
         const evEl = document.getElementById('varEvent');
-        if (evEl && evEl.value && ipd80IsIdentifierField(evEl.value)) evEl.value = '';
+        const userValue = ipd80UserSelectedValue('varEvent');
+        if (evEl && evEl.value && evEl.value !== userValue && ipd80IsIdentifierField(evEl.value)) evEl.value = '';
     }
 
     const required = outcome === 'survival'
