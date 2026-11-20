@@ -95,19 +95,49 @@
     // A trailing "%" marks the value (and so the whole list) as percentages.
     var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*%?$/;
     function parse(text) {
-      var rows = [], errs = [], anyPct = false;
+      var rows = [], errs = [], anyPct = false, marked = 0, why = [];
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
-        var v = NUM.test(f[0]) ? Number(f[0].replace(/\s*%$/, "")) : NaN;
+        // LIM-P23 F01: the value is the first field; the name is EVERYTHING after the first
+        // separator (a name may contain commas), never just the second field.
+        var sep = t.search(/[,\t]/);
+        var tok = (sep < 0 ? t : t.slice(0, sep)).trim(), name = sep < 0 ? "" : t.slice(sep + 1).trim();
+        // "0,92" is a decimal comma, not the value 0 for a treatment called "92".
+        if (sep >= 0 && t[sep] === "," && /^[+-]?\d+$/.test(tok) && /^\d+\s*%?(\s*[,\t].*)?$/.test(name)) {
+          errs.push("line " + (i + 1)); why.push("line " + (i + 1) + " looks like a decimal comma: write 0.92, not 0,92"); return;
+        }
+        var v = NUM.test(tok) ? Number(tok.replace(/\s*%$/, "")) : NaN;
         if (!isFinite(v) || v < 0) { errs.push("line " + (i + 1)); return; }
-        if (v > 1 || /%$/.test(f[0])) anyPct = true;
-        rows.push({ v: v, line: i + 1, tok: f[0], label: f[1] || ("T" + (rows.length + 1)) });
+        // LIM-P23 F03: a token with a nonzero digit must not become 0 (1e-400 underflows; -1e-400 is -0).
+        if (v === 0 && /[1-9]/.test(tok.replace(/[eE].*$/, ""))) {
+          errs.push("line " + (i + 1)); why.push("line " + (i + 1) + " is too small to represent (it would read as 0)"); return;
+        }
+        v = v + 0;  // -0 -> 0
+        if (/%$/.test(tok)) marked++;
+        if (v > 1 || /%$/.test(tok)) anyPct = true;
+        rows.push({ v: v, line: i + 1, tok: tok, label: name || ("T" + (rows.length + 1)) });
       });
+      // LIM-P23 F02: some values marked % and others not is ambiguous: an unmarked 0.74 beside
+      // 92% would otherwise be divided by 100 a second time. Mark all values or none.
+      if (marked > 0 && marked < rows.length) {
+        rows.forEach(function (r) { if (!/%$/.test(r.tok)) errs.push("line " + r.line); });
+        why.push("mark every value with % or none of them");
+      }
       // percent auto-detect: if any value > 1, treat all as 0–100.
-      if (anyPct) rows.forEach(function (r) { r.v = r.v / 100; });
+      if (anyPct) rows.forEach(function (r) {
+        var was = r.v; r.v = r.v / 100;
+        if (was !== 0 && r.v === 0) { errs.push("line " + r.line); why.push("line " + r.line + " is too small to represent (it would read as 0)"); }
+      });
       rows.forEach(function (r) { if (r.v > 1) errs.push("line " + r.line); });
-      return { rows: rows, errs: errs, pct: anyPct };
+      // LIM-P23 F04: one row per treatment; a repeated name (supplied or generated) is two rows for one treatment.
+      var seen = {};
+      rows.forEach(function (r) {
+        if (Object.prototype.hasOwnProperty.call(seen, r.label)) {
+          errs.push("line " + r.line); why.push("line " + r.line + " repeats the treatment name on line " + seen[r.label]);
+        } else seen[r.label] = r.line;
+      });
+      errs = errs.filter(function (e, k) { return errs.indexOf(e) === k; });
+      return { rows: rows, errs: errs, pct: anyPct, why: why };
     }
 
     function band(p) { return p >= 0.75 ? "hi" : (p >= 0.5 ? "mid" : "lo"); }
@@ -122,7 +152,8 @@
       var out = document.getElementById("out");
       if (window.AlmRCheck) window.AlmRCheck.set(null);
       if (p.errs.length) {
-        out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name.</p>";
+        out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name, one row per treatment." +
+          (p.why.length ? " " + esc(p.why.join("; ")) + "." : "") + "</p>";
         return;
       }
       if (p.rows.length < 2) {
