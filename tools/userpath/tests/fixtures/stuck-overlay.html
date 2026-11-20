@@ -1,0 +1,9 @@
+<!doctype html>
+<!-- A page-covering modal whose close control does nothing: the harness must report it, not delete it. -->
+<html><head><style>
+#stuck-modal { position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+</style></head><body>
+<button id="target">Run</button>
+<div id="stuck-modal" role="dialog" aria-modal="true"><div style="background:#fff;padding:20px">Please read<button id="stuck-close">Close</button></div></div>
+<script>document.getElementById("stuck-close").addEventListener("click", (e) => e.preventDefault());</script>
+</body></html>

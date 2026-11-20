@@ -33,3 +33,14 @@ An in-page pass count counts only if it appeared after that control was pressed 
 than 0 quantities; a panel still busy when the wait runs out is a FAIL; a control that could not
 be pressed is a FAIL; exit 3 means no R control was exercised. bus-handoff.cjs fails a hand-over
 with a stale study in any row, and fails with 0 runs.
+
+Lane uptool (2026-11-19): `--entry <file>` opens `<base><app>/<file>` instead of the folder
+index; a built-in map opens `IPD-Meta-Pro/ipd-meta-pro.html` (its `index.html` is a landing
+page with no R control, so the folder run ended with exit 3). A "Verify in R" that runs R in the
+page (no validator tab) is scored by the MATCH/MISMATCH line it newly printed: MATCH n/n with
+n > 0 is PASS, MISMATCH is FAIL, no new line (or still busy) is FAIL ("did not complete"),
+MATCH 0/0 or NOT CHECKED is UNKNOWN; `verdict.json` carries `match`/`total`. After every page
+load, known onboarding overlays (HTA tutorial and welcome) are closed by their own close
+controls, never by removing DOM; any overlay left up is written to `overlays.json` and to
+`verdict.json` (`overlay: true`; a known one is a FAIL). Offline tests:
+`PLAYWRIGHT_CORE=<path> node --test tools/userpath/tests/userpath.test.cjs`.
