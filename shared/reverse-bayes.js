@@ -107,9 +107,16 @@
     opts = opts || {};
     var alpha = (opts.alpha != null) ? opts.alpha : 0.05;
     if (!(s > 0) || !isFinite(thetaHat)) return { error: "need finite thetaHat and s>0" };
+    // Finite inputs can still leave no representable answer in double precision. Each such case is refused here,
+    // never turned into a verdict: an infinite SE (interval width overflow) would read as "not significant", an
+    // infinite z_alpha (alpha so small that 1 - alpha/2 rounds to 1) as "not significant at the 100% level", and
+    // an infinite, NaN or zero prior variance (s^4 or thetaHat^2 overflow/underflow) as a critical prior that exists.
+    if (!isFinite(s)) return { error: "The standard error recovered from the interval is not finite in double precision (the interval is too wide). No result is shown." };
     var za = _qnorm(1 - alpha / 2);          // significance critical value
+    if (!isFinite(za)) return { error: "α is too small: its critical value z_α = Φ⁻¹(1 − α/2) is not finite in double precision. No result is shown." };
     var z95 = 1.959963984540054;             // for the prior's own 95% interval
     var z = thetaHat / s;
+    if (!isFinite(z)) return { error: "z = estimate / SE is not finite in double precision. No result is shown." };
     var pObs = _twoSidedP(z);
     var significant = Math.abs(z) > za;
 
@@ -121,6 +128,9 @@
     // (1) Matthews sceptical (critical) prior — only exists if significant.
     if (significant) {
       var tauS2 = (za * za * Math.pow(s, 4)) / (thetaHat * thetaHat - za * za * s * s);
+      if (!(isFinite(tauS2) && tauS2 > 0)) {
+        return { error: "The critical prior variance is not representable in double precision for these inputs (computed as " + String(tauS2) + "). No result is shown." };
+      }
       var tauS = Math.sqrt(tauS2);
       out.sceptical = {
         exists: true,
