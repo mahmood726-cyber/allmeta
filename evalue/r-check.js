@@ -206,10 +206,25 @@
       .then(function (r) { if (!r.ok) throw new Error("WebR package list unavailable (HTTP " + r.status + ")"); return r.json(); })
       .then(function (m) { return (m.packages || []).map(function (p) { return p.package; }); });
   }
+  // LIM-P22 F21: a verdict belongs to the result it was computed for. run() replaces
+  // window.__almLastEValue's result object on every recomputation, so its identity
+  // tells whether the page still shows the analysed result.
+  function current() { return typeof window.__almLastEValue === "function" ? window.__almLastEValue() : null; }
+  var STALE = "R result discarded: the inputs on the page changed while R was running, so the verdict R returned (for the earlier inputs) is not shown. Press Verify in R again.";
+  var CHANGED = "The inputs changed after the last R check, so its verdict was cleared. Press Verify in R again.";
+  var verdictFor;  // the result object the shown verdict checked (undefined = nothing shown)
+  function invalidateIfChanged() {
+    if (verdictFor === undefined || current() === verdictFor) return;
+    verdictFor = undefined;
+    var out = el("rcheck-out"); if (out) { out.hidden = true; out.textContent = ""; }
+    showVerdict(null); setStatus(CHANGED);
+  }
+  ["input", "change", "click"].forEach(function (ev) { document.addEventListener(ev, invalidateIfChanged); });
   var busy = false;
   function verify() {
     if (busy) return;
-    var script;
+    var script, snap = current();
+    verdictFor = undefined;
     try { script = buildScript(); } catch (e) { setStatus(e.message); return; }
     busy = true; el("btn-verify-r").disabled = true;
     var out = el("rcheck-out"); out.hidden = true; out.textContent = ""; showVerdict(null);
@@ -227,8 +242,10 @@
         return W.runR({ script: script, packages: REQUIRED_PACKAGES, onStatus: setStatus });
       }).then(function (res) {
         if (!res.ok) throw new Error(res.error || "WebR failed");
+        if (current() !== snap) { out.textContent = ""; showVerdict(null); setStatus(STALE); return; }
         out.hidden = false; out.textContent = res.stdout;
         showVerdict(verdictOf(res.stdout) || "MISMATCH (R printed no verdict line)");
+        verdictFor = snap;
         setStatus((res.versions && res.versions.R || "R") + " in WebR " + (res.versions && res.versions.webR || "") + " ran the same script as the download.");
       });
     }).catch(function (e) {
