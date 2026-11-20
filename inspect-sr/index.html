@@ -361,13 +361,14 @@
     });
     document.getElementById("eff-est").addEventListener("input", function (e) { cur().est = e.target.value; commit(); });
     document.getElementById("eff-se").addEventListener("input", function (e) { cur().se = e.target.value; commit(); });
-    document.getElementById("scale").addEventListener("change", renderPooled);
+    // The display scale is part of the saved workspace and of the export (it used to reset on reload).
+    document.getElementById("scale").addEventListener("change", function (e) { state.scale = e.target.value === "exp" ? "exp" : "linear"; save(); renderPooled(); });
     document.getElementById("btn-reset").addEventListener("click", function () {
       if (!confirm("Clear all trials and assessments?")) return;
-      state = { trials: [newTrial("Trial 1")], cur: 0 }; save(); renderAll();
+      state = { trials: [newTrial("Trial 1")], cur: 0, scale: state.scale }; save(); renderAll();
     });
     document.getElementById("btn-json").addEventListener("click", function () {
-      var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(),
+      var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(), displayScale: state.scale === "exp" ? "exp" : "linear",
         trials: state.trials.map(function (t) {
           return { label: t.label, responses: t.resp,
             domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
@@ -379,6 +380,7 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     });
 
+    document.getElementById("scale").value = state.scale === "exp" ? "exp" : "linear";
     renderAll();
   </script>
 <script src="../shared/webr-runner.js"></script>

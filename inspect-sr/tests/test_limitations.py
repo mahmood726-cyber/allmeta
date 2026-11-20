@@ -97,3 +97,16 @@ def test_L04_failed_repool_does_not_leave_the_previous_table():
     first = o["after"].splitlines()[0]
     assert "-0.328" not in first and "could not" in first, o
     assert o["r"] is None
+
+
+def test_L07_display_scale_survives_reload_and_is_exported():
+    """L07: the ratio (exponentiated) display setting was not saved, so a reload silently showed the other
+    scale, and the JSON did not say which scale the reviewer used. Requirement: it is kept and exported."""
+    res = drive(TWO + r"""
+      await p.selectOption('#scale', 'exp');
+      await p.reload({ waitUntil: 'load' });
+      const scale = await p.inputValue('#scale');
+      const j = JSON.parse(await download('#btn-json'));
+      return { scale, displayScale: j.displayScale };
+    """)
+    assert res["out"] == {"scale": "exp", "displayScale": "exp"}, res
