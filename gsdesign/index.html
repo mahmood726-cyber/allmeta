@@ -144,8 +144,8 @@
         <label><span class="lbl">Min stage size (stages ≥ 2)</span><input id="smin" type="number" step="any" value="20" aria-label="Min stage size (stages ≥ 2)"></label>
         <label><span class="lbl">Max stage size (stages ≥ 2)</span><input id="smax" type="number" step="any" value="80" aria-label="Max stage size (stages ≥ 2)"></label>
         <label><span class="lbl">Assumed effect for SSR</span><input id="th1" type="text" placeholder="observed" aria-label="Assumed effect for SSR"></label>
-        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" value="10000" aria-label="Simulated trials per difference"></label>
-        <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" value="20261021" aria-label="Seed"></label>
+        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" min="100" max="1000000" value="10000" aria-label="Simulated trials per difference"></label>
+        <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" min="0" max="4294967295" value="20261021" aria-label="Seed"></label>
       </div>
       <button class="primary" id="simrun" type="button">Simulate</button>
       <p class="foot" id="simnote" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
@@ -296,6 +296,11 @@
         });
         txt((m.l + W - m.r) / 2, H - 4, "information fraction");
       }
+      function intIn(id) {
+        // A whole number inside the field's own min/max, or null: never truncated, clamped or defaulted.
+        var el = $(id), t = el.value.trim(), v = Number(t);
+        return t !== "" && Number.isInteger(v) && v >= Number(el.min) && v <= Number(el.max) ? v : null;
+      }
       function simulate() {
         var tb = $("simtb"), th = $("simth"); tb.textContent = ""; th.textContent = "";
         function fail(msg) { var tr = document.createElement("tr"), c = document.createElement("td"); c.className = "err"; c.textContent = msg; tr.appendChild(c); tb.appendChild(tr); }
@@ -310,15 +315,26 @@
         var th1 = $("th1").value.trim();
         var opts = {
           alternative: numList($("alts").value), stDev: parseFloat($("sd").value), plannedSubjects: planned,
-          conditionalPower: ssr ? parseFloat($("cp").value) : NaN,
+          conditionalPower: ssr ? Number($("cp").value.trim() || NaN) : NaN,
           minNumberOfSubjectsPerStage: mins, maxNumberOfSubjectsPerStage: maxs,
-          thetaH1: th1 === "" ? NaN : parseFloat(th1),
-          maxNumberOfIterations: Math.max(100, Math.min(1000000, parseInt($("iter").value, 10) || 10000)),
-          seed: parseInt($("seed").value, 10) || 0
+          thetaH1: th1 === "" ? NaN : Number(th1),
+          maxNumberOfIterations: intIn("iter"), seed: intIn("seed")
         };
-        if (!(opts.stDev > 0) || !(N > 0) || !opts.alternative.length || opts.alternative.some(isNaN)) { fail("Check σ, N and the mean differences."); return; }
-        if (ssr && K < 2) { fail("Re-estimation needs at least two looks."); return; }
-        var res = G.simulateMeans(dsg, opts);
+        if (!(opts.stDev > 0 && isFinite(opts.stDev)) || !(N > 0 && isFinite(N)) || !opts.alternative.length ||
+            !opts.alternative.every(isFinite)) { fail("Check σ, N and the mean differences (finite numbers; σ and N above zero)."); return; }
+        if (opts.maxNumberOfIterations === null) { fail("Check the number of simulated trials: a whole number from " + $("iter").min + " to " + $("iter").max + "."); return; }
+        if (opts.seed === null) { fail("Check the seed: a whole number from " + $("seed").min + " to " + $("seed").max + "."); return; }
+        if (ssr) {
+          // Re-estimation needs a target strictly inside (0, 1), positive ordered stage limits and a finite
+          // assumed effect (or blank = observed effect); anything else used to run and print NaN or ignore the limits.
+          if (K < 2) { fail("Re-estimation needs at least two looks."); return; }
+          if (!(opts.conditionalPower > 0 && opts.conditionalPower < 1)) { fail("Check the target conditional power: it must be strictly between 0 and 1."); return; }
+          var lo = mins[1], hi = maxs[1];
+          if (!(lo > 0 && isFinite(lo) && hi >= lo && isFinite(hi))) { fail("Check the stage sizes: the minimum must be above zero and the maximum at least the minimum."); return; }
+          if (th1 !== "" && !isFinite(opts.thetaH1)) { fail("Check the assumed effect for SSR: a finite number, or blank to use the observed effect."); return; }
+        }
+        var res;
+        try { res = G.simulateMeans(dsg, opts); } catch (e) { fail("Cannot simulate this design: " + e.message); return; }
         var head = ["Mean difference", "Rejection probability", "Early stop", "Futility stop", "Expected N"];
         for (k = 0; k < K; k++) head.push("Reject at look " + (k + 1));
         if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1));
