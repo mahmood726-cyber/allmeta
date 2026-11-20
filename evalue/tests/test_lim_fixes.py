@@ -218,3 +218,28 @@ def test_f21_control_unchanged_inputs_keep_the_verdict(page):
     page.wait_for_function("document.getElementById('rcheck-verdict').textContent.startsWith('MATCH')")
     page.click("#btn-download-r")
     assert page.inner_text("#rcheck-verdict").startswith("MATCH")
+
+
+# ---- F20: the R script always ends with a verdict line, even when EValue stops --------------
+
+def test_f20_r_error_still_ends_with_mismatch(page, tmp_path):
+    import glob, os, shutil, subprocess
+    rs = next((c for c in [os.environ.get("RSCRIPT"), shutil.which("Rscript")] +
+               sorted(glob.glob("C:/Program Files/R/R-*/bin/Rscript.exe"), reverse=True) if c and Path(c).exists()), None)
+    if rs is None:
+        pytest.skip("Rscript not found")
+    ok = subprocess.run([rs, "--vanilla", "-e", "cat(requireNamespace('EValue', quietly=TRUE))"],
+                        capture_output=True, text=True, timeout=120).stdout.strip().endswith("TRUE")
+    if not ok:
+        pytest.skip("R package EValue not installed (set R_LIBS)")
+    _set(page, measure="RR", point="2", lo="1.5", hi="2.7", se="", truev="")
+    script = page.evaluate("window.__almEValueRScript()")
+    # Plant an input EValue refuses (an RR below its lower limit), as a corrupted or
+    # hand-edited script would carry: R must still print a terminal MISMATCH line.
+    planted = script.replace("point = 2, lo = 1.5", "point = 2, lo = 2.5")
+    assert planted != script
+    f = tmp_path / "planted.R"
+    f.write_text(planted, encoding="utf-8", newline="\n")
+    r = subprocess.run([rs, "--vanilla", str(f)], capture_output=True, text=True, timeout=180)
+    lines = [l for l in r.stdout.splitlines() if l.strip()]
+    assert lines and lines[-1].startswith("MISMATCH"), (r.returncode, r.stdout[-500:], r.stderr[-500:])

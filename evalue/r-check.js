@@ -27,7 +27,7 @@
 
   var R_HELPERS = [
     "## ---- comparison helpers ----",
-    ".n <- 0L; .ok <- 0L; .skipped <- character(0)",
+    ".n <- 0L; .ok <- 0L; .skipped <- character(0); .err <- NULL",
     "fmtv <- function(x) if (length(x) != 1 || is.na(x)) \"NA\" else sprintf(\"%.10g\", x)",
     "check <- function(label, r, page) {",
     "  # |R - page| <= min(5e-5, 1e-9 * max(1, |page|)): never looser than half a unit of the 4 decimals shown",
@@ -46,7 +46,9 @@
     "}",
     "finish <- function() {",
     "  extra <- if (length(.skipped)) sprintf(\" (%d more NOT CHECKED: see above)\", length(.skipped)) else \"\"",
-    "  if (.n == 0L) cat(sprintf(\"MISMATCH (nothing could be checked)%s\\n\", extra))",
+    "  # LIM-P22 F20: an R error must still end the output with a verdict line, never a bare stop.",
+    "  if (!is.null(.err)) cat(sprintf(\"MISMATCH (R stopped with an error after %d of %d checks agreed: %s)%s\\n\", .ok, .n, .err, extra))",
+    "  else if (.n == 0L) cat(sprintf(\"MISMATCH (nothing could be checked)%s\\n\", extra))",
     "  else if (.ok == .n) cat(sprintf(\"MATCH %d/%d%s\\n\", .ok, .n, extra))",
     "  else cat(sprintf(\"MISMATCH (%d of %d quantities agree)%s\\n\", .ok, .n, extra))",
     "}",
@@ -115,7 +117,7 @@
     L.push("if (!requireNamespace(\"EValue\", quietly = TRUE)) {");
     L.push("  for (k in names(page)) not_checked(labels[[k]], \"package EValue is not installed\")");
     L.push("  cat(\"Install EValue (version 4.1.4 was used by the P22 validation) and run this script again.\\n\")");
-    L.push("} else with(inp, {");
+    L.push("} else invisible(tryCatch(with(inp, {");
     L.push("  q <- function(e) suppressMessages(suppressWarnings(e))");
     L.push("  cat(sprintf(\"R %s; EValue %s; measure %s\\n\", getRversion(), packageVersion(\"EValue\"), measure))");
     L.push("  first <- function(x) { x <- x[!is.na(x)]; if (length(x)) x[[1]] else NA_real_ }");
@@ -162,7 +164,7 @@
     L.push("              rd_hi = p1 - p0 + half, bf = (sqrt((tv + dd)^2 + 4 * p1 * p0 * f * (1 - f)) - (tv + dd)) / (2 * p0 * f))");
     L.push("  }");
     L.push("  for (k in names(page)) check(labels[[k]], if (is.null(R[[k]])) NA_real_ else as.numeric(R[[k]]), page[[k]])");
-    L.push("})");
+    L.push("}), error = function(e) { .err <<- conditionMessage(e); cat(\"R error: \", .err, \"\\n\", sep = \"\") }))");
     L.push("finish()");
     return L.join("\n") + "\n";
   }
