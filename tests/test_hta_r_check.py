@@ -105,3 +105,12 @@ def test_unsupported_models_are_refused_not_guessed():
                         "try{C.buildScript({model:{type:'des'}},{},{},{});console.log('built')}catch(e){console.log('refused:'+e.message)}"],
                        capture_output=True, text=True, timeout=30, cwd=str(HTA))
     assert p.stdout.startswith("refused:") and "Markov cohort" in p.stdout, p.stdout
+
+
+def test_heemod_section_described_as_what_it_does():
+    """P43 F25: the optional heemod block rebuilds cohort TRACES with zero-reward states; it never
+    computes or prints heemod discounted totals, so the script header must not say it does."""
+    s = _script({"demo": True})
+    head = s.split("tol_engine <-")[0]
+    assert "printed for information" not in head
+    assert "traces only" in head

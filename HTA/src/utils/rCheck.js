@@ -178,8 +178,9 @@
         P('#   discount factor (1 + r)^-(t * cycle_length) per time point, transition-matrix clamp/complement/');
         P('#   row-sum rules. The P43 pack validated discounted totals against this formula in R and the cohort');
         P('#   traces against heemod 1.1.0 at 1e-9. heemod discounts each cycle\'s average from the start of the');
-        P('#   cycle, so heemod\'s own discounted totals differ by design (up to 2.9% in the pack); they are');
-        P('#   printed for information only and are not counted.');
+        P('#   cycle, so heemod\'s own discounted totals differ by design (up to 2.9% in the pack). This script');
+        P('#   does not compute them: its optional heemod section (if heemod is installed) rebuilds the cohort');
+        P('#   traces only, with zero-reward states, and compares them with the page at 1e-9.');
         P('# Expressions are translated from the page\'s own parse tree (fully parenthesised).');
         const noteAt = L.length;
         P('# Run with: Rscript --vanilla hta-basecase-check.R');
