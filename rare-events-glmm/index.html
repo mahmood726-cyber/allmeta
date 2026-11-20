@@ -69,13 +69,14 @@ Trial 5, 3, 600, 7, 605
 Trial 6, 0, 95, 2, 98
 Trial 7, 2, 450, 6, 445
 Trial 8, 1, 210, 3, 215</textarea>
-        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
-        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
-
       </label>
+      <!-- generated benchmark / citation controls sit outside the Studies label, so they
+           do not become part of the textarea's accessible name -->
+      <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+      <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
-        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
+        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="Model">
           <option value="UM.FS" selected>Experimental unconditional fit (not default metafor UM.FS)</option>
           <option value="CM.EL">CM.EL — conditional likelihood; numerical parity unverified</option>
           <option value="CM.AL">Fixed-baseline approximation (not metafor CM.AL)</option>
@@ -90,7 +91,7 @@ Trial 8, 1, 210, 3, 215</textarea>
     </section>
     <section class="panel">
       <h2>GLMM fit</h2>
-      <div id="summary" class="summary-grid"></div>
+      <div id="summary" class="summary-grid" role="status" aria-live="polite"></div>
       <h2 style="margin-top:1rem">Comparison: GLMM vs inverse-variance with +0.5</h2>
       <table id="compare" style="width:100%;border-collapse:collapse">
         <thead><tr><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">Method</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">OR</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">95% CI</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">τ²</th></tr></thead>
