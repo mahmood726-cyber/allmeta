@@ -46,7 +46,7 @@
     sec.className = "panel"; sec.id = "rcheck-panel"; sec.style.gridColumn = "1 / -1";
     sec.setAttribute("aria-label", "Check this result in R");
     sec.innerHTML = '<h2>Check in R</h2>' +
-      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes every displayed number with ' + PKG_NOTE + ', prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
+      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. From the values the page parsed it recomputes, with ' + PKG_NOTE + ', the SUCRA values, their mean and POTH shown on the page (not the ranking order, names or band text, and not with the poth package); it prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
       '<button type="button" id="btn-rscript" class="ghost">Download R script</button>' +
       '<button type="button" id="btn-verify-r" class="ghost">Verify in R (WebR)</button></div>' +
