@@ -99,16 +99,23 @@
         "s3, B, 2, 33, 650", "s3, C, 2, 24, 600"
       ].join("\n");
 
+      // Every non-blank, non-comment line is an arm row. A malformed row is named and stops the fit; it is never
+      // dropped while the remaining rows are pooled, and a numeric prefix ("12abc") is not read as a number
+      // (LIM-P49 L01/L02). Extra columns after the fifth are ignored, as before.
+      var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       function parse(text) {
-        var rows = [];
-        text.split(/\r?\n/).forEach(function (ln) {
+        var rows = [], errors = [];
+        text.split(/\r?\n/).forEach(function (ln, i) {
           ln = ln.trim(); if (!ln || ln.charAt(0) === "#") return;
-          var p = ln.split(/[,\t]/).map(function (x) { return x.trim(); });
-          if (p.length < 5) return;
-          var ev = parseFloat(p[3]), pt = parseFloat(p[4]);
-          if (!isFinite(ev) || !(pt > 0)) return;
+          var p = ln.split(/[,\t]/).map(function (x) { return x.trim(); }), where = "Line " + (i + 1) + ": ";
+          if (p.length < 5) { errors.push(where + "needs 5 fields (study, treatment, interval, events, person-time)"); return; }
+          if (!p[0] || !p[1] || !p[2]) { errors.push(where + "study, treatment and interval must not be empty"); return; }
+          var ev = NUM.test(p[3]) ? Number(p[3]) : NaN, pt = NUM.test(p[4]) ? Number(p[4]) : NaN;
+          if (!(isFinite(ev) && ev >= 0)) { errors.push(where + "events must be a number >= 0, got \"" + p[3] + "\""); return; }
+          if (!(isFinite(pt) && pt > 0)) { errors.push(where + "person-time must be a finite number > 0, got \"" + p[4] + "\""); return; }
           rows.push({ study: p[0], treatment: p[1], interval: p[2], events: ev, ptime: pt });
         });
+        rows.errors = errors;
         return rows;
       }
 
@@ -116,6 +123,7 @@
         window.__almNphLast = null;   // a failed fit must not leave the previous analysis for r-verify.js
         var rows = parse($("data").value);
         var note = $("note"); note.hidden = true; note.textContent = "";
+        if (rows.errors.length) { note.hidden = false; note.textContent = "Not fitted: " + rows.errors.join("  ·  "); $("out").textContent = ""; return; }
         if (rows.length < 2) { note.hidden = false; note.textContent = "Need at least two arm rows."; $("out").textContent = ""; return; }
         var res;
         var tauMethod = $("tau-method") ? $("tau-method").value : "DL";
