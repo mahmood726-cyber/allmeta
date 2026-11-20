@@ -84,7 +84,7 @@
     </section>
   </main>
   <footer>
-    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in <code>shared/poth.js</code>, checked against the CRAN <code>poth</code> package 0.3-0 (within 10⁻⁹ on every <code>netmeta</code> example network). P-scores from the allmeta <a href="../nma/">NMA app</a> can be pasted here. Computed client-side.
+    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in <code>shared/poth.js</code>, checked against the CRAN <code>poth</code> package 0.3-0 (within 10⁻⁹ on every <code>netmeta</code> example network that netmeta can rank; for rounded input whose mean is off 0.5 the page's centred formula can differ slightly from poth's uncentred one). P-scores from the allmeta <a href="../nma/">NMA app</a> can be pasted here. Computed client-side.
   </footer>
   <script>
     var EXAMPLE = "0.92, Drug A\n0.74, Drug B\n0.55, Drug C\n0.41, Drug D\n0.23, Drug E\n0.15, Drug F";
@@ -142,9 +142,10 @@
 
     function band(p) { return p >= 0.75 ? "hi" : (p >= 0.5 ? "mid" : "lo"); }
     function verdictText(p, n) {
-      if (p >= 0.75) return "High certainty — the hierarchy is well-separated; a top-ranked treatment is meaningfully ahead.";
+      // LIM-P23 F20: POTH measures how spread the scores are; it compares no effects, so it cannot show a leader is "ahead".
+      if (p >= 0.75) return "High certainty — the scores are well spread, so the ordering is fairly stable; check the relative effects before calling any treatment better.";
       if (p >= 0.5) return "Moderate certainty — interpret the ranking with care; neighbouring treatments may be interchangeable.";
-      return "Low certainty — the hierarchy is largely uninformative. Do not claim a treatment is “ranked best” on these SUCRAs alone; report relative effects with credible intervals.";
+      return "Low certainty — the hierarchy is largely uninformative. Do not claim a treatment is “ranked best” on these SUCRAs alone; report relative effects with their confidence or credible intervals.";
     }
 
     function run() {
