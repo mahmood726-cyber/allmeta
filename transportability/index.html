@@ -169,7 +169,11 @@
             ? ("an unmeasured shift of " + r.sensitivity.biasToNull.toFixed(3) + " (analysis scale) would move the CI to the null")
             : "transported CI already includes the null")
         + "</table>";
-      if (!slopeSig) html += '<p class="hint" style="margin-top:.5rem">⚠ The modifier shows weak/no effect modification here — transport then barely differs from the ordinary pooled effect, and the model is doing little work.</p>';
+      // A non-significant slope does NOT make the transport shift small: the shift is slope x (x* - trial mean),
+      // and no ordinary pooled effect is fitted here to compare with. Say what the data show instead.
+      if (!slopeSig) html += '<p class="hint" style="margin-top:.5rem">⚠ The effect-modification slope is not statistically significant (p=' + r.slope.p.toFixed(3) + '). That is not evidence that the shift is small: the shift above is the slope times the distance from the trials\' mean modifier to x*, and it carries the slope\'s uncertainty.</p>';
+      var xlo = Math.min.apply(null, rows.map(function (d) { return d.x; })), xhi = Math.max.apply(null, rows.map(function (d) { return d.x; }));
+      if (target < xlo || target > xhi) html += '<p class="badge warn" style="margin-top:.5rem">⚠ x* = ' + target + ' is outside the trials\' modifier range (' + xlo + ' to ' + xhi + '): the transported effect is an extrapolation of the linear model (assumption 4).</p>';
       host.innerHTML = html;
       drawPlot(rows, r, target, log, modname);
     }
