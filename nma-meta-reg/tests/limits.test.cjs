@@ -124,8 +124,8 @@ test("L08: prediction values are validated and sorted, and extrapolation is flag
   const p = await open();
   const bad = await fitWith(p, DEFAULT.join("\n"), "A", "40, abc, 60");
   assert.ok(failed(bad), "invalid prediction token dropped silently: " + bad.summary);
-  const s = await fitWith(p, DEFAULT.join("\n"), "A", "70, 40, 50");
-  assert.deepStrictEqual(s.fit.predictions.map((q) => q.x), [40, 50, 70]);
+  const s = await fitWith(p, DEFAULT.join("\n"), "A", "70, 50, 60");
+  assert.deepStrictEqual(s.fit.predictions.map((q) => q.x), [50, 60, 70]);
   assert.doesNotMatch(s.summary, /outside the observed/);
   const ex = await fitWith(p, DEFAULT.join("\n"), "A", "40, 200");
   assert.ok(ex.fit);

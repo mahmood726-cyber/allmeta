@@ -237,8 +237,14 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       try { rows = parse(document.getElementById("src").value); }
       catch (e) { showFail(e.message); return; }
       var refTrt = (document.getElementById("f-ref").value || "").trim();
-      var predicts = (document.getElementById("f-predict").value || "")
-        .split(/\s*,\s*/).map(function (s) { return parseFloat(s); }).filter(isFinite);
+      // Every prediction token must be a plain number (an invalid token used to vanish, and an all-invalid
+      // field became a prediction at the mean); values are sorted so the plotted ribbon cannot fold back.
+      var predRaw = (document.getElementById("f-predict").value || "").trim(), predicts = [];
+      if (predRaw) {
+        var toks = predRaw.split(/\s*,\s*/), badTok = toks.filter(function (t) { return !NUM.test(t); });
+        if (badTok.length) { showFail("prediction covariate values must be numbers separated by commas ('" + badTok[0] + "' is not)."); return; }
+        predicts = toks.map(Number).sort(function (u, v) { return u - v; });
+      }
 
       var treatments = Array.from(new Set(rows.reduce(function (acc, r) {
         acc.push(r.trtA); acc.push(r.trtB); return acc;
@@ -270,6 +276,17 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         '<div class="card"><span class="k">p (params)</span><span class="v">' + fit.p + '</span></div>' +
         '<div class="card"><span class="k">Reference</span><span class="v">' + treatments[0] + '</span></div>' +
         '<div class="card"><span class="k">Treatments</span><span class="v">' + treatments.length + '</span></div>';
+      // Predictions beyond the covariate values of the analysed rows are extrapolations: say so.
+      var obsX = rows.filter(function (r) { return isFinite(r.yi) && isFinite(r.sei) && r.sei > 0 && isFinite(r.covariate) && r.trtA !== r.trtB; })
+        .map(function (r) { return r.covariate; });
+      var xLo = Math.min.apply(null, obsX), xHi = Math.max.apply(null, obsX);
+      var outside = fit.predictions.filter(function (q) { return q.x < xLo || q.x > xHi; }).map(function (q) { return q.x; });
+      if (outside.length) {
+        var ex = document.createElement("div");
+        ex.className = "card"; ex.style.gridColumn = "1/-1";
+        ex.textContent = "Predictions at " + outside.join(", ") + " are outside the observed covariate range (" + xLo + " to " + xHi + "): extrapolations.";
+        document.getElementById("summary").appendChild(ex);
+      }
 
       // β table
       var bHtml = "";
