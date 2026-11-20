@@ -90,10 +90,21 @@
     return x;
   }
 
-  // Symmetric complete-pivot elimination of X'X, with relative tolerance.
-  function checkRank(x, treatments) {
-    var a = cross(x, x), d = a.length, order = [], maxDiag = 0;
+  // Symmetric complete-pivot elimination of X'X, with relative tolerance, on the column-equilibrated matrix
+  // D^-1/2 X'X D^-1/2 (unit diagonal). Without equilibration the 1e-10 test compared the interaction columns
+  // with the treatment columns, whose units differ by the covariate's: a covariate x 1e-6 or x 1e6 made an
+  // identifiable interaction (or effect) "not identifiable". Test: hub/shared/tests/unit/nma-meta-regression-scale.test.mjs.
+  // noise[i] is the norm column i would have with every entry replaced by the magnitude it was computed from
+  // (|covariate| + |xMean| for an interaction column, 0 for a treatment column). A column whose norm is within
+  // 1e-12 of that is centring rounding (a covariate constant up to 1 ulp), and is treated as zero: equilibration
+  // would otherwise scale the noise to unit norm and pass it as identifiable.
+  function checkRank(x, treatments, noise) {
+    var a = cross(x, x), d = a.length, order = [], maxDiag = 0, s = [];
     var i, j, k, pivot, tmp;
+    for (i = 0; i < d; i++)
+      s[i] = a[i][i] > 0 && Math.sqrt(a[i][i]) > 1e-12 * (noise ? noise[i] : 0) ? Math.sqrt(a[i][i]) : 0;
+    for (i = 0; i < d; i++)
+      for (j = 0; j < d; j++) a[i][j] = s[i] > 0 && s[j] > 0 ? a[i][j] / (s[i] * s[j]) : 0;
     for (i = 0; i < d; i++) {
       order[i] = i;
       maxDiag = Math.max(maxDiag, a[i][i]);
@@ -214,15 +225,17 @@
       if (block.length) blocks.push(block);
     }
     xMean /= kept.length;
-    var p = treatments.length - 1, x = zeros(kept.length, 2 * p), y = [], v = [];
+    var p = treatments.length - 1, x = zeros(kept.length, 2 * p), y = [], v = [], noise = [];
+    for (i = 0; i < 2 * p; i++) noise[i] = 0;
     for (i = 0; i < kept.length; i++) {
       r = kept[i].row; a = index[r.trtA]; b = index[r.trtB];
-      var sign = kept[i].sign, xc = r.covariate - xMean;
-      if (a > 0) { x[i][a - 1] = -sign; x[i][p + a - 1] = -sign * xc; }
-      if (b > 0) { x[i][b - 1] = sign; x[i][p + b - 1] = sign * xc; }
+      var sign = kept[i].sign, xc = r.covariate - xMean, mag = Math.abs(r.covariate) + Math.abs(xMean);
+      if (a > 0) { x[i][a - 1] = -sign; x[i][p + a - 1] = -sign * xc; noise[p + a - 1] += mag * mag; }
+      if (b > 0) { x[i][b - 1] = sign; x[i][p + b - 1] = sign * xc; noise[p + b - 1] += mag * mag; }
       y.push(sign * r.yi); v.push(r.sei * r.sei);
     }
-    checkRank(x, treatments);
+    for (i = 0; i < 2 * p; i++) noise[i] = Math.sqrt(noise[i]);
+    checkRank(x, treatments, noise);
     return { x: x, y: y, v: v, blocks: blocks, xMean: xMean, droppedRows: dropped };
   }
 
@@ -309,8 +322,11 @@
   }
 
   function optimize(at, initial, v) {
-    var best = initial, scale = 0, i, trial, iterations = 0;
-    for (i = 0; i < v.length; i++) scale += v[i];
+    var best = initial, scale = 0, minVariance = Infinity, i, trial, iterations = 0;
+    for (i = 0; i < v.length; i++) {
+      scale += v[i];
+      minVariance = Math.min(minVariance, v[i]);
+    }
     scale /= v.length;
     // Include zero and a broad coarse log grid before starting scoring.
     // Extend the upper tail if it is still climbing.
@@ -330,7 +346,12 @@
     if (best.tau2 === 0) best = initial;
     var converged = false;
     for (iterations = 1; iterations <= 200; iterations++) {
-      var tolerance = 1e-14 * Math.max(1, best.tau2);
+      // Stop rule in the data's own variance units, not relative to 1: with effects in units of 1e-6 the old
+      // floor 1e-14 * max(1, tau2) exceeded tau2 itself, so scoring stopped at the coarse grid with tau2 70% off.
+      // The floor is the SMALLEST sampling variance, not the mean: one practically unweighted study (sei 1e8)
+      // raised the mean to ~2e15, the tolerance to ~20, and REML/ML "converged" at tau2 = 0 instead of 7 / 3.
+      // Test: hub/shared/tests/unit/nma-meta-regression-scale.test.mjs.
+      var tolerance = 1e-14 * Math.max(minVariance, best.tau2);
       // Fisher scoring first, then observed-Newton polishing.
       var curvature = iterations > 8 && best.hessian < 0 ? -best.hessian : best.information;
       if (!(curvature > 0)) break;
