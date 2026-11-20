@@ -172,14 +172,16 @@
     L.push("cat(sprintf(\"(sampling in R took %.1f s)\\n\", proc.time()[[3]] - t0))");
     L.push("## Descriptive, not counted above: the exact posterior from bayesmeta (the R package the P47 pack");
     L.push("## validates this page against), same priors. The page's means should lie within a few Monte-Carlo SEs.");
-    L.push("if (requireNamespace(\"bayesmeta\", quietly = TRUE)) {");
+    L.push("## wrapped: an error inside bayesmeta (e.g. \"the integral is probably divergent\") must not stop the counted check");
+    L.push("if (requireNamespace(\"bayesmeta\", quietly = TRUE)) tryCatch({");
     L.push("  bm <- bayesmeta::bayesmeta(y = te, sigma = se, mu.prior.mean = 0, mu.prior.sd = 1000,");
     L.push("                             tau.prior = function(t) bayesmeta::dhalfnormal(t, scale = tauPrior))");
     L.push("  for (q in c(\"mu\", \"tau\")) { ex <- bm$summary[\"mean\", q]; pg <- if (q == \"mu\") page$mu[1] else page$tau[1]");
     L.push("    mcse <- (if (q == \"mu\") page$mu[2] / sqrt(page$essMu) else page$tau[2] / sqrt(page$essTau))");
     L.push("    cat(sprintf(\"bayesmeta %s: exact posterior mean %.6f, page %.6f, difference %.2f Monte-Carlo SEs (descriptive)\\n\", q, ex, pg, (pg - ex) / mcse)) }");
     L.push("  cat(\"bayesmeta\", as.character(packageVersion(\"bayesmeta\")), \"\\n\")");
-    L.push("} else cat(\"bayesmeta not installed: descriptive cross-check skipped (it is not part of the MATCH count)\\n\")");
+    L.push("}, error = function(e) cat(\"bayesmeta stopped:\", conditionMessage(e), \"-- descriptive cross-check skipped (it is not part of the MATCH count)\\n\")) else");
+    L.push("  cat(\"bayesmeta not installed: descriptive cross-check skipped (it is not part of the MATCH count)\\n\")");
     L.push("cat(\"R:\", R.version.string, \"\\n\")");
     L.push("finish()");
     return L.join("\n") + "\n";

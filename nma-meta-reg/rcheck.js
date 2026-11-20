@@ -68,7 +68,8 @@
     if (typeof document === "undefined") return;
     var o = el("rcheck-out"), v = el("rcheck-verdict");
     if (o) { o.style.display = "none"; o.textContent = ""; }
-    if (v) v.textContent = busy ? "The inputs changed while R was running; the result will be discarded. Press Verify in R again for the current analysis." : "";
+    // XREV-631 A3: tell the user to press Verify again only when there is an analysis to verify (the button is enabled)
+    if (v) v.textContent = busy ? "The inputs changed while R was running; the result will be discarded." + (state ? " Press Verify in R again for the current analysis." : "") : "";
     if (!busy) setStatus("");
     refresh();
   }
@@ -95,7 +96,7 @@
       var r = await global.AlmWebR.runR({ script: txt, packages: PKGS, onStatus: function (t) { if (!stale()) setStatus(t); } });
       if (stale()) {
         // R ran on an analysis the page no longer shows: never report its verdict next to the current one.
-        v.textContent = "R finished on an earlier analysis: the inputs changed while R was running, so that result was discarded. Press Verify in R again.";
+        v.textContent = "R finished on an earlier analysis: the inputs changed while R was running, so that result was discarded." + (state ? " Press Verify in R again." : "");
         setStatus("");
         return;
       }
@@ -114,13 +115,19 @@
       v.textContent = line ? "R (WebR): " + line : "R (WebR) printed no MATCH/MISMATCH line: the check did not complete.";
       setStatus("R finished (" + vers + ").");
     } catch (e) {
-      v.textContent = "R was not run: " + (e && e.message ? e.message : String(e));
+      // XREV-631 A3: an error from a run the user has since superseded belongs to the earlier analysis too
+      v.textContent = stale()
+        ? "R stopped on an earlier analysis: the inputs changed while R was running, so that error was discarded." + (state ? " Press Verify in R again." : "")
+        : "R was not run: " + (e && e.message ? e.message : String(e));
     } finally { busy = false; refresh(); }
   }
 
   // state: { rows: [{studyId,trtA,trtB,yi,sei,covariate}] as parsed, treatments: [ref first], method, page: <AlmNmaMetaReg.fit result> }
   function buildScript(s) {
     var f = s.page, tr = s.treatments, m = s.method;
+    var MULTI = "multi-arm contrast not involving study baseline";
+    var nMulti = f.droppedRows.filter(function (r) { return r.reason === MULTI; }).length;
+    var nInvalid = f.droppedRows.length - nMulti;
     // FE is closed form: 1e-9. REML/ML tau^2 comes from two different optimisers on a likelihood that can be
     // flat to 1e-10, so each quantity is compared at half a unit of the last digit the page displays
     // (4 dp: 5e-5, 3 dp: 5e-4); the printed abs_diff shows the actual agreement.
@@ -136,6 +143,11 @@
       "  yi   = " + rvec(s.rows.map(function (r) { return r.yi; })) + ",",
       "  sei  = " + rvec(s.rows.map(function (r) { return r.sei; })) + ",",
       "  x    = " + rvec(s.rows.map(function (r) { return r.covariate; })) + ", stringsAsFactors = FALSE)",
+      "# The page's engine (shared/nma-meta-regression.js) does not analyse rows with a non-finite yi, sei or covariate,",
+      "# sei <= 0, or trtA == trtB; R drops the same rows before the covariate shift and the fit (XREV-631 finding 2).",
+      "input_n <- nrow(d)",
+      "d <- d[is.finite(d$yi) & is.finite(d$sei) & d$sei > 0 & is.finite(d$x) & d$trtA != d$trtB, , drop = FALSE]",
+      "cat(\"Invalid input rows excluded by the page and R:\", input_n - nrow(d), \"\\n\")",
       "trts <- " + rvec(tr, rstr) + "   # page order, reference first",
       "ref <- trts[1]; method <- " + rstr(m),
       "xpred <- " + rvec(f.predictions.map(function (q) { return q.x; })),
@@ -159,7 +171,11 @@
       "  e <- b[[i]] + h * b[[g]]; se <- sqrt(V[i, i] + h^2 * V[g, g] + 2 * h * V[i, g]); c(e, se, e - z * se, e + z * se) }",
       "slope <- function(t) { g <- gn(code[[t]]); se <- sqrt(V[g, g]); c(b[[g]], se, b[[g]] - z * se, b[[g]] + z * se) }",
       "chk(\"rows used n\", " + rnum(f.n) + ", res$k, 0)",
-      "chk(\"dropped multi-arm contrasts\", " + f.droppedRows.length + ", nrow(d) - res$k, 0)",
+      "chk(\"invalid input rows excluded\", " + nInvalid + ", input_n - nrow(d), 0)",
+      "# the card shows only rows dropped as multi-arm contrasts not involving the study baseline",
+      "chk(\"dropped multi-arm contrasts\", " + nMulti + ", nrow(d) - res$k, 0)",
+      "chk(\"parameters p\", " + rnum(f.p) + ", res$p, 0)",
+      "chk(\"treatments\", " + tr.length + ", length(unique(c(d$trtA, d$trtB))), 0)",
       "chk(\"QE\", " + rnum(f.QE) + ", res$QE, 1e-9)",
       "chk(\"QE df\", " + rnum(f.QEdf) + ", res$k - res$p, 0)",
       "chk(\"x-bar (covariate mean)\", " + rnum(f.xMean) + ", xbar, 1e-9)",

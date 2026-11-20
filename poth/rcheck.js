@@ -68,7 +68,8 @@
     if (typeof document === "undefined") return;
     var o = el("rcheck-out"), v = el("rcheck-verdict");
     if (o) { o.style.display = "none"; o.textContent = ""; }
-    if (v) v.textContent = busy ? "The inputs changed while R was running; the result will be discarded. Press Verify in R again for the current analysis." : "";
+    // XREV-631 A3: tell the user to press Verify again only when there is an analysis to verify (the button is enabled)
+    if (v) v.textContent = busy ? "The inputs changed while R was running; the result will be discarded." + (state ? " Press Verify in R again for the current analysis." : "") : "";
     if (!busy) setStatus("");
     refresh();
   }
@@ -95,7 +96,7 @@
       var r = await global.AlmWebR.runR({ script: txt, packages: PKGS, onStatus: function (t) { if (!stale()) setStatus(t); } });
       if (stale()) {
         // R ran on an analysis the page no longer shows: never report its verdict next to the current one.
-        v.textContent = "R finished on an earlier analysis: the inputs changed while R was running, so that result was discarded. Press Verify in R again.";
+        v.textContent = "R finished on an earlier analysis: the inputs changed while R was running, so that result was discarded." + (state ? " Press Verify in R again." : "");
         setStatus("");
         return;
       }
@@ -114,7 +115,10 @@
       v.textContent = line ? "R (WebR): " + line : "R (WebR) printed no MATCH/MISMATCH line: the check did not complete.";
       setStatus("R finished (" + vers + ").");
     } catch (e) {
-      v.textContent = "R was not run: " + (e && e.message ? e.message : String(e));
+      // XREV-631 A3: an error from a run the user has since superseded belongs to the earlier analysis too
+      v.textContent = stale()
+        ? "R stopped on an earlier analysis: the inputs changed while R was running, so that error was discarded." + (state ? " Press Verify in R again." : "")
+        : "R was not run: " + (e && e.message ? e.message : String(e));
     } finally { busy = false; refresh(); }
   }
 
