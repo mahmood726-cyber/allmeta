@@ -845,13 +845,16 @@
       if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
     })();
 
+    // LIM-P20 A05: export exactly the analysis on screen. Re-running runConvert() here
+    // analysed unsubmitted edits and revived the previous table after a rejected CSV row.
     window.__almResults = function () {
-      if (typeof runConvert === 'function') runConvert();
-      var type = document.getElementById('in-type').value;
-      var est = parseFloat(document.getElementById('in-est').value);
-      var se = parseFloat(document.getElementById('in-se').value);
-      var n1 = parseFloat(document.getElementById('der-n1').value);
-      var n2 = parseFloat(document.getElementById('der-n2').value);
+      var a = typeof window.__escAnalysed === 'function' ? window.__escAnalysed() : null;
+      var shown = (window.__almResultRows || []).length > 0;
+      if (!a || !shown) a = { type: document.getElementById('in-type').value, est: NaN, se: NaN, p0: NaN, sd: NaN, kind: null, n1: NaN, n2: NaN };
+      var type = a.type;
+      var est = a.est, se = a.se, n1 = a.n1, n2 = a.n2;
+      var evr = typeof window.__almLastEValue === 'function' ? window.__almLastEValue() : null;
+      var evIn = function (id) { var e = document.getElementById(id); return e && e.value.trim() !== '' ? Number(e.value) : null; };
       var rows = (window.__almResultRows || []).map(function (r) {
         return {
           scale: r.scale,
@@ -866,15 +869,16 @@
         _schema: 'esc-results-v1',
         build: window.AlmBuildInfo ? Object.assign({}, window.AlmBuildInfo) : null,
         type: type,
-        smd_estimator: type === 'SMD' ? document.getElementById('in-smd-kind').value : null,
+        smd_estimator: type === 'SMD' && shown ? a.kind : null,
         input_estimate: Number.isFinite(est) ? est : null,
         input_se: Number.isFinite(se) ? se : null,
-        n1: Number.isFinite(n1) ? n1 : null,
-        n2: Number.isFinite(n2) ? n2 : null,
-        baseline_risk: document.getElementById('ctx-p0').value.trim() !== '' ?
-          Number(document.getElementById('ctx-p0').value) : null,
-        pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
-          Number(document.getElementById('ctx-sd').value) : null,
+        n1: Number.isFinite(n1) && n1 > 0 ? n1 : null,
+        n2: Number.isFinite(n2) && n2 > 0 ? n2 : null,
+        baseline_risk: Number.isFinite(a.p0) ? a.p0 : null,
+        pooled_sd: Number.isFinite(a.sd) ? a.sd : null,
+        e_value: evr ? { measure: document.getElementById('ev-measure').value, point: evIn('ev-point'),
+          ci_lower: evIn('ev-lo'), ci_upper: evIn('ev-hi'), rare: document.getElementById('ev-rare').checked,
+          approx_rr: evr.rr.point, e_point: evr.point, e_ci: evr.ci } : null,
         assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; logit (Hasselblad-Hedges) OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
         numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::escalc(measure="MD",vtype="HO") for the raw MD row; metafor::cmicalc(method="exact")',
         rows: rows
