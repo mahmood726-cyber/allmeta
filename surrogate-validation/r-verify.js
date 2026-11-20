@@ -96,6 +96,13 @@
       '<pre id="rv-out" style="white-space:pre-wrap;font-size:.72rem;max-height:28rem;overflow:auto" hidden></pre>';
     anchor.parentNode.insertBefore(sec, anchor.nextSibling);
     function revalidate() { if (window.__almSurrogate) window.__almSurrogate.run(); }
+    // An R verdict belongs to the analysis it checked: editing the trials (or loading the example) clears
+    // it, and a Verify answer that arrives after the analysis changed is discarded (it used to stay on
+    // screen beside different numbers until the next Verify).
+    var gen = 0;
+    function invalidate() { gen++; $("rv-out").hidden = true; $("rv-out").textContent = ""; $("rv-status").textContent = ""; }
+    $("f-data").addEventListener("input", invalidate);
+    if ($("btn-example")) $("btn-example").addEventListener("click", invalidate);
     $("rv-download").addEventListener("click", function () {
       try {
         revalidate();
@@ -110,10 +117,12 @@
       var btn = $("rv-run"), out = $("rv-out"), status = $("rv-status"), script;
       out.hidden = true; out.textContent = "";   // never leave an earlier verdict on screen
       try { revalidate(); script = buildScript(); } catch (e) { status.textContent = e.message; return; }
+      var my = ++gen, checked = window.__lastSurrogate;
       if (!window.AlmWebR || !AlmWebR.runR) { status.textContent = "WebR runner (../shared/webr-runner.js) did not load; use Download R script instead."; return; }
       btn.disabled = true; out.hidden = true; status.textContent = "Starting WebR...";
       try {
-        var r = await AlmWebR.runR({ packages: ["metafor"], script: script, onStatus: function (s) { status.textContent = s; } });
+        var r = await AlmWebR.runR({ packages: ["metafor"], script: script, onStatus: function (s) { if (my === gen) status.textContent = s; } });
+        if (my !== gen || window.__lastSurrogate !== checked) { status.textContent = "R result discarded: the trials changed while R was running. Press Verify in R again."; return; }
         if (!r.ok) { status.textContent = "WebR could not run the check: " + r.error + " (the downloadable R script remains the check)."; return; }
         out.textContent = r.stdout; out.hidden = false;
         var lines = r.stdout.trim().split(/\r?\n/), last = lines[lines.length - 1] || "";

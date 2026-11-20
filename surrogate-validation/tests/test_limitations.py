@@ -97,3 +97,15 @@ def test_F11_loo_range_states_how_many_fits_are_defined(pg):
     pg.fill("#f-data", "T1, 1, 0.1, 0.1\nT2, 1, 0.3, 0.1\nT3, 1, 0.2, 0.1\nT4, 3, 0.5, 0.1")
     txt = pg.text_content("#result")
     assert "3 of 4 deletions" in txt and "T4" in txt, txt
+
+
+def test_F16_input_change_clears_the_r_verdict(pg):
+    """F16: an R MATCH stayed on screen after the trials were edited (only a new Verify cleared it), so a
+    verdict for earlier data sat beside different numbers. Requirement: editing the input clears it, and a
+    Verify answer for an earlier analysis is discarded."""
+    pg.fill("#f-data", EX)
+    pg.evaluate("""() => { const o = document.getElementById("rv-out"); o.textContent = "MATCH 19/19"; o.hidden = false;
+                           document.getElementById("rv-status").textContent = "MATCH 19/19"; }""")
+    pg.fill("#f-data", EX + "\nTrial E, -11.0, -0.34, 0.14")
+    assert pg.evaluate("() => document.getElementById('rv-out').hidden")
+    assert "MATCH" not in pg.text_content("#rv-status")
