@@ -128,6 +128,7 @@
         <thead><tr><th>Analysis set</th><th>k</th><th>Pooled (95% CI)</th><th>I²</th></tr></thead>
         <tbody id="pooled"></tbody>
       </table>
+      <p id="pool-excluded" class="suggest" style="margin:-0.6rem 0 0.6rem"></p>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.3rem">
         <button type="button" id="btn-json" class="primary">Download JSON</button>
         <button type="button" id="btn-reset" class="ghost">Reset all</button>
@@ -273,11 +274,26 @@
       }).join("");
     }
 
+    // A whole-field decimal/scientific number, else null: "0.3kg" or "1e" is not read as 0.3 or 1 (parseFloat
+    // read numeric prefixes, so a corrupted restored field silently entered the pool).
+    function numOf(x) {
+      if (typeof x === "number") return isFinite(x) ? x : null;
+      var str = String(x == null ? "" : x).trim();
+      return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(str) && isFinite(+str) ? +str : null;
+    }
+    // Why a trial cannot enter a pooled set ("" = it can).
+    function unusable(t) {
+      var e = numOf(t.est), s = numOf(t.se);
+      if (e === null && s === null) return "no effect or SE";
+      if (e === null) return "no usable effect";
+      if (s === null) return "no usable SE";
+      if (!(s > 0)) return "SE not > 0";
+      return "";
+    }
     function poolSet(trials) {
       var yi = [], vi = [];
       trials.forEach(function (t) {
-        var e = parseFloat(t.est), s = parseFloat(t.se);
-        if (isFinite(e) && isFinite(s) && s > 0) { yi.push(e); vi.push(s * s); }
+        if (!unusable(t)) { yi.push(numOf(t.est)); vi.push(numOf(t.se) * numOf(t.se)); }
       });
       if (yi.length < 1) return null;
       if (yi.length === 1) { var z = window.AlmMaCore._qnorm(0.975); return { k: 1, mu: yi[0], ciLo: yi[0] - z * Math.sqrt(vi[0]), ciHi: yi[0] + z * Math.sqrt(vi[0]), I2: 0 }; }
@@ -311,8 +327,13 @@
         return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
       }).join("");
       if (rRows[0].k > 0) rState = { exp: ratio, page: rRows,
-        trials: all.map(function (t, i) { var e = parseFloat(t.est), s = parseFloat(t.se);
+        trials: all.map(function (t, i) { var e = numOf(t.est), s = numOf(t.se);
           return { label: t.label || ("Trial " + (i + 1)), est: isFinite(e) ? e : null, se: isFinite(s) ? s : null, overall: effectiveOverall(t) }; }) };
+      // Name every trial that no pooled set can contain, with the reason (they used to vanish silently).
+      var left = all.map(function (t, i) { var why = unusable(t); return why ? esc(t.label || ("Trial " + (i + 1))) + " (" + why + ")" : ""; }).filter(Boolean);
+      document.getElementById("pool-excluded").innerHTML = left.length
+        ? "Not pooled in any set — " + left.length + " of " + all.length + " trial" + (all.length === 1 ? "" : "s") + ": " + left.join("; ") + "."
+        : "";
     }
 
     function renderAll() { renderTrialSelect(); renderChecks(); renderSummary(); renderPooled(); }
