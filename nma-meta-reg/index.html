@@ -339,6 +339,21 @@ S10, A, B, -0.32, 0.10, 70</textarea>
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
+    // A displayed fit belongs to the inputs that produced it: editing any input (or a restored draft firing
+    // input/change) withdraws the fit, its export and the R snapshot until the user fits again.
+    function inputsEdited() {
+      if (!window.__almLastNmaMetaReg()) return;
+      window.__almLastNmaMetaReg = function () { return null; };
+      if (window.AlmRCheck) window.AlmRCheck.set(null);
+      ["#beta tbody", "#gamma tbody", "#pred tbody"].forEach(function (sel) { document.querySelector(sel).innerHTML = ""; });
+      document.getElementById("pred-head-host").innerHTML = "<tr><th>Covariate</th></tr>";
+      document.getElementById("plot-host").innerHTML = "";
+      document.getElementById("summary").innerHTML = '<div class="card" style="grid-column:1/-1">Inputs changed: press Fit network meta-regression.</div>';
+    }
+    ["src", "f-ref", "f-method", "f-predict"].forEach(function (id) {
+      var e = document.getElementById(id);
+      e.addEventListener("input", inputsEdited); e.addEventListener("change", inputsEdited);
+    });
     run();
   })();
   </script>
