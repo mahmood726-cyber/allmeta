@@ -145,7 +145,10 @@ function judgeInpageVerdict(r) {
   if (r.stillBusy) return { verdict: "FAIL", why: "in-page R comparison still running when the wait ran out (blocked)" + where };
   const v = fresh[fresh.length - 1]; // the final result line decides
   if (!v) return { verdict: "FAIL", why: "in-page R comparison did not complete (no new MATCH/MISMATCH line)" + where };
-  if (!own && (r.busyBefore || PROGRESS_LINE.test(String(before || ""))))
+  // busyBefore (from the live/status regions, recorded by the live harness) decides when known;
+  // the progress-line text heuristic is only for callers that did not record it, because page
+  // prose can end in a static "Loading..." (HTA).
+  if (!own && (r.busyBefore === true || (r.busyBefore === undefined && PROGRESS_LINE.test(String(before || "")))))
     return { verdict: "FAIL", why: "a run was still in progress when this control was pressed, so the new result line cannot be attributed to it: " + v.line };
   if (v.kind === "NOT CHECKED") return { verdict: "UNKNOWN", why: "in-page R comparison checked nothing: " + v.line + where };
   if (!(v.total > 0)) return Object.assign({ verdict: "UNKNOWN", why: "in-page R comparison: " + v.line + " (0 quantities checked)" + where }, counts(v));
@@ -292,7 +295,10 @@ async function settle(p, maxMs, re, before) {
       // In-page run (reviewer MAJOR 1): a new result line is NOT a finish while the page still
       // reads busy -- "Stage 1: MATCH 3/3" can print while stage 2 runs and ends in MISMATCH.
       // Finish only when the page is idle AND stable, so the line judged is the final one.
-      const busyIn = BUSY_RE.test(t.slice(-4000)) || BUSY_RE.test(st);
+      // Busy is read from the live/status regions only. The page tail is prose: HTA ends with
+      // static help text "Loading Data" / "Loading...", which held this wait busy for 420 s
+      // after R had printed MATCH 14/14 (live run 2026-11-20).
+      const busyIn = BUSY_RE.test(st);
       lastBusy = busyIn;
       const fresh = freshVerdictLines(before, t).length > 0;
       if (!busyIn && fresh && Date.now() - stableSince > 8000) return t;

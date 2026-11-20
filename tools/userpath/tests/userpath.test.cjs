@@ -179,3 +179,31 @@ test("MINOR 4: a fixed full-screen app shell is never pressed and gives no verdi
     assert.deepStrictEqual(U.overlayVerdicts("default", rep), []);
   } finally { await b.close().catch(() => {}); }
 });
+// Live HTA regression (2026-11-20, after the MAJOR 1 fix): static help text "Loading Data" /
+// "Loading..." at the end of the page kept the in-page wait "busy" for 420 s although the status
+// regions were idle and the comparison had printed MATCH 14/14. Busy must come from the live regions.
+test("settle: static 'Loading...' prose in the page tail does not block an idle, finished in-page run", async () => {
+  const vm = require("vm");
+  const SRC = path.join(__dirname, "..", "userpath.cjs");
+  const src = fs.readFileSync(SRC, "utf8").replace(/if \(require\.main === module\)[^\n]*/, "") + "\nmodule.exports.settle = settle; module.exports.lb = () => lastSettleBusy;";
+  let now = 0; const mod = { exports: {} };
+  vm.runInNewContext(src, { require, module: mod, exports: mod.exports, process: { argv: ["n", "s", "app", "out"], env: {} }, Date: { now: () => now }, console, String, RegExp, Object, JSON, Math });
+  const tail = "\nHelp & Documentation\nLoading Data\nDrop a CSV file\nKeyboard Shortcuts\nLoading...";
+  const page = () => (now < 20000 ? "Check in R" : "Check in R\nheemod is not installed here.\nMATCH 14/14") + tail;
+  const status = () => (now < 20000 ? "Running R in WebR..." : "WebR 0.5.5 - base-R checks: MATCH 14/14.");
+  const p = { waitForTimeout: async (ms) => { now += ms; }, evaluate: async (fn) => String(fn).includes("querySelectorAll") ? status() : page() };
+  const t = await mod.exports.settle(p, 420000, /(match|fail)/i, "Check in R" + tail);
+  assert.ok(now < 120000, "waited until " + now + " ms");
+  assert.strictEqual(mod.exports.lb(), false);
+  // busyBefore: false as the live harness records it (status regions idle before the click)
+  const v = U.judge(verify, { kind: "inpage", before: "Check in R" + tail, text: t, stillBusy: mod.exports.lb(), busyBefore: false });
+  assert.strictEqual(v.verdict, "PASS", v.why);
+  // and the same page with the status regions busy before the click is still not attributed
+  assert.strictEqual(U.judge(verify, { kind: "inpage", before: "Check in R" + tail, text: t, stillBusy: false, busyBefore: true }).verdict, "FAIL");
+});
+test("judge: a known idle busyBefore is not overridden by a static 'Loading...' line", () => {
+  const before = "Check in R\nKeyboard Shortcuts\nLoading...";
+  assert.strictEqual(U.judge(verify, { kind: "inpage", before, text: before + "\nMATCH 3/3", busyBefore: false }).verdict, "PASS");
+  // unknown busyBefore keeps the conservative text heuristic (reviewer case 1b)
+  assert.strictEqual(U.judge(verify, { kind: "inpage", before, text: before + "\nMATCH 3/3" }).verdict, "FAIL");
+});
