@@ -657,6 +657,9 @@
         _lastResults = null;
       };
       if (nSig < 3) return refuse("Need at least 3 significant (p &lt; 0.05) p-values.");
+      // p-uniform uses z = qnorm(p/2, upper tail): below ~1e-323 p/2 underflows to 0 and z is infinite.
+      const tiny = raw.filter(p => !(p / 2 > 0));
+      if (tiny.length) return refuse(`${tiny.length} p-value${tiny.length === 1 ? " is" : "s are"} too small to analyse in double precision (p/2 underflows to 0); the smallest usable p is about 1e-323.`);
       const testType = document.getElementById("test").value;
       // The common df is used exactly as typed: Number(), not parseInt() (which made 30.9 -> 30 and 1e2 -> 1),
       // and a t-test without a usable df is refused instead of silently becoming the z family.
