@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Fragility index for a binary-outcome meta-analysis (Atal 2019): the fewest single-patient event changes needed to flip the pooled result's statistical significance.">
+  <meta name="description" content="Fragility index for a binary-outcome meta-analysis (Atal 2019): the number of single-patient event changes, chosen greedily as in fragility::frag.ma, needed to flip the pooled result's statistical significance.">
   <meta name="color-scheme" content="light dark">
   <title>Fragility index — meta-analysis</title>
   <style>
@@ -62,7 +62,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Fragility index — meta-analysis</h1>
-    <p>How many single-patient event-status changes, added greedily across studies, would it take to flip the pooled result's statistical significance? A small fragility index means a "significant" meta-analysis hangs on very few events (Atal et al. 2019). Pooling matches <code>metafor</code> DL; the algorithm matches the <code>fragility</code> R package.</p>
+    <p>How many single-patient event-status changes, added greedily across studies, would it take to flip the pooled result's statistical significance? A small fragility index means a "significant" meta-analysis hangs on very few events (Atal et al. 2019). Pooling matches <code>metafor</code> DL; the greedy search follows <code>fragility::frag.ma</code> (its FI and FQ were reproduced on the validated inputs; the modification path can differ after floating-point near-ties). It gives a count of greedy changes, not a guaranteed minimum.</p>
   </header>
   <main>
     <section class="panel">
@@ -97,7 +97,7 @@
   <footer>
     Greedy procedure matching <code>fragility::frag.ma(method="DL")</code>: each step applies the single ±1
     event change (across any study, either arm) that pushes the watched DerSimonian-Laird 95% CI bound furthest
-    toward the null, stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
+    toward the null (or the earliest that reaches the null), stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
     Zero-cell handling follows <code>frag.ma</code>'s defaults for <code>metafor</code> (add ½ to studies with a zero cell;
     double-zero studies are kept, <code>drop00 = FALSE</code>); at least two studies are required; the DL pool
     delegates to the audited <code>shared/ma-core.js</code>. Reference: Atal I, Porcher R, Boutron I, Ravaud P.
