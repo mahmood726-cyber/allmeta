@@ -44,3 +44,14 @@ def test_example_unchanged_with_ma_core():
 def test_no_t_quantile_no_result():
     o = transport(EXAMPLE, 31, macore=False)
     assert o["ok"] is False and "t quantile" in o["error"], o
+
+
+def test_unresolved_paule_mandel_is_refused():
+    o = transport([(0, 1, 1), (1e12, 1, 2), (-1e12, 1, 3), (0, 1, 4)], 2)
+    assert o["ok"] is False and "Paule-Mandel" in o["error"], o
+
+
+def test_resolved_large_heterogeneity_still_fits():
+    # control: big but bracketable residual heterogeneity is still fitted
+    o = transport([(0, 1, 1), (1e4, 1, 2), (-1e4, 1, 3), (0, 1, 4)], 2)
+    assert o["ok"] and o["tau2"] > 1e7, o

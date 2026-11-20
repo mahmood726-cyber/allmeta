@@ -64,9 +64,12 @@
     if (r0 <= dfree) return 0;                              // no excess residual heterogeneity
     var lo = 0, hi = 1;
     for (var g = 0; g < 60 && rssAt(hi) > dfree; g++) hi *= 2; // bracket
+    // Not bracketed after 60 doublings (RSS still > k - 2 at tau^2 = 2^60), or a singular fit inside the
+    // bracket: the equation is unresolved. Returning the midpoint reported that as a fitted tau^2.
+    var rh = rssAt(hi); if (rh == null || !(rh <= dfree)) return NaN;
     for (var it = 0; it < 200; it++) {
       var m = (lo + hi) / 2, rm = rssAt(m);
-      if (rm == null) break;
+      if (rm == null || !isFinite(rm)) return NaN;
       if (rm > dfree) lo = m; else hi = m;
     }
     return (lo + hi) / 2;
@@ -85,6 +88,7 @@
     var y = rows.map(function (s) { return s.est; });
     var se2 = rows.map(function (s) { return s.se * s.se; });
     var tau2 = _tau2PM(y, xs, se2);
+    if (!isFinite(tau2)) return { ok: false, error: "the Paule-Mandel equation for tau^2 could not be resolved for these inputs (numerical range)" };
     var w = se2.map(function (v) { return 1 / (v + tau2); });
     var fit = _fit(y, xs, w);
     if (!fit) return { ok: false, error: "design is singular" };
@@ -113,6 +117,9 @@
 
     // Unmeasured-modifier sensitivity: the residual transported-effect shift
     // that would move the nearer CI bound to the null (analysis scale).
+    // A non-finite estimate, SE or bound is a numerical failure, not a result (negative variances were clamped to 0).
+    var vals = [fit.beta[0], fit.beta[1], slopeSE, pSlope, q, xbar, atTrial.est, atTrial.ciLo, atTrial.ciHi, trans.est, trans.ciLo, trans.ciHi];
+    if (!vals.every(isFinite) || !(atTrial.se > 0) || !(trans.se > 0)) return { ok: false, error: "the fit did not give finite estimates and intervals for these inputs (numerical range)" };
     var nearBound = Math.abs(trans.ciLo) < Math.abs(trans.ciHi) ? trans.ciLo : trans.ciHi;
     var biasToNull = (trans.ciLo > 0 || trans.ciHi < 0) ? Math.abs(nearBound) : 0;
 
