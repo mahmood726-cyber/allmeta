@@ -205,6 +205,16 @@
         refuse("derived risk ratio or E-value was non-finite.");
         return;
       }
+      // LIM-P22 F11: every DISPLAYED derived quantity must be usable, not only the E-values
+      // (an SMD SE of 1000 gives risk-ratio limits exp(0.91 d -/+ 1.78 SE) = 0 and Infinity).
+      var shown = measure === "RD" ? [r.rd, r.rdLo, r.rdHi, r.biasFactor]
+        : [r.rr.point].concat(r.rr.lo != null ? [r.rr.lo, r.rr.hi] : [], tv !== null ? [r.rr["true"]] : [],
+            measure === "OLS" ? [r.d].concat(r.seD != null ? [r.seD] : []) : []);
+      var ratioOk = measure === "RD" || (r.rr.point > 0 && (r.rr.lo == null || (r.rr.lo > 0 && r.rr.hi > 0)));
+      if (shown.some(function (v) { return !Number.isFinite(v); }) || !ratioOk) {
+        refuse("a derived quantity (risk ratio, its limits, d or the bias factor) is non-finite or out of numerical range.");
+        return;
+      }
       window.__almLastEValue = function () { return r; };
       tbody.innerHTML =
         "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
