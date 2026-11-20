@@ -77813,15 +77813,20 @@ function displayValidationResults(results) {
     return '"' + out + '"';
   }
 
-  // A page value as an R literal, coerced the way the panel's compareResults coerces it
-  // (global isFinite / arithmetic). null/undefined -> NULL ("the page gives no value").
+  // A page value as an R literal. A number is embedded as it is (NaN / Inf too: R then prints NOT
+  // CHECKED, "a value is not finite"); a string is embedded only when it is a decimal number. Anything
+  // else -- null/undefined, "", "  ", a boolean, an array, an object, "abc", "0x10" -- is NULL ("the
+  // page gives no value", NOT CHECKED). It used to be coerced with Number() and the global isFinite(),
+  // so "" / [] / false became 0 and a page that gave no tau2 printed a false [MATCH] against R's
+  // tau2 = 0 (dev/tests/webr_rscript_missing_page_value.test.cjs).
+  var R_DECIMAL_RE = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
   function rNumLiteral(v) {
     if (v === null || v === undefined) return 'NULL';
     if (typeof v !== 'number') {
-      if (typeof v === 'object' && !Array.isArray(v)) return 'NULL';
-      var n = Number(v);
-      if (!isFinite(v)) return 'NULL';
-      v = n;
+      if (typeof v !== 'string') return 'NULL';
+      var s = v.trim();
+      if (!R_DECIMAL_RE.test(s)) return 'NULL';
+      v = Number(s);
     }
     if (v !== v) return 'NaN';
     if (v === Infinity) return 'Inf';
