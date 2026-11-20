@@ -224,7 +224,11 @@
         if (toks.length < 2) return null;
         var te = num(toks[0]), se = num(toks[1]);
         if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te: te, se: se };
+        // The rest of the line after effect and SE is the study's label (lane hf1, review of
+        // PR #578: bus Save and the receipt export this snapshot, and 'Study N' for every row
+        // erased the names the shared reader kept). Labels never enter the fit.
+        var label = l.trim().replace(/^[\s,]*[^\s,]+[\s,]+[^\s,]+[\s,]*/, '').trim();
+        return { te: te, se: se, label: label };
       }).filter(Boolean);
     }
 
@@ -548,7 +552,7 @@
       // meaning, and everything PR #212's metasens pipeline added is additive.
       // A consumer of v2 needs no change, so the schema string must not move.
       _validatorSnapshot = {
-        studies: rows.map(function (r, i) { return { label: 'Study ' + (i + 1), est: r.te, se: r.se }; }),
+        studies: rows.map(function (r, i) { return { label: r.label || ('Study ' + (i + 1)), est: r.te, se: r.se }; }),
         method: tauUsed
       };
       _lastResults = {
