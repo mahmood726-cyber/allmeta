@@ -148,7 +148,6 @@ def test_f12_control_default_example_display_unchanged(page):
 
 def test_f14_rd_plot_labels_bias_factor_not_rr(page):
     _set(page, **RD_OK)
-    txt = page.inner_text("#plot") if page.locator("#plot text").count() else ""
     labels = page.evaluate("[...document.querySelectorAll('#plot text')].map(t => t.textContent)")
     assert not any(l == "RR" or l.startswith("1/RR") for l in labels), labels
     assert any("bias factor" in l.lower() for l in labels), labels
