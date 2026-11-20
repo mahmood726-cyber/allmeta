@@ -89,3 +89,11 @@ def test_F06_numerical_failure_is_refused_and_clears_the_plot(pg):
     assert pg.inner_html("#plot") == ""
     assert pg.evaluate("() => window.__lastSurrogate") is None
     assert pg.errs == []
+
+
+def test_F11_loo_range_states_how_many_fits_are_defined(pg):
+    """F11: the leave-one-out range dropped undefined fits without saying so. Requirement: the page states
+    how many of the k deletions gave a defined R^2 and names any that did not."""
+    pg.fill("#f-data", "T1, 1, 0.1, 0.1\nT2, 1, 0.3, 0.1\nT3, 1, 0.2, 0.1\nT4, 3, 0.5, 0.1")
+    txt = pg.text_content("#result")
+    assert "3 of 4 deletions" in txt and "T4" in txt, txt

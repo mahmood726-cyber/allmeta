@@ -132,6 +132,12 @@
       });
       return pairs;
     }
+    // The leave-one-out range is over the deletions that gave a defined R² only; say how many, and which did not.
+    function looCoverage(r) {
+      var undef = r.loo.filter(function (l) { return l.r2 == null; }).map(function (l) { return l.left_out; });
+      return "; " + (r.k - undef.length) + " of " + r.k + " deletions gave a defined R²"
+        + (undef.length ? " (undefined without " + esc(undef.join(", ")) + ")" : "");
+    }
     function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
 
     function drawScatter(pairs, r) {
@@ -189,6 +195,7 @@
         + stat("STE", r.ste != null ? r.ste.toFixed(2) : "—")
         + "</div>"
         + '<p class="hint">Leave-one-out naive R²: ' + (r.loo_min != null ? r.loo_min.toFixed(2) + "–" + r.loo_max.toFixed(2) : "—") + " (k=" + r.k + ")"
+        + looCoverage(r)
         + (r.adj_reason ? '<br><span style="color:var(--warn)">' + esc(r.adj_reason) + "</span>" : "") + "</p>";
       $("plot").innerHTML = drawScatter(pairs, r);
     }
