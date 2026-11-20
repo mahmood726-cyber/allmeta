@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Umbrella-review overlap: Corrected Covered Area (CCA, Pieper 2014) from the study×review citation matrix, with Pieper grooves, a pairwise overlap matrix, and the most-shared primary studies — so you don't double-count evidence across overlapping reviews. Free, offline.">
+  <meta name="description" content="Umbrella-review overlap: Corrected Covered Area (CCA, Pieper 2014) from the study×review citation matrix, with an overlap band, a pairwise overlap matrix, and the most-shared primary studies — so you don't double-count evidence across overlapping reviews. Free, offline.">
   <meta name="color-scheme" content="light dark">
   <title>Umbrella overlap — Corrected Covered Area (CCA)</title>
   <style>
@@ -53,7 +53,7 @@
 
   <header>
     <h1>Umbrella overlap <span style="font-size:.8rem;color:var(--muted);font-weight:400">· Corrected Covered Area</span></h1>
-    <p>In an umbrella review (a review of reviews), the same primary studies often appear in several of the included reviews — so naively pooling across them <strong>double-counts evidence</strong>. The <strong>Corrected Covered Area</strong> (CCA; Pieper et al. 2014) measures that overlap from the study×review citation matrix, with Pieper's grooves (slight / moderate / high / very high), a pairwise overlap matrix, and the most-shared studies. Free, offline.</p>
+    <p>In an umbrella review (a review of reviews), the same primary studies often appear in several of the included reviews — so naively pooling across them <strong>double-counts evidence</strong>. The <strong>Corrected Covered Area</strong> (CCA; Pieper et al. 2014) measures that overlap from the study×review citation matrix, with an overlap band (slight / moderate / high / very high; this page's cut-points are given below), a pairwise overlap matrix, and the most-shared studies. Free, offline.</p>
   </header>
 
   <div class="toolbar">
@@ -93,7 +93,7 @@
     </section>
   </main>
 
-  <p class="footer-note">CCA = (N − r) / (r·c − r) where N = total citations across reviews, r = unique primary studies, c = reviews (Pieper et&nbsp;al., <em>J Clin Epidemiol</em> 2014). Grooves: &lt;5% slight, &lt;10% moderate, &lt;15% high, ≥15% very high. Method integrated from the UmbrellaEngine project. Everything runs on your device.</p>
+  <p class="footer-note">CCA = (N − r) / (r·c − r) where N = total citations across reviews, r = unique primary studies, c = reviews (Pieper et&nbsp;al., <em>J Clin Epidemiol</em> 2014). Overlap bands (this page's cut-points): &lt;5% slight, &lt;10% moderate, &lt;15% high, ≥15% very high. Method integrated from the UmbrellaEngine project. Everything runs on your device.</p>
 
   <script src="../shared/toast.js"></script>
   <script src="../shared/webr-runner.js"></script>
