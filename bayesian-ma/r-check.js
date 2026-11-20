@@ -110,7 +110,11 @@
     L.push("} else if (k < 2) 0 else {");
     L.push("  suppressPackageStartupMessages(library(metafor))");
     L.push("  ## tight convergence so R reaches the PM root the page solves for (metafor's default tol stops ~1e-4 short)");
-    L.push("  rma(yi, sei = sei, method = \"PM\", control = list(tol = 1e-12, maxiter = 10000))$tau2");
+    L.push("  ## metafor's tol is ABSOLUTE in tau^2 units, so on data in tiny units it stops far from the root (tau^2 ~ 1e-16");
+    L.push("  ## vs tol 1e-12). Fit on yi and sei divided by a power of 2 near the SEs: exact in floating point, and the PM");
+    L.push("  ## tau^2 of the rescaled data is tau^2 / sc^2, so the root is found to the same relative accuracy at any scale.");
+    L.push("  sc <- 2^round(log2(median(sei)))");
+    L.push("  rma(yi / sc, sei = sei / sc, method = \"PM\", control = list(tol = 1e-12, maxiter = 10000))$tau2 * sc^2");
     L.push("}");
     L.push("prec <- 1 / tau0^2 + sum(1 / (v + tau2))");
     L.push("post_mu <- (mu0 / tau0^2 + sum(yi / (v + tau2))) / prec; post_sd <- sqrt(1 / prec)");

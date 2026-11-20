@@ -182,7 +182,9 @@ def test_a_wrong_page_value_is_reported_as_MISMATCH(server, tmp_path):
     # The verdict is computed by R from the comparisons: change one page value in the downloaded
     # script and the same script must say MISMATCH and mark exactly that quantity DIFFERS.
     res = drive(server, DEFAULT_ACTIONS)
-    m = re.search(r"^(page <- list\(\w+ = (?:c\()?)(-?[0-9][0-9.e+-]*)", res["script"], re.M)
+    # perturb the posterior mean (a computed, displayed quantity), not the first field of page (k, an integer
+    # count): review of PR #630, agy A8.
+    m = re.search(r"^(page <- list\(.*?\bmu = )(-?[0-9][0-9.e+-]*)", res["script"], re.M)
     assert m, res["script"][:2000]
     bad = res["script"][:m.start(2)] + repr(float(m.group(2)) + 0.01) + res["script"][m.end(2):]
     rc, out = run_r(bad, tmp_path, "perturbed")
@@ -220,3 +222,25 @@ def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_dis
     assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
                        "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
     assert "MISMATCH 3/6 agree" in out, out
+
+
+# Review of PR #630 (Codex F2 reproduction B / agy A1, second half; XREV-631 lane fix631): metafor's PM
+# tol (1e-12) is an ABSOLUTE tolerance on tau^2, so on data in tiny units (tau^2 ~ 1e-16) R stopped at
+# 7.07e-13 while the page solves to 2.32e-16, and the displayed probability then disagreed (0.539 vs
+# 0.357). Requirement: the PM root R checks against does not depend on the units of the data. The
+# same data set (shape 0, 1, 3 with SE 0.1) is pasted at two unit scales (1e-8 and 1); each must MATCH.
+def _scaled(s):
+    data = "\n".join("%s, %r, %r" % (lab, y * s, 0.1 * s) for lab, y in (("A", 0.0), ("B", 1.0), ("C", 3.0)))
+    return [{"fill": "#f-data", "value": data}, {"fill": "#f-tau0", "value": repr(10.0 * s)},
+            {"fill": "#f-threshold", "value": repr(1.0 * s)}, {"wait": 500}]
+
+
+@pytest.mark.parametrize("scale", [1e-8, 1.0])
+def test_pm_tau2_root_does_not_depend_on_the_units_of_the_data(server, tmp_path, scale):
+    res = drive(server, _scaled(scale))
+    assert res["downloaded"], res["status"]
+    rc, out = run_r(res["script"], tmp_path, "pm-scale-%g" % scale)
+    assert_match(rc, out)
+    R = r_values(out)
+    assert math.isclose(R["tau^2 (plug-in)"], 2.3233333333333333 * scale * scale, rel_tol=1e-9), out
+    check_dom_against_r(res["dom"], R)

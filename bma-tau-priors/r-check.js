@@ -48,7 +48,9 @@
       '<button type="button" id="btn-r-webr" title="Run the same R script in this browser with WebR (downloads R on first use) and show its output.">Verify this analysis in R (WebR)</button>' +
       '<span id="r-check-status" role="status" aria-live="polite" style="font-size:0.85rem"></span>' +
       '<pre id="r-check-out" hidden style="flex-basis:100%;max-height:28rem;overflow:auto;font-size:0.75rem;white-space:pre-wrap;border:1px solid #ccc;border-radius:6px;padding:0.5rem;margin:0"></pre>';
-    mount.parentNode.insertBefore(box, mount.nextSibling);
+    // a mount inside a table (tbody#per-model) puts the controls after the whole table: a <div> is not valid table content
+    var anchor = (mount.closest && mount.closest("table")) || mount;
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
     var st = box.querySelector("#r-check-status"), out = box.querySelector("#r-check-out");
     function current() {
       var inp = cfg.getInputs();
@@ -176,14 +178,16 @@
     L.push("chk(\"95% CrI hi (97.5% quantile)\", qroot(0.975), page$hi, half = 5e-5)");
     L.push("## Descriptive, not counted above: the per-prior posterior mean of mu from bayesmeta's own tau posterior");
     L.push("## (the P47 pack's reference construction), when bayesmeta is installed.");
-    L.push("if (requireNamespace(\"bayesmeta\", quietly = TRUE)) {");
+    L.push("## wrapped: an error inside bayesmeta (e.g. \"the integral is probably divergent\") must not stop the counted check");
+    L.push("if (requireNamespace(\"bayesmeta\", quietly = TRUE)) tryCatch({");
     L.push("  for (j in seq_along(MODELS)) { M <- MODELS[[j]]");
     L.push("    bm <- bayesmeta::bayesmeta(y = yi, sigma = sqrt(vi), tau.prior = function(t) exp(M$ld(t)))");
     L.push("    br <- fits[[j]]$br; d <- function(t) bm$dposterior(tau = t)");
     L.push("    mb <- qint(function(t) d(t) * bm$cond.moment(tau = t)[, \"mean\"], br)");
     L.push("    cat(sprintf(\"bayesmeta %-20s mean mu %.8f (base R %.8f, |diff| %.1e; descriptive)\\n\", M$name, mb, fits[[j]]$mu, abs(mb - fits[[j]]$mu))) }");
     L.push("  cat(\"bayesmeta\", as.character(packageVersion(\"bayesmeta\")), \"\\n\")");
-    L.push("} else cat(\"bayesmeta not installed: descriptive cross-check skipped (it is not part of the MATCH count)\\n\")");
+    L.push("}, error = function(e) cat(\"bayesmeta stopped:\", conditionMessage(e), \"-- descriptive cross-check skipped (it is not part of the MATCH count)\\n\")) else");
+    L.push("  cat(\"bayesmeta not installed: descriptive cross-check skipped (it is not part of the MATCH count)\\n\")");
     L.push("cat(\"R:\", R.version.string, \"\\n\")");
     L.push("finish()");
     return L.join("\n") + "\n";

@@ -241,3 +241,30 @@ def test_chk_does_not_pass_different_undefined_values_or_large_values_beyond_dis
     assert verdict == {"nan-vs-inf": "DIFFERS", "minf-vs-inf": "DIFFERS", "big": "DIFFERS",
                        "na-vs-nan": "ok", "inf-vs-inf": "ok", "close": "ok"}, out
     assert "MISMATCH 3/6 agree" in out, out
+
+
+def test_r_check_controls_are_not_placed_inside_the_table(server):
+    # Review of PR #630 (Codex N1 / agy A7): the mount is tbody#per-model, and inserting after it put the
+    # controls' <div> directly inside <table> (invalid table content; browsers render it out of place).
+    # Requirement: the controls follow the table, as a sibling of the table in its section.
+    res = drive(server, DEFAULT_ACTIONS,
+                dom="(() => { const b = document.querySelector('.alm-rcheck'); const t = document.getElementById('per-model').closest('table');"
+                    " return [b.parentElement.tagName, !!b.closest('table'), t.nextElementSibling === b]; })()")
+    assert res["dom"] == ["SECTION", False, True], res["dom"]
+    assert res["downloaded"], res["status"]
+
+
+TINY = [WAIT, {"fill": "#src", "value": "A, 0, 1e-18\nB, 1e-8, 1e-18\nC, 3e-8, 1e-18"}, {"click": "#btn-run"},
+        {"waitFor": "window.__almRCheckInputs() && window.__almRCheckInputs().rows.length === 3"}]
+
+
+def test_a_failing_descriptive_bayesmeta_check_does_not_abort_the_counted_check(server, tmp_path):
+    # Review of PR #630 (agy A6): the bayesmeta block is labelled "descriptive, not counted", but it ran
+    # unwrapped before finish(); bayesmeta 3.5 stops on these data ("the integral is probably divergent"),
+    # so Rscript exited with an error and printed no verdict at all. Requirement: the counted base-R check
+    # still reaches its verdict, and the skipped descriptive check is reported as skipped.
+    res = drive(server, TINY)
+    assert res["downloaded"], res["status"]
+    rc, out = run_r(res["script"], tmp_path, "tiny")
+    assert rc == 0, out
+    assert re.search(r"^(MATCH \d+/\d+|MISMATCH \d+/\d+ agree)$", out, re.M), out

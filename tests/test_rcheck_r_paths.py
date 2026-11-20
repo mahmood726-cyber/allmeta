@@ -54,6 +54,9 @@ EXAMPLE_MARK = {"poth": '"Drug A"', "multiplicative-ma": "1.1, ", "multiplicativ
 
 
 def r_has(pkg):
+    # Rscript is needed only by tests that execute R; the mocked-WebR tests run without it (XREV-631 A4).
+    if not RSCRIPT:
+        pytest.skip("Rscript not found")
     if pkg is None:
         return True
     r = subprocess.run([RSCRIPT, "--vanilla", "-e", f"q(status = !requireNamespace('{pkg}', quietly = TRUE))"],
@@ -74,8 +77,6 @@ def browser():
     sync_api = pytest.importorskip("playwright.sync_api")
     if not CHROME.exists():
         pytest.skip("system Chrome not found")
-    if not RSCRIPT:
-        pytest.skip("Rscript not found")
 
     class Quiet(SimpleHTTPRequestHandler):
         def log_message(self, *a):
@@ -109,8 +110,16 @@ def page_script(br, base, app, data=None, settings=()):
             pg.click("#btn-rscript")
         downloaded = Path(dl.value.path()).read_text(encoding="utf-8")
         script = pg.evaluate("() => window.AlmRCheck.script()")
-        # the download IS the script the WebR button runs
-        assert downloaded == script
+        # The download IS the script the WebR button runs: capture it at the WebR boundary (the runR call made
+        # by the real Verify button), not from the getter (XREV-631 finding 3). The stub never starts WebR.
+        pg.evaluate("""() => { window.__rcheckSent = null; window.__rcheckRealRunR = window.AlmWebR.runR;
+            window.AlmWebR.runR = async opts => { window.__rcheckSent = opts.script;
+                return { ok: true, stdout: "MATCH 1/1", versions: { R: "test stub" } }; }; }""")
+        pg.click("#btn-verify-r")
+        pg.wait_for_function("() => window.__rcheckSent !== null")
+        sent = pg.evaluate("() => window.__rcheckSent")
+        pg.evaluate("() => { window.AlmWebR.runR = window.__rcheckRealRunR; }")
+        assert downloaded == script == sent
         return pg, script
     except Exception:
         pg.close()
@@ -187,6 +196,35 @@ def test_webr_result_of_a_superseded_analysis_is_not_shown(browser, app, second)
         assert "changed" in verdict, verdict   # the user is told why there is no verdict
         if second == "rerun":
             assert not pg.is_disabled("#btn-verify-r")
+        else:
+            # XREV-631 A3: with no analysis on the page the button is disabled, so the page must not tell
+            # the user to press it.
+            assert pg.is_disabled("#btn-verify-r")
+            assert "Press Verify in R again" not in verdict, verdict
+    finally:
+        pg.close()
+
+
+@pytest.mark.parametrize("app", list(CASES))
+def test_webr_error_of_a_superseded_analysis_is_not_shown(browser, app):
+    """XREV-631 A3: a WebR run that THROWS after the user re-ran the page belongs to the earlier analysis; its
+    error must not replace the 'inputs changed' notice next to the current analysis."""
+    br, base = browser
+    pg = br.new_page()
+    try:
+        pg.goto(base + app + "/", wait_until="load", timeout=120000)
+        pg.click("#btn-run")
+        pg.evaluate("""() => { window.AlmWebR.runR = function () { return new Promise((res, rej) => { window.__reject = rej; }); }; }""")
+        pg.click("#btn-verify-r")
+        pg.wait_for_function("() => !!window.__reject")
+        pg.evaluate("""d => { const ta = [...document.querySelectorAll('textarea')].sort((a, b) => b.clientHeight - a.clientHeight)[0];
+            ta.value = d; ta.dispatchEvent(new Event('input', { bubbles: true })); }""", RACE_DATA[app])
+        pg.click("#btn-run")
+        pg.evaluate("() => window.__reject(new Error('boom from analysis A'))")
+        pg.wait_for_timeout(300)
+        verdict = pg.text_content("#rcheck-verdict")
+        assert "boom from analysis A" not in verdict and "changed" in verdict, verdict
+        assert not pg.is_disabled("#btn-verify-r")
     finally:
         pg.close()
 
@@ -220,3 +258,52 @@ def test_exponentiated_checks_are_not_looser_than_the_display(browser, tmp_path,
         planted = script.replace('chk("%s", %s, ' % (q, val), 'chk("%s", %r, ' % (q, float(val) + 9e-4), 1)
         r, v = run_r(planted, tmp_path, app + "-exp-planted")
         assert v and v[-1].startswith("MISMATCH "), f"{q} off by 9e-4 (a different 3-dp display) still gives {v}"
+
+
+# ---- XREV-631 (external review of the merged PR) -----------------------------------------------------------
+@pytest.mark.parametrize("app,field", [("multiplicative-nma", "aicDiff"), ("nma-meta-reg", "p")])
+def test_displayed_summary_field_is_checked(browser, tmp_path, app, field):
+    """XREV-631 finding 1: the page displays res.aicDiff (the Delta AIC in the verdict line) and fit.p (the
+    'p (params)' card). A wrong stored value must change the script AND turn the R verdict into MISMATCH."""
+    br, base = browser
+    if not r_has(CASES[app][0]):
+        pytest.skip(f"R package {CASES[app][0]} not installed")
+    pg, original = page_script(br, base, app)
+    try:
+        planted = pg.evaluate("""field => {
+            const s = structuredClone(window.AlmRCheck._state());
+            s.page[field] += 100;
+            return window.AlmRCheck.buildScript(s);
+        }""", field)
+    finally:
+        pg.close()
+    assert planted != original, f"displayed {field} does not enter the R check"
+    r, v = run_r(original, tmp_path, app + "-summary-clean")
+    assert r.returncode == 0, r.stderr
+    assert v and re.match(r"^MATCH (\d+)/\1$", v[-1]), r.stdout[-3000:]
+    r, v = run_r(planted, tmp_path, app + "-summary-planted")
+    assert r.returncode == 0, r.stderr
+    assert v and v[-1].startswith("MISMATCH "), r.stdout[-3000:]
+
+
+def test_nmr_r_check_uses_the_rows_the_page_analysed(browser, tmp_path):
+    """XREV-631 finding 2: a row the engine rejects (here a missing covariate) is not analysed by the page, so
+    it must not enter R's covariate shift or fit; and the 'Dropped multi-arm contrasts' row compares the
+    number the page displays (rows dropped for that reason only), not every rejected row."""
+    br, base = browser
+    if not r_has("netmeta"):
+        pytest.skip("R package netmeta not installed")
+    data = RACE_DATA["nma-meta-reg"] + "\nBAD, A, B, -0.2, 0.1, missing"
+    pg, script = page_script(br, base, "nma-meta-reg", data)
+    try:
+        st = pg.evaluate("() => { const p = window.AlmRCheck._state().page; return { n: p.n, dropped: p.droppedRows.map(r => r.reason) }; }")
+        card = pg.evaluate("""() => [...document.querySelectorAll('#summary .card')].find(c => /Dropped multi-arm/.test(c.textContent)).querySelector('.v').textContent""")
+    finally:
+        pg.close()
+    assert st["n"] == 7 and st["dropped"] == ["non-finite yi, sei, or covariate"], st
+    assert card == "0"
+    assert 'chk("dropped multi-arm contrasts", 0, ' in script, "the script does not compare the displayed count"
+    r, v = run_r(script, tmp_path, "nmr-invalid-row-exclusion")
+    assert r.returncode == 0, r.stderr
+    assert v and re.match(r"^MATCH (\d+)/\1$", v[-1]), r.stdout[-3000:]
+    assert "Invalid input rows excluded by the page and R: 1" in r.stdout, r.stdout[-3000:]
