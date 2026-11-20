@@ -74,8 +74,8 @@
     var verdict = "CCA " + (cca * 100).toFixed(1) + "% — " + groove + " overlap. " + (
       cca >= 0.15 ? "Very high overlap: the reviews are far from independent — pooling effect sizes across them double-counts the shared primary studies and inflates precision. Use a non-overlapping subset or report a citation-matrix-based correction."
         : cca >= 0.05 ? "Moderate/high overlap: account for the shared studies (e.g. restrict to non-overlapping reviews for any quantitative pool)."
-          : "Slight overlap: the reviews are largely independent on their primary studies."
-    );
+          : "Slight overlap on aggregate. A low CCA does not establish that the reviews or their estimates are independent: two reviews can still share most of their studies, so inspect the pairwise matrix (and outcome-specific overlap)."
+    ) + " The band uses the unrounded CCA, so a value just below a cut-off can display as the cut-off.";
 
     return {
       ok: true, cca: cca, groove: groove, nTotal: nTotal, nUnique: r, nReviews: c,
