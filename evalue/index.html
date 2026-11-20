@@ -167,6 +167,12 @@
         if (measure === "RD") {
           var c = ["n11", "n10", "n01", "n00"].map(num);
           if (c.some(function (v) { return v === null; })) throw new RangeError("all four cell counts are required.");
+          // LIM-P22 F08: counts are whole numbers of people; a fractional or unsafe-integer
+          // entry is a typo, not data. A risk difference lies strictly between -1 and 1.
+          if (c.some(function (v) { return !(Number.isSafeInteger(v) && v >= 0); }))
+            throw new RangeError("cell counts must be whole numbers of 0 or more.");
+          if (tv !== null && !(tv > -1 && tv < 1))
+            throw new RangeError("a risk-difference true value must lie between -1 and 1 (exclusive).");
           r = E.eValuesRD(c[0], c[1], c[2], c[3], { "true": tv });
           rows = "<tr><td>Risk difference (95% CI)</td><td><code>" + fmt(r.rd) + "</code> (CI <code>" + fmt(r.rdLo) + "</code>&ndash;<code>" + fmt(r.rdHi) + "</code>)</td></tr>"
             + "<tr><td>Bias factor to reach the true value</td><td><code>" + fmt(r.biasFactor) + "</code></td></tr>";
