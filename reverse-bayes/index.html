@@ -40,6 +40,8 @@
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
                      border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    /* Dark mode: the accent is light (#6aa6d4), so white text on it is 2.6:1; dark text is 6.9:1. */
+    @media (prefers-color-scheme:dark) { button.primary { color: #141618; } }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
     th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
