@@ -59,3 +59,12 @@ def test_L06_duplicate_and_unknown_cells_are_refused_and_constructor_is_a_name(p
     assert "duplicate" in pg.text_content("#summary").lower() and pg.evaluate("() => window.__lastBR") is None
     pg.fill("#f-perf", PERF + "\nA, xx, 1.0, 0.1")
     assert "xx" in pg.text_content("#summary") and pg.evaluate("() => window.__lastBR") is None
+
+
+def test_L11_equal_leaders_are_all_named(pg):
+    """L11: the headline showed only the first of several treatments with the same P(best), so the named
+    leader depended on input order. Requirement: every treatment sharing the top P(best) is named."""
+    pg.fill("#f-criteria", "wl, Weight loss, benefit, 1")
+    pg.fill("#f-perf", "A, wl, 5\nB, wl, 5\nC, wl, 1")
+    big = pg.text_content("#summary .big")
+    assert "A" in big and "B" in big, big

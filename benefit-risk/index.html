@@ -176,10 +176,12 @@
       window.__lastBRInput = { criteria: criteria, treatments: treatments, iterations: iters, seed: seed };
 
       var top = r.smaa[0];
-      var second = r.smaa[1];
+      // Every treatment sharing the top P(best) is named (only the first, i.e. input order, used to be).
+      var leaders = r.smaa.filter(function (x) { return x.pBest === top.pBest; });
+      var second = r.smaa[leaders.length] || null;
       var close = second && (top.pBest - second.pBest) < 0.15;
       $("summary").innerHTML =
-        '<div class="out"><div class="hint">Most likely best (SMAA)</div><div class="big">' + esc(top.name) + ' <span class="badge ok">P(best) ' + (top.pBest * 100).toFixed(0) + "%</span></div>"
+        '<div class="out"><div class="hint">Most likely best (SMAA)</div><div class="big">' + esc(leaders.map(function (x) { return x.name; }).join(" = ")) + ' <span class="badge ok">P(best) ' + (top.pBest * 100).toFixed(0) + "%</span></div>"
         + '<div class="hint">EVPI = <strong>' + r.evpi.toFixed(4) + "</strong> (value scale, 0–1) · " + r.iterations.toLocaleString() + " iterations · seed " + r.seed + "</div></div>"
         + "<p class=\"hint\">" + (r.evpi < 0.01
             ? "Low EVPI — the decision is fairly robust to the remaining uncertainty; more research is unlikely to change the choice."
