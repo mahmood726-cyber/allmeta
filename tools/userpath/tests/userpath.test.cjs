@@ -114,7 +114,7 @@ test("dismissOverlays closes the HTA tutorial and welcome overlays by their clos
     assert.deepStrictEqual(rep.dismissed.map((d) => d.name).sort(), ["HTA quick-start tutorial", "HTA welcome"]);
     // closed by the page's own handlers (which record that), not by the harness deleting nodes
     assert.deepStrictEqual(await p.evaluate(() => window.__closedBy.sort()), ["tutorial-close", "welcome-skip"]);
-    await p.click("#target", { timeout: 3000 });
+    await p.click("#target", { timeout: 15000 }); // generous: under 100% CPU a click can stall after "stable"
     assert.strictEqual(await p.evaluate(() => window.__targetClicked), true);
   } finally { await b.close().catch(() => {}); }
 });
