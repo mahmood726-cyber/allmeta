@@ -89,7 +89,9 @@
   // model probs, model-averaged effect estimate. opts: { muSD:1, tauSD:1, priors:[w00,w0R,wH0,...] }.
   function analysis(yi, sei, opts) {
     opts = opts || {};
-    var k = yi.length, muSD = opts.muSD || 1, tauSD = opts.tauSD || 1;
+    // A prior scale must be a finite positive number: "|| 1" silently replaced 0 by 1 and let -2 through.
+    function scale(v, name) { if (v == null) return 1; if (typeof v !== "number" || !isFinite(v) || !(v > 0)) throw new Error(name + " must be a finite positive number"); return v; }
+    var k = yi.length, muSD = scale(opts.muSD, "muSD"), tauSD = scale(opts.tauSD, "tauSD");
     var vi = sei.map(function (s) { return s * s; });
     // log Πφ(yᵢ; 0, vᵢ+τ²)
     function logLik0(tau2) { var s = 0; for (var i = 0; i < k; i++) s += _logNormPdf(yi[i], 0, Math.sqrt(vi[i] + tau2)); return s; }
@@ -122,13 +124,19 @@
     var lH1RE = re.log, emuH1RE = re.mean;
 
     var pri = opts.priors || [0.25, 0.25, 0.25, 0.25]; // [H0FE, H1FE, H0RE, H1RE]
+    if (pri.length !== 4 || !pri.every(function (p) { return typeof p === "number" && isFinite(p) && p >= 0; })
+        || !(pri[0] + pri[2] > 0 && pri[1] + pri[3] > 0 && pri[0] + pri[1] > 0 && pri[2] + pri[3] > 0))
+      throw new Error("priors must be 4 finite non-negative model weights with every hypothesis given positive weight");
     var lmarg = [lH0FE, lH1FE, lH0RE, lH1RE];
     var lp = lmarg.map(function (l, i) { return l + Math.log(pri[i]); });
     var lZ = _lse(lp);
     var post = lp.map(function (v) { return Math.exp(v - lZ); });
 
-    var logBfEffect = _lse([lp[1], lp[3]]) - _lse([lp[0], lp[2]]);
-    var logBfHetero = _lse([lp[2], lp[3]]) - _lse([lp[0], lp[1]]);
+    // Inclusion BF = posterior inclusion odds / PRIOR inclusion odds. With the default equal weights the prior
+    // odds are 1 (log 0 exactly), so the default results are unchanged; with unequal weights the posterior
+    // odds alone are not a Bayes factor.
+    var logBfEffect = _lse([lp[1], lp[3]]) - _lse([lp[0], lp[2]]) - (Math.log(pri[1] + pri[3]) - Math.log(pri[0] + pri[2]));
+    var logBfHetero = _lse([lp[2], lp[3]]) - _lse([lp[0], lp[1]]) - (Math.log(pri[2] + pri[3]) - Math.log(pri[0] + pri[1]));
     // model-averaged effect = Σ post_m · E[μ|m]; E[μ]=0 for H0 models, posterior mean for H1.
     var muMA = post[1] * emuH1FE + post[3] * emuH1RE;
 
