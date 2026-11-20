@@ -26,7 +26,7 @@ def _parse(text: str):
     script = m.group(0) + (
         f"\nvar rej = []; var rows = parse({json.dumps(text)}, rej);"
         "\nconsole.log(JSON.stringify({rows: rows, rejected: rej}));")
-    res = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=30, check=False)
+    res = subprocess.run([NODE, "-e", script], capture_output=True, text=True, encoding="utf-8", timeout=30, check=False)
     assert res.returncode == 0, res.stderr
     return json.loads(res.stdout.strip().splitlines()[-1])
 
