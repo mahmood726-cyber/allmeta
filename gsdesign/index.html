@@ -230,6 +230,7 @@
         return v;
       }
       function run() {
+        clearSim(); clearR();   // earlier simulation/R output belong to the earlier design
         var K, frac, alpha, power;
         try {
           K = readK(); frac = readFracs(K);
@@ -365,6 +366,23 @@
         if (!writeHash(true)) $("simnote").textContent += " The browser refused to update the address, so these settings are not saved in the link.";
       }
       ["spend", "fut", "sided"].forEach(function (id) { $(id).addEventListener("change", sync); });
+      // Results depend on the inputs that produced them: editing a design input withdraws the boundaries,
+      // the simulation and any R output (so neither Simulate nor the R check can use a design the inputs
+      // no longer describe, and no link is written for one); editing a simulation input withdraws the simulation.
+      var DESIGN_FIELDS = FIELDS.slice(0, FIELDS.indexOf("power") + 1), SIM_NOTE = $("simnote").textContent;
+      function clearSim() { $("simtb").textContent = ""; $("simth").textContent = ""; $("simnote").textContent = SIM_NOTE; }
+      function clearR() { $("rcheck-out").textContent = ""; $("rcheck-status").textContent = ""; }
+      function designEdited() {
+        if (current || $("tb").childNodes.length) {
+          current = null; window._almLastGSD = null; $("tb").textContent = ""; $("note").textContent = ""; draw([], false);
+          $("summary").textContent = "Inputs changed: press Compute boundaries.";
+        }
+        clearSim(); clearR();
+      }
+      FIELDS.forEach(function (id) {
+        var f = DESIGN_FIELDS.indexOf(id) >= 0 ? designEdited : clearSim;
+        $(id).addEventListener("input", f); $(id).addEventListener("change", f);
+      });
       $("run").addEventListener("click", run);
       $("simrun").addEventListener("click", simulate);
       var h = readHash();
