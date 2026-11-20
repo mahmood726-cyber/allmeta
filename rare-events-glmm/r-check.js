@@ -64,7 +64,9 @@
       "if (!is.null(gl)) print(gl)"
     ];
     if (!p) {
-      L.push("cat(\"\nNO PAGE VALUES: UM.RS is R-only on this page, so there is nothing to compare; the R fit is shown above.\n\")", "verdict()");
+      L.push(state.refused
+        ? "cat(\"\\nNOT A CHECK: the page refused this fit (\", " + str(state.refused) + ", \"), so it displays no GLMM numbers and nothing is compared; R's own result for these counts is shown above.\\n\", sep = \"\")"
+        : "cat(\"\nNO PAGE VALUES: UM.RS is R-only on this page, so there is nothing to compare; the R fit is shown above.\n\")", "verdict()");
       return L.join("\n") + "\n";
     }
     L.push(

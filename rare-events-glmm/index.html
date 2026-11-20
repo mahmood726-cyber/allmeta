@@ -213,6 +213,9 @@ Trial 8, 1, 210, 3, 215</textarea>
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
           (glmm.error || "Non-finite fit; use R to diagnose this dataset.") + '</div>';
+        // The counts are valid: keep them so the R script can show what metafor does with
+        // them (no page values, so it compares nothing and says NOT A CHECK).
+        _rstate = { model: model, rows: rows, page: null, refused: String(glmm.error || "non-finite browser fit") };
         return;
       }
       var iv = ivPoolWithCC(rows);
