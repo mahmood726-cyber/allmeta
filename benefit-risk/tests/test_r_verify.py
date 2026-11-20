@@ -127,3 +127,33 @@ console.log(JSON.stringify({ s: R.buildScript(snap) }));
     assert rr.returncode == 0, rr.stdout + rr.stderr
     assert re.search(r"^MATCH (\d+)/\1$", rr.stdout, re.M), rr.stdout
     assert "LABEL 68 114 117 103 32 128138" in rr.stdout
+
+
+def test_smaa_cross_check_aggregates_ranks_into_acceptabilities():
+    # smaa::smaa.ranks() returns one row PER DRAW (iterations x treatments) of ranks; ra[k, 1] is the rank of
+    # treatment 1 in draw k, not P(rank 1) for treatment k. The default example printed "R=1" three times and
+    # ended "MISMATCH 3 of 13" in desktop R with smaa installed (WebR skips the branch, so it showed MATCH 10/10).
+    # Requirement: the package cross-check compares the page's P(best) with smaa's own rank acceptability,
+    # smaa::smaa.ra(ranks)[k, 1] (rows = treatments, columns = ranks; ties share the best rank).
+    for txt in _scripts().values():
+        assert "smaa::smaa.ra(smaa::smaa.ranks(Vmat))" in txt
+        assert "ra <- smaa::smaa.ranks(Vmat)" not in txt
+
+
+SMAA_RLIB = os.environ.get("SMAA_RLIB")  # a library holding smaa 0.3-4 (absent on most machines; set to run)
+
+
+@pytest.mark.skipif(not HAVE_R or not SMAA_RLIB, reason="needs Rscript and SMAA_RLIB (a library with smaa)")
+@pytest.mark.parametrize("case", ["default", "pasted"])
+def test_script_with_smaa_installed_matches_every_check(case):
+    s = _scripts()[case]
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "check.R"
+        f.write_text(s, encoding="utf-8")
+        env = dict(os.environ, R_LIBS=SMAA_RLIB)
+        r = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300, env=env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    smaa_lines = [l for l in r.stdout.splitlines() if l.startswith("smaa::")]
+    assert len(smaa_lines) == 3 and all(l.endswith(" ok") for l in smaa_lines), r.stdout
+    last = [l for l in r.stdout.splitlines() if l.startswith(("MATCH", "MISMATCH"))]
+    assert last and re.fullmatch(r"MATCH (\d+)/\1", last[-1]), r.stdout
