@@ -58,3 +58,12 @@ def test_no_result_clears_the_previous_table_plot_and_export(server):
         assert not st["last"], "the previous result is still exported"
     assert refused["overall"].startswith("Cannot compute boundaries"), refused["overall"]
 
+
+
+def test_plot_draws_when_a_later_look_has_no_alpha_left(server):
+    (st,) = _drive(server, [{"src": "0.5, 1.0\n1.0, 1.5\n1.4, 1.8", "futility": "0"}])
+    assert st["rows"] == 3
+    assert "NaN" not in st["svg"] and "Infinity" not in st["svg"], st["svg"][:400]
+    import re
+    xs = [float(x) for x in re.findall(r'<circle cx="([-\d.]+)"', st["svg"])]
+    assert len(xs) == 3 and all(60 <= x <= 690 for x in xs), xs

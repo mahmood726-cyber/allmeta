@@ -132,16 +132,21 @@
       var ts = lk.map(function (l) { return l.t; });
       var bounds = lk.map(function (l) { return l.alpha_boundary; });
       var zs = lk.map(function (l) { return Math.abs(l.z); });
-      var maxY = Math.max(Math.max.apply(null, bounds), Math.max.apply(null, zs), 4);
+      // A look after all alpha is spent has an infinite boundary (no more alpha): it is not drawn and does not set
+      // the scale; looks beyond t = 1 widen the time axis instead of falling outside it (LIM-P46 F25).
+      var finB = bounds.filter(function (b) { return isFinite(b); });
+      var maxY = Math.max(finB.length ? Math.max.apply(null, finB) : 0, Math.max.apply(null, zs), 4);
       var loY = -maxY;
-      function X(t) { return padL + (W - padL - padR) * t; }
+      var tMax = Math.max(1, Math.max.apply(null, ts));
+      function X(t) { return padL + (W - padL - padR) * t / tMax; }
       function Y(y) { return padT + (H - padT - padB) * (1 - (y - loY) / (maxY - loY)); }
       svg.insertAdjacentHTML("beforeend",
         '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="currentColor"/>' +
         '<line x1="' + padL + '" x2="' + padL + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="currentColor"/>');
       // Upper boundary line + mirror (lower)
-      var up = lk.map(function (l) { return X(l.t) + "," + Y(l.alpha_boundary); }).join(" ");
-      var lo = lk.map(function (l) { return X(l.t) + "," + Y(-l.alpha_boundary); }).join(" ");
+      var lkB = lk.filter(function (l) { return isFinite(l.alpha_boundary); });
+      var up = lkB.map(function (l) { return X(l.t) + "," + Y(l.alpha_boundary); }).join(" ");
+      var lo = lkB.map(function (l) { return X(l.t) + "," + Y(-l.alpha_boundary); }).join(" ");
       svg.insertAdjacentHTML("beforeend",
         '<polyline points="' + up + '" fill="none" stroke="#1f7a44" stroke-width="2" stroke-dasharray="6 4"/>' +
         '<polyline points="' + lo + '" fill="none" stroke="#1f7a44" stroke-width="2" stroke-dasharray="6 4"/>');
@@ -155,7 +160,7 @@
       });
       // Axes
       for (var i = 0; i <= 4; i++) {
-        var tv = i / 4;
+        var tv = tMax * i / 4;
         svg.insertAdjacentHTML("beforeend",
           '<line x1="' + X(tv) + '" x2="' + X(tv) + '" y1="' + (H - padB) + '" y2="' + (H - padB + 4) + '" stroke="currentColor"/>' +
           '<text x="' + X(tv) + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="11" fill="currentColor">' + tv.toFixed(2) + '</text>');
