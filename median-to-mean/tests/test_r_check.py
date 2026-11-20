@@ -137,3 +137,29 @@ def test_planted_wrong_page_value_gives_mismatch(page, tmp_path):
     lines = _run_r(planted, tmp_path, "planted.R")
     assert lines[-1].startswith("MISMATCH"), lines[-1]
     assert any("DIFFERS" in l for l in lines)
+
+
+# Requirement (P24 limitation L03): a sample size the page cannot represent exactly (above 2^53 - 1), or so
+# large that the range divisor 2*qnorm((n - 0.375)/(n + 0.25)) is infinite in double precision (from about
+# n = 5e15 the quantile argument rounds to 1), must be REFUSED, not shown as an SD of 0.000 from the range
+# term. The R script must agree that it is refused. Control: n = 10^12 (the archived validation's largest
+# probe, P04) is still estimated and still MATCHes in R.
+@pytest.mark.parametrize("scenario,nval", [("C2", "10000000000000000"), ("C1", "5000000000000000"), ("C3", "9007199254740993")])
+def test_unrepresentable_sample_size_is_refused(page, tmp_path, scenario, nval):
+    page.reload(); page.wait_for_selector("#results-body tr")
+    _set(page, scenario=scenario, n=nval)
+    assert page.locator("#results-body tr").count() == 0, page.locator("#results-body").inner_text()
+    assert "too large" in page.locator("#warn-slot").inner_text()
+    script = page.evaluate("window.__almM2MRScript()")
+    assert "page_refused <- TRUE" in script
+    lines = _run_r(script, tmp_path, "huge.R")
+    assert any(l.startswith("refuses the sample size (1 = yes)") and l.rstrip().endswith("ok") for l in lines), lines
+    assert lines[-1].startswith("NOT CHECKED"), lines[-1]
+
+
+def test_largest_archived_sample_size_still_estimated(page, tmp_path):
+    page.reload(); page.wait_for_selector("#results-body tr")
+    _set(page, scenario="C1", n="1000000000000", a="1", q1="3", m="5", q3="7", b="9")
+    assert page.locator("#results-body tr").count() == 3
+    lines = _run_r(page.evaluate("window.__almM2MRScript()"), tmp_path, "p04.R")
+    assert re.match(r"^MATCH (\d+)/\1\b", lines[-1]), lines[-1]
