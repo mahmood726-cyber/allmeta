@@ -135,7 +135,14 @@
       rows.bad = bad;
       return rows;
     }
-    function fmt(v, log) { return log ? Math.exp(v).toFixed(3) : v.toFixed(3); }
+    // exp() of a finite log ratio can overflow to Infinity or underflow to 0; show the log value then, never "Infinity"/"0.000".
+    function fmt(v, log) {
+      if (!log) return v.toFixed(3);
+      var e = Math.exp(v);
+      return (isFinite(e) && e >= 5e-4) ? e.toFixed(3) : "exp(" + v.toPrecision(6) + ")";
+    }
+    // a p-value below the 3-dp resolution is "<0.001", not "0.000"
+    function fmtP(p) { return p < 0.0005 ? "&lt;0.001" : p.toFixed(3); }   // (written into innerHTML)
 
     function run() {
       window.__lastTransport = null; window.__lastTransportInput = null;   // cleared unless this run succeeds (test hook + R check read them)
@@ -162,8 +169,8 @@
         + " &nbsp;·&nbsp; " + (transSig ? '<span class="badge ok">excludes the null</span>' : '<span class="badge warn">includes the null</span>') + "</div></div>";
       html += '<table><tr><th>Quantity</th><th>Value</th></tr>'
         + row("Effect at the trials' mean modifier (" + r.trialMean.toFixed(1) + ")", fmt(r.atTrialMean.est, log) + " [" + fmt(r.atTrialMean.ciLo, log) + ", " + fmt(r.atTrialMean.ciHi, log) + "]")
-        + row("Transport shift (modifier effect)", (log ? "×" + Math.exp(r.shift).toFixed(3) : (r.shift >= 0 ? "+" : "") + r.shift.toFixed(3)))
-        + row("Effect-modification slope (per unit " + esc(modname) + ")", r.slope.est.toFixed(4) + " (p=" + r.slope.p.toFixed(3) + ") " + (slopeSig ? '<span class="badge ok">modifier</span>' : '<span class="badge muted">weak/none</span>'))
+        + row("Transport shift (modifier effect)", (log ? "×" + fmt(r.shift, true) : (r.shift >= 0 ? "+" : "") + r.shift.toFixed(3)))
+        + row("Effect-modification slope (per unit " + esc(modname) + ")", r.slope.est.toFixed(4) + " (p" + (r.slope.p < 0.0005 ? "" : "=") + fmtP(r.slope.p) + ") " + (slopeSig ? '<span class="badge ok">modifier</span>' : '<span class="badge muted">weak/none</span>'))
         + row("Residual heterogeneity τ²", r.tau2.toFixed(4) + " · HKSJ q=" + r.q.toFixed(2) + " · k=" + r.k)
         + row("Unmeasured-modifier sensitivity", r.sensitivity.significant
             ? ("an unmeasured shift of " + r.sensitivity.biasToNull.toFixed(3) + " (analysis scale) would move the CI to the null")
@@ -171,7 +178,7 @@
         + "</table>";
       // A non-significant slope does NOT make the transport shift small: the shift is slope x (x* - trial mean),
       // and no ordinary pooled effect is fitted here to compare with. Say what the data show instead.
-      if (!slopeSig) html += '<p class="hint" style="margin-top:.5rem">⚠ The effect-modification slope is not statistically significant (p=' + r.slope.p.toFixed(3) + '). That is not evidence that the shift is small: the shift above is the slope times the distance from the trials\' mean modifier to x*, and it carries the slope\'s uncertainty.</p>';
+      if (!slopeSig) html += '<p class="hint" style="margin-top:.5rem">⚠ The effect-modification slope is not statistically significant (p' + (r.slope.p < 0.0005 ? '' : '=') + fmtP(r.slope.p) + '). That is not evidence that the shift is small: the shift above is the slope times the distance from the trials\' mean modifier to x*, and it carries the slope\'s uncertainty.</p>';
       var xlo = Math.min.apply(null, rows.map(function (d) { return d.x; })), xhi = Math.max.apply(null, rows.map(function (d) { return d.x; }));
       if (target < xlo || target > xhi) html += '<p class="badge warn" style="margin-top:.5rem">⚠ x* = ' + target + ' is outside the trials\' modifier range (' + xlo + ' to ' + xhi + '): the transported effect is an extrapolation of the linear model (assumption 4).</p>';
       host.innerHTML = html;

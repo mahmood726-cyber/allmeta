@@ -61,3 +61,26 @@ def test_non_significant_slope_does_not_claim_a_small_shift():
     assert o["ok"], o
     assert "barely differs" not in o["msg"] and "ordinary pooled effect" not in o["msg"], o["msg"]
     assert "not evidence that the shift is small" in o["msg"], o["msg"]
+
+
+# F12: p-values below the 3-dp resolution printed "p=0.000"; exp() of a large/small log ratio printed
+# "Infinity"/"0.000". Requirement: "p<0.001", and an exp-overflow/underflow is shown as exp(log value).
+STRONG = "\n".join(["A, 0.0, 0.01, 1", "B, 1.0, 0.01, 2", "C, 2.0, 0.01, 3", "D, 3.0, 0.01, 4", "E, 4.0, 0.01, 5"])
+HUGE_LOG = "\n".join(["A, 700, 0.5, 1", "B, 705, 0.5, 2", "C, 712, 0.5, 3", "D, 716, 0.5, 4"])
+
+
+def test_tiny_p_value_is_shown_as_below_resolution():
+    o = page((STRONG, "3", False))[0]
+    assert o["ok"] and "(p&lt;0.001)" in o["msg"], o["msg"]
+    assert "p=0.000" not in o["msg"], o["msg"]
+
+
+def test_exp_overflow_is_not_shown_as_infinity():
+    o = page((HUGE_LOG, "5", True))[0]
+    assert o["ok"], o
+    assert "Infinity" not in o["msg"] and "exp(" in o["msg"], o["msg"]
+
+
+def test_example_p_value_display_unchanged():
+    o = page((EXAMPLE, "31", False))[0]
+    assert "(p=0.019)" in o["msg"], o["msg"]
