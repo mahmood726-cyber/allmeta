@@ -253,3 +253,14 @@ def test_malformed_row_is_refused_by_line_not_dropped_or_coerced(pg, bad):
     assert "line 21" in note.lower(), note
     assert "no current result" in no_download(pg).lower()
 
+
+@pytest.mark.parametrize("cc", ["-0.5", ""], ids=["negative", "blank"])
+def test_invalid_continuity_correction_is_refused(pg, cc):
+    # Requirement (LIM-P49 L03): the correction must be a finite number >= 0; a negative one used to be fitted.
+    pg.fill("#data", PASTED)
+    pg.select_option("#model", "fe")
+    pg.fill("#cc", cc)
+    pg.click("#run")
+    assert pg.text_content("#out") == ""
+    assert "correction" in pg.text_content("#note").lower()
+    pg.fill("#cc", "0.5")
