@@ -195,26 +195,52 @@
         return s.split(/[,;\s]+/).filter(function (x) { return x !== ""; }).map(Number);
       }
       function fmtP(p) { return p < 1e-4 ? p.toExponential(2) : p.toFixed(4); }
+      function showDesignError(msg) {
+        current = null; window._almLastGSD = null; $("tb").textContent = "";
+        $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
+        s.textContent = msg; $("summary").appendChild(s);
+        $("note").textContent = ""; draw([], false);
+      }
+      function readK() {
+        // K is a whole number 1-10 as stated beside the field: refuse, never truncate/clamp/default.
+        var t = $("K").value.trim(), K = Number(t);
+        if (t === "" || !Number.isInteger(K) || K < 1 || K > 10) throw new Error("Looks (K) must be a whole number from 1 to 10.");
+        return K;
+      }
+      function readFracs(K) {
+        // Explicit fractions must number exactly K (they cannot bypass K or its limit) and be finite.
+        var raw = $("timing").value.trim();
+        if (!raw) { var eq = []; for (var i = 1; i <= K; i++) eq.push(i / K); return eq; }
+        var f = numList(raw);
+        if (!f.length || f.some(function (x) { return !Number.isFinite(x); }))
+          throw new Error("Information fractions must be numbers separated by commas, or left blank for equal spacing.");
+        if (f.length !== K) throw new Error("Information fractions: " + f.length + " value" + (f.length === 1 ? "" : "s") + " entered but Looks (K) = " + K + "; enter one fraction per look.");
+        return f;
+      }
+      function readRange(id, name) {
+        // The field's own min/max are the page's stated domain: values outside it are refused.
+        var el = $(id), t = el.value.trim(), v = Number(t), lo = Number(el.min), hi = Number(el.max);
+        if (t === "" || !Number.isFinite(v) || v < lo || v > hi) throw new Error(name + " must be a number from " + el.min + " to " + el.max + ".");
+        return v;
+      }
       function run() {
-        var K = Math.max(1, Math.min(10, parseInt($("K").value, 10) || 1));
-        var frac = $("timing").value.trim() ? numList($("timing").value) : null;
-        if (!frac) { frac = []; for (var i = 1; i <= K; i++) frac.push(i / K); }
+        var K, frac, alpha, power;
+        try {
+          K = readK(); frac = readFracs(K);
+          alpha = readRange("alpha", $("sided").value === "2" ? "Two-sided α" : "One-sided α");
+          power = readRange("power", "Power");
+        } catch (e) { showDesignError("Cannot compute this design: " + e.message); return; }
         var two = $("sided").value === "2", fut = !two && $("fut").value !== "none";
         var opts = {
-          alpha: parseFloat($("alpha").value), infoFracs: frac, spend: $("spend").value,
+          alpha: alpha, infoFracs: frac, spend: $("spend").value,
           param: parseFloat($("param").value), twoSided: two,
           futility: fut ? "betaspend" : "none", futSpend: $("fut").value, futParam: parseFloat($("fparam").value),
-          binding: $("bind").value === "1", beta: 1 - parseFloat($("power").value)
+          binding: $("bind").value === "1", beta: 1 - power
         };
         var tb = $("tb"); tb.textContent = "";
         try {
           var b = G.boundaries(opts);
-        } catch (e) {
-          current = null; window._almLastGSD = null;
-          $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
-          s.textContent = "Cannot compute this design: " + e.message; $("summary").appendChild(s);
-          $("note").textContent = ""; draw([], false); return;
-        }
+        } catch (e) { showDesignError("Cannot compute this design: " + e.message); return; }
         current = b.design;
         // Inputs and boundaries now on screen, for the R check (rcheck.js).
         window._almLastGSD = { opts: opts, rows: b };

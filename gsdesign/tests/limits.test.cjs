@@ -84,7 +84,7 @@ test("L06: alpha and power outside the page's stated ranges are refused", { skip
   assert.match(await summary(p), /Power/);
   await p.fill("#power", "0.9"); await p.fill("#alpha", "0.45"); await p.click("#run");
   assert.strictEqual(await rows(p), 0, "alpha 0.45 accepted");
-  await p.fill("#alpha", "abc"); await p.click("#run");
+  await p.fill("#alpha", ""); await p.click("#run");
   assert.strictEqual(await rows(p), 0);
   await p.fill("#alpha", "0.025"); await p.click("#run");
   assert.strictEqual(await rows(p), 4);
