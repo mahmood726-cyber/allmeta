@@ -109,8 +109,13 @@
     L.push("  if (is.finite(tau2_manual) && tau2_manual >= 0) tau2_manual else 0   # the page uses 0 for an invalid entry");
     L.push("} else if (k < 2) 0 else {");
     L.push("  suppressPackageStartupMessages(library(metafor))");
+    L.push("  ## upper end of the root search: the page doubles its bracket from 1 until Q(hi) <= k - 1 (shared/ma-core.js");
+    L.push("  ## tau2PM). metafor's default tau2.max is the larger of 100 and 10 * mad(yi)^2 and it stops when the root lies");
+    L.push("  ## above that (e.g. mad(yi) = 0 with one far study), so the page's bracket is passed to it as tau2.max.");
+    L.push("  Qgen <- function(t2) { w <- 1 / (v + t2); sum(w * (yi - sum(w * yi) / sum(w))^2) }");
+    L.push("  hi <- 1; n2 <- 0; while (Qgen(hi) > k - 1) { hi <- 2 * hi; n2 <- n2 + 1; if (n2 > 1100 || !is.finite(hi)) stop(\"PM tau2 could not be bracketed\") }");
     L.push("  ## tight convergence so R reaches the PM root the page solves for (metafor's default tol stops ~1e-4 short)");
-    L.push("  rma(yi, sei = sei, method = \"PM\", control = list(tol = 1e-12, maxiter = 10000))$tau2");
+    L.push("  rma(yi, sei = sei, method = \"PM\", control = list(tol = 1e-12, maxiter = 10000, tau2.max = hi))$tau2");
     L.push("}");
     L.push("prec <- 1 / tau0^2 + sum(1 / (v + tau2))");
     L.push("post_mu <- (mu0 / tau0^2 + sum(yi / (v + tau2))) / prec; post_sd <- sqrt(1 / prec)");
