@@ -96,6 +96,7 @@
         <button type="button" id="btn-add" class="ghost">+ Add</button>
         <button type="button" id="btn-del" class="ghost">Remove</button>
       </div>
+      <p id="save-status" role="alert" class="suggest" style="color:var(--warn);margin:0 0 0.5rem"></p>
       <div id="checks"></div>
       <fieldset>
         <legend>Effect size (optional — for the robustness re-pool)</legend>
@@ -186,10 +187,37 @@
     var state = load() || { trials: [newTrial("Trial 1")], cur: 0 };
 
     function load() {
-      try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.trials && s.trials.length) return s; } catch (e) {}
+      try { return sanitize(JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
       return null;
     }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    // Rebuild a workspace from untrusted saved data, keeping only well-formed fields (a record such as
+    // {trials:[{}], cur:5} used to be accepted as-is and throw while rendering, leaving no form).
+    function sanitize(s) {
+      if (!s || !Array.isArray(s.trials)) return null;
+      var obj = function (o) { return o && typeof o === "object" && !Array.isArray(o); };
+      var str = function (v) { return typeof v === "string" ? v : (typeof v === "number" && isFinite(v) ? String(v) : ""); };
+      var trials = s.trials.filter(obj).map(function (t, i) {
+        var n = newTrial(str(t.label) || ("Trial " + (i + 1)));
+        if (typeof t.id === "string" && t.id) n.id = t.id;
+        if (obj(t.resp)) CHECKS.forEach(function (c) { if (RESP.indexOf(t.resp[c.id]) >= 0) n.resp[c.id] = t.resp[c.id]; });
+        if (obj(t.dj)) DOMAINS.forEach(function (dm) { if (JUDGE.indexOf(t.dj[dm.d]) >= 0) n.dj[dm.d] = t.dj[dm.d]; });
+        if (JUDGE.indexOf(t.overall) >= 0) n.overall = t.overall;
+        if (obj(t.why)) Object.keys(t.why).forEach(function (k) { if (typeof t.why[k] === "string" && (k === "overall" || /^[1-4]$/.test(k))) n.why[k] = t.why[k]; });
+        n.est = str(t.est); n.se = str(t.se);
+        return n;
+      });
+      if (!trials.length) return null;
+      var c = Number.isInteger(s.cur) && s.cur >= 0 && s.cur < trials.length ? s.cur : 0;
+      return { trials: trials, cur: c, scale: s.scale === "exp" ? "exp" : "linear" };
+    }
+    // A failed write is reported on the page (it used to be swallowed, so work could be lost unseen).
+    function save() {
+      var msg = "";
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {
+        msg = "Not saved: browser storage is unavailable or full (" + (e && e.message || e) + "). Use Download JSON to keep this work.";
+      }
+      var el = document.getElementById("save-status"); if (el) el.textContent = msg;
+    }
     function cur() { return state.trials[state.cur]; }
 
     // Non-binding suggestion, made only once every check in the domain is answered:

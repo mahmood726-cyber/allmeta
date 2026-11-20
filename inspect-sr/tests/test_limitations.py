@@ -160,3 +160,19 @@ def test_L12_a_single_response_can_be_cleared():
                checked: await p.evaluate(() => document.querySelectorAll('input[name="resp-1.1"]:checked').length) };
     """)
     assert res["out"] == {"resp": {}, "checked": 0}, res
+
+
+def test_L13_malformed_saved_state_still_renders_and_save_failure_is_shown():
+    """L13: a saved record such as {trials:[{}], cur:5} threw at load and left no assessment form, and a
+    failed localStorage write was swallowed. Requirement: the record is repaired so the form renders, and a
+    failed save is reported on the page."""
+    res = drive(r"""
+      await p.evaluate(() => localStorage.setItem('inspect-sr-v1', JSON.stringify({ trials: [{}], cur: 5 })));
+      await p.reload({ waitUntil: 'load' });
+      const radios = await p.evaluate(() => document.querySelectorAll('#checks input[type=radio]').length);
+      await p.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('QuotaExceededError'); }; });
+      await fill('#trial-name', 'X');
+      return { radios, msg: await p.evaluate(() => (document.getElementById('save-status') || {}).textContent || '') };
+    """)
+    assert res["errs"] == [], res["errs"]
+    assert res["out"]["radios"] == 84 and "not saved" in res["out"]["msg"].lower(), res
