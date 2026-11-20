@@ -239,6 +239,8 @@
 
                     <button class="dropdown-item" onclick="HelpSystem.showFeatureGuide()">&#x2B50; Feature Guide</button>
 
+                    <button class="dropdown-item" id="helpMenuVerifyInR" onclick="openValidationPanel()" title="Check this page's numbers against R: run the analysis in WebR, or download an R script that prints page value, R value and MATCH / MISMATCH">&#x2714;&#xFE0F; Statistical Validation (Verify in R)</button>
+
                     <div class="dropdown-divider"></div>
 
                     <button class="dropdown-item" onclick="HelpSystem.showKeyboardShortcuts()">&#x2328;&#xFE0F; Keyboard Shortcuts</button>
@@ -28715,7 +28717,10 @@ const SessionManager = {
 
     showModal: function(title, content, size = 'medium') {
 
-        const modalId = 'helpModal';
+        // Its own overlay, created on first use. It used to be #helpModal, whose innerHTML it rewrote: the
+        // first Help menu item destroyed the Statistical Validation (Verify in R) tab that lives there
+        // (dev/tests/webr_panel_reachable_ui.test.cjs).
+        const modalId = 'helpSystemModal';
 
         // Save previously focused element for focus restoration
         this._previousFocus = document.activeElement;
@@ -28893,7 +28898,7 @@ const SessionManager = {
 
     closeModal: function() {
 
-        const modal = document.getElementById('helpModal');
+        const modal = document.getElementById('helpSystemModal');
 
         if (modal) {
 
@@ -39594,6 +39599,21 @@ function runMetaRegression(moderatorArg) {
  document.getElementById('helpModal').classList.add('active');
 
  }
+
+// Help > "Statistical Validation (Verify in R)": the only control that opens the WebR panel (Validate Current
+// Analysis, Download R script), which lives in #helpModal's Statistical Validation tab. Before it, showHelp()
+// had no caller in the UI, so a user could not reach the panel at all.
+function openValidationPanel() {
+ document.querySelectorAll('.dropdown').forEach(function (d) {
+  d.classList.remove('open');
+  var t = d.querySelector('.dropdown-toggle');
+  if (t) t.setAttribute('aria-expanded', 'false');
+ });
+ showHelp();
+ var tab = document.querySelector('#helpTabs .inner-tab[onclick*="\'validation\'"]');
+ if (tab) { tab.click(); tab.setAttribute('aria-selected', 'true'); tab.focus(); }
+ else switchHelpTab('validation');
+}
 
 
 
