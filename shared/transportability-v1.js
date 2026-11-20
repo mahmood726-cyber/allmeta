@@ -26,12 +26,12 @@
 (function (global) {
   "use strict";
 
+  // The t quantile comes from shared/ma-core.js. Without it there is NO fallback: a normal quantile here
+  // used to give narrower intervals still labelled Knapp-Hartung t_{k-2} (k = 8: 1.96 instead of 2.447).
   function qt(p, df) {
-    if (global.AlmMaCore && global.AlmMaCore._qt) return global.AlmMaCore._qt(p, df);
-    // crude fallback (normal) — only hit if ma-core is absent
-    var z = Math.sqrt(2) * _erfinv(2 * p - 1); return z;
+    if (global.AlmMaCore && typeof global.AlmMaCore._qt === "function") return global.AlmMaCore._qt(p, df);
+    return NaN;
   }
-  function _erfinv(x) { var a = 0.147, ln = Math.log(1 - x * x), t = 2 / (Math.PI * a) + ln / 2; return Math.sign(x) * Math.sqrt(Math.sqrt(t * t - ln / a) - t); }
 
   // 2x2 weighted normal equations for y ~ 1 + x with weights w.
   function _fit(y, x, w) {
@@ -93,6 +93,7 @@
     var rss = _rss(y, xs, w, fit.beta);
     var q = Math.max(1, rss / df);                          // HKSJ scaling, floored at 1
     var tcrit = qt(0.975, df);
+    if (!isFinite(tcrit)) return { ok: false, error: "the t quantile (shared/ma-core.js) did not load, so the Knapp-Hartung t interval cannot be formed" };
     var sumw = w.reduce(function (a, b) { return a + b; }, 0);
     var sumwx = 0, i; for (i = 0; i < k; i++) sumwx += w[i] * xs[i];
     var xbar = sumwx / sumw;
