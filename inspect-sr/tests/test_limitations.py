@@ -187,3 +187,20 @@ def test_L15_remove_asks_before_deleting_an_assessment():
       return await p.evaluate(() => JSON.parse(localStorage.getItem('inspect-sr-v1')).trials.length);
     """)
     assert res["out"] == 2 and len(res["dialogs"]) == 1, res
+
+
+def test_L16_export_keeps_overrides_pool_and_provenance():
+    """L16: the JSON merged suggestions and explicit overrides into one value and omitted the pooled table,
+    the model and the software version, so it was not a record of the analysis. Requirement: it carries
+    the reviewer's overrides separately from the effective judgements, the re-pool table and its method."""
+    res = drive(TWO + r"""
+      await p.selectOption('select[data-dj="2"]', 'some');
+      const j = JSON.parse(await download('#btn-json'));
+      return { t: j.trials[1], analysis: j.analysis, software: j.software };
+    """)
+    o = res["out"]
+    assert o["t"]["domainOverrides"] == {"2": "some"} and o["t"]["overallOverride"] == "", o
+    assert o["t"]["domainJudgements"]["2"] == "some" and o["t"]["domainJudgements"]["1"] == "unset", o
+    assert o["analysis"]["method"].startswith("Paule-Mandel") and o["analysis"]["sets"][0]["k"] == 2, o
+    assert abs(o["analysis"]["sets"][0]["mu"] - (-0.328)) < 5e-4, o
+    assert o["software"]["app"] == "inspect-sr", o

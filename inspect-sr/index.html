@@ -369,7 +369,7 @@
     }
     // Trials + the numbers of the re-pool table, for "Check the re-pool in R" (inspect-sr/r-check.js); null
     // while the table has no estimate. A new object per render, so an R answer for an earlier table is stale.
-    var rState = null;
+    var rState = null, lastSets = [];   // lastSets: the re-pool table on the analysis scale, for the JSON export
     window.__almInspectSrRState = function () { return rState; };
     function renderPooled() {
       rState = null;
@@ -388,15 +388,20 @@
         { name: "Sensitivity: no-concern trials only", arr: onlyNo },
       ];
       var rRows = [], failed = false;
+      lastSets = [];
       document.getElementById("pooled").innerHTML = sets.map(function (s) {
         // A set the engine cannot pool (e.g. an SE whose square underflows) gets its own row saying so; the
         // exception used to escape here and leave the previous inputs' table on screen.
         var r;
         try { r = poolSet(s.arr); } catch (err) {
           failed = true; rRows.push(null);
+          lastSets.push({ name: s.name, k: null, error: String(err && err.message || err) });
           return "<tr><td>" + esc(s.name) + "</td><td>—</td><td colspan='2'>could not be computed: " + esc(err && err.message || err) + "</td></tr>";
         }
         rRows.push(r ? { k: r.k, mu: tx(r.mu), lo: tx(r.ciLo), hi: tx(r.ciHi), I2: r.I2 } : { k: 0, mu: null, lo: null, hi: null, I2: null });
+        lastSets.push({ name: s.name, k: r ? r.k : 0, mu: r ? r.mu : null, ciLo: r ? r.ciLo : null, ciHi: r ? r.ciHi : null,
+          tau2: r && r.k > 1 ? r.tau2 : null, I2: r ? r.I2 : null,
+          trials: s.arr.filter(function (t) { return !unusable(t); }).map(function (t) { return t.label; }) });
         if (!r) return "<tr><td>" + esc(s.name) + "</td><td>0</td><td>—</td><td>—</td></tr>";
         return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
       }).join("");
@@ -443,8 +448,15 @@
         trials: state.trials.map(function (t) {
           return { label: t.label, responses: t.resp,
             domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
+            // The reviewer's own entries, apart from the effective values above (a suggestion and an equal
+            // explicit judgement used to be indistinguishable in the export).
+            domainOverrides: DOMAINS.reduce(function (o, dm) { if (t.dj[dm.d]) o[dm.d] = t.dj[dm.d]; return o; }, {}),
+            overallOverride: t.overall || "",
             overall: effectiveOverall(t), reasons: t.why || {}, est: t.est, se: t.se };
-        }) };
+        }),
+        analysis: { method: "Paule-Mandel random effects (shared/ma-core.js), normal 95% CI, I^2 from the PM tau^2; a set with one trial shows that trial's estimate +/- z(0.975) x SE",
+          scale: "analysis scale as entered (displayScale only changes the display)", sets: lastSets },
+        software: { app: "inspect-sr", build: window.AlmBuildInfo || null } };
       var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "inspect-sr-assessment.json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
