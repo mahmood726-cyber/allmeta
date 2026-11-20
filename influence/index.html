@@ -235,9 +235,11 @@
       // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
       // returning user an earlier session's studies).
       window.__almValidatorStudies = function () {
-        const p = parse(document.getElementById("src").value);
-        // The page refuses input with any unreadable line or fewer than 3 studies.
-        return (p.errors.length || p.rows.length < 3 || !_lastFull) ? [] : p.rows.map(r => ({ label: r.label, est: r.te, se: r.se }));
+        // Only when the page shows an analysis, and only the studies it was computed on: run()
+        // records them and clearResults() empties both on every refusal or failed fit. Never a
+        // re-read of the input box: Run is a button here, so an edit not yet run would otherwise
+        // be saved, signed and sent to R beside the old result (lane hf1, review of PR #580).
+        return (!_lastFull || _lastStudies.length < 3) ? [] : _lastStudies.map(r => ({ label: r.label, est: r.te, se: r.se }));
       };
       // The model of this page's headline, which the validator can re-fit.
       window.__almValidatorModel = function () { return { method: "REML", test: "z" }; };
