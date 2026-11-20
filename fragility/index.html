@@ -120,7 +120,13 @@
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim();
         if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        // four counts, then the label = everything after the 4th separator (a label may
+        // contain commas; one pair of enclosing double quotes is removed). Splitting the
+        // whole line kept only the text up to the label's first comma and dropped the rest.
+        var m = /^([^,\t]*)[,\t]([^,\t]*)[,\t]([^,\t]*)[,\t]([^,\t]*)(?:[,\t]([\s\S]*))?$/.exec(t);
+        var f = m ? m.slice(1, 5).map(function (s) { return s.trim(); }) : [];
+        var lab = m && m[5] != null ? m[5].trim() : "";
+        if (/^"[\s\S]*"$/.test(lab)) lab = lab.slice(1, -1).replace(/""/g, '"').trim();
         // counts must be complete non-negative integers ("" must not read as 0, 2.5 is not a count)
         if (!f.slice(0, 4).every(function (s) { return /^\d+$/.test(s); }) || f.length < 4) {
           errs.push("line " + (i + 1)); return;
@@ -130,7 +136,7 @@
           errs.push("line " + (i + 1)); return;
         }
         studies.push({ e1: e1, n1: n1, e0: e0, n0: n0 });
-        labels.push(f[4] || ("Study " + studies.length));
+        labels.push(lab || ("Study " + studies.length));
       });
       return { studies: studies, labels: labels, errs: errs };
     }
