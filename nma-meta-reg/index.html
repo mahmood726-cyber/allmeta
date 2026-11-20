@@ -121,21 +121,42 @@ S10, A, B, -0.32, 0.10, 70</textarea>
   (function () {
     "use strict";
 
+    // Plain comma-separated contrast rows. A row that is not exactly 6 fields, has an empty label, or has a
+    // numeric field that is not a plain number is REFUSED with its line number (it used to vanish, lose
+    // its surplus fields, or be read by parseFloat's numeric prefix: "-0.30oops" fitted as -0.30; a header
+    // line became treatment nodes). Blank, NA or NaN numeric fields are missing values: such a row is
+    // excluded from the fit, as R excludes it, and the count is shown.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/, MISSING = /^(|NA|NaN)$/i;
+    function num(tok) { return MISSING.test(tok) ? NaN : (NUM.test(tok) ? Number(tok) : undefined); }
     function parse(text) {
-      var rows = [];
+      var rows = [], bad = [];
       var lines = text.split(/\r?\n/);
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 6) continue;
+        var parts = line.split(/\s*,\s*/), why = "", vals = null;
+        if (parts.length !== 6) why = "expected 6 comma-separated fields, found " + parts.length;
+        else if (!parts[0] || !parts[1] || !parts[2]) why = "empty study or treatment label";
+        else {
+          vals = [num(parts[3]), num(parts[4]), num(parts[5])];
+          var k = vals.indexOf(undefined);
+          if (k >= 0) why = ["yi", "sei", "covariate"][k] + " '" + parts[3 + k] + "' is not a number";
+        }
+        if (why) { bad.push("line " + (i + 1) + ": " + why); continue; }
         rows.push({
           studyId: parts[0], trtA: parts[1], trtB: parts[2],
-          yi: parseFloat(parts[3]), sei: parseFloat(parts[4]),
-          covariate: parseFloat(parts[5]),
+          yi: vals[0], sei: vals[1], covariate: vals[2],
         });
       }
+      if (bad.length) throw new Error("input refused (" + bad.length + " malformed row" + (bad.length > 1 ? "s" : "") + "): " +
+        bad.slice(0, 3).join("; ") + (bad.length > 3 ? "; ..." : "") + ". Enter studyId, trtA, trtB, yi, sei, covariate per row, without a header.");
       return rows;
+    }
+    function showFail(msg) {
+      var card = document.createElement("div");
+      card.className = "card"; card.style.gridColumn = "1/-1"; card.style.color = "var(--warn)";
+      card.textContent = "Fit failed: " + msg;
+      var host = document.getElementById("summary"); host.innerHTML = ""; host.appendChild(card);
     }
 
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
@@ -212,7 +233,9 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         document.querySelector(selector).innerHTML = "";
       });
       document.getElementById("plot-host").innerHTML = "";
-      var rows = parse(document.getElementById("src").value);
+      var rows;
+      try { rows = parse(document.getElementById("src").value); }
+      catch (e) { showFail(e.message); return; }
       var refTrt = (document.getElementById("f-ref").value || "").trim();
       var predicts = (document.getElementById("f-predict").value || "")
         .split(/\s*,\s*/).map(function (s) { return parseFloat(s); }).filter(isFinite);
