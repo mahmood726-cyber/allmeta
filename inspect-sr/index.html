@@ -425,6 +425,8 @@
     document.getElementById("trial-name").addEventListener("input", function (e) { cur().label = e.target.value; save(); renderTrialSelect(); renderSummary(); });
     document.getElementById("btn-add").addEventListener("click", function () { state.trials.push(newTrial("Trial " + (state.trials.length + 1))); state.cur = state.trials.length - 1; save(); renderAll(); });
     document.getElementById("btn-del").addEventListener("click", function () {
+      // Ask first, like Reset all: Remove used to delete the trial and its answers at once, with no undo.
+      if (!confirm("Remove " + (cur().label || "this trial") + " and its assessment? This cannot be undone.")) return;
       if (state.trials.length <= 1) { state.trials = [newTrial("Trial 1")]; } else { state.trials.splice(state.cur, 1); }
       state.cur = Math.max(0, Math.min(state.cur, state.trials.length - 1)); save(); renderAll();
     });

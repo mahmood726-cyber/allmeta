@@ -176,3 +176,14 @@ def test_L13_malformed_saved_state_still_renders_and_save_failure_is_shown():
     """)
     assert res["errs"] == [], res["errs"]
     assert res["out"]["radios"] == 84 and "not saved" in res["out"]["msg"].lower(), res
+
+
+def test_L15_remove_asks_before_deleting_an_assessment():
+    """L15: Remove deleted the selected trial and its answers at once (Reset all asks first).
+    Requirement: Remove asks; declining keeps the trial."""
+    res = drive(r"""
+      await p.click('#btn-add');
+      await p.click('#btn-del');
+      return await p.evaluate(() => JSON.parse(localStorage.getItem('inspect-sr-v1')).trials.length);
+    """)
+    assert res["out"] == 2 and len(res["dialogs"]) == 1, res
