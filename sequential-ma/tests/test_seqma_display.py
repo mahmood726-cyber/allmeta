@@ -56,7 +56,9 @@ def _drive(server, steps):
 
 def test_no_result_clears_the_previous_table_plot_and_export(server):
     first, empty, refused = _drive(server, [{}, {"src": ""},
-                                            {"src": "0.5, 1\n1.2, 2", "futility": "1"}])
+                                            {"src": "50, 1", "futility": "1"}])
+    # "50, 1": one look at 50x the planned information; its futility inflation (~1/50) is below the searched range
+    # 0.02-10, so the engine refuses it. (t = 0.5, 1.2, used before the PR #648 review, is solvable.)
     assert first["rows"] == 4 and first["last"]
     for st in (empty, refused):
         assert st["rows"] == 0, st

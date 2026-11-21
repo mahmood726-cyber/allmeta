@@ -225,13 +225,25 @@
   }
   function _warpRoot(t, eff, beta, bfam, theta, rm) {
     var K = t.length, g = function (R) { return eff[K - 1] - _betaBounds(t, eff, beta, bfam, theta, R, rm)[K - 1]; };
-    var a = 0.9, ga = g(a);
-    for (var b = 0.92; b <= 10; b += 0.02) {           // first sign change at or above 0.9, then bisection
-      var gb = g(b);
-      if ((ga > 0) !== (gb > 0)) return _solve(g, a, b);
-      a = b; ga = gb;
+    // First sign change of g on a 0.02 grid from 0.9 upward to 10, then a root. When the design ends past full
+    // information (t > 1) the root lies below 0.9, so if there is none above, the grid is searched downward from
+    // 0.9 to 0.02 as well -- the same search as the R check (sequential-ma/rcheck.js inflation()). Grid points
+    // where g is not finite are skipped. NaN means no inflation factor exists on that range.
+    // (the grid is accumulated b += step exactly as before, so a root found above 0.9 is bit-identical to the old one)
+    function scan(from, to, step) {
+      var a = NaN, ga = NaN;
+      for (var b = from; step > 0 ? b <= to : b >= to; b += step) {
+        var gb = g(b);
+        if (!isFinite(gb)) { a = NaN; ga = NaN; continue; }
+        if (gb === 0) return b;
+        if (isFinite(ga) && (ga > 0) !== (gb > 0)) return _solve(g, Math.min(a, b), Math.max(a, b));
+        a = b; ga = gb;
+      }
+      return NaN;
     }
-    return NaN;
+    var R = scan(0.9, 10, 0.02);
+    if (!isFinite(R)) R = scan(0.9, 0.02, -0.02);
+    return R;
   }
   function _futility(t, eff, beta, bfam, theta, sided) {
     var R = _warpRoot(t, eff, beta, bfam, theta, 0), rm = 0;

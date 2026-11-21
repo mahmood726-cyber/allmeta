@@ -199,21 +199,36 @@ def test_alpha_total_spent_does_not_exceed_alpha():
     assert out["total"] <= 0.05 + 1e-9
 
 
-def test_unsolved_futility_design_is_refused_not_silently_dropped():
-    # Requirement: when futility is requested and the non-binding futility design cannot be solved (inflation root not
-    # bracketed: here the design's last look is at t = 1.2), the engine must say so. It used to return
-    # infoInflation NaN, every futility boundary null and an efficacy/continue decision, i.e. an apparently complete
-    # futility analysis with no futility in it (LIM-P46 F12).
+def test_futility_design_ending_past_full_information_is_solved_below_0_9():
+    # Requirement (LIM-P46 F12, review of PR #648): when the design ends past t = 1 the information-inflation root R
+    # lies below 0.9. The search started at 0.9 and only went up, so these solvable designs returned NaN (on main:
+    # futility silently absent; in 88334b1a: refused). The root is now searched downward from 0.9 too, as the R check
+    # (sequential-ma/rcheck.js) does. Values: the reviewer's widened search (rev648 probes), checked again here.
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
-        let msg = null, res = null;
-        try {{ res = M.computeBoundary([{{ t: 0.5, z: 1 }}, {{ t: 1.2, z: 2 }}],
-                                       {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true }}); }}
-        catch (e) {{ msg = e.message; }}
-        console.log(JSON.stringify({{ msg, inflation: res && res.infoInflation }}));
+        const cases = [[[{{t:0.5,z:1}},{{t:1.2,z:2}}], 2], [[{{t:1.5,z:1}}], 2], [[{{t:1.2,z:1}}], 1]];
+        console.log(JSON.stringify(cases.map(([l, s]) => {{
+          const r = M.computeBoundary(l, {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true, sided: s }});
+          return {{ R: r.infoInflation, fut: r.looks.map(x => x.futility_boundary), dec: r.decision }};
+        }})));
     """)
+    for got, want in zip(out, [0.8987, 0.667, 0.833]):
+        assert got["R"] is not None and abs(got["R"] - want) < 5e-4, out
+        assert any(b is not None for b in got["fut"]), out
+
+
+def test_unsolved_futility_design_is_refused_not_silently_dropped():
+    # Requirement (LIM-P46 F12): if no inflation root exists anywhere on the searched range, the engine must say so
+    # rather than return infoInflation NaN, every futility boundary null and an efficacy/continue decision.
+    # Unsolvable case: beta = 0.99 makes the design drift z_{1-a/2} + z_{1-b} negative (power 0.01 < alpha), so no
+    # inflation factor exists; main returned infoInflation NaN with every futility boundary null.
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        let msg = null; try {{ M.computeBoundary(UNSOLVABLE_LOOKS, UNSOLVABLE_OPTS); }} catch (e) {{ msg = e.message; }}
+        console.log(JSON.stringify({{ msg }}));
+    """.replace("UNSOLVABLE_LOOKS", '[{t: 0.5, z: 1}, {t: 1, z: 1}]')
+       .replace("UNSOLVABLE_OPTS", '{alpha: 0.05, beta: 0.99, family: "OBF", futility: true}'))
     assert out["msg"] and "futility" in out["msg"], out
-    # a solvable design is unaffected
     ok = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
         const r = M.computeBoundary([{{ t: 0.5, z: 1 }}, {{ t: 1, z: 2 }}], {{ alpha: 0.05, futility: true }});
