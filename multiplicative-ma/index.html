@@ -141,9 +141,13 @@
         row("Fixed-effect (IV)", fe.mu, fe.ciLo, fe.ciHi, fe.se, "—", false)
         + row("Random-effects (PM, additive)", re.mu, re.ciLo, re.ciHi, re.se, "τ² = " + re.tau2.toFixed(4) + ", I² = " + re.I2.toFixed(0) + "%", false)
         + row("Multiplicative (UWLS)", mult.mu, mult.ciLo, mult.ciHi, mult.se, "φ = " + mult.phi.toFixed(3) + " (Q/" + mult.df + ")", true);
-      var disp = mult.phi >= 1
+      // phi > 1 keeps its sentence. phi = 1 used to be printed "> 1"; and for phi < 1 the UWLS SE is smaller
+      // but its t(k-1) interval need not be narrower than the fixed-effect normal interval.
+      var disp = mult.phi > 1
         ? "φ = " + mult.phi.toFixed(2) + " > 1: the data are over-dispersed relative to a common effect (heterogeneity and/or small-study effects), so UWLS widens the CI beyond fixed-effect."
-        : "φ = " + mult.phi.toFixed(2) + " < 1: less variation than a common-effect model expects; UWLS narrows the CI (some implementations floor φ at 1 — here it follows lm exactly, unfloored).";
+        : mult.phi === 1
+        ? "φ = 1.00: exactly the variation a common-effect model expects; the UWLS SE equals the fixed-effect SE (its interval uses t with k−1 df)."
+        : "φ = " + mult.phi.toFixed(2) + " < 1: less variation than a common-effect model expects; the UWLS SE is smaller than the fixed-effect SE, but its interval uses t with k−1 df, so it need not be narrower (some implementations floor φ at 1 — here it follows lm exactly, unfloored).";
       document.getElementById("interp").innerHTML = "<strong>Multiplicative (UWLS) is highlighted as the primary estimate.</strong> " + disp;
     }
     document.getElementById("btn-run").addEventListener("click", run);
