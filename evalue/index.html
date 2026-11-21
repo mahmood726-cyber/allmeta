@@ -113,6 +113,7 @@
         <tbody id="tbody"></tbody>
       </table>
       <p id="interp" role="status" aria-live="polite"></p>
+      <p id="refusal-status" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0"></p>
       <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
       <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale"></svg>
       <h2 style="margin-top:1rem">Check these numbers in R</h2>
@@ -250,10 +251,13 @@
       var ratio = (measure !== "SMD");
       var hasLo = lo !== null, hasHi = hi !== null;
       window.__almLastEValue = function () { return null; };
+      document.getElementById("refusal-status").textContent = "";
       function refuse(reason) {
         tbody.textContent = "Analysis refused: " + reason;
-        // LIM-P22 F23: the polite live region announces refusals as well as results.
-        document.getElementById("interp").textContent = "Analysis refused: " + reason;
+        // LIM-P22 F23: a refusal is announced in its own polite live region; the
+        // interpretation (#interp) is cleared, so no stale result text remains.
+        document.getElementById("interp").textContent = "";
+        document.getElementById("refusal-status").textContent = "Analysis refused: " + reason;
         document.getElementById("plot").replaceChildren();
       }
       layout(measure);
