@@ -105,7 +105,8 @@
     if ($("btn-example")) $("btn-example").addEventListener("click", invalidate);
     $("rv-download").addEventListener("click", function () {
       try {
-        revalidate();
+        // No revalidate() here: the page re-analyses on every input, so the current result is already the
+        // one on screen, and re-running would replace it and make a running Verify discard its answer.
         var blob = new Blob([buildScript()], { type: "text/plain;charset=utf-8" });
         var url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "surrogate-validation-check.R"; document.body.appendChild(a); a.click(); a.remove();

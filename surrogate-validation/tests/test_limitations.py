@@ -109,3 +109,32 @@ def test_F16_input_change_clears_the_r_verdict(pg):
     pg.fill("#f-data", EX + "\nTrial E, -11.0, -0.34, 0.14")
     assert pg.evaluate("() => document.getElementById('rv-out').hidden")
     assert "MATCH" not in pg.text_content("#rv-status")
+
+
+def test_F01_trailing_comma_is_accepted(pg):
+    """Review of PR 649: "Trial A, -9.4, -0.21, 0.06," (a trailing comma, i.e. an empty 5th field) was
+    accepted on main and must stay accepted; a non-empty 5th field is still refused."""
+    pg.fill("#f-data", EX.replace("0.06", "0.06,") + "\nTrial X, -3.0, -0.10, 0.10, 99")
+    rows = analysed(pg)
+    assert ["Trial A", -9.4, -0.21, 0.06] in rows and len(rows) == 4, rows
+    txt = pg.text_content("#input-issues")
+    assert "line 5" in txt and "line 1" not in txt, txt
+
+
+def test_F16_download_does_not_discard_a_running_verify(pg):
+    """Review of PR 649: Download R script re-ran the analysis, which replaced the result object, so a
+    Verify in R still running was discarded as "trials changed" although nothing changed. Requirement:
+    downloading does not regenerate the analysis; the running Verify still reports its verdict."""
+    pg.fill("#f-data", EX)
+    pg.evaluate("""() => { window.__realRunR = AlmWebR.runR; window.__release = null;
+        AlmWebR.runR = () => new Promise(res => { window.__release = () => res({ ok: true, stdout: "x\\nMATCH 19/19\\n", versions: { R: "4" } }); }); }""")
+    pg.click("#rv-run")
+    pg.wait_for_function("() => typeof window.__release === 'function'")
+    with pg.expect_download():
+        pg.click("#rv-download")
+    pg.evaluate("() => window.__release()")
+    pg.wait_for_timeout(300)
+    pg.evaluate("() => { AlmWebR.runR = window.__realRunR; }")
+    st = pg.text_content("#rv-status")
+    assert st.startswith("MATCH 19/19"), st
+
