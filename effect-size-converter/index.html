@@ -71,7 +71,7 @@
                   font-size: 0.74rem; max-height: 24rem; overflow: auto; white-space: pre; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 100000; text-decoration: none; }
     .skip-link:focus { left: 8px; }
     .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
@@ -217,6 +217,7 @@
     <section class="panel results" aria-label="Results">
       <h2>Conversions</h2>
       <div id="warn-slot" role="status" aria-live="polite"></div>
+      <p id="results-status" class="sr-only" role="status" aria-live="polite"></p>
       <table>
         <thead>
           <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th><th scope="col">Notes</th></tr>
@@ -478,6 +479,12 @@
       const tbody = document.getElementById("results-body");
       tbody.innerHTML = "";
       window.__almResultRows = rows.map(withCI);
+      // LIM-P20 A08: announce what the table now holds, and describe the plot's values.
+      const status = document.getElementById("results-status");
+      if (status) status.textContent = rows.length
+        ? rows.length + " converted value" + (rows.length === 1 ? "" : "s") + " shown: " +
+          window.__almResultRows.map(r => r.scale + " " + fmt(r.point)).join("; ") + "."
+        : "No conversions shown" + (warn ? ": " + warn : ".");
       for (const r of window.__almResultRows) {
         const ci = Number.isFinite(r.lo) && Number.isFinite(r.hi)
           ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
@@ -571,6 +578,10 @@
         ptsParts.push(`<rect x="${X(v.pt) - 5}" y="${y - 5}" width="10" height="10" fill="var(--accent)"/>`);
       });
 
+      svg.setAttribute("aria-label", views.length
+        ? "SMD-scale plot of " + views.length + " representation" + (views.length === 1 ? "" : "s") + " of one estimate: " +
+          views.map(v => v.scale + " " + fmt(v.pt) + (Number.isFinite(v.lo) && Number.isFinite(v.hi) ? " (95% CI " + fmt(v.lo) + " to " + fmt(v.hi) + ")" : "")).join("; ")
+        : "SMD-scale plot: no defensible SMD representation for this input");
       ax.innerHTML = axParts.join("");
       lbls.innerHTML = lblParts.join("");
       pts.innerHTML = ptsParts.join("");
