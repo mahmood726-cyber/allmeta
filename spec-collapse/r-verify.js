@@ -152,6 +152,16 @@
       return { input: global.__lastSpec.input, result: global.__lastSpec.result };
     }
     var status = $("r-status"), out = $("r-out");
+    // A COMPLETED verdict belongs to the analysis it was computed for: when the page re-runs (run() replaces
+    // __lastSpec) or its inputs are edited (the page then withdraws __lastSpec), clear the verdict and say so.
+    var shownFor = null;
+    function invalidate() {
+      if (!shownFor || global.__lastSpec === shownFor) return;
+      shownFor = null; out.textContent = ""; out.hidden = true; global.__lastRVerify = null;
+      status.textContent = "The analysis changed since the last R check, so its verdict was cleared. Press Verify in R again.";
+    }
+    doc.addEventListener("input", invalidate); doc.addEventListener("change", invalidate); doc.addEventListener("click", function (e) {
+      if (e.target && (e.target.id === "btn-run" || e.target.id === "btn-example")) invalidate(); });
     $("btn-rscript").addEventListener("click", function () {
       var s = snapshot();
       if (!s) { status.textContent = "Run the multiverse first - the script is generated from the analysed studies."; return; }
@@ -164,7 +174,7 @@
       var s = snapshot(), btn = $("btn-webr"), my = ++verifyGen, run = global.__lastSpec;   // run() replaces it on every analysis
       if (!s) { status.textContent = "Run the multiverse first."; return; }
       if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { status.textContent = "WebR runner (../shared/webr-runner.js) did not load - use Download R script."; return; }
-      btn.disabled = true; out.hidden = true;
+      btn.disabled = true; out.hidden = true; shownFor = null;
       var t0 = Date.now();
       global.AlmWebR.runR({ script: buildScript(s), packages: ["metafor"], onStatus: function (m) { status.textContent = m; } }).then(function (r) {
         btn.disabled = false;
@@ -175,6 +185,10 @@
         var last = r.stdout.split(/\r?\n/).filter(function (l) { return /^(MATCH|MISMATCH)/.test(l); }).pop() || "no MATCH/MISMATCH line in R output";
         status.textContent = last + "  (R in WebR: " + r.versions.R + ", webR " + r.versions.webR + ", metafor " + r.versions.metafor + "; " + ((Date.now() - t0) / 1000).toFixed(0) + " s)";
         global.__lastRVerify = { line: last, stdout: r.stdout, versions: r.versions };
+        shownFor = run;
+      }).catch(function (e) {   // a runner that rejects must not leave Verify disabled
+        btn.disabled = false;
+        status.textContent = "WebR could not run the check: " + ((e && e.message) || e) + " - use Download R script.";
       });
     });
   }

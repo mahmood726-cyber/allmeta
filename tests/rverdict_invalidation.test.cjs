@@ -47,7 +47,21 @@ const VERS = { R: "R version 4.5.1", webR: "0.5.5", metafor: "4.8-0" };
 const APPS = {
   robma: { A: "0", verify: "#btn-r-webr", B: set("#f-data", "A, 0.30, 0.12\nB, 0.12, 0.20\nC, 0.55, 0.18"), show: ["#r-check-status", "#r-check-out"] },
   transportability: { A: click("#btn-example"), verify: "#btn-webr", B: set("#f-target", "35"), show: ["#r-status", "#r-out"] },
+  // spec-collapse does not re-run on typing: editing the studies must withdraw the old result (P64 L12)
+  "spec-collapse": { A: click("#btn-example"), verify: "#btn-webr", B: set("#data", "0.1, 0.2\n0.3, 0.25\n0.2, 0.3\n0.4, 0.2"), show: ["#r-status", "#r-out"] },
 };
+
+test("spec-collapse: editing the studies withdraws the cards and table of the old input (P64 L12)", { skip: SKIP }, async () => {
+  const page = await open("spec-collapse");
+  await page.evaluate(click("#btn-example")); await page.waitForTimeout(300);
+  assert.ok(await page.evaluate(() => !!window.__lastSpec && document.getElementById("specs").children.length > 0), "example not analysed");
+  await page.evaluate(set("#data", "0.1, 0.2\n0.3, 0.25\n0.2, 0.3\n0.4, 0.2")); await page.waitForTimeout(300);
+  const st = await page.evaluate(() => ({ last: window.__lastSpec, rows: document.getElementById("specs").children.length, banner: document.getElementById("banner").textContent }));
+  await page.close();
+  assert.strictEqual(st.last, null, "the old analysis is still offered to the R check");
+  assert.strictEqual(st.rows, 0, "the old specification table is still shown");
+  assert.match(st.banner, /edited/i, st.banner);
+});
 
 async function open(app) {
   const page = await browser.newPage();

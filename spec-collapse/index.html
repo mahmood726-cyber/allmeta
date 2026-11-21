@@ -188,6 +188,15 @@
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; run(); });
     document.getElementById("scheme").addEventListener("change", run);
+    // Editing the studies does not re-run the 36 specifications; until Run is pressed the cards and table
+    // describe the OLD input, so withdraw them (and the R check's snapshot) instead of leaving them as current.
+    document.getElementById("data").addEventListener("input", function () {
+      if (!window.__lastSpec) return;
+      window.__lastSpec = null;
+      var banner = document.getElementById("banner");
+      banner.className = "banner bad"; banner.textContent = "The studies were edited: press Run to analyse the current input.";
+      document.getElementById("cards").innerHTML = ""; document.getElementById("specs").innerHTML = ""; document.getElementById("curve-n").textContent = "";
+    });
     document.getElementById("data").value = EXAMPLE;
     run();
   </script>
