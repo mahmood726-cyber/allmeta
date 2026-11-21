@@ -121,6 +121,7 @@
         ln = ln.trim(); if (!ln || ln[0] === "#") return;
         var c = csvFields(ln), bad = function (why) { lastIssues.push("line " + (i + 1) + ": " + why); };
         if (!c) return bad("unterminated quote");
+        if (c.length === 5 && c[4] === "") c.pop();   // a trailing comma (empty 5th field) was accepted on main
         if (c.length !== 4) return bad(c.length + " fields (need exactly 4: label, surrogate, final, SE)");
         var nn = [c[1], c[2], c[3]].filter(function (x) { return x !== "" && num(x) == null; });
         if (nn.length) return bad('"' + nn[0] + '" is not a number');
