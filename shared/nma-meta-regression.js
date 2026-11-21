@@ -192,7 +192,8 @@
           " treatments need " + (mArms * (mArms - 1) / 2) + " contrasts, " + g.rows.length + " supplied");
       }
       // The right COUNT is not enough: a duplicated pair can stand in for a missing one (A-B, A-B, A-C for a
-      // three-arm study), and the covariate is study-level, so every contrast of a study must carry one value.
+      // three-arm study). (No covariate-equality rule: netmetareg fits contrasts with differing covariate
+      // values, e.g. a dropped non-baseline contrast carrying another value - hub/shared/tests engine test.)
       var seenPair = Object.create(null);
       for (j = 0; j < g.rows.length; j++) {
         r = g.rows[j];
@@ -200,8 +201,6 @@
         if (seenPair[pk]) throw new Error("Study '" + r.studyId + "' must supply each pair once: " + r.trtA + " vs " + r.trtB +
           " is given twice, so another of its " + (mArms * (mArms - 1) / 2) + " contrasts is missing");
         seenPair[pk] = true;
-        if (r.covariate !== g.rows[0].covariate) throw new Error("Study '" + r.studyId + "' has different covariate values on its contrasts (" +
-          g.rows[0].covariate + ", " + r.covariate + "); the covariate must be study-level");
       }
     }
     var kept = [], blocks = [], xMean = 0;

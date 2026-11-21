@@ -152,11 +152,9 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         bad.slice(0, 3).join("; ") + (bad.length > 3 ? "; ..." : "") + ". Enter studyId, trtA, trtB, yi, sei, covariate per row, without a header.");
       return rows;
     }
-    function showFail(msg) {
-      var card = document.createElement("div");
-      card.className = "card"; card.style.gridColumn = "1/-1"; card.style.color = "var(--warn)";
-      card.textContent = "Fit failed: " + msg;
-      var host = document.getElementById("summary"); host.innerHTML = ""; host.appendChild(card);
+    function showFail(msg) {   // msg is escaped: it can quote user labels
+      document.getElementById("summary").innerHTML =
+        '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + esc(msg) + '</div>';
     }
 
     // User-derived strings (treatment labels, messages) go into HTML/SVG markup only escaped, so a label like
@@ -293,10 +291,8 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var xLo = Math.min.apply(null, obsX), xHi = Math.max.apply(null, obsX);
       var outside = fit.predictions.filter(function (q) { return q.x < xLo || q.x > xHi; }).map(function (q) { return q.x; });
       if (outside.length) {
-        var ex = document.createElement("div");
-        ex.className = "card"; ex.style.gridColumn = "1/-1";
-        ex.textContent = "Predictions at " + outside.join(", ") + " are outside the observed covariate range (" + xLo + " to " + xHi + "): extrapolations.";
-        document.getElementById("summary").appendChild(ex);
+        document.getElementById("summary").innerHTML += '<div class="card" style="grid-column:1/-1">' +
+          esc("Predictions at " + outside.join(", ") + " are outside the observed covariate range (" + xLo + " to " + xHi + "): extrapolations.") + '</div>';
       }
 
       // β table

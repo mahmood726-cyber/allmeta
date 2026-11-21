@@ -98,11 +98,13 @@ test("L03: an unknown reference treatment is refused; blank means the first sort
 const tri = (sid, pairs, xs) => pairs.map(([a, b, y], i) => ({ studyId: sid, trtA: a, trtB: b, yi: y, sei: 0.15, covariate: xs ? xs[i] : 50 }));
 const two = [["S1", "A", "B", -0.3, 40], ["S2", "A", "B", -0.2, 60], ["S3", "A", "C", -0.4, 45], ["S4", "A", "C", -0.5, 65], ["S5", "B", "C", -0.1, 55]]
   .map(([s, a, b, y, x]) => ({ studyId: s, trtA: a, trtB: b, yi: y, sei: 0.12, covariate: x }));
-test("L04: a multi-arm study must supply every distinct pair, with one covariate value", () => {
+// Requirement is distinct pairs only. A covariate-equality rule was tried and withdrawn (review of PR #651):
+// netmetareg fits a multi-arm study whose contrasts carry different covariate values, so the engine must too.
+test("L04: a multi-arm study must supply every distinct pair (a duplicate cannot stand in for a missing one)", () => {
   const dup = two.concat(tri("M1", [["A", "B", -0.3], ["A", "B", -0.25], ["A", "C", -0.4]]));
   assert.throws(() => NMR.fit(dup, ["A", "B", "C"]), /each pair once|duplicate/i);
   const diffx = two.concat(tri("M1", [["A", "B", -0.3], ["A", "C", -0.4], ["B", "C", -0.1]], [50, 50, 70]));
-  assert.throws(() => NMR.fit(diffx, ["A", "B", "C"]), /covariate/i);
+  assert.ok(NMR.fit(diffx, ["A", "B", "C"]).ok, "differing covariates within a study must still fit, as netmetareg does");
   // a complete three-arm study with one covariate value still fits
   const good = two.concat(tri("M1", [["A", "B", -0.3], ["A", "C", -0.4], ["B", "C", -0.1]], [50, 50, 50]));
   assert.ok(NMR.fit(good, ["A", "B", "C"]).ok);
