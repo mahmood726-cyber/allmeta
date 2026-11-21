@@ -46,7 +46,7 @@
     sec.className = "panel"; sec.id = "rcheck-panel"; sec.style.gridColumn = "1 / -1";
     sec.setAttribute("aria-label", "Check this result in R");
     sec.innerHTML = '<h2>Check in R</h2>' +
-      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes every displayed number with ' + PKG_NOTE + ', prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
+      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. From the rows the page accepted, it recomputes the estimates, SEs, confidence limits and heterogeneity values shown with ' + PKG_NOTE + ' (it does not check which lines were left out, labels or the rounded text), prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
       '<button type="button" id="btn-rscript" class="ghost">Download R script</button>' +
       '<button type="button" id="btn-verify-r" class="ghost">Verify in R (WebR)</button></div>' +
