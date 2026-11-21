@@ -47,10 +47,391 @@
   // under the Node/linkedom DOM used by the validation harness the page's global
   // object is proxied, so each `Math.x` lookup goes through a getter trap and the
   // same loop runs about 50x slower. The arithmetic is unchanged.
-  var mExp = Math.exp, mSqrt = Math.sqrt, mLog = Math.log, mLog10 = Math.log10,
+  // exp and log are NOT Math.exp/Math.log: they are the correctly rounded
+  // crExp/crLog defined just below (function declarations, so hoisted; their
+  // tables are built before anything in this module can call them). mPow stays
+  // Math.pow for the exact powers of two and ten it is used for; the one
+  // non-trivial power on the likelihood path, (1 - rho2T)^-1.5, calls crPow.
+  var mExp = crExp, mSqrt = Math.sqrt, mLog = crLog, mLog10 = Math.log10,
       mAbs = Math.abs, mPow = Math.pow, mMin = Math.min, mMax = Math.max,
       mFloor = Math.floor, mCeil = Math.ceil, mTrunc = Math.trunc,
       mSign = Math.sign, isFin = isFinite, isNan = isNaN;
+
+  /* ------------------------------------- correctly rounded exp, log, pow */
+  // V8's Math.exp/log are faithful (< 1 ulp) but NOT correctly rounded: on
+  // arguments from the likelihood's ranges they differ from the correctly
+  // rounded value in 7.2% (exp) and 3.7% (log) of calls. R 4.6.0 on Windows
+  // (mingw-w64's x87-based libm; x^y is powl) is far closer -- 0.23% (exp),
+  // 0.05% (log), 1.5% (x^-1.5) -- and L-BFGS-B turns a one-ulp difference in
+  // f or g into a different path, so the page stopped where metasens did not.
+  // R's own residual is not reproducible from first principles (it depends on
+  // the x87 transcendental instructions), so the target is the correctly
+  // rounded value; copas/tests/crmath.test.mjs pins how often R misses it.
+  // These return the correctly rounded (round-to-nearest-even) result.
+  //
+  // Method (Ziv): a fast double-double evaluation with a stated relative error
+  // bound, then a rounding test that proves the bound cannot straddle a
+  // rounding boundary; if it might, an exact BigInt fixed-point evaluation
+  // with rigorous error bounds is repeated at rising precision until it can
+  // decide. The fast path decides all but ~1 in 10^7 calls. The tables are
+  // computed here, at load, by that same BigInt code -- nothing is hand-typed.
+  //   exp: x = k ln2/1024 + r, |r| <= ln2/2048, 2^(j/1024) from a 1024-entry
+  //        double-double table, expm1(r) to degree 6 (truncation 2^-93);
+  //        evaluation error < 2^-86, bound used 2^-80.
+  //   log: x = 2^e m, m in (sqrt(1/2), sqrt(2)], r = m c_i - 1 exact,
+  //        |r| <= 2^-9, log1p(r) to degree 10 (truncation 2^-93); r and r^2
+  //        in double-double, the rest in double: error < 2^-71.5, bound 2^-70
+  //        (pow uses an r^3/3-in-double-double variant: < 2^-80, bound 2^-81.5).
+  //   pow: exp(y log x) in double-double; bound 2^-80 + |y log x| 2^-81.5.
+  //        R's own special cases (R_pow, src/main/arithmetic.c) are kept:
+  //        1^y = x^0 = 1 (also for NaN), x^2 = x*x, 0^y, infinities.
+  // Each fast path's measured error is asserted by crmath.test.mjs against
+  // the BigInt evaluation, and the results against 3,000,000+ reference
+  // values and against R 4.6.0's own exp/log/^ (crmath fixture).
+  // Globals captured once (see the note on mExp above: the validation harness
+  // proxies the global object, so each Math.x / BigInt lookup is a trap).
+  var crRound = Math.round, crFloor = Math.floor, crMax = Math.max, CR_LN2D = Math.LN2,
+      crPow2f = function (e) { return Math.pow(2, e); }, crBI = BigInt, crNum = Number;
+  var CR_INF = 1 / 0, CR_NAN = 0 / 0; // the identifiers Infinity / NaN are global lookups too
+  var CRM_SPLIT = 134217729; // 2^27 + 1, Dekker
+  var crE = 0; // error word of the last twoProd (avoids allocating pairs)
+  function crTwoProd(a, b) {
+    var p = a * b;
+    var t = CRM_SPLIT * a, ah = t - (t - a), al = a - ah;
+    t = CRM_SPLIT * b; var bh = t - (t - b), bl = b - bh;
+    crE = ((ah * bh - p) + ah * bl + al * bh) + al * bl;
+    return p;
+  }
+  var crF64 = new Float64Array(1), crU32 = new Uint32Array(crF64.buffer);
+  crF64[0] = 1; var CR_HI = crU32[1] === 0x3ff00000 ? 1 : 0;
+  var CR_POW2 = new Float64Array(2100); // CR_POW2[p + 1074] = 2^p, p in [-1074, 1025)
+  (function () { var v = 5e-324; for (var i = 0; i < 2100; i++) { CR_POW2[i] = v; v *= 2; } })();
+  function crLdexp(n, p) { // n * 2^p, exact whenever the result is representable
+    if (p >= -1022) {
+      if (p > 1000) return n * CR_POW2[1000 + 1074] * CR_POW2[p - 1000 + 1074];
+      return n * CR_POW2[p + 1074];
+    }
+    return n * CR_POW2[p + 52 + 1074] * CR_POW2[-52 + 1074];
+  }
+
+  // ---- exact BigInt fixed point (reference / fallback / table builder) ----
+  var crDV = new DataView(new ArrayBuffer(8));
+  function crDecomp(x) { // |x| = m 2^ex exactly (x finite, nonzero)
+    crDV.setFloat64(0, x);
+    var hi = crDV.getUint32(0), lo = crDV.getUint32(4), be = (hi >>> 20) & 0x7ff;
+    var m = (crBI(hi & 0xfffff) << 32n) | crBI(lo);
+    if (be === 0) return { neg: hi >>> 31 === 1, m: m, ex: -1074 };
+    return { neg: hi >>> 31 === 1, m: m | (1n << 52n), ex: be - 1075 };
+  }
+  function crBitLen(v) { return v.toString(2).length; } // v > 0
+  function crToFixed(x, Q) { // trunc(x 2^Q), error < 1 unit
+    if (x === 0) return 0n;
+    var d = crDecomp(x), s = d.ex + Q;
+    var v = s >= 0 ? d.m << crBI(s) : d.m >> crBI(-s);
+    return d.neg ? -v : v;
+  }
+  // V 2^s rounded to the nearest double, ties to even; subnormals and
+  // overflow (to Infinity) included.
+  function crBigRound(V, s) {
+    if (V === 0n) return 0;
+    var neg = V < 0n; if (neg) V = -V;
+    var top = crBitLen(V) - 1 + s, r;
+    if (top > 1023) r = CR_INF;
+    else {
+      var lsb = crMax(top - 52, -1074), sh = lsb - s, q;
+      if (sh <= 0) q = V << crBI(-sh);
+      else {
+        q = V >> crBI(sh);
+        var rem = V - (q << crBI(sh)), half = 1n << crBI(sh - 1);
+        if (rem > half || (rem === half && (q & 1n) === 1n)) q += 1n;
+      }
+      r = crLdexp(crNum(q), lsb);
+    }
+    return neg ? -r : r;
+  }
+  function crAbsBig(v) { return v < 0n ? -v : v; }
+  // ln 2 2^Q, error <= 2 units: 2 atanh(1/3) at Q + 24 bits, then shifted.
+  var crLn2Cache = {};
+  function crLn2(Q) {
+    if (crLn2Cache[Q] !== undefined) return crLn2Cache[Q];
+    var W = crBI(Q + 24), one = 1n << W, t = one / 3n, t2 = (t * t) >> W, s = 0n, term = t, n = 1n;
+    while (term !== 0n) { s += term / n; term = (term * t2) >> W; n += 2n; }
+    var v = (2n * s) >> 24n;
+    crLn2Cache[Q] = v; return v;
+  }
+  // exp(z), z = Z 2^-Q with |error| <= Ez units. Returns [S, E, k]:
+  // exp(z) lies in [(S - E) 2^(k-Q), (S + E) 2^(k-Q)].
+  function crBigExpZ(Z, Q, Ez) {
+    var Qb = crBI(Q), LN2 = crLn2(Q);
+    var zd = crNum(Z >> crBI(Q - 60)) / 1152921504606846976; // 2^60
+    var k = crRound(zd / CR_LN2D), kb = crBI(k);
+    var R = Z - kb * LN2;                                  // |R| < 0.35 * 2^Q
+    var errR = Ez + 2n * crAbsBig(kb) + 1n;
+    var one = 1n << Qb, S = one, T = one, n = 1n, nt = 0n;
+    while (T !== 0n) { T = ((T * R) >> Qb) / n; S += T; n += 1n; nt += 1n; }
+    return [S, 4n * nt + 8n + 2n * errR, k];
+  }
+  // log(x) 2^Q for finite x > 0. Returns [L, E]: log x in [(L-E) 2^-Q, (L+E) 2^-Q].
+  function crBigLogFixed(x, Q) {
+    var d = crDecomp(x), bl = crBitLen(d.m), e = d.ex + bl - 1, Qb = crBI(Q);
+    var one = 1n << Qb, M = d.m << crBI(Q - bl + 1);     // [1, 2) 2^Q, exact
+    if (M > (3n * one) / 2n) { M >>= 1n; e += 1; }          // [0.75, 1.5] 2^Q, exact
+    var t = ((M - one) << Qb) / (M + one);                  // |t| <= 0.2, error < 1
+    var t2 = (t * t) >> Qb, s = 0n, term = t, n = 1n, nt = 0n; // t2 >= 0
+    // (term * t2) / one truncates toward zero, so a negative term reaches 0n.
+    while (term !== 0n) { s += term / n; term = (term * t2) / one; n += 2n; nt += 1n; }
+    var eb = crBI(e);
+    return [2n * s + eb * crLn2(Q), 2n * (3n * nt + 4n) + 2n * crAbsBig(eb) + 2n];
+  }
+  var CR_PRECS = [128, 256, 512, 1024, 2048];
+  var crStats = { expFallback: 0, logFallback: 0, powFallback: 0, undecided: 0 };
+  // Both ends of the error interval round to the same double -> that double is
+  // the correctly rounded result. If even 2048 bits cannot decide, the value is
+  // an exact midpoint (only possible for pow): round half to even.
+  function crDecide(lo, hi) {
+    crStats.undecided++;
+    var f = crDecomp(lo); return (f.m & 1n) === 0n ? lo : hi;
+  }
+  function crBigExp(x) {
+    var lo, hi;
+    for (var i = 0; i < CR_PRECS.length; i++) {
+      var Q = CR_PRECS[i] + 64, r = crBigExpZ(crToFixed(x, Q), Q, 1n);
+      lo = crBigRound(r[0] - r[1], r[2] - Q); hi = crBigRound(r[0] + r[1], r[2] - Q);
+      if (lo === hi) return lo;
+    }
+    return crDecide(lo, hi);
+  }
+  function crBigLog(x) {
+    var lo, hi;
+    for (var i = 0; i < CR_PRECS.length; i++) {
+      var Q = CR_PRECS[i] + 64, r = crBigLogFixed(x, Q);
+      lo = crBigRound(r[0] - r[1], -Q); hi = crBigRound(r[0] + r[1], -Q);
+      if (lo === hi) return lo;
+    }
+    return crDecide(lo, hi);
+  }
+  // x > 0 finite, x != 1; y finite, y != 0.
+  function crBigPow(x, y) {
+    var dy = crDecomp(y), lo, hi;
+    var extra = crMax(0, dy.ex + crBitLen(dy.m));         // log2 |y|, rounded up
+    for (var i = 0; i < CR_PRECS.length; i++) {
+      var Q = CR_PRECS[i] + 64 + extra, r = crBigLogFixed(x, Q), Z, Ez;
+      var my = dy.neg ? -dy.m : dy.m;
+      if (dy.ex >= 0) { Z = (r[0] * my) << crBI(dy.ex); Ez = (r[1] * dy.m) << crBI(dy.ex); }
+      else { Z = (r[0] * my) >> crBI(-dy.ex); Ez = ((r[1] * dy.m) >> crBI(-dy.ex)) + 2n; }
+      var lim = 746n << crBI(Q);
+      if (Z > lim) return CR_INF;
+      if (Z < -lim) return 0;
+      var e = crBigExpZ(Z, Q, Ez);
+      lo = crBigRound(e[0] - e[1], e[2] - Q); hi = crBigRound(e[0] + e[1], e[2] - Q);
+      if (lo === hi) return lo;
+    }
+    return crDecide(lo, hi);
+  }
+
+  // ---- tables and constants, from the BigInt code above ----
+  function crSplitDD(V, Q) { // V 2^-Q as hi + lo (each rounded to nearest)
+    var h = crBigRound(V, -Q); return [h, crBigRound(V - crToFixed(h, Q), -Q)];
+  }
+  var CR_Q0 = 160;
+  var CR_EXP_TH = new Float64Array(1024), CR_EXP_TL = new Float64Array(1024);
+  var CR_L1, CR_L2, CR_L3, CR_LN2H, CR_LN2M, CR_LN2L, CR_THIRD_H, CR_THIRD_L;
+  var CR_LOG_C = new Float64Array(363), CR_LOG_TH = new Float64Array(363), CR_LOG_TL = new Float64Array(363);
+  function crTopBits(v, n) { var b = crBitLen(v) - n; return b > 0 ? (v >> crBI(b)) << crBI(b) : v; }
+  (function () {
+    var Q = CR_Q0, Qx = Q + 16, LN2 = crLn2(Qx), Qb = crBI(Q), j, dd, r;
+    // 2^(j/1024) = 2^(j1/32) 2^(j2/1024): 64 BigInt exps, then exact products
+    var F1 = [], F2 = [];
+    for (j = 0; j < 32; j++) {
+      r = crBigExpZ((crBI(j) * LN2) >> 21n, Q, 2n); F1.push(r[0] << crBI(r[2]));
+      r = crBigExpZ((crBI(j) * LN2) >> 26n, Q, 2n); F2.push(r[0] << crBI(r[2]));
+    }
+    for (j = 0; j < 1024; j++) {
+      dd = crSplitDD((F1[j >> 5] * F2[j & 31]) >> Qb, Q); CR_EXP_TH[j] = dd[0]; CR_EXP_TL[j] = dd[1];
+    }
+    // ln2/1024 = L1 + L2 + L3, L1 and L2 of 32 bits: k*L1, k*L2 exact for |k| < 2^21
+    var l = LN2 >> 10n, v1 = crTopBits(l, 32), v2 = crTopBits(l - v1, 32);
+    CR_L1 = crBigRound(v1, -Qx); CR_L2 = crBigRound(v2, -Qx); CR_L3 = crBigRound(l - v1 - v2, -Qx);
+    // ln2 = H + M + L, H and M of 42 bits: e*H, e*M exact for |e| < 2^11
+    v1 = crTopBits(LN2, 42); v2 = crTopBits(LN2 - v1, 42);
+    CR_LN2H = crBigRound(v1, -Qx); CR_LN2M = crBigRound(v2, -Qx); CR_LN2L = crBigRound(LN2 - v1 - v2, -Qx);
+    dd = crSplitDD((1n << Qb) / 3n, Q); CR_THIRD_H = dd[0]; CR_THIRD_L = dd[1];
+    for (var i = 362; i <= 724; i++) {        // c_i ~ 1/m on [i/512, (i+1)/512)
+      var c = (i === 511 || i === 512) ? 1 : 512 / (i + 0.5);
+      CR_LOG_C[i - 362] = c;
+      if (c === 1) { CR_LOG_TH[i - 362] = 0; CR_LOG_TL[i - 362] = 0; continue; }
+      var L = crBigLogFixed(c, Q);            // -log c
+      dd = crSplitDD(-L[0], Q); CR_LOG_TH[i - 362] = dd[0]; CR_LOG_TL[i - 362] = dd[1];
+    }
+  })();
+  var CR_INV_L1024 = 1477.3197218702985; // 1024/ln2 (any nearby value works)
+  var CR_EXP_EPS2 = 2 * crPow2f(-80), CR_LOG_EPS2 = 2 * crPow2f(-70);
+  var CR_POW_EPS2A = 2 * crPow2f(-80), CR_POW_EPS2B = 2 * crPow2f(-79);
+
+  var crH = 0, crL = 0, crK = 0; // double-double result h + l, times 2^crK
+  // exp(xh + xl) in double-double, -745.2 < xh < 709.7, |xl| <= ulp(xh)/2.
+  function crExpDD(xh, xl) {
+    var kf = crRound(xh * CR_INV_L1024) | 0, j = kf & 1023; // int32: never -0
+    crK = (kf - j) / 1024;
+    var t = xh - kf * CR_L1, u = kf * CR_L2;          // both exact
+    var s = t - u, bb = s - t, se = (t - (s - bb)) + (-u - bb);
+    se += xl - kf * CR_L3;
+    var rh = s + se, rl = se - (rh - s);              // r, |r| <= ln2/2048 + tiny
+    var q = crTwoProd(rh, rh), qe = crE + 2 * rh * rl; // r^2
+    // r^3 (1/6 + r/24 + r^2/120 + r^3/720); truncation r^7/7! < 2^-93
+    var tail = q * rh * (0.16666666666666666 + rh * (0.041666666666666664 +
+      rh * (0.008333333333333333 + rh * 0.001388888888888889)));
+    var h2 = q * 0.5;
+    var s1 = rh + h2; bb = s1 - rh;
+    var lo = (rh - (s1 - bb)) + (h2 - bb) + rl + qe * 0.5 + tail;
+    var ph = s1 + lo, pl = lo - (ph - s1);           // expm1(r)
+    var Th = CR_EXP_TH[j], Tl = CR_EXP_TL[j];
+    var m = crTwoProd(Th, ph), me = crE + Th * pl + Tl * ph;
+    s = Th + m; bb = s - Th; se = (Th - (s - bb)) + (m - bb);
+    se += me + Tl;
+    crH = s + se; crL = se - (crH - s);
+  }
+  // log(x) in double-double (crH + crL), x > 0 finite, x != 1.
+  // acc = false (log): r^3 onwards in plain double; error < 2^-71.5, bound 2^-70.
+  // acc = true (pow, whose result error is |y log x| times log's relative
+  // error): r^3/3 in double-double; error < 2^-80, bound 2^-81.5 relative...
+  // see crmath.test.mjs for both measured.
+  function crLogDD(x, acc) {
+    var e = 0;
+    if (x < 2.2250738585072014e-308) { x *= 18014398509481984; e = -54; }
+    crF64[0] = x; var hw = crU32[CR_HI];
+    e += (hw >>> 20) - 1023;
+    crU32[CR_HI] = (hw & 0x000fffff) | 0x3ff00000; var m = crF64[0];  // [1, 2)
+    if (m > 1.4142135623730951) { m *= 0.5; e += 1; }
+    var i = ((m * 512) | 0) - 362, c = CR_LOG_C[i], rh, rl, s, bb, t, se;
+    if (c === 1) { rh = m - 1; rl = 0; }                // |r| <= 2^-9
+    else {                                               // |r| <= 2^-9.5
+      var p = crTwoProd(m, c), pe = crE; t = p - 1;      // exact
+      rh = t + pe; bb = rh - t; rl = (t - (rh - bb)) + (pe - bb);
+    }
+    var q = crTwoProd(rh, rh), qe = crE + 2 * rh * rl;  // r^2
+    // log1p(r) = r - r^2/2 + r^3/3 - ...; truncation after r^10: < 2^-93 relative
+    var w = rh * (-0.25 + rh * (0.2 + rh * (-0.16666666666666666 + rh * (0.14285714285714285 +
+      rh * (-0.125 + rh * (0.1111111111111111 + rh * -0.1))))));   // r^4.. / r^3
+    var hq = -q * 0.5;
+    if (acc) {
+      var cc = crTwoProd(q, rh), ce = crE + qe * rh + q * rl;        // r^3
+      var f = crTwoProd(cc, CR_THIRD_H), fe = crE + ce * CR_THIRD_H + cc * CR_THIRD_L;
+      w *= q * rh;
+      s = f + w; bb = s - f; se = (f - (s - bb)) + (w - bb) + fe;
+    } else {
+      s = q * rh * (0.3333333333333333 + w); se = 0;
+    }
+    t = hq + s; bb = t - hq; se += (hq - (t - bb)) + (s - bb); s = t;
+    t = rh + s; bb = t - rh; se += (rh - (t - bb)) + (s - bb); s = t;
+    se += rl - qe * 0.5;
+    var Ph = s + se, Pl = se - (Ph - s);                            // log1p(r)
+    // e ln2 + (-log c) + log1p(r); e*H and e*M exact
+    var a = e * CR_LN2H, am = e * CR_LN2M, Lh = CR_LOG_TH[i];
+    s = a + Lh; bb = s - a; var lo = (a - (s - bb)) + (Lh - bb);
+    t = s + am; bb = t - s; lo += (s - (t - bb)) + (am - bb); s = t;
+    t = s + Ph; bb = t - s; lo += (s - (t - bb)) + (Ph - bb); s = t;
+    lo += e * CR_LN2L + CR_LOG_TL[i] + Pl;
+    crH = s + lo; crL = lo - (crH - s);
+  }
+  // The rounding test. True value v satisfies |v - (h + l)| <= eps2/2 |h|,
+  // h = fl(h + l). Adding l +/- eps2|h| to h and getting h back both times
+  // proves every such v rounds to h (eps2 is twice the bound, which absorbs
+  // the rounding of l +/- eps2|h| itself; see crmath.test.mjs).
+  function crRounds(h, l, eps2) {
+    var E = (h < 0 ? -h : h) * eps2;
+    return h + (l + E) === h && h + (l - E) === h;
+  }
+  // The double-double exp result crH + crL (relative error bound eps2/2),
+  // scaled by 2^crK, rounded -- or NaN when the rounding test cannot decide.
+  // Results below 2^-1021 are rounded on the subnormal grid 2^-1074 directly
+  // (one rounding, never two): H = crH 2^(crK+1074) is exact, n0 its nearest
+  // integer, and n0 is the answer iff |H + L - n0| stays below 1/2 by more
+  // than the error bound.
+  function crExpFinish(eps2) {
+    if (crK >= -1021) return crRounds(crH, crL, eps2) ? crLdexp(crH, crK) : CR_NAN;
+    var sc = CR_POW2[crK + 2148], H = crH * sc, L = crL * sc;  // 2^(crK+1074), exact
+    var n0 = crRound(H), f = (H - n0) + L, E = H * eps2;
+    if (f < 0) f = -f;
+    return f + E < 0.4999999999999 ? crLdexp(n0, -1074) : CR_NAN;
+  }
+  // Fallback results, memoised: the hard cases are not random -- log(1 - 2^-52)
+  // (pnorm returning 1 - ulp) recurs hundreds of times in one fit.
+  var crMemo = { e: new Map(), l: new Map(), p: new Map() };
+  function crMemoSet(m, key, v) { if (m.size >= 4096) m.clear(); m.set(key, v); return v; }
+  function crExp(x) {
+    var r;
+    if (x > -745.2 && x < 709.7) {
+      crExpDD(x, 0);
+      r = crExpFinish(CR_EXP_EPS2);
+      if (r === r) return r;
+    } else {
+      if (x !== x) return x;
+      if (x > 709.79) return CR_INF;
+      if (x < -746) return 0;
+    }
+    r = crMemo.e.get(x);
+    if (r !== undefined) return r;
+    crStats.expFallback++;
+    return crMemoSet(crMemo.e, x, crBigExp(x));
+  }
+  function crLog(x) {
+    if (!(x > 0) || x === CR_INF) {
+      if (x === 0) return -CR_INF;
+      return x === CR_INF ? x : CR_NAN;   // NaN, negative
+    }
+    if (x === 1) return 0;
+    crLogDD(x, false);
+    if (crRounds(crH, crL, CR_LOG_EPS2)) return crH;
+    var r = crMemo.l.get(x);
+    if (r !== undefined) return r;
+    crStats.logFallback++;
+    return crMemoSet(crMemo.l, x, crBigLog(x));
+  }
+  // R_pow() (src/main/arithmetic.c) semantics, correctly rounded finite part.
+  function crPow(x, y) {
+    if (x === 1 || y === 0) return 1;
+    if (x === 0) { if (y > 0) return 0; if (y < 0) return CR_INF; return y; }
+    if (x !== x || y !== y) return x + y;
+    if (y === 2) return x * x;           // R's R_POW macro: x^2 is x * x
+    if (x === CR_INF) return y < 0 ? 0 : CR_INF;
+    if (x === -CR_INF) {
+      if (y === CR_INF || y === -CR_INF || y !== crFloor(y)) return CR_NAN;
+      return y < 0 ? 0 : (y % 2 !== 0 ? x : -x);
+    }
+    if (y === CR_INF || y === -CR_INF) {
+      if (x >= 0) return y > 0 ? (x >= 1 ? CR_INF : 0) : (x < 1 ? CR_INF : 0);
+      return CR_NAN;
+    }
+    var neg = false;
+    if (x < 0) { if (y !== crFloor(y)) return CR_NAN; neg = y % 2 !== 0; x = -x; if (x === 1) return neg ? -1 : 1; }
+    crLogDD(x, true);
+    var zh = crTwoProd(y, crH), zl = crE + y * crL, r;
+    var z = zh + zl; zl = zl - (z - zh); zh = z;
+    if (zh > 709.8) r = CR_INF;
+    else if (zh < -745.2) r = 0;
+    else {
+      r = CR_NAN;
+      if (zh < 709.7) {
+        crExpDD(zh, zl);
+        r = crExpFinish(CR_POW_EPS2A + (zh < 0 ? -zh : zh) * CR_POW_EPS2B);
+      }
+      if (r !== r) {
+        var pm = crMemo.p.get(y), key = x;
+        if (pm === undefined) { if (crMemo.p.size >= 64) crMemo.p.clear(); pm = new Map(); crMemo.p.set(y, pm); }
+        r = pm.get(key);
+        if (r === undefined) { crStats.powFallback++; r = crMemoSet(pm, key, crBigPow(x, y)); }
+      }
+    }
+    return neg ? -r : r;
+  }
+  var crmath = { exp: crExp, log: crLog, pow: crPow, stats: crStats,
+    // internals, for crmath.test.mjs (error measurement and reference values)
+    _expDD: function (xh, xl) { crExpDD(xh, xl || 0); return [crH, crL, crK]; },
+    _logDD: function (x, acc) { crLogDD(x, !!acc); return [crH, crL]; },
+    _bigExp: crBigExp, _bigLog: crBigLog, _bigPow: crBigPow,
+    _bigExpZ: crBigExpZ, _bigLogFixed: crBigLogFixed, _toFixed: crToFixed, _bigRound: crBigRound };
+
 
   var DBL_EPSILON = 2.220446049250313e-16;
   var DBL_MIN = 2.2250738585072014e-308;
@@ -173,6 +554,99 @@
       hi = s;
     }
     return hi + lo;
+  }
+
+  // R's sum() EXACTLY, for the places where its last bit decides what follows
+  // (the optimiser's start values -- see metaforTau2Exact). R accumulates in
+  // the x87 80-bit long double: each partial sum is rounded to a 64-bit
+  // significand (round half to even), the total once more to double. Emulated
+  // exactly with BigInt: every double is an integer multiple of 2^-1074, so the
+  // running sum is held as that integer and rounded to 64 significant bits after
+  // each addition. Checked against R 4.6.0 sum() and colMeans() on 3,000
+  // adversarial vectors (cancellation, 1e-8..1e8 magnitudes): 3,000 / 3,000
+  // identical, where rsum() above agreed on 2,267. It costs a BigInt operation
+  // per element, so it is used for the O(k) start-value sums, not inside the
+  // likelihood. Non-finite input falls back to an ordinary sum (R's Inf/NaN).
+  var LD_DV = (typeof DataView === "function") ? new DataView(new ArrayBuffer(8)) : null;
+  var HAS_BIGINT = typeof BigInt === "function" && LD_DV !== null;
+  function ldToFix(x) {
+    LD_DV.setFloat64(0, x);
+    var hi = LD_DV.getUint32(0), lo = LD_DV.getUint32(4);
+    var e = (hi >>> 20) & 0x7ff;
+    var m = BigInt(hi & 0xfffff) * BigInt(4294967296) + BigInt(lo);
+    var v = e === 0 ? m : (m + BigInt(4503599627370496)) * (BigInt(1) << BigInt(e - 1));
+    return (hi >>> 31) ? -v : v;
+  }
+  function ldBitlen(a) {            // a > 0
+    var h = a.toString(16);
+    return 4 * (h.length - 1) + (parseInt(h[0], 16).toString(2).length);
+  }
+  function ldRound(v, bits) {      // round to `bits` significant bits, half to even
+    var Z = BigInt(0), one = BigInt(1);
+    if (v === Z) return v;
+    var neg = v < Z, a = neg ? -v : v, L = ldBitlen(a);
+    if (L <= bits) return v;
+    var sh = BigInt(L - bits), q = a >> sh, r = a - (q << sh), half = one << (sh - one);
+    if (r > half || (r === half && (q & one) === one)) q = q + one;
+    a = q << sh;
+    return neg ? -a : a;
+  }
+  function ldFixToDouble(v) {
+    var Z = BigInt(0);
+    v = ldRound(v, 53);
+    if (v === Z) return 0;
+    var neg = v < Z, a = neg ? -v : v, L = ldBitlen(a), sh = L > 53 ? L - 53 : 0;
+    var d = Number(a >> BigInt(sh)) * mPow(2, sh - 1074);
+    return neg ? -d : d;
+  }
+  function ldAccumulate(a) {       // the rounded 64-bit-significand running sum, or null
+    var s = BigInt(0);
+    for (var i = 0; i < a.length; i++) {
+      if (!isFin(a[i])) return null;
+      s = ldRound(s + ldToFix(a[i]), 64);
+    }
+    return s;
+  }
+  // Non-finite input: the 80-bit accumulator has the exponent range not to
+  // overflow on finite terms, so only the NaNs and infinities decide.
+  function ldNonFinite(a) {
+    var pos = false, neg = false;
+    for (var i = 0; i < a.length; i++) {
+      if (isNan(a[i])) return NaN;
+      if (a[i] === Infinity) pos = true; else if (a[i] === -Infinity) neg = true;
+    }
+    return pos && neg ? NaN : (pos ? Infinity : -Infinity);
+  }
+  // base::sum(x) for a double vector.
+  function ldsum(a) {
+    if (!HAS_BIGINT) return rsum(a);
+    var s = ldAccumulate(a);
+    return s === null ? ldNonFinite(a) : ldFixToDouble(s);
+  }
+  // base::colMeans() of one column: long-double sum, divided by n IN long
+  // double (rounded to 64 bits), then rounded to double -- a double rounding
+  // that a double division does not reproduce.
+  function ldmean(a) {
+    if (a.length === 0) return NaN;                 // colMeans of no rows
+    if (!HAS_BIGINT) return rsum(a) / a.length;
+    var s = ldAccumulate(a);
+    if (s === null) return ldNonFinite(a);
+    var Z = BigInt(0), one = BigInt(1);
+    if (s === Z) return 0;
+    var neg = s < Z, x = neg ? -s : s, n = BigInt(a.length), SC = BigInt(200);
+    var num = x << SC, q = num / n, r = num - q * n;          // q in units of 2^-(1074+200)
+    var sh = BigInt(ldBitlen(q) - 64), qq = q >> sh, rem = q - (qq << sh), half = one << (sh - one);
+    if (rem > half || (rem === half && (r > Z || (qq & one) === one))) qq = qq + one;
+    // Round to double while still scaled by 2^-SC (shifting first would
+    // truncate the significand of a mean below ~2^-820): to 53 bits, or -- in
+    // the subnormal range -- straight to the 2^-1074 grid (SC = 200 bits up),
+    // once, as the x87 store does. Then unscale by an exact power of two.
+    var w64 = qq << sh, L1 = ldBitlen(w64), bits = mMin(53, L1 - 200);
+    if (bits < 1) return neg ? -0 : 0;
+    var v = ldRound(w64, bits), s2 = mMax(ldBitlen(v) - 53, 200);   // v is a multiple of 2^s2
+    var top = Number(v >> BigInt(s2)), e = s2 - 1274;
+    var d = top * mPow(2, e);
+    return neg ? -d : d;
   }
 
   // Wichura AS 241 — the algorithm R's qnorm uses; ~1e-16 relative.
@@ -624,12 +1098,32 @@
   // because L-BFGS-B below is R's own algorithm: fed the same f and g bits it
   // takes the same steps, so the page lands where metasens lands.
 
+  // lambda(u_i), u_i = gamma[0] + gamma[1] / seTE[i], does not depend on the
+  // parameters being optimised, yet every evaluation of the likelihood and its
+  // gradient recomputed it (three to four exp calls per study). Memoised on the
+  // VALUES of gamma and seTE, not on array identity, so what it returns is
+  // exactly what lambda(u) returns -- the same bits, computed once per gamma.
+  var lamMemo = { g0: NaN, g1: NaN, se: [], u: [], lam: [] };
+  function lamSame(a, b) { return a === b && (a !== 0 || 1 / a === 1 / b); }
+  function lambdaU(gamma, seTE) {
+    var M = lamMemo, k = seTE.length, g0 = gamma[0], g1 = gamma[1], i;
+    // Identical values, -0 told apart from 0 (1/+-0 differ); NaN never hits.
+    var hit = lamSame(g0, M.g0) && lamSame(g1, M.g1) && k === M.se.length;
+    for (i = 0; hit && i < k; i++) if (!lamSame(seTE[i], M.se[i])) hit = false;
+    if (hit) return M;
+    var se = new Array(k), u = new Array(k), lam = new Array(k);
+    for (i = 0; i < k; i++) { se[i] = seTE[i]; u[i] = g0 + g1 / seTE[i]; lam[i] = lambda(u[i]); }
+    lamMemo = M = { g0: g0, g1: g1, se: se, u: u, lam: lam };
+    return M;
+  }
+
   // metasens:::copas.loglik.without.beta — the NEGATIVE log-likelihood.
   function loglikWithoutBeta(par, gamma, TE, seTE) {
+    var LU = lambdaU(gamma, seTE);
     var mu = par[0], rho = par[1], tau = par[2], k = TE.length;
     var ell = new Array(k);
     for (var i = 0; i < k; i++) {
-      var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
+      var u = LU.u[i], lam = LU.lam[i];
       var sigma = mSqrt(seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam)));
       var s2t2 = sigma * sigma + tau * tau;
       var rhoT = rho * sigma / mSqrt(s2t2);
@@ -643,10 +1137,11 @@
 
   // metasens:::copas.loglik.with.beta — four parameters (mu, rho, tau, beta).
   function loglikWithBeta(par, gamma, TE, seTE) {
+    var LU = lambdaU(gamma, seTE);
     var mu = par[0], rho = par[1], tau = par[2], beta = par[3], k = TE.length;
     var ell = new Array(k);
     for (var i = 0; i < k; i++) {
-      var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
+      var u = LU.u[i], lam = LU.lam[i];
       var sigma = mSqrt(seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam)));
       var s2t2 = sigma * sigma + tau * tau;
       var rhoT = rho * sigma / mSqrt(s2t2);
@@ -660,12 +1155,13 @@
 
   // metasens:::copas.gradient.without.beta — gradient of the NEGATIVE loglik.
   function gradientWithoutBeta(par, gamma, TE, seTE) {
+    var LU = lambdaU(gamma, seTE);
     var mu = par[0], rho = par[1], tau = par[2], k = TE.length;
     var rho2 = rho * rho, tau2 = tau * tau;
     var gm = new Array(k), gr = new Array(k), gt = new Array(k);
     for (var i = 0; i < k; i++) {
       var TEmu = TE[i] - mu, varTE = seTE[i] * seTE[i];
-      var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
+      var u = LU.u[i], lam = LU.lam[i];
       var sigma = mSqrt(varTE / (1 - rho2 * lam * (u + lam)));
       var sigma2 = sigma * sigma;
       var s2t2 = sigma2 + tau2;
@@ -684,13 +1180,14 @@
       var diffTop = (top - u) / rho - (top - u) * rho * ci2 / (1 - ci2 * rho2) +
         2 * (top - u) * rho * tau2 * ci2 / (varTE + tau2 * (1 - ci2 * rho2));
       var eta = varTE / (varTE + tau2 * (1 - ci2 * rho2));
-      var diffBot = (mPow((1 - rho2T), -1.5)) * rho * eta *
+      var p15 = crPow((1 - rho2T), -1.5); // R evaluates it twice; same bits
+      var diffBot = (p15) * rho * eta *
         (1 + (rho2 * tau2 * ci2 * eta) / varTE);
       gRho = gRho + (top * diffBot + diffTop / bottom) * lamv;
       var gTau = -0.5 / s2t2;
       gTau = gTau + 0.5 * (TEmu * TEmu) / (s2t2 * s2t2);
       gTau = gTau + (-sigma * TEmu * rho / (bottom * (s2t2 * s2t2)) -
-        0.5 * top * (mPow((1 - rho2T), -1.5)) * sigma2 * rho2 / (s2t2 * s2t2)) * lamv;
+        0.5 * top * (p15) * sigma2 * rho2 / (s2t2 * s2t2)) * lamv;
       gTau = 2 * tau * gTau;
       gm[i] = -gMu; gr[i] = -gRho; gt[i] = -gTau;
     }
@@ -1891,6 +2388,216 @@
     return optimLBFGSB(fn, gr, start, lower, upper);
   }
 
+  /* ------------------- metagen()'s start values, bit for bit (k <= 250) */
+  // metasens starts every profile fit at c(TE.random, rho0, tau), and R's
+  // L-BFGS-B, given a start a few ulps away, takes a different path and stops
+  // (factr = 1e7) somewhere else. That -- not the likelihood, not the optimiser
+  // -- was the cause of every Tier-O failure in the validation archive (12 grid
+  // points in 4 configurations, page objective above metasens's by up to 1.5e-6
+  // at dat.raudenbush1985 C1 [370]); from R's own start all 12 are no worse.
+  // So the start is reproduced as R computes it, not as the algebra says:
+  //
+  //   metafor 5.0.1 rma.uni (intercept-only X): ymci = scale(yi) (colMeans: a
+  //   long-double mean); stXWX = .invcalc(X, W) = tcrossprod(qr.solve(sqrt(W)
+  //   %*% X, diag(k))) -- LINPACK dqrdc2 / dqrsl on one column, with LAPACK
+  //   3.12's dnrm2 (Blue's algorithm, mid-range accumulator) and BLAS dsyrk;
+  //   P = W - W X stXWX X'W formed densely; crossprod(Ymc, M) %*% Ymc and
+  //   P %*% P in reference-BLAS dgemv/dgemm loop order; .tr() = sum(diag()).
+  //   DL: tau2 = (RSS - (k - p)) / tr(P). REML: Fisher scoring from the HE
+  //   estimate exactly as rma.uni iterates it, then metafor's ll0check.
+  //   meta 8.5.0 metagen: w = 1/(seTE^2 + tau2); TE.random = weighted.mean(TE, w)
+  //   = sum((TE*w)[w != 0]) / sum(w); seTE.random = sqrt(1/sum(w)); tau = sqrt(tau2).
+  //
+  // Checked against R 4.6.0 on all 92 (input, method) cases of the archive's
+  // corpus, k = 6..1653: tau2, tau, TE.random and seTE.random identical to the
+  // last bit in 92 of 92 (copas/tests/copas-core-start.test.mjs holds the 90
+  // with k <= 120). The REML step needs tr(P P) and Ymc' P P Ymc with P P formed
+  // in dgemm's summation order -- O(k^3) -- so it is used for k <= 250 (well
+  // under a second); above that metaforREML's O(k) closed form (the same
+  // quantities, equal to ~1e-15 relative but not bit-identical) is used.
+  var EXACT_REML_KMAX = 250;
+
+  // LAPACK 3.12 dnrm2.f90 (incx = 1). Only the mid-range accumulator is
+  // reproduced; for |x| outside [2^-511, 2^486] it returns null and the caller
+  // falls back.
+  function dnrm2Mid(x) {
+    var amed = 0, lo = mPow(2, -511), hi = mPow(2, 486);
+    for (var i = 0; i < x.length; i++) {
+      var ax = mAbs(x[i]);
+      if (ax > hi || ax < lo) return null;
+      amed = amed + ax * ax;
+    }
+    return mSqrt(amed);
+  }
+  // metafor:::.invcalc(X = 1, W = diag(w)) -> the 1x1 (X'WX)^-1, as R computes it.
+  function invcalcIntercept(w) {
+    var k = w.length, x = new Array(k), i;
+    for (i = 0; i < k; i++) x[i] = mSqrt(w[i]);           // sqrt(W) %*% X
+    var nrmxl = dnrm2Mid(x);                              // dqrdc2, l = 1
+    if (nrmxl === null || !(nrmxl > 0) || k < 2) return null;
+    if (x[0] !== 0) nrmxl = x[0] < 0 ? -mAbs(nrmxl) : mAbs(nrmxl);
+    var sc = 1.0 / nrmxl;
+    for (i = 0; i < k; i++) x[i] = sc * x[i];             // dscal
+    x[0] = 1.0 + x[0];
+    var qraux = x[0], r11 = -nrmxl, s = 0;
+    for (var j = 0; j < k; j++) {                         // dqrcf: dqrsl(job 100) on e_j
+      var vj = j === 0 ? qraux : x[j];                    // ddot(v, e_j)
+      var t = -vj / qraux;
+      var b = ((j === 0 ? 1 : 0) + t * qraux) / r11;      // daxpy, then b(1)/x(1,1)
+      if (b !== 0) s = s + b * b;                         // dsyrk(U, N): tcrossprod
+    }
+    return s;
+  }
+  // P[i,j] = (i == j ? w_i : 0) - w_j * (s * w_i): metafor's
+  // W - W %*% X %*% stXWX %*% crossprod(X, W), element for element.
+  function pElem(w, s, i, j) { var m = w[j] * (s * w[i]); return (i === j ? w[i] : 0) - m; }
+  // c(crossprod(y, P) %*% y) with P generated on the fly (dgemv T, then dgemv N).
+  function quadP(w, s, y) {
+    var k = y.length, out = 0;
+    for (var j = 0; j < k; j++) {
+      var r = 0;
+      for (var i = 0; i < k; i++) r = r + pElem(w, s, i, j) * y[i];
+      out = out + y[j] * r;
+    }
+    return out;
+  }
+  function diagP(w, s) {
+    var d = new Array(w.length);
+    for (var i = 0; i < w.length; i++) d[i] = pElem(w, s, i, i);
+    return d;
+  }
+
+  // tau^2 as metafor::rma.uni(yi, vi, method) returns it, or null when an input
+  // is outside what is emulated (the caller then falls back).
+  function metaforTau2Exact(TE, vi, method) {
+    var k = TE.length, p = 1, i, j, l;
+    if (!HAS_BIGINT || k < 2) return null;
+    for (i = 0; i < k; i++) if (!(vi[i] > 0) || !isFin(vi[i]) || !isFin(TE[i])) return null;
+    var ybar = ldmean(TE), ymc = new Array(k), w = new Array(k), s;
+    for (i = 0; i < k; i++) ymc[i] = TE[i] - ybar;
+    if (method === "DL") {
+      for (i = 0; i < k; i++) w[i] = 1 / vi[i];
+      s = invcalcIntercept(w);
+      if (s === null) return null;
+      var tauDL = (quadP(w, s, ymc) - (k - p)) / ldsum(diagP(w, s));
+      return { tau2: mMax(0, tauDL), iterations: 0, converged: true };
+    }
+    // REML. HE start: P = I - X tcrossprod(stXX, X), tr(P %*% diag(vi)).
+    for (i = 0; i < k; i++) w[i] = 1;
+    var sI = invcalcIntercept(w);
+    if (sI === null) return null;
+    var rss0 = 0;
+    for (j = 0; j < k; j++) {
+      var r0 = 0;
+      for (i = 0; i < k; i++) r0 = r0 + ((i === j ? 1 : 0) - sI) * ymc[i];
+      rss0 = rss0 + ymc[j] * r0;
+    }
+    var dpv = new Array(k);
+    for (i = 0; i < k; i++) dpv[i] = vi[i] * (1 - sI);
+    var tau2 = (rss0 - ldsum(dpv)) / (k - p);
+    tau2 = mMax(0, tau2, 0);                              // max(0, tau2, tau2.min)
+    var threshold = 1e-5, maxiter = 100, iter = 0, change = threshold + 1, conv = true;
+    var P = new Float64Array(k * k), col = new Float64Array(k), dPP = new Array(k);
+    while (change > threshold) {
+      iter++;
+      var old2 = tau2;
+      for (i = 0; i < k; i++) w[i] = 1 / (vi[i] + tau2);
+      s = invcalcIntercept(w);
+      if (s === null) return null;
+      for (j = 0; j < k; j++) for (i = 0; i < k; i++) P[i + j * k] = pElem(w, s, i, j);
+      // PP = P %*% P column by column in dgemm's order (for j, for l, for i),
+      // folded straight into crossprod(Ymc, PP) %*% Ymc and diag(PP).
+      var yPPy = 0;
+      for (j = 0; j < k; j++) {
+        for (i = 0; i < k; i++) col[i] = 0;
+        for (l = 0; l < k; l++) {
+          var temp = P[l + j * k], ao = l * k;
+          for (i = 0; i < k; i++) col[i] = col[i] + temp * P[ao + i];
+        }
+        var rj = 0;
+        for (i = 0; i < k; i++) rj = rj + col[i] * ymc[i];
+        yPPy = yPPy + ymc[j] * rj;
+        dPP[j] = col[j];
+      }
+      var adj = (yPPy - ldsum(diagP(w, s))) / ldsum(dPP);
+      if (isNan(adj)) adj = 0;
+      if (!isFin(adj)) { conv = false; break; }
+      while (tau2 + adj < 0) adj = adj / 2;
+      tau2 = tau2 + adj;
+      change = mAbs(old2 - tau2);
+      if (iter > maxiter) { conv = false; break; }
+    }
+    if (conv && tau2 > threshold) {
+      // ll0check (con$tol = eps^0.25): a decision, not a reported number.
+      var llAt = function (t2) {
+        var ww = new Array(k), lv = new Array(k), rr = new Array(k), q;
+        for (q = 0; q < k; q++) { ww[q] = 1 / (vi[q] + t2); lv[q] = mLog(vi[q] + t2); }
+        var sw = invcalcIntercept(ww);
+        if (sw === null) return NaN;
+        var beta = 0, swsum = 0;
+        for (q = 0; q < k; q++) { beta = beta + ymc[q] * (sw * ww[q]); swsum = swsum + ww[q]; }
+        for (q = 0; q < k; q++) { var e = ymc[q] - beta; rr[q] = ww[q] * (e * e); }
+        return -1 / 2 * (k - p) * mLog(2 * Math.PI) - 1 / 2 * ldsum(lv) -
+          1 / 2 * mLog(mAbs(swsum)) - 1 / 2 * ldsum(rr);
+      };
+      if (llAt(0) - llAt(tau2) > crPow(DBL_EPSILON, 0.25)) tau2 = 0;
+    }
+    if (!conv) return { tau2: tau2, iterations: iter, converged: false };
+    return { tau2: mMax(0, tau2), iterations: iter, converged: true };
+  }
+  // meta::metagen()'s random-effects pool given tau^2.
+  function metagenPool(TE, seTE, tau2) {
+    var k = TE.length, w = new Array(k), xw = [], i;
+    for (i = 0; i < k; i++) {
+      w[i] = 1 / (seTE[i] * seTE[i] + tau2);
+      if (w[i] !== 0) xw.push(TE[i] * w[i]);
+    }
+    var sw = ldsum(w);
+    return { TE_random: ldsum(xw) / sw, seTE_random: mSqrt(1 / sw), tau: mSqrt(tau2) };
+  }
+  function metaforStart(TE, seTE, method) {
+    var vi = new Array(TE.length);
+    for (var i = 0; i < TE.length; i++) vi[i] = seTE[i] * seTE[i];
+    var t = metaforTau2Exact(TE, vi, method);
+    if (t === null) return null;
+    var m = metagenPool(TE, seTE, t.tau2);
+    return { tau2: t.tau2, tau: m.tau, TE_random: m.TE_random, seTE_random: m.seTE_random,
+             iterations: t.iterations, converged: t.converged, exact: true };
+  }
+  // metagen(..., method.tau = "DL"): metafor's closed-form DerSimonian-Laird
+  // tau^2 in its P-matrix form -- O(k^2), so exact at every k.
+  function metaforDL(TE, seTE) {
+    var r = metaforStart(TE, seTE, "DL");
+    if (r !== null) return r;
+    // Outside the emulated range (BigInt unavailable, an extreme seTE, k = 1):
+    // the textbook DL estimator, the same quantity to rounding. rma.uni sets
+    // tau^2 = 0 for a single study.
+    var k = TE.length, i, sw = 0, swy = 0, sw2 = 0;
+    if (k === 1) {
+      var m1 = metagenPool(TE, seTE, 0);
+      return { tau2: 0, tau: 0, TE_random: m1.TE_random, seTE_random: m1.seTE_random,
+               iterations: 0, converged: true, exact: false };
+    }
+    for (i = 0; i < k; i++) { var wi = 1 / (seTE[i] * seTE[i]); sw += wi; swy += wi * TE[i]; sw2 += wi * wi; }
+    var mu0 = swy / sw, Q = 0;
+    for (i = 0; i < k; i++) Q += (TE[i] - mu0) * (TE[i] - mu0) / (seTE[i] * seTE[i]);
+    var tau2 = mMax(0, (Q - (k - 1)) / (sw - sw2 / sw));
+    var m = metagenPool(TE, seTE, tau2);
+    // Not a start metagen() can be said to give, so NOT converged (the page then
+    // refuses instead of fitting from it):
+    //  - any non-finite piece: a weight of Inf (seTE^2 underflows, seTE ~ 1e-160)
+    //    leaves NaN, and R stops with "NA/NaN/Inf in foreign function call";
+    //  - sum(w^2) overflowed (seTE ~ 1e-150). The formula above then returns 0.
+    //    R does return a fit there, but warns its variances are too disparate
+    //    for stable results, and its tau^2 is not the DL value either: for
+    //    TE = c(.1,.2,.15,.3), seTE = c(1e-150,1e-3,1e-2,.1) R gives 0.00765625
+    //    while the exact DL estimate (rational arithmetic) is 0.0049629, so no
+    //    double-precision formula reproduces metagen() there (review MINOR-2).
+    var ok = isFin(sw2) && isFin(tau2) && isFin(m.TE_random) && isFin(m.seTE_random);
+    return { tau2: tau2, tau: m.tau, TE_random: m.TE_random, seTE_random: m.seTE_random,
+             iterations: 0, converged: ok, exact: false };
+  }
+
   /* --------------------------------------- metagen()'s REML start values */
   // metasens starts every optimisation at c(TE.random, rho0, tau), and
   // meta::metagen() takes tau^2 from metafor::rma.uni(method = "REML") with
@@ -1906,6 +2613,10 @@
   //   tr(PP) = S2 - 2 S3/S1 + S2^2/S1^2    (Sr = sum of w_i^r).
   // TE.random / seTE.random are then metagen's own weighted.mean pool.
   function metaforREML(TE, seTE) {
+    if (TE.length <= EXACT_REML_KMAX) {
+      var ex = metaforStart(TE, seTE, "REML");
+      if (ex !== null) return ex;
+    }
     var k = TE.length, i, vi = new Array(k), ymc = new Array(k), tmp = new Array(k);
     for (i = 0; i < k; i++) vi[i] = seTE[i] * seTE[i];
     var ybar = rsum(TE) / k;
@@ -1971,7 +2682,7 @@
         return -1 / 2 * (k - 1) * mLog(2 * Math.PI) - 1 / 2 * rsum(lsum) -
           1 / 2 * mLog(q.S1) - 1 / 2 * rsum(tmp);
       };
-      if (ll(0) - ll(tau2) > mPow(DBL_EPSILON, 0.25)) tau2 = 0;
+      if (ll(0) - ll(tau2) > crPow(DBL_EPSILON, 0.25)) tau2 = 0;
     }
     var wr = new Array(k), xw = new Array(k);
     for (i = 0; i < k; i++) { wr[i] = 1 / (vi[i] + tau2); xw[i] = TE[i] * wr[i]; }
@@ -2413,6 +3124,7 @@
   function pick(arr, ord) { return ord.map(function (i) { return arr[i]; }); }
 
   var api = {
+    crmath: crmath,
     pnorm: pnorm, dnorm: dnorm, qnorm: qnorm, pchisq1Upper: pchisq1Upper,
     lambda: lambda, seqLen: seqLen, parseNumToken: parseNumToken,
     rPrettyCore: rPrettyCore, rPretty: rPretty, contourLines: contourLines,
@@ -2421,6 +3133,7 @@
     gradientWithoutBeta: gradientWithoutBeta,
     profileMLE: profileMLE, optimLBFGSB: optimLBFGSB, optimHess: optimHess,
     solveFirstDiag: solveFirstDiag, metaforREML: metaforREML, rsum: rsum,
+    metaforDL: metaforDL, ldsum: ldsum, ldmean: ldmean,
     eggerEstimate: eggerEstimate, revOrder: revOrder,
     orthogonalLine: orthogonalLine, adjustSelection: adjustSelection,
     copas: copas
