@@ -78,9 +78,11 @@ jobs:
           #       exits 2 without them by the same rule. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
           #   IPD-Meta-Pro/dev/tests/webr_panel_reachable_ui.test.cjs  NEEDS system Chrome + playwright-core:
           #       exits 2 without them by the same rule. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
+          #   IPD-Meta-Pro/dev/tests/clustered_ipd_keyboard_ui.test.cjs  NEEDS system Chrome + playwright-core:
+          #       exits 2 without them by the same rule. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
           #   IPD-Meta-Pro/dev/tests/webr_stale_analysis_warning_ui.test.cjs  NEEDS system Chrome + playwright-core:
           #       exits 2 without them by the same rule. Run it locally: CHROME=<path> PLAYWRIGHT_CORE=<path> node <file>.
-          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs IPD-Meta-Pro/dev/tests/webr_rscript_page_check.test.cjs IPD-Meta-Pro/dev/tests/webr_validation_report_pairing.test.cjs IPD-Meta-Pro/dev/tests/webr_panel_reachable_ui.test.cjs IPD-Meta-Pro/dev/tests/webr_stale_analysis_warning_ui.test.cjs "
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs IPD-Meta-Pro/dev/tests/webr_js_snapshot_same_run.test.cjs IPD-Meta-Pro/dev/tests/webr_rscript_page_check.test.cjs IPD-Meta-Pro/dev/tests/webr_validation_report_pairing.test.cjs IPD-Meta-Pro/dev/tests/webr_panel_reachable_ui.test.cjs IPD-Meta-Pro/dev/tests/webr_stale_analysis_warning_ui.test.cjs IPD-Meta-Pro/dev/tests/clustered_ipd_keyboard_ui.test.cjs "
           files=()
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
