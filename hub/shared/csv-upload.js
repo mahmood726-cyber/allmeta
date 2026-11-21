@@ -21,21 +21,23 @@
   }
 
   // RFC-4180 parser. Handles quoted fields (embedded commas, newlines,
-  // doubled-quote escapes). Returns array of arrays of strings.
+  // doubled-quote escapes). Returns array of arrays of strings; each row
+  // carries .line, the physical file line (1-based) on which the record starts.
   function _splitCSV(text) {
     var rows = [];
-    var row = [], field = '', inQuotes = false;
+    var row = [], field = '', inQuotes = false, line = 1;
+    row.line = 1;
     for (var i = 0; i < text.length; i++) {
       var c = text[i];
       if (inQuotes) {
         if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
         else if (c === '"') { inQuotes = false; }
-        else { field += c; }
+        else { field += c; if (c === '\n') line++; }
       } else {
         if (c === '"' && field === '') { inQuotes = true; }
         else if (c === ',') { row.push(field); field = ''; }
         else if (c === '\r') { /* swallow CR in CRLF */ }
-        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; line++; row.line = line; }
         else { field += c; }
       }
     }
@@ -86,6 +88,10 @@
   function parse(text, columns) {
     columns = columns || [];
     var warnings = [];
+    // A UTF-8 BOM before a quoted header ('﻿"study"') would otherwise stop the
+    // quote from opening, and the header would only be fuzzy-matched.
+    text = String(text == null ? '' : text);
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
     var matrix = _splitCSV(text);
     if (matrix.length === 0) {
       return { headers: [], rows: [], warnings: ['empty CSV'] };
@@ -135,6 +141,21 @@
       destinations.add(destination);
     }
 
+    // A row with more non-empty cells than the header cannot be assigned to
+    // columns: an unquoted comma in a label ("Smith et al., 2001,0.04,0.0361")
+    // would shift every later cell left (yi=2001, vi=0.04). Refuse the whole
+    // file, like a duplicate header, rather than silently dropping the excess.
+    // A trailing empty cell (trailing comma) is not data and stays accepted.
+    for (var rr = 1; rr < matrix.length; rr++) {
+      var extra = matrix[rr].slice(rawHeaders.length);
+      if (extra.some(function (c) { return String(c).trim() !== ''; })) {
+        warnings.push('CSV rejected: row ' + rr + ' (file line ' + matrix[rr].line + ') has more cells than the header (' +
+          matrix[rr].length + ' vs ' + rawHeaders.length + '). Quote text that contains commas ' +
+          '("Smith, 2001"), use commas between fields and "." as the decimal point.');
+        return { headers: rawHeaders, rows: [], warnings: warnings };
+      }
+    }
+
     var rows = [];
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
@@ -144,7 +165,7 @@
         var raw = (rowArr[i] !== undefined ? rowArr[i] : '').trim();
         var result = _coerce(raw, col.type);
         if (result.err) {
-          warnings.push('row ' + r + ': ' + result.err);
+          warnings.push('row ' + r + ' (line ' + rowArr.line + '): ' + result.err);
         }
         obj[col.name] = result.value;
       }
@@ -154,7 +175,7 @@
     return { headers: rawHeaders, rows: rows, warnings: warnings };
   }
 
-  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#e0a85e}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;
+  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv [data-section=warnings][data-refused]{font-size:14px;font-weight:600;color:#9a1c1c;background:#fdecec;border:1px solid #e3a0a0;border-radius:6px;padding:.5rem .6rem}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#e0a85e}.alm-csv [data-section=warnings][data-refused]{color:#ffd2d2;background:#3a1d1d;border-color:#7a3a3a}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;
   let _stylesInjected = false;
   function _ensureStyle() {
     if (_stylesInjected) return;
@@ -216,6 +237,11 @@
       const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);
       warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
       warnEl.style.whiteSpace = 'pre-wrap';
+      // A whole-file refusal is announced and shown prominently, not as a small amber note
+      // (rev542 M4). The app's onParse still receives zero rows and must clear its results.
+      const refused = !(result.rows || []).length && result.warnings.some(w => /^CSV rejected/.test(w));
+      if (refused) { warnEl.setAttribute('role', 'alert'); warnEl.setAttribute('data-refused', ''); }
+      else { warnEl.removeAttribute('role'); warnEl.removeAttribute('data-refused'); }
       onParse(result);
     }
     fileInput.addEventListener('change', () => {

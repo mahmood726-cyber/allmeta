@@ -145,14 +145,55 @@
 
     // ---- engine (unchanged from pre-retrofit) ----
 
+    // Rows the original parser skipped (header, blank or non-numeric lines) are still skipped.
+    // A row it would have ACCEPTED is now refused, and listed in rows.rejected, when its effect/SE is
+    // not a complete decimal token (parseFloat read "35;0" from a decimal-comma row as 35) or it has
+    // more than 4 fields (a comma inside the study id shifted "Smith, 2001, 0.35" to effect=2001).
+    // Fields may be double-quoted ("outcome A, primary"); trailing empty fields (a pasted
+    // spreadsheet's empty last column, "1, 0.35, 0.12, A,") are absent. A line with no quote
+    // character splits exactly as before. Line numbers are physical textarea lines.
+    // Lane csvaudit 2026-11-12/13 (review rev542 M2, M3, m1).
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l) {
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+      var MLMA_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      function fields(l) {
+        if (l.indexOf('"') < 0) return l.split(/,/).map(function (s) { return s.trim(); });
+        var out = [], f = '', q = false, quoted = false;
+        for (var k = 0; k < l.length; k++) {
+          var c = l.charAt(k);
+          if (q) {
+            if (c === '"' && l.charAt(k + 1) === '"') { f += '"'; k++; }
+            else if (c === '"') q = false;
+            else f += c;
+          } else if (c === '"' && !quoted && f.trim() === '') { f = ''; q = true; quoted = true; }
+          else if (c === ',') { out.push(quoted ? f : f.trim()); f = ''; quoted = false; }
+          else if (!(quoted && /\s/.test(c))) f += c;
+        }
+        out.push(quoted ? f : f.trim());
+        return out;
+      }
+      var rejected = [];
+      var lead = (String(text).match(/^\s*/) || [''])[0].split('\n').length - 1;
+      var rows = text.trim().split(/\n/).map(function (l, i) {
+        var line = i + 1 + lead;
+        var parts = fields(l);
+        while (parts.length > 1 && parts[parts.length - 1] === '') parts.pop();
         var study = parts[0];
         var te = parseFloat(parts[1]), se = parseFloat(parts[2]);
         if (!study || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        if (!MLMA_DECIMAL.test(parts[1]) || !MLMA_DECIMAL.test(parts[2])) {
+          rejected.push('Line ' + line + ': effect and SE must be complete numbers with a decimal point (found "' +
+            parts[1].slice(0, 20) + '", "' + parts[2].slice(0, 20) + '")');
+          return null;
+        }
+        if (parts.length > 4) {
+          rejected.push('Line ' + line + ': expected study, effect, SE[, label] but found ' + parts.length +
+            ' comma-separated fields; put a study id or label that contains a comma in double quotes');
+          return null;
+        }
         return { study: study, te: te, se: se, label: parts[3] || '' };
       }).filter(Boolean);
+      rows.rejected = rejected;
+      return rows;
     }
 
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
@@ -313,7 +354,25 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      if (rows.rejected && rows.rejected.length) {
+        // Refuse the whole input: a partial or shifted study set must never be pooled.
+        _lastResults = null; _lastReml = null;
+        var escR = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
+        document.getElementById('summary').innerHTML = '<p role="alert"><strong>Analysis refused: correct these rows and run again.</strong><br>' +
+          rows.rejected.slice(0, 10).map(escR).join('<br>') + '</p>';
+        var fsvg = document.getElementById('forest'); if (fsvg) fsvg.innerHTML = '';
+        var ebody = document.getElementById('body'); if (ebody) ebody.innerHTML = '';
+        return;
+      }
+      if (rows.length < 3) {
+        // Never leave the previous dataset's results on screen (rev542 M4: after a refused CSV
+        // the input was emptied but all 33 old numbers stayed).
+        _lastResults = null; _lastReml = null;
+        document.getElementById('summary').innerHTML = '<p role="status"><strong>No analysis:</strong> at least three valid effect rows (study, effect, SE) are needed; ' + rows.length + ' found.</p>';
+        var esvg = document.getElementById('forest'); if (esvg) esvg.innerHTML = '';
+        var ebody = document.getElementById('body'); if (ebody) ebody.innerHTML = '';
+        return;
+      }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -474,8 +533,13 @@
 
     // ---- load CSV rows into textarea ----
     window.__almLoad = function (rows) {
+      // Quote text that contains a comma or quote so a valid RFC-4180 label such as
+      // "outcome A, primary" reaches parse() as one field (rev542 M3). An effect of exactly 0
+      // is a value, not a missing cell (rev542 m5: `r.effect || r.te` turned 0 into '').
+      var pick = function () { for (var a = 0; a < arguments.length; a++) { var v = arguments[a]; if (v !== undefined && v !== null && v !== '') return v; } return ''; };
+      var q = function (v) { v = String(v); return /[",]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
       var lines = rows.map(function (r) {
-        return [r.study || '', r.effect || r.te || '', r.SE || r.se || '', r.label || ''].join(', ');
+        return [q(pick(r.study)), pick(r.effect, r.te), pick(r.SE, r.se), q(pick(r.label))].join(', ');
       });
       document.getElementById('src').value = lines.join('\n');
       run();
