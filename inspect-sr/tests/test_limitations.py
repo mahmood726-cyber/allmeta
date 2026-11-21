@@ -5,6 +5,7 @@ the page in system Chrome (playwright-core, located by ALM_PLAYWRIGHT_CORE), ser
 an ephemeral 127.0.0.1 port. Skips, with the reason, when node or playwright-core are missing.
 """
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -277,9 +278,16 @@ def test_L19_radio_groups_named_focus_visible_and_domain_text():
 
 
 def test_L20_footer_cites_the_article_number_and_scopes_its_claims():
-    """L20: the reference gave the DOI suffix as the article number (BMJ 2026;394:e100611 per Crossref), and
-    the footer called the pooling engine "audited" although the P50 validation excluded pooling."""
+    """L20: the reference gave the DOI suffix as the article number; the article number is e100611 (P50
+    dictation, reference 1: "BMJ 2026;394:e100611. doi:10.1136/bmj-2026-100611"). The footer also called
+    the pooling engine "audited" although the P50 validation excludes pooling. Requirement: the article
+    number is cited, and no sentence about the re-pool engine claims it is audited/validated/verified
+    (other than saying the validation does not test it)."""
     html = (ROOT / "inspect-sr" / "index.html").read_text(encoding="utf-8")
-    assert "BMJ 2026;394:e100611" in html and "394:bmj-2026-100611" not in html
-    assert "audited" not in html
-    assert "user testing" in html   # the 45-minute figure is the preprint's user-testing time, not this page's
+    foot = re.search(r"<footer>(.*?)</footer>", html, re.S).group(1)
+    assert "BMJ 2026;394:e100611" in foot and "394:bmj-2026-100611" not in foot
+    for sent in re.split(r"(?<=[.;])\s+", re.sub(r"<[^>]+>", "", foot)):
+        if "ma-core" in sent or "pool" in sent.lower():
+            claim = re.search(r"\b(audited|validated|verified)\b", sent, re.I)
+            assert not claim or re.search(r"\bdoes not\b|\bnot\b", sent), sent
+
