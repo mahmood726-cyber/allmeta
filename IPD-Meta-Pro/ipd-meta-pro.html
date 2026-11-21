@@ -35728,6 +35728,12 @@ function showNotification(message, type = 'info') {
 
  notif.className = 'notification';
 
+ // LIM-P60 L33: announce it -- refusals and errors as alerts, other messages as status
+ const urgent = type === 'error' || type === 'warning';
+ notif.setAttribute('role', urgent ? 'alert' : 'status');
+ notif.setAttribute('aria-live', urgent ? 'assertive' : 'polite');
+ notif.setAttribute('aria-atomic', 'true');
+
  notif.textContent = message;
 
  notif.style.cssText = `position:fixed;top:80px;right:20px;padding:1rem 1.5rem;border-radius:8px;z-index:1001;
