@@ -108,6 +108,9 @@
     "  chk(\"exp(transported CI lower)\", exp(page$trans_lo), exp(tr[[\"lo\"]]), XT(tr[[\"lo\"]]))",
     "  chk(\"exp(transported CI upper)\", exp(page$trans_hi), exp(tr[[\"hi\"]]), XT(tr[[\"hi\"]]))",
     "  chk(\"transport shift (ratio)\", exp(page$shift), exp(shift), XT(shift))",
+    "  chk(\"exp(effect at trials' mean modifier)\", exp(page$at_est), exp(at[[\"est\"]]), XT(at[[\"est\"]]))",
+    "  chk(\"exp(  CI lower)\", exp(page$at_lo), exp(at[[\"lo\"]]), XT(at[[\"lo\"]]))",
+    "  chk(\"exp(  CI upper)\", exp(page$at_hi), exp(at[[\"hi\"]]), XT(at[[\"hi\"]]))",
     "}",
     "cat(if (.bad == 0L) sprintf(\"MATCH %d/%d\\n\", .n, .n) else sprintf(\"MISMATCH %d of %d checks differ\\n\", .bad, .n))"
   ].join("\n");

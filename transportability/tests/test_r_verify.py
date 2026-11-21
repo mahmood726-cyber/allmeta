@@ -107,3 +107,30 @@ console.log(JSON.stringify({ s: R.buildScript(snap) }));
     assert re.search(r"transported 95% CI upper .* ok", rr.stdout), rr.stdout          # analysis scale: within 1e-6
     assert re.search(r"exp\(transported CI upper\) .*MISMATCH", rr.stdout), rr.stdout
     assert rr.stdout.strip().splitlines()[-1].startswith("MISMATCH 1 of"), rr.stdout
+
+
+# P58 F14 (lane lim8): on the log scale the page also shows exp() of the effect at the trials' mean modifier and
+# its CI, but the script checked only their analysis-scale values, so a visible exp-scale error there was never
+# flagged. Requirement: an error of 6e-4 on the displayed scale of that CI bound is a MISMATCH (same plant as above).
+@pytest.mark.skipif(not HAVE_R, reason="Rscript not found (set RSCRIPT)")
+def test_back_transformed_trial_mean_ci_is_checked():
+    if not _has_metafor():
+        pytest.skip("metafor not installed for this Rscript (set R_LIBS)")
+    js = GEN.split("const out = {")[0] + r"""
+const snap = mk([["a",5.5,0.3,10],["b",5.8,0.3,12],["c",6.2,0.35,14],["d",6.3,0.3,16],["e",6.6,0.4,18]], 15, true, "x");
+const hi = snap.result.atTrialMean.ciHi;                     // exp(hi) = 652.1, so 6e-4 there is < 1e-6 on the log scale
+snap.result = JSON.parse(JSON.stringify(snap.result));
+snap.result.atTrialMean.ciHi = Math.log(Math.exp(hi) + 6e-4);  // 6e-4 off on the displayed scale
+console.log(JSON.stringify({ s: R.buildScript(snap) }));
+"""
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.returncode == 0, r.stdout + r.stderr
+    s = json.loads(r.stdout.strip().splitlines()[-1])["s"]
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "check.R"
+        f.write_text(s, encoding="utf-8")
+        rr = subprocess.run([RSCRIPT, "--vanilla", str(f)], capture_output=True, text=True, timeout=300)
+    assert rr.returncode == 0, rr.stdout + rr.stderr
+    assert re.search(r"^  CI upper .* ok", rr.stdout, re.M), rr.stdout          # analysis scale: within 1e-6
+    assert re.search(r"exp\(  CI upper\) .*MISMATCH", rr.stdout), rr.stdout
+    assert rr.stdout.strip().splitlines()[-1].startswith("MISMATCH 1 of"), rr.stdout
