@@ -378,8 +378,130 @@
     return true;
   }
 
+  // ---- Plots (additive; used by shared/alm-verify-r.js) ---------------------
+  //
+  // runRPlots({script, packages, plots:[{id, code, width_in, height_in}], onStatus})
+  // Same queue, pinned/SHA-verified packages and version checks as runR. Runs
+  // `script` (stdout captured exactly as runR), then each plot's `code` in the
+  // SAME R session (objects the script created are visible) on four devices:
+  //   png    : webR canvas via captureGraphics at 96 dpi (screen preview Blob)
+  //   raster : canvas at inches*300 px, pointsize scaled by 300/96 so the plot
+  //            looks the same; returned as {width, height, rgba} at exactly the
+  //            requested 300-dpi pixel size (TIFF/PNG export)
+  //   pdf    : grDevices::pdf() into the webR VFS, read back with FS.readFile
+  //   svg    : grDevices::svg() ONLY when capabilities("cairo") is TRUE
+  // plus sessionInfo text. Returns {ok, stdout, versions, sessionInfo, cairo,
+  // plots:[{id, png, raster, pdf, svg, svgReason, native}]} or {ok:false, error}.
+  var PLOT_BASE_PT = 12, SCREEN_DPI = 96, PRINT_DPI = 300;
+  function _bitmapToCanvas(bitmap, width, height) {
+    var c = document.createElement('canvas');
+    c.width = width; c.height = height;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    return c;
+  }
+  function _canvasBlob(c) {
+    return new Promise(function (resolve, reject) {
+      c.toBlob(function (b) { if (b) resolve(b); else reject(new Error('PNG encoding failed')); }, 'image/png');
+    });
+  }
+  async function _capture(w, code, width, height, pointsize) {
+    var shelter = await new w.Shelter();
+    try {
+      var cap = await shelter.captureR(code, {
+        captureStreams: true, captureConditions: true, withAutoprint: false,
+        captureGraphics: { width: width, height: height, pointsize: pointsize, bg: 'white', capture: true },
+      });
+      var images = cap.images || [];
+      if (!images.length) throw new Error('R plot code produced no image');
+      // Multi-page output: keep the last page (the finished plot); close the rest.
+      for (var i = 0; i < images.length - 1; i++) if (images[i].close) images[i].close();
+      return images[images.length - 1];
+    } finally { await shelter.purge(); }
+  }
+  async function _evalQuiet(w, code) {
+    var shelter = await new w.Shelter();
+    try { await shelter.captureR(code, { captureStreams: true, captureConditions: true, captureGraphics: false, withAutoprint: false }); }
+    finally { await shelter.purge(); }
+  }
+  function runRPlots(opts) {
+    opts = opts || {};
+    var task = async function () {
+      var shelter;
+      try {
+        var packages = opts.packages || [], status = opts.onStatus || function () {}, plots = opts.plots || [];
+        if (typeof opts.script !== 'string' || !opts.script.trim()) throw new Error('R script is required');
+        if (!packages.every(function (p) { return /^[A-Za-z][A-Za-z0-9.]*$/.test(p); })) throw new Error('Invalid R package name');
+        if (!Array.isArray(plots)) throw new Error('plots must be an array');
+        plots.forEach(function (p) {
+          if (!p || !/^[A-Za-z][A-Za-z0-9_-]{0,40}$/.test(String(p.id))) throw new Error('Invalid plot id');
+          if (typeof p.code !== 'string' || !p.code.trim()) throw new Error('Plot code is required: ' + p.id);
+          if (!(p.width_in > 0 && p.width_in <= 20 && p.height_in > 0 && p.height_in <= 20)) throw new Error('Plot size must be 0-20 inches: ' + p.id);
+        });
+        if (plots.length && typeof document === 'undefined') throw new Error('Plot capture needs a browser document');
+        var w = await _ensurePackages(packages, status);
+        status('Running R...');
+        shelter = await new w.Shelter();
+        var cap = await shelter.captureR(opts.script, { captureStreams: true, captureConditions: false, captureGraphics: false, withAutoprint: false });
+        var stdout = cap.output.filter(function (o) { return o.type === 'stdout'; }).map(function (o) { return o.data; }).join('\n');
+        await shelter.purge(); shelter = null;
+        var versions = { R: await w.evalRString('R.version.string'), webR: w.version };
+        for (var p of packages) versions[p] = await w.evalRString('as.character(packageVersion(' + JSON.stringify(p) + '))');
+        for (var p of packages) {
+          var record = _manifest.packages.find(function (x) { return x.package === p; });
+          if (record.version.replace(/-/g, '.') !== versions[p].replace(/-/g, '.')) throw new Error('Session package version differs: ' + p);
+          versions[p] = record.version;
+        }
+        var cairo = (await w.evalRString('if (isTRUE(capabilities("cairo"))) "TRUE" else "FALSE"')) === 'TRUE';
+        await w.evalRVoid('dir.create("/tmp/alm-plots", showWarnings=FALSE)');
+        var out = [];
+        for (var plot of plots) {
+          status('Drawing R plot: ' + plot.id + '...');
+          var sw = Math.round(plot.width_in * SCREEN_DPI), sh = Math.round(plot.height_in * SCREEN_DPI);
+          var screen = await _capture(w, plot.code, sw, sh, PLOT_BASE_PT * SCREEN_DPI / 72);
+          var native = { screen: { width: screen.width, height: screen.height } };
+          var png = await _canvasBlob(_bitmapToCanvas(screen, sw, sh));
+          if (screen.close) screen.close();
+          var pw = Math.round(plot.width_in * PRINT_DPI), ph = Math.round(plot.height_in * PRINT_DPI);
+          // webR's canvas device renders at a fixed multiple of the requested size (2x in webR 0.5.5:
+          // 768x576 requested -> 1536x1152 bitmap). Request print size / that factor so the bitmap is
+          // already ~300 dpi instead of a 4x-memory 600-dpi bitmap; any residual is resampled below.
+          var scale = native.screen.width / sw > 0 ? native.screen.width / sw : 1;
+          var big = await _capture(w, plot.code, Math.round(pw / scale), Math.round(ph / scale), PLOT_BASE_PT * PRINT_DPI / 72 / scale);
+          native.raster = { width: big.width, height: big.height }; native.deviceScale = scale;
+          var bigCanvas = _bitmapToCanvas(big, pw, ph);
+          if (big.close) big.close();
+          var raster = { width: pw, height: ph, dpi: PRINT_DPI, rgba: bigCanvas.getContext('2d').getImageData(0, 0, pw, ph).data };
+          var png300 = await _canvasBlob(bigCanvas);
+          bigCanvas.width = 1; bigCanvas.height = 1;
+          var pdfPath = '/tmp/alm-plots/' + plot.id + '.pdf';
+          await _evalQuiet(w, 'grDevices::pdf(file=' + JSON.stringify(pdfPath) + ', width=' + plot.width_in + ', height=' + plot.height_in + ', pointsize=' + PLOT_BASE_PT + ')\n' +
+            'tryCatch({\n' + plot.code + '\n}, finally = grDevices::dev.off())');
+          var pdf = await w.FS.readFile(pdfPath);
+          await w.FS.unlink(pdfPath);
+          var svg = null, svgReason = null;
+          if (cairo) {
+            var svgPath = '/tmp/alm-plots/' + plot.id + '.svg';
+            await _evalQuiet(w, 'grDevices::svg(filename=' + JSON.stringify(svgPath) + ', width=' + plot.width_in + ', height=' + plot.height_in + ', pointsize=' + PLOT_BASE_PT + ')\n' +
+              'tryCatch({\n' + plot.code + '\n}, finally = grDevices::dev.off())');
+            svg = new TextDecoder('utf-8').decode(await w.FS.readFile(svgPath));
+            await w.FS.unlink(svgPath);
+          } else svgReason = 'R svg() device unavailable in webR (no cairo)';
+          out.push({ id: plot.id, png: png, png300: png300, raster: raster, pdf: pdf, svg: svg, svgReason: svgReason, native: native });
+        }
+        var sessionInfo = await w.evalRString('paste(utils::capture.output(print(utils::sessionInfo())), collapse="\\n")');
+        status('R finished.');
+        return { ok: true, stdout: stdout, versions: versions, sessionInfo: sessionInfo, cairo: cairo, plots: out };
+      } catch (e) { return { ok: false, error: e.message || String(e) }; }
+      finally { if (shelter) await shelter.purge(); }
+    };
+    var result = _queue.then(task, task); _queue = result.catch(function () {}); return result;
+  }
+
   var api = {
     runR: runR,
+    runRPlots: runRPlots,
     buildMetaforScript: buildMetaforScript,
     runMetafor: runMetafor,
     runMetaforFromBus: runMetaforFromBus,
