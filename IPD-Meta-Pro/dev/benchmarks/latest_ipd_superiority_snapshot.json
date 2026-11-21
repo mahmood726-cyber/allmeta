@@ -2,10 +2,10 @@
   "generated_at": "2026-03-12T10:20:40Z",
   "app_build_id": "2026-03-07-fixall-1",
   "source_artifacts": {
-    "parity_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_parity_gate.json",
-    "frontier_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_frontier_gap_methods_benchmark.json",
-    "simulation_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_simulation_lab_benchmark.json",
-    "replication_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_publication_replication_gate.json"
+    "parity_json": "dev/benchmarks/latest_ipd_parity_gate.json",
+    "frontier_json": "dev/benchmarks/latest_frontier_gap_methods_benchmark.json",
+    "simulation_json": "dev/benchmarks/latest_ipd_simulation_lab_benchmark.json",
+    "replication_json": "dev/benchmarks/latest_publication_replication_gate.json"
   },
   "artifact_availability": {
     "parity": true,

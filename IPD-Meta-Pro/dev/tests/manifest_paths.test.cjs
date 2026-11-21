@@ -18,6 +18,13 @@ const abs = html.match(/"[A-Za-z]:(\\|\/)[^"\n]{0,160}"/g) || [];
 check('no absolute drive paths in JSON strings of the shipped page', abs.length === 0, abs.slice(0, 4).join(' | '));
 const homes = html.match(/(C:\\Users\\|\/home\/[a-z]|HTML apps)/g) || [];
 check('no user-home or build-folder paths', homes.length === 0, homes.slice(0, 4).join(' | '));
+// the build copies source_artifacts from this file (dev/build.py), so it must not hold them either
+const snapFile = path.join(path.dirname(pageFile), 'dev', 'benchmarks', 'latest_ipd_superiority_snapshot.json');
+if (fs.existsSync(snapFile)) {
+  const snap = fs.readFileSync(snapFile, 'utf8');
+  const sabs = snap.match(/"[A-Za-z]:(\\\\|\/)[^"\n]{0,160}"/g) || [];
+  check('dev/benchmarks/latest_ipd_superiority_snapshot.json holds no absolute drive paths', sabs.length === 0, sabs.slice(0, 4).join(' | '));
+}
 const PY = `
 import json, hashlib, sys
 s = open(sys.argv[1], encoding='utf-8', newline='').read()

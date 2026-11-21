@@ -14,6 +14,16 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _portable_path(value: Any) -> str:
+    """A source path as written into the snapshot: relative to the app root (forward slashes) when it is
+    inside it, else the bare file name -- never a build-machine absolute path (LIM-P60 L34)."""
+    p = Path(str(value))
+    try:
+        return p.resolve().relative_to(_repo_root()).as_posix()
+    except ValueError:
+        return p.name
+
+
 def _mean(values: list[float]) -> float | None:
     if not values:
         return None
@@ -229,10 +239,10 @@ def main() -> int:
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "app_build_id": ((parity or {}).get("app_build_id") or (frontier or {}).get("app_build_id") or (simulation or {}).get("app_build_id") or (replication or {}).get("app_build_id")),
         "source_artifacts": {
-            "parity_json": str(Path(args.parity_json)),
-            "frontier_json": str(Path(args.frontier_json)),
-            "simulation_json": str(Path(args.simulation_json)),
-            "replication_json": str(Path(args.replication_json)),
+            "parity_json": _portable_path(args.parity_json),
+            "frontier_json": _portable_path(args.frontier_json),
+            "simulation_json": _portable_path(args.simulation_json),
+            "replication_json": _portable_path(args.replication_json),
         },
         "artifact_availability": {
             "parity": parity is not None,
