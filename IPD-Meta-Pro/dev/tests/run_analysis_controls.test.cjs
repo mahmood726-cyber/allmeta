@@ -50,5 +50,16 @@ for (const [data, outcome, measure] of [[bin, 'binary', 'RR'], [bin, 'binary', '
     refused(o, new RegExp(measure)), JSON.stringify(o.notes) + ' results=' + !!o.results);
 }
 
+// Review of PR #655: a refused choice must not be written into APP.config. After an OR run, a refused
+// RR run left APP.config.effectMeasure = "RR" next to the OR results (APP.analysisSettings "OR"), so code
+// reading APP.config (E-value, isRatio labels) treated the OR results as RR. Same for "Both".
+for (const [measure, approach, key, want] of [['RR', 'two-stage', 'effectMeasure', 'OR'], ['OR', 'both', 'analysisApproach', 'two-stage']]) {
+  const ok = analyse(bin, 'binary', 'OR', 'two-stage');
+  const o = analyse(bin, 'binary', measure, approach);
+  const st = JSON.parse(run('JSON.stringify({ cfg: APP.config.' + key + ', saved: APP.analysisSettings && APP.analysisSettings.' + key + ' })'));
+  check('a refused ' + key + ' "' + (key === 'effectMeasure' ? measure : approach) + '" leaves APP.config.' + key + ' at the analysed "' + want + '"',
+    !!(ok.results || {}).pooled && o.notes.length > 0 && st.cfg === want && st.saved === want, JSON.stringify(st));
+}
+
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('all passed');
