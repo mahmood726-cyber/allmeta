@@ -77598,11 +77598,14 @@ function displayValidationResults(results) {
     lines.push('cat("Expected: all pooled estimates, SEs, and heterogeneity stats should match.\\n\\n")');
     lines.push('');
 
-    // ── Package install guards ───────────────────────────────────────────────
-    lines.push('# ── Package setup ─────────────────────────────────────────────');
-    lines.push('if (!require("metafor", quietly=TRUE))  install.packages("metafor")');
-    lines.push('if (!require("survival", quietly=TRUE)) install.packages("survival")');
-    lines.push('if (!require("lme4", quietly=TRUE))     install.packages("lme4")');
+    // ── Package check: the script never installs software ────────────────────
+    // It used to run install.packages() for metafor, survival and lme4 whenever require() failed, so
+    // running a downloaded script could silently install packages. It now stops and names what is
+    // missing; lme4 is not needed here (the tier-C check reports it NOT CHECKED via requireNamespace).
+    lines.push('# ── Package check (this script installs nothing) ───────────────');
+    lines.push('.ipd_need <- c("metafor", "survival")');
+    lines.push('.ipd_miss <- .ipd_need[!vapply(.ipd_need, requireNamespace, logical(1), quietly = TRUE)]');
+    lines.push('if (length(.ipd_miss)) stop("R package not installed: ", paste(.ipd_miss, collapse = ", "), ". This script does not install packages: install it yourself (install.packages) and run the script again.", call. = FALSE)');
     lines.push('library(metafor)');
     lines.push('library(survival)');
     lines.push('');
