@@ -1,0 +1,329 @@
+{
+  "app": "nma-inconsistency",
+  "script": "# P16: independent two-arm contrasts; signed back-calculation splits.\n# jsonlite is shipped in the same-origin webR library image, not its tarball\n# manifest. Mount that existing image only in webR; desktop R uses its library.\nif (grepl('emscripten', R.version$os) && !requireNamespace('jsonlite', quietly=TRUE)) {\n  webr::mount('/tmp/alm-bundled-library', \"http://127.0.0.1:61276/r-shiny/shinylive/webr/library.data.gz\")\n  .libPaths(c(.libPaths(), '/tmp/alm-bundled-library'))\n}\nstopifnot(requireNamespace('jsonlite', quietly=TRUE))\ncat('SERIALIZER jsonlite', as.character(utils::packageVersion('jsonlite')), '\\n')\n# PM uses the archived uncentred metafor QE equation, not centred rma(PM).\nA <- c(\"A\",\"A\",\"A\",\"A\",\"A\",\"B\",\"B\",\"A\",\"B\",\"C\",\"A\"); B <- c(\"B\",\"B\",\"B\",\"C\",\"C\",\"C\",\"C\",\"D\",\"D\",\"D\",\"D\")\nte <- c(-0.3,-0.32,-0.28,-0.2,-0.22,0.1,0.08,-0.5,-0.25,-0.35,-0.48); se <- c(0.1,0.08,0.09,0.12,0.1,0.11,0.13,0.15,0.18,0.14,0.14); study <- c(\"row_1\",\"row_2\",\"row_3\",\"row_4\",\"row_5\",\"row_6\",\"row_7\",\"row_8\",\"row_9\",\"row_10\",\"row_11\")\ntr <- c(\"A\",\"B\",\"C\",\"D\"); model <- \"FE\"\ntau <- 0\nif (model == 'PM') {\n  X <- as.matrix(sapply(tr[-1], function(t) as.numeric(A == t) - as.numeric(B == t)))\n  if (length(te) > ncol(X)) {\n    qe <- get('.QE.func', asNamespace('metafor'))\n    objective <- function(t2) qe(t2, Y=as.matrix(te), vi=se^2, X=X, k=length(te), objective=length(te)-ncol(X))\n    if (objective(0) > 0) {\n      upper <- max(1, var(te))\n      while (objective(upper) > 0) upper <- upper * 2\n      tau <- sqrt(uniroot(objective, c(0, upper), tol=.Machine$double.eps^0.75, maxiter=1000)$root)\n    }\n  }\n}\nsep <- ' ~~ '\nwhile (any(grepl(sep, tr, fixed=TRUE))) sep <- paste0(sep, '~')\nm <- netmeta::netmeta(TE=te, seTE=se, treat1=A, treat2=B, studlab=study,\n  sm='MD', reference.group=tr[1], common=TRUE, random=TRUE, method.tau='DL',\n  tau.preset=if (model == 'DL') NULL else tau, sep.trts=sep, warn=FALSE)\ntau <- if (model == 'FE') 0 else m$tau\nspl <- netmeta::netsplit(m, method='Back-calculation', tol.direct=0)\nsuffix <- if (model == 'FE') 'common' else 'random'\ndirect <- spl[[paste0('direct.', suffix)]]\nindirect <- spl[[paste0('indirect.', suffix)]]\ncmp <- spl[[paste0('compare.', suffix)]]\n# The global random-effects test uses the SAME consistency-model tau.\ndec <- netmeta::decomp.design(m, tau.preset=tau, warn=FALSE)\nq <- if (model == 'FE') dec$Q.decomp else dec$Q.inc.random.preset\ng <- list(Q=0, df=0, p=NA_real_)\nif (!is.null(q)) {\n  j <- match('Between designs', rownames(q))\n  g <- list(Q=q$Q[j], df=q$df[j], p=q$pval[j])\n  if (g$df == 0) { g$Q <- 0; g$p <- NA_real_ }\n}\nout <- list(tau2=tau^2, dbt.Q=g$Q, dbt.df=g$df, dbt.p=g$p)\npath <- function(a,b) {\n  keep <- !((A==a & B==b) | (A==b & B==a)); reach <- a\n  repeat {\n    nextset <- unique(c(reach, B[keep & A %in% reach], A[keep & B %in% reach]))\n    if (length(nextset) == length(reach)) break\n    reach <- nextset\n  }\n  b %in% reach\n}\nsplits <- list()\nfor (j in seq_len(nrow(cmp))) {\n  pair <- strsplit(cmp$comparison[j], sep, fixed=TRUE)[[1]]\n  ord <- pair[order(match(pair, tr))]\n  sign <- if (pair[1] == ord[1]) 1 else -1\n  if (!is.finite(direct$TE[j]) || !path(ord[1], ord[2])) next\n  name <- paste(ord, collapse=' vs ')\n  splits[[name]] <- list(direct=sign*direct$TE[j], directSE=direct$seTE[j],\n    indirect=sign*indirect$TE[j], indirectSE=indirect$seTE[j],\n    difference=sign*cmp$TE[j], differenceSE=cmp$seTE[j], z=sign*cmp$statistic[j], p=cmp$p[j])\n}\n# App ordering is only an output mapping; R independently checks membership.\norder_app <- c(\"A vs B\",\"A vs C\",\"B vs C\",\"A vs D\",\"B vs D\",\"C vs D\")\nstopifnot(setequal(order_app, names(splits)), !anyDuplicated(order_app))\nfor (i in seq_along(order_app)) for (key in names(splits[[order_app[i]]]))\n  out[[paste('split', i-1L, key, sep='.')]] <- splits[[order_app[i]]][[key]]\ncat('ALMJSON:', jsonlite::toJSON(out, digits=NA, auto_unbox=TRUE, na='null'), '\\n', sep='')\n",
+  "packages": [
+    "netmeta",
+    "metafor"
+  ],
+  "appValues": [
+    {
+      "key": "tau2",
+      "label": "Between-study variance",
+      "value": 0
+    },
+    {
+      "key": "dbt.Q",
+      "label": "Global inconsistency statistic",
+      "value": 0.18873861747562792
+    },
+    {
+      "key": "dbt.df",
+      "label": "Global degrees of freedom",
+      "value": 3
+    },
+    {
+      "key": "dbt.p",
+      "label": "Global inconsistency p-value",
+      "value": 0.9793864643821553
+    },
+    {
+      "key": "split.0.direct",
+      "label": "A vs B: Direct estimate",
+      "value": -0.30202901849217634
+    },
+    {
+      "key": "split.0.directSE",
+      "label": "A vs B: Direct standard error",
+      "value": 0.051318720313972034
+    },
+    {
+      "key": "split.0.indirect",
+      "label": "A vs B: Indirect estimate",
+      "value": -0.28495592828482
+    },
+    {
+      "key": "split.0.indirectSE",
+      "label": "A vs B: Indirect standard error",
+      "value": 0.09902510679372323
+    },
+    {
+      "key": "split.0.difference",
+      "label": "A vs B: Direct minus indirect estimate",
+      "value": -0.016771362916155386
+    },
+    {
+      "key": "split.0.differenceSE",
+      "label": "A vs B: Difference standard error",
+      "value": 0.11153287779920312
+    },
+    {
+      "key": "split.0.z",
+      "label": "A vs B: Inconsistency z statistic",
+      "value": -0.15037147114906788
+    },
+    {
+      "key": "split.0.p",
+      "label": "A vs B: Inconsistency p-value",
+      "value": 0.8804715480506101
+    },
+    {
+      "key": "split.1.direct",
+      "label": "A vs C: Direct estimate",
+      "value": -0.21180327868852458
+    },
+    {
+      "key": "split.1.directSE",
+      "label": "A vs C: Direct standard error",
+      "value": 0.07682212795973759
+    },
+    {
+      "key": "split.1.indirect",
+      "label": "A vs C: Indirect estimate",
+      "value": -0.19336669129774214
+    },
+    {
+      "key": "split.1.indirectSE",
+      "label": "A vs C: Indirect standard error",
+      "value": 0.08554684503944593
+    },
+    {
+      "key": "split.1.difference",
+      "label": "A vs C: Direct minus indirect estimate",
+      "value": -0.01843658739078244
+    },
+    {
+      "key": "split.1.differenceSE",
+      "label": "A vs C: Difference standard error",
+      "value": 0.11497783282209345
+    },
+    {
+      "key": "split.1.z",
+      "label": "A vs C: Inconsistency z statistic",
+      "value": -0.16034905979928832
+    },
+    {
+      "key": "split.1.p",
+      "label": "A vs C: Inconsistency p-value",
+      "value": 0.8726061146785048
+    },
+    {
+      "key": "split.2.direct",
+      "label": "B vs C: Direct estimate",
+      "value": 0.0916551724137931
+    },
+    {
+      "key": "split.2.directSE",
+      "label": "B vs C: Direct standard error",
+      "value": 0.0839724913906026
+    },
+    {
+      "key": "split.2.indirect",
+      "label": "B vs C: Indirect estimate",
+      "value": 0.09758154589313356
+    },
+    {
+      "key": "split.2.indirectSE",
+      "label": "B vs C: Indirect standard error",
+      "value": 0.08438646206296097
+    },
+    {
+      "key": "split.2.difference",
+      "label": "B vs C: Direct minus indirect estimate",
+      "value": -0.005926373479340455
+    },
+    {
+      "key": "split.2.differenceSE",
+      "label": "B vs C: Difference standard error",
+      "value": 0.11904811754012903
+    },
+    {
+      "key": "split.2.z",
+      "label": "B vs C: Inconsistency z statistic",
+      "value": -0.049781328775255755
+    },
+    {
+      "key": "split.2.p",
+      "label": "B vs C: Inconsistency p-value",
+      "value": 0.9602966457118655
+    },
+    {
+      "key": "split.3.direct",
+      "label": "A vs D: Direct estimate",
+      "value": -0.4893111638954869
+    },
+    {
+      "key": "split.3.directSE",
+      "label": "A vs D: Direct standard error",
+      "value": 0.10234773755400167
+    },
+    {
+      "key": "split.3.indirect",
+      "label": "A vs D: Indirect estimate",
+      "value": -0.5575087966166803
+    },
+    {
+      "key": "split.3.indirectSE",
+      "label": "A vs D: Indirect standard error",
+      "value": 0.1199536194578654
+    },
+    {
+      "key": "split.3.difference",
+      "label": "A vs D: Direct minus indirect estimate",
+      "value": 0.06819763272119339
+    },
+    {
+      "key": "split.3.differenceSE",
+      "label": "A vs D: Difference standard error",
+      "value": 0.15768300543642993
+    },
+    {
+      "key": "split.3.z",
+      "label": "A vs D: Inconsistency z statistic",
+      "value": 0.4324983059045468
+    },
+    {
+      "key": "split.3.p",
+      "label": "A vs D: Inconsistency p-value",
+      "value": 0.6653792832156644
+    },
+    {
+      "key": "split.4.direct",
+      "label": "B vs D: Direct estimate",
+      "value": -0.25
+    },
+    {
+      "key": "split.4.directSE",
+      "label": "B vs D: Direct standard error",
+      "value": 0.18
+    },
+    {
+      "key": "split.4.indirect",
+      "label": "B vs D: Indirect estimate",
+      "value": -0.21171563219374173
+    },
+    {
+      "key": "split.4.indirectSE",
+      "label": "B vs D: Indirect standard error",
+      "value": 0.09361169650967482
+    },
+    {
+      "key": "split.4.difference",
+      "label": "B vs D: Direct minus indirect estimate",
+      "value": -0.03828436780625827
+    },
+    {
+      "key": "split.4.differenceSE",
+      "label": "B vs D: Difference standard error",
+      "value": 0.20288703685405696
+    },
+    {
+      "key": "split.4.z",
+      "label": "B vs D: Inconsistency z statistic",
+      "value": -0.18869794936084272
+    },
+    {
+      "key": "split.4.p",
+      "label": "B vs D: Inconsistency p-value",
+      "value": 0.8503295588889936
+    },
+    {
+      "key": "split.5.direct",
+      "label": "C vs D: Direct estimate",
+      "value": -0.35
+    },
+    {
+      "key": "split.5.directSE",
+      "label": "C vs D: Direct standard error",
+      "value": 0.14
+    },
+    {
+      "key": "split.5.indirect",
+      "label": "C vs D: Indirect estimate",
+      "value": -0.2941276215025732
+    },
+    {
+      "key": "split.5.indirectSE",
+      "label": "C vs D: Indirect standard error",
+      "value": 0.10593182004820922
+    },
+    {
+      "key": "split.5.difference",
+      "label": "C vs D: Direct minus indirect estimate",
+      "value": -0.05587237849742677
+    },
+    {
+      "key": "split.5.differenceSE",
+      "label": "C vs D: Difference standard error",
+      "value": 0.1755606746931846
+    },
+    {
+      "key": "split.5.z",
+      "label": "C vs D: Inconsistency z statistic",
+      "value": -0.3182511037569838
+    },
+    {
+      "key": "split.5.p",
+      "label": "C vs D: Inconsistency p-value",
+      "value": 0.7502944710543074
+    }
+  ],
+  "compare": {
+    "tolerance": {
+      "default": 1e-9
+    },
+    "kind": {
+      "tau2": "rel",
+      "dbt.Q": "rel",
+      "dbt.df": "exact",
+      "dbt.p": "abs",
+      "split.0.direct": "rel",
+      "split.0.directSE": "rel",
+      "split.0.indirect": "rel",
+      "split.0.indirectSE": "rel",
+      "split.0.difference": "rel",
+      "split.0.differenceSE": "rel",
+      "split.0.z": "rel",
+      "split.0.p": "abs",
+      "split.1.direct": "rel",
+      "split.1.directSE": "rel",
+      "split.1.indirect": "rel",
+      "split.1.indirectSE": "rel",
+      "split.1.difference": "rel",
+      "split.1.differenceSE": "rel",
+      "split.1.z": "rel",
+      "split.1.p": "abs",
+      "split.2.direct": "rel",
+      "split.2.directSE": "rel",
+      "split.2.indirect": "rel",
+      "split.2.indirectSE": "rel",
+      "split.2.difference": "rel",
+      "split.2.differenceSE": "rel",
+      "split.2.z": "rel",
+      "split.2.p": "abs",
+      "split.3.direct": "rel",
+      "split.3.directSE": "rel",
+      "split.3.indirect": "rel",
+      "split.3.indirectSE": "rel",
+      "split.3.difference": "rel",
+      "split.3.differenceSE": "rel",
+      "split.3.z": "rel",
+      "split.3.p": "abs",
+      "split.4.direct": "rel",
+      "split.4.directSE": "rel",
+      "split.4.indirect": "rel",
+      "split.4.indirectSE": "rel",
+      "split.4.difference": "rel",
+      "split.4.differenceSE": "rel",
+      "split.4.z": "rel",
+      "split.4.p": "abs",
+      "split.5.direct": "rel",
+      "split.5.directSE": "rel",
+      "split.5.indirect": "rel",
+      "split.5.indirectSE": "rel",
+      "split.5.difference": "rel",
+      "split.5.differenceSE": "rel",
+      "split.5.z": "rel",
+      "split.5.p": "abs"
+    }
+  }
+}
