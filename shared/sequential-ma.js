@@ -225,13 +225,46 @@
   }
   function _warpRoot(t, eff, beta, bfam, theta, rm) {
     var K = t.length, g = function (R) { return eff[K - 1] - _betaBounds(t, eff, beta, bfam, theta, R, rm)[K - 1]; };
-    var a = 0.9, ga = g(a);
-    for (var b = 0.92; b <= 10; b += 0.02) {           // first sign change at or above 0.9, then bisection
-      var gb = g(b);
-      if ((ga > 0) !== (gb > 0)) return _solve(g, a, b);
-      a = b; ga = gb;
+    // First sign change of g on a 0.02 grid from 0.9 upward to 10, then a root. When the design ends past full
+    // information (t > 1) the root lies below 0.9, so if there is none above, the grid is searched downward from
+    // 0.9 to 0.02 as well -- the same search as the R check (sequential-ma/rcheck.js inflation()). g can be finite
+    // at one grid point and not finite at the next with the root in between, so at every finite/non-finite step the
+    // edge of the finite region is located by bisection and its sign tested; a sign change there brackets the root.
+    // NaN means no inflation factor exists on that range.
+    // (the grid is accumulated b += step exactly as before, so a root between two finite points is bit-identical)
+    function edge(fin, non) {                         // last point on the finite side between fin and non
+      for (var it = 0; it < 200 && Math.abs(non - fin) > 1e-13; it++) {
+        var mid = (fin + non) / 2;
+        if (isFinite(g(mid))) fin = mid; else non = mid;
+      }
+      return fin;
     }
-    return NaN;
+    function bracket(x, gx, y, gy) {                  // x, y finite points with g values gx, gy
+      if (gy === 0) return y;
+      if ((gx > 0) !== (gy > 0)) return _solve(g, Math.min(x, y), Math.max(x, y));
+      return NaN;
+    }
+    function scan(from, to, step) {
+      var a = NaN, ga = NaN, prev = NaN, prevFinite = false;
+      for (var b = from; step > 0 ? b <= to : b >= to; b += step) {
+        var gb = g(b), r = NaN;
+        if (!isFinite(gb)) {
+          if (prevFinite) { var e = edge(a, b); r = bracket(a, ga, e, g(e)); }   // finite -> non-finite
+          a = NaN; ga = NaN; prevFinite = false; prev = b;
+          if (isFinite(r)) return r;
+          continue;
+        }
+        if (gb === 0) return b;
+        if (prevFinite) r = bracket(a, ga, b, gb);
+        else if (isFinite(prev)) { var e2 = edge(b, prev); r = bracket(b, gb, e2, g(e2)); }   // non-finite -> finite
+        if (isFinite(r)) return r;
+        a = b; ga = gb; prevFinite = true; prev = b;
+      }
+      return NaN;
+    }
+    var R = scan(0.9, 10, 0.02);
+    if (!isFinite(R)) R = scan(0.9, 0.02, -0.02);
+    return R;
   }
   function _futility(t, eff, beta, bfam, theta, sided) {
     var R = _warpRoot(t, eff, beta, bfam, theta, 0), rm = 0;
@@ -287,6 +320,10 @@
         for (var kp = kEnd + 1; kp < t.length; kp++) fut.za.push(-Infinity);
       }
     }
+    // A requested futility design that could not be solved (inflation root not bracketed) must not be reported as a
+    // completed analysis with every futility boundary silently null (LIM-P46 F12).
+    if (fut && (!Number.isFinite(fut.R) || fut.za.some(function (x) { return Number.isNaN(x); })))
+      throw new Error("the non-binding futility design could not be solved for these looks (information inflation not found); no decisions were computed");
     var decisionTaken = null, out = [];
     for (var k = 0; k < sorted.length; k++) {
       var z = sorted[k].z, b = eff[k], l = null;

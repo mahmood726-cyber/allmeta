@@ -33,6 +33,17 @@
   // that has a zero event count (meta::pairwise(sm = "IRR") default), so a study without zeros is uncorrected.
   function buildContrasts(rows, cc, ccTo) {
     cc = cc == null ? 0.5 : cc;
+    // Input contract (LIM-P49 L02/L03): the page names bad lines itself; the engine refuses them too, so no caller
+    // can fit negative/non-finite events, non-positive/non-finite person-time, empty labels or an invalid correction.
+    if (typeof cc !== "number" || !isFinite(cc) || cc < 0) throw new Error("nma-survival-nph: the continuity correction must be a finite number >= 0");
+    if (!Array.isArray(rows)) throw new Error("nma-survival-nph: rows must be an array");
+    rows.forEach(function (r, i) {
+      var where = "nma-survival-nph: row " + (i + 1) + ": ";
+      if (!r || ["study", "treatment", "interval"].some(function (k) { return r[k] == null || String(r[k]).trim() === ""; }))
+        throw new Error(where + "study, treatment and interval must not be empty");
+      if (typeof r.events !== "number" || !isFinite(r.events) || r.events < 0) throw new Error(where + "events must be a finite number >= 0");
+      if (typeof r.ptime !== "number" || !isFinite(r.ptime) || !(r.ptime > 0)) throw new Error(where + "person-time must be a finite number > 0");
+    });
     var only0 = ccTo === "only0";
     // group by study -> interval -> [{treatment, events, ptime}]
     var byStudy = {};

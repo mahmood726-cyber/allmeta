@@ -234,3 +234,33 @@ def test_disconnected_network_under_reml_ml_is_not_checked(pg, tmp_path, method)
     p, txt = download(pg, tmp_path, f"disconnected-{method}.R")
     last, full = run_r(p)
     assert last.startswith("NOT CHECKED: no estimate"), full
+
+
+@pytest.mark.parametrize("bad", ["T6, placebo, 1, 12abc, 900", "T6, placebo, 1, -3, 900", "T6, , 1, 3, 900",
+                                 "T6, placebo, 1, 3, Infinity", "T6, placebo, 1, 3", "T6, placebo, 1, 3, 0",
+                                 "T6, placebo, 1, , 900"],
+                         ids=["numeric-prefix", "negative-events", "empty-treatment", "infinite-ptime", "short-row",
+                              "zero-ptime", "blank-events"])
+def test_malformed_row_is_refused_by_line_not_dropped_or_coerced(pg, bad):
+    # Requirement (LIM-P49 L01/L02): every non-comment line is an arm row. A row with a missing field, an events
+    # value that is not a complete non-negative number ("12abc" was read as 12), an empty label, or person-time
+    # that is not finite and > 0 must stop the fit and be named, not silently dropped while the other rows are pooled.
+    pg.fill("#data", PASTED + "\n" + bad)
+    pg.select_option("#model", "fe")
+    pg.click("#run")
+    assert pg.text_content("#out") == "", "the remaining rows were fitted as if the bad row did not exist"
+    note = pg.text_content("#note")
+    assert "line 21" in note.lower(), note
+    assert "no current result" in no_download(pg).lower()
+
+
+@pytest.mark.parametrize("cc", ["-0.5", ""], ids=["negative", "blank"])
+def test_invalid_continuity_correction_is_refused(pg, cc):
+    # Requirement (LIM-P49 L03): the correction must be a finite number >= 0; a negative one used to be fitted.
+    pg.fill("#data", PASTED)
+    pg.select_option("#model", "fe")
+    pg.fill("#cc", cc)
+    pg.click("#run")
+    assert pg.text_content("#out") == ""
+    assert "correction" in pg.text_content("#note").lower()
+    pg.fill("#cc", "0.5")

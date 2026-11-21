@@ -197,3 +197,60 @@ def test_alpha_total_spent_does_not_exceed_alpha():
         console.log(JSON.stringify({{ total: total }}));
     """)
     assert out["total"] <= 0.05 + 1e-9
+
+
+def test_futility_design_ending_past_full_information_is_solved_below_0_9():
+    # Requirement (LIM-P46 F12, review of PR #648): when the design ends past t = 1 the information-inflation root R
+    # lies below 0.9. The search started at 0.9 and only went up, so these solvable designs returned NaN (on main:
+    # futility silently absent; in 88334b1a: refused). The root is now searched downward from 0.9 too, as the R check
+    # (sequential-ma/rcheck.js) does. Values: the reviewer's widened search (rev648 probes), checked again here.
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const cases = [[[{{t:0.5,z:1}},{{t:1.2,z:2}}], 2], [[{{t:1.5,z:1}}], 2], [[{{t:1.2,z:1}}], 1]];
+        console.log(JSON.stringify(cases.map(([l, s]) => {{
+          const r = M.computeBoundary(l, {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true, sided: s }});
+          return {{ R: r.infoInflation, fut: r.looks.map(x => x.futility_boundary), dec: r.decision }};
+        }})));
+    """)
+    for got, want in zip(out, [0.8987, 0.667, 0.833]):
+        assert got["R"] is not None and abs(got["R"] - want) < 5e-4, out
+        assert any(b is not None for b in got["fut"]), out
+
+
+def test_unsolved_futility_design_is_refused_not_silently_dropped():
+    # Requirement (LIM-P46 F12): if no inflation root exists anywhere on the searched range, the engine must say so
+    # rather than return infoInflation NaN, every futility boundary null and an efficacy/continue decision.
+    # Unsolvable case: beta = 0.99 makes the design drift z_{1-a/2} + z_{1-b} negative (power 0.01 < alpha), so no
+    # inflation factor exists; main returned infoInflation NaN with every futility boundary null.
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        let msg = null; try {{ M.computeBoundary(UNSOLVABLE_LOOKS, UNSOLVABLE_OPTS); }} catch (e) {{ msg = e.message; }}
+        console.log(JSON.stringify({{ msg }}));
+    """.replace("UNSOLVABLE_LOOKS", '[{t: 0.5, z: 1}, {t: 1, z: 1}]')
+       .replace("UNSOLVABLE_OPTS", '{alpha: 0.05, beta: 0.99, family: "OBF", futility: true}'))
+    assert out["msg"] and "futility" in out["msg"], out
+    ok = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary([{{ t: 0.5, z: 1 }}, {{ t: 1, z: 2 }}], {{ alpha: 0.05, futility: true }});
+        console.log(JSON.stringify(r.infoInflation));
+    """)
+    assert abs(ok - 1.0607421394929404) < 1e-12
+
+
+@pytest.mark.parametrize("t,fam,sided,R", [
+    ([0.446, 0.994], "OBF", 2, 1.0558722211324496), ([0.446, 0.994], "OBF", 1, 1.0615841289030505),
+    ([0.446, 0.994], "POCOCK", 2, 1.2735165523269103), ([0.446, 0.994], "POCOCK", 1, 1.29537730683951),
+    ([0.398, 0.789, 0.975], "OBF", 2, 1.1612556594560737), ([0.398, 0.789, 0.975], "POCOCK", 2, 1.4029013611204575),
+])
+def test_inflation_root_next_to_a_non_finite_grid_point_is_found(t, fam, sided, R):
+    # Delta review of PR #648: the inflation objective g(R) can be finite at one 0.02 grid point and non-finite at the
+    # next (here g(1.04) = +0.147, g(1.06) = NaN for t = (0.446, 0.994)) with the real root in between. c5415926
+    # skipped the non-finite point, lost the root and refused the design. Requirement: such a root is found (values:
+    # the pre-c5415926 engine, 7efcb7b3, which reached it by bisecting towards the NaN point).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary({json.dumps([{"t": x, "z": 1} for x in t])},
+                                    {{ alpha: 0.05, beta: 0.20, family: "{fam}", sided: {sided}, futility: true }});
+        console.log(JSON.stringify(r.infoInflation));
+    """)
+    assert out is not None and abs(out - R) < 1e-9, out

@@ -109,7 +109,7 @@
     L.push("");
     L.push("v <- sei^2; k <- length(yi)");
     L.push("tau2 <- if (tau_method == \"0\") 0 else if (tau_method == \"manual\") {");
-    L.push("  if (is.finite(tau2_manual) && tau2_manual >= 0) tau2_manual else 0   # the page uses 0 for an invalid entry");
+    L.push("  if (is.finite(tau2_manual) && tau2_manual >= 0) tau2_manual else 0   # not reached: the page refuses an invalid manual entry");
     L.push("} else if (k < 2) 0 else {");
     L.push("  suppressPackageStartupMessages(library(metafor))");
     L.push("  ## upper end of the root search: the page doubles its bracket from 1 until Q(hi) <= k - 1 (shared/ma-core.js");

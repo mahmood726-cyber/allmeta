@@ -285,3 +285,15 @@ def test_a_one_percent_error_at_tiny_units_is_reported_as_MISMATCH(server, tmp_p
     assert rc == 0, out
     assert re.search(r"^MISMATCH (\d+)/(\d+) agree$", out, re.M), out
     assert out.count("DIFFERS") == 1, out
+
+
+@pytest.mark.parametrize("bad", ["-1", ""])
+def test_invalid_manual_tau2_is_refused_not_silently_zero(server, bad):
+    # Requirement (LIM-P47 L09): a manual tau^2 that is negative, blank or not a number is an input error. The page
+    # used to analyse it as tau^2 = 0 while labelling the strategy "manual", i.e. a fixed-effect posterior presented
+    # as a manual random-effects one. It must show no posterior and offer nothing to check.
+    acts = [{"select": "#f-tau-method", "value": "manual"}, {"fill": "#f-tau2-manual", "value": bad}, {"wait": 500}]
+    res = drive(server, acts, refuse=True)
+    keys = [k for k, _ in res["dom"]]
+    assert "Posterior mean" not in keys, res["dom"]
+    assert not res["downloaded"], "a script was downloaded for a refused manual tau^2"
