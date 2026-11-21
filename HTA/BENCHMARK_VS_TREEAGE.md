@@ -5,9 +5,9 @@
 
 This document benchmarks the HTA Artifact Standard implementation against TreeAge Pro (the industry-leading commercial software), R-based alternatives (metafor, netmeta, mada, ipdmetan, TwoSampleMR, RBesT, survHE, weightr, RoBMA), Python packages, Stata, and specialized research tools.
 
-**Overall Assessment**: The HTA Artifact Standard v0.5 implements **CAPABILITIES THAT EXCEED ALL EXISTING SOFTWARE** in the health technology assessment and evidence synthesis space:
+**Overall Assessment**: The HTA Artifact Standard v0.5 implements the following capabilities in the health technology assessment and evidence synthesis space:
 
-### v0.5 New Capabilities (Frontier Edition - Exceeds ALL Existing Software):
+### v0.5 New Capabilities (Frontier Edition):
 
 | Method | Status | Comparison |
 |--------|--------|------------|
@@ -905,7 +905,7 @@ predictionIntervals: {
 
 ## Conclusion
 
-**HTA Artifact Standard v0.5** is now the **world's most advanced health economic modeling and evidence synthesis platform**, with **320 FEATURES** and **62 CLASSES** that exceed ALL existing software:
+**HTA Artifact Standard v0.5** is a health economic modeling and evidence synthesis platform with **320 FEATURES** and **62 CLASSES**:
 
 ### Unprecedented Capabilities:
 1. **ONLY platform** with integrated data fabrication detection (GRIM/SPRITE/GRIMMER/StatCheck)
