@@ -28341,7 +28341,7 @@ const SessionManager = {
 
                         <h4>🔄 Random-Effects Models</h4>
 
-                        <p>7 estimators: REML, DL, PM, SJ, HE, ML, EB</p>
+                        <p>Fixed effect and 6 between-study variance estimators: REML, DL, PM, SJ, HE, ML</p>
 
                     </div>
 
@@ -28665,7 +28665,7 @@ const SessionManager = {
 
                     <ul>
 
-                        <li>7 heterogeneity estimators (REML, DL, PM, SJ, HE, ML, EB)</li>
+                        <li>Fixed effect and 6 between-study variance estimators (REML, DL, PM, SJ, HE, ML)</li>
 
                         <li>Bayesian MCMC with convergence diagnostics</li>
 
@@ -68208,11 +68208,11 @@ const TOOLTIPS = {
 
     'outcomeType': 'Survival: time-to-event with censoring. Binary: yes/no outcomes. Continuous: numeric measures.',
 
-    'analysisApproach': 'Two-stage: analyze each study, then pool. One-stage: single mixed model. Both recommended.',
+    'analysisApproach': 'Two-stage: analyze each study, then pool. Run Analysis fits the two-stage model only; fit one-stage mixed models from the One-Stage analyses.',
 
-    'effectMeasure': 'HR for survival, OR/RR for binary, MD/SMD for continuous outcomes.',
+    'effectMeasure': 'Run Analysis fits HR (Cox, per study) for survival, OR for binary and MD for continuous outcomes; other measures are refused.',
 
-    'reMethod': 'REML is default and most accurate. DL is classic but can underestimate variance.',
+    'reMethod': 'Check the method selected here before running. REML and ML are likelihood-based; DL is the classic moment estimator and can underestimate between-study variance.',
 
     'confLevel': 'Confidence level for intervals. 95% is standard, 99% for stricter inference.',
 
@@ -68372,7 +68372,7 @@ function showContextualHelp(section) {
 
             <ul>
 
-                <li><strong>REML:</strong> Default, most accurate</li>
+                <li><strong>REML:</strong> Restricted maximum likelihood</li>
 
                 <li><strong>DL:</strong> Classic method, may underestimate variance</li>
 
