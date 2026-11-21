@@ -73,28 +73,48 @@
     }
     // a Bayes factor: 2 dp as before; toFixed returns the raw round-trip string from 1e21 up, so a finite BF that
     // large is written from its log in the toExponential(3) form above (the value itself is unchanged)
-    function fmtBF(bf, logBf) { return (typeof bf === "number" && isFinite(bf) && bf >= 1e21) ? fmtExpLog(logBf) : fmt(bf, 2); }
+    // A BF whose 2-dp form would carry no information is written from its log instead: one that overflowed
+    // to Inf (finite log BF) and one below 0.005 (which toFixed(2) shows as "0.00"). Only a non-finite log BF is "-".
+    function fmtBF(bf, logBf) {
+      if (typeof logBf === "number" && isFinite(logBf) && !(typeof bf === "number" && isFinite(bf) && bf < 1e21 && fmt(bf, 2) !== "0.00")) return fmtExpLog(logBf);
+      return fmt(bf, 2);
+    }
     function bfWord(bf) { return bf > 100 ? "extreme" : bf > 10 ? "strong" : bf > 3 ? "moderate" : bf > 1 ? "weak" : "favours null"; }
     var _last = null, _yi = [], _sei = [];
     window._almLastRoBMA = function () { return _last; };
     // What the R check (r-check.js) recomputes: the effects and SEs analysed and the displayed result.
     window.__almRCheckInputs = function () { return _last ? { yi: _yi.slice(), sei: _sei.slice(), page: _last } : null; };
 
+    // Returns the line numbers of rows whose SE is outside the double range the model needs: the variance
+    // se^2 and the weight 1/se^2 must both be finite and positive (se = 1e-200 squares to 0, 1e200 to Inf,
+    // and the analysis then gave NaN, or never returned).
     function parse(text) {
-      _yi = []; _sei = [];
-      String(text || "").split(/\r?\n/).forEach(function (line) {
+      _yi = []; _sei = []; var range = [];
+      String(text || "").split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         var p = t.split(/\s*,\s*/); if (p.length < 3) return;
         var se = parseFloat(p[p.length - 1]), y = parseFloat(p[p.length - 2]);
-        if (isFinite(y) && isFinite(se) && se > 0) { _yi.push(y); _sei.push(se); }
+        if (isFinite(y) && isFinite(se) && se > 0) {
+          var v = se * se; if (!(isFinite(v) && v > 0 && isFinite(1 / v))) { range.push(i + 1); return; }
+          _yi.push(y); _sei.push(se);
+        }
       });
+      return range;
+    }
+    function allFinite(r) {
+      var xs = [r.logBfEffect, r.logBfHetero, r.pInclEffect, r.pInclHetero, r.muMA];
+      ["H0FE", "H1FE", "H0RE", "H1RE"].forEach(function (m) { xs.push(r.logMarginal[m], r.postProb[m]); });
+      return xs.every(function (x) { return typeof x === "number" && isFinite(x); });
     }
 
     function run() {
-      parse(document.getElementById("f-data").value);
+      var range = parse(document.getElementById("f-data").value);
       var head = document.getElementById("headline"), body = document.getElementById("model-body");
+      if (range.length) { _yi = []; _sei = []; head.textContent = "Not analysed: the SE on line " + range.join(", ") + " is outside the supported numerical range (its square and 1/square must be finite and positive, roughly 1e-154 < SE < 1e154)."; body.innerHTML = ""; _last = null; return; }
       if (_yi.length < 2) { head.textContent = "Enter at least 2 studies."; body.innerHTML = ""; _last = null; return; }
-      var r = window.AlmRoBMA.analysis(_yi, _sei);
+      var r = null; try { r = window.AlmRoBMA.analysis(_yi, _sei); } catch (e) { r = null; }
+      // Never show, label or hand to the R check a result that did not compute ("favours null" for NaN).
+      if (!r || !allFinite(r)) { head.textContent = "Not analysed: the calculation did not give finite results for these inputs (numerical failure), so no evidence is reported."; body.innerHTML = ""; _last = null; return; }
       var ce = r.bfEffect >= 1 ? "y" : "n", ch = r.bfHetero >= 1 ? "y" : "n";
       head.innerHTML =
         "Effect: BF<sub>10</sub> = <strong>" + fmtBF(r.bfEffect, r.logBfEffect) + "</strong> <span class='chip " + ce + "'>" + bfWord(r.bfEffect) + "</span> · P(effect) = " + fmt(r.pInclEffect, 3) + "<br>"

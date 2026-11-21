@@ -108,6 +108,9 @@
     "  chk(\"exp(transported CI lower)\", exp(page$trans_lo), exp(tr[[\"lo\"]]), XT(tr[[\"lo\"]]))",
     "  chk(\"exp(transported CI upper)\", exp(page$trans_hi), exp(tr[[\"hi\"]]), XT(tr[[\"hi\"]]))",
     "  chk(\"transport shift (ratio)\", exp(page$shift), exp(shift), XT(shift))",
+    "  chk(\"exp(effect at trials' mean modifier)\", exp(page$at_est), exp(at[[\"est\"]]), XT(at[[\"est\"]]))",
+    "  chk(\"exp(  CI lower)\", exp(page$at_lo), exp(at[[\"lo\"]]), XT(at[[\"lo\"]]))",
+    "  chk(\"exp(  CI upper)\", exp(page$at_hi), exp(at[[\"hi\"]]), XT(at[[\"hi\"]]))",
     "}",
     "cat(if (.bad == 0L) sprintf(\"MATCH %d/%d\\n\", .n, .n) else sprintf(\"MISMATCH %d of %d checks differ\\n\", .bad, .n))"
   ].join("\n");
@@ -123,6 +126,16 @@
       return { input: global.__lastTransportInput, result: global.__lastTransport };
     }
     var status = $("r-status"), out = $("r-out");
+    // A COMPLETED verdict belongs to the analysis it was computed for: when an edit re-runs the page
+    // (run() replaces __lastTransport, or clears it on a refusal), clear the verdict and its output.
+    var shownFor = null;
+    function invalidate() {
+      if (!shownFor || global.__lastTransport === shownFor) return;
+      shownFor = null; out.textContent = ""; out.hidden = true; global.__lastRVerify = null;
+      status.textContent = "The analysis changed since the last R check, so its verdict was cleared. Press Verify in R again.";
+    }
+    doc.addEventListener("input", invalidate); doc.addEventListener("change", invalidate); doc.addEventListener("click", function (e) {
+      if (e.target && (e.target.id === "btn-run" || e.target.id === "btn-example")) invalidate(); });
     $("btn-rscript").addEventListener("click", function () {
       var s = snapshot();
       if (!s) { status.textContent = "Run the analysis first - the script is generated from the analysed inputs."; return; }
@@ -135,7 +148,7 @@
       var s = snapshot(), btn = $("btn-webr"), my = ++verifyGen, run = global.__lastTransport;   // run() replaces it on every analysis
       if (!s) { status.textContent = "Run the analysis first."; return; }
       if (!global.AlmWebR || typeof global.AlmWebR.runR !== "function") { status.textContent = "WebR runner (../shared/webr-runner.js) did not load - use Download R script."; return; }
-      btn.disabled = true; out.hidden = true;
+      btn.disabled = true; out.hidden = true; shownFor = null;
       var t0 = Date.now();
       global.AlmWebR.runR({ script: buildScript(s), packages: ["metafor"], onStatus: function (m) { status.textContent = m; } }).then(function (r) {
         btn.disabled = false;
@@ -146,6 +159,10 @@
         var last = r.stdout.split(/\r?\n/).filter(function (l) { return /^(MATCH|MISMATCH)/.test(l); }).pop() || "no MATCH/MISMATCH line in R output";
         status.textContent = last + "  (R in WebR: " + r.versions.R + ", webR " + r.versions.webR + ", metafor " + r.versions.metafor + "; " + ((Date.now() - t0) / 1000).toFixed(0) + " s)";
         global.__lastRVerify = { line: last, stdout: r.stdout, versions: r.versions };
+        shownFor = run;
+      }).catch(function (e) {   // a runner that rejects must not leave Verify disabled
+        btn.disabled = false;
+        status.textContent = "WebR could not run the check: " + ((e && e.message) || e) + " - use Download R script.";
       });
     });
   }
