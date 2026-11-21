@@ -413,9 +413,11 @@
       if (!failed && rRows[0].k > 0) rState = { exp: ratio, page: rRows,
         trials: all.map(function (t, i) { var e = numOf(t.est), s = numOf(t.se);
           return { label: t.label || ("Trial " + (i + 1)), est: isFinite(e) ? e : null, se: isFinite(s) ? s : null, overall: effectiveOverall(t) }; }) };
-      // Name every trial that no pooled set can contain, with the reason (they used to vanish silently).
+      // Name every trial that no pooled set can contain, with the reason (they used to vanish silently). Effects
+      // are optional, so the list is shown only once some trial has an effect or SE entered.
+      var anyEntered = all.some(function (t) { return String(t.est == null ? "" : t.est).trim() !== "" || String(t.se == null ? "" : t.se).trim() !== ""; });
       var left = all.map(function (t, i) { var why = unusable(t); return why ? esc(t.label || ("Trial " + (i + 1))) + " (" + why + ")" : ""; }).filter(Boolean);
-      document.getElementById("pool-excluded").innerHTML = left.length
+      document.getElementById("pool-excluded").innerHTML = anyEntered && left.length
         ? "Not pooled in any set — " + left.length + " of " + all.length + " trial" + (all.length === 1 ? "" : "s") + ": " + left.join("; ") + "."
         : "";
     }

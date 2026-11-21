@@ -78,6 +78,22 @@ def test_L03_trials_left_out_of_the_pool_are_named():
     assert "C" in o["prefix"] and o["k"] == "2", o
 
 
+def test_L03_no_list_while_no_trial_has_an_effect():
+    """Review of PR 649: effects are optional (the re-pool is an add-on), so while no trial has an effect or
+    SE entered the page must not list every trial as "not pooled"; the list appears once any trial has one."""
+    res = drive(r"""
+      const t = () => p.evaluate(() => document.getElementById('pool-excluded').textContent);
+      const none1 = await t();
+      await p.click('#btn-add');
+      const none2 = await t();
+      await fill('#eff-est', '-0.4'); await fill('#eff-se', '0.15');
+      return { none1, none2, some: await t() };
+    """)
+    o = res["out"]
+    assert o["none1"] == "" and o["none2"] == "", o
+    assert "Trial 1" in o["some"] and "Trial 2" not in o["some"], o
+
+
 TWO = r"""
       await fill('#trial-name', 'A'); await fill('#eff-est', '-0.4'); await fill('#eff-se', '0.15');
       await p.click('#btn-add'); await fill('#trial-name', 'B'); await fill('#eff-est', '-0.2'); await fill('#eff-se', '0.2');
