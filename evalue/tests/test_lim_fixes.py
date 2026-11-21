@@ -32,6 +32,18 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+def _wait(pg, expr, timeout=20.0):
+    # Page.wait_for_function polls with eval, which these pages' CSP (no 'unsafe-eval') can block;
+    # page.evaluate is not affected. Poll from the test instead.
+    import time
+    end = time.time() + timeout
+    while time.time() < end:
+        if pg.evaluate(expr):
+            return
+        pg.wait_for_timeout(100)
+    raise AssertionError("timed out waiting for " + expr)
+
+
 @pytest.fixture(scope="module")
 def browser_ctx():
     port = _free_port()
@@ -194,7 +206,7 @@ def _mock_webr(page, hold=False):
 def test_f21_completed_verdict_is_cleared_when_inputs_change(page):
     _mock_webr(page)
     page.click("#btn-verify-r")
-    page.wait_for_function("document.getElementById('rcheck-verdict').textContent.startsWith('MATCH')")
+    _wait(page, "document.getElementById('rcheck-verdict').textContent.startsWith('MATCH')")
     page.fill("#point", "2.5")   # a real input event: the page recomputes
     page.wait_for_timeout(200)
     assert page.locator("#rcheck-verdict").is_hidden()
@@ -204,10 +216,10 @@ def test_f21_completed_verdict_is_cleared_when_inputs_change(page):
 def test_f21_verdict_for_earlier_inputs_is_discarded(page):
     _mock_webr(page, hold=True)
     page.click("#btn-verify-r")
-    page.wait_for_function("typeof window.__release === 'function'")
+    _wait(page, "typeof window.__release === 'function'")
     page.fill("#point", "2.5")
     page.evaluate("window.__release()")
-    page.wait_for_function("!document.getElementById('btn-verify-r').disabled")
+    _wait(page, "!document.getElementById('btn-verify-r').disabled")
     assert page.locator("#rcheck-verdict").is_hidden()
     assert "discarded" in page.inner_text("#rcheck-status").lower()
 
@@ -215,7 +227,7 @@ def test_f21_verdict_for_earlier_inputs_is_discarded(page):
 def test_f21_control_unchanged_inputs_keep_the_verdict(page):
     _mock_webr(page)
     page.click("#btn-verify-r")
-    page.wait_for_function("document.getElementById('rcheck-verdict').textContent.startsWith('MATCH')")
+    _wait(page, "document.getElementById('rcheck-verdict').textContent.startsWith('MATCH')")
     page.click("#btn-download-r")
     assert page.inner_text("#rcheck-verdict").startswith("MATCH")
 
@@ -243,3 +255,17 @@ def test_f20_r_error_still_ends_with_mismatch(page, tmp_path):
     r = subprocess.run([rs, "--vanilla", str(f)], capture_output=True, text=True, timeout=180)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
     assert lines and lines[-1].startswith("MISMATCH"), (r.returncode, r.stdout[-500:], r.stderr[-500:])
+
+
+# ---- F16 / F19: guidance on retained values; the script names its reference honestly --------
+
+def test_f16_measure_change_guidance_is_shown(page):
+    assert "kept when the measure changes" in page.inner_text("#measure-hint")
+
+
+def test_f19_script_names_reference_and_later_modes(page):
+    _set(page, measure="RR", point="2", lo="1.5", hi="2.7", se="", truev="")
+    s = page.evaluate("window.__almEValueRScript()")
+    assert "Reference, as in the P22 validation" not in s
+    assert "added to the page later" in s
+    assert 'packageVersion("EValue") != "4.1.4"' in s

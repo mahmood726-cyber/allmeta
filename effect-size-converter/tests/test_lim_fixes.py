@@ -32,6 +32,18 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+def _wait(pg, expr, timeout=20.0):
+    # Page.wait_for_function polls with eval, which these pages' CSP (no 'unsafe-eval') can block;
+    # page.evaluate is not affected. Poll from the test instead.
+    import time
+    end = time.time() + timeout
+    while time.time() < end:
+        if pg.evaluate(expr):
+            return
+        pg.wait_for_timeout(100)
+    raise AssertionError("timed out waiting for " + expr)
+
+
 @pytest.fixture(scope="module")
 def browser_ctx():
     port = _free_port()
@@ -109,7 +121,7 @@ def test_a01_unparseable_context_is_refused_not_treated_as_blank(page, field):
 
 @pytest.mark.parametrize("blank", ["m1", "sd2", "n1"])
 def test_a01_csv_blank_cell_is_rejected_not_read_as_zero(page, blank):
-    page.wait_for_function("typeof window.__almLoadCSV === 'function'")
+    _wait(page, "typeof window.__almLoadCSV === 'function'")
     row = {"m1": "52.5", "sd1": "8.2", "n1": "30", "m2": "47.1", "sd2": "7.9", "n2": "30"}
     row[blank] = ""
     page.evaluate("row => window.__almLoadCSV([row])", row)
@@ -130,7 +142,7 @@ def _mock_webr(page, stdout):
 
 def _verify(page):
     page.click("#btn-verify-r")
-    page.wait_for_function("!document.getElementById('rcheck-verdict').hidden")
+    _wait(page, "!document.getElementById('rcheck-verdict').hidden")
 
 
 def test_a07_verdict_cleared_after_a_new_conversion(page):
@@ -203,7 +215,7 @@ def test_a03_r_twin_agrees_on_the_underflowed_row(page):
 # ---- A05: export what is displayed, not a recomputation of unsubmitted fields ---------------
 
 def test_a05_export_ignores_unsubmitted_edits(page):
-    page.wait_for_function("typeof window.__almResults === 'function'")
+    _wait(page, "typeof window.__almResults === 'function'")
     _set(page, **{"in-est": "0.9"})          # typed, Convert not pressed
     res = page.evaluate("window.__almResults()")
     assert res["input_estimate"] == 0.75
@@ -212,14 +224,14 @@ def test_a05_export_ignores_unsubmitted_edits(page):
 
 
 def test_a05_rejected_csv_is_not_revived_by_export(page):
-    page.wait_for_function("typeof window.__almLoadCSV === 'function'")
+    _wait(page, "typeof window.__almLoadCSV === 'function'")
     page.evaluate("window.__almLoadCSV([{m1:'52.5',sd1:'-1',n1:'30',m2:'47.1',sd2:'7.9',n2:'30'}])")
     assert _rows(page) == []
     assert page.evaluate("window.__almResults()")["rows"] == []
 
 
 def test_a05_export_includes_the_e_value_widget(page):
-    page.wait_for_function("typeof window.__almResults === 'function'")
+    _wait(page, "typeof window.__almResults === 'function'")
     ev = page.evaluate("window.__almResults()")["e_value"]
     assert ev["measure"] == "RR" and abs(ev["e_point"] - 3.414214) < 1e-6
 
@@ -270,7 +282,7 @@ def xpage(browser_ctx):
         body="window.LocalLLM = { attachPanel: function (host, o) { window.__onResult = o.onResult; } };"))
     pg.goto(url)
     pg.wait_for_selector("#results-body tr")
-    pg.wait_for_function("typeof window.__onResult === 'function'")
+    _wait(pg, "typeof window.__onResult === 'function'")
     yield pg
     ctx.close()
 
