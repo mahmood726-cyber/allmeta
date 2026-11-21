@@ -105,7 +105,7 @@
   <header>
     <h1>Risk of Bias &mdash; automated suggestions</h1>
     <p>Paste each study's abstract / methods (or pull from <strong>Extract</strong>). The free in-browser engine reads Cochrane signalling-question cues and <strong>suggests</strong> a per-domain judgment with the <strong>sentence it keyed on</strong> &mdash; for <strong>RoB&nbsp;2</strong> (randomized trials) and <strong>ROBINS-I</strong> (non-randomized). Every suggestion is <em>yours to confirm or override</em>; nothing is finalised automatically.</p>
-    <span class="bench" id="bench-badge">Benchmarked: 62.6 vs RobotReviewer 56.7 Macro-F1 (RoBBR, measured) &mdash; see footer</span>
+    <span class="bench" id="bench-badge">RoB&nbsp;1 phrase benchmark: 62.6 vs RobotReviewer 56.7 Macro-F1 (RoBBR, measured; not distinguishable) &mdash; see footer</span>
   </header>
   <main id="main">
     <section class="panel" id="intake">
@@ -172,7 +172,7 @@
     </section>
   </main>
   <footer>
-    <p><strong>How it works.</strong> A transparent phrase model scores each domain from Cochrane-Handbook signalling cues (e.g. <em>"computer-generated"</em> &rarr; low sequence-generation risk; <em>"date of birth"</em> &rarr; high; <em>"opaque sealed envelopes"</em> &rarr; low allocation-concealment risk). It returns a suggested low / some-concerns / high judgment with the sentence it matched. <strong>It never finalises a judgment</strong> &mdash; you confirm or override every domain, exactly as in the Screen app. RoB 2 verdicts use the deterministic Sterne&nbsp;2019 (<em>BMJ</em> 366:l4898) algorithm over the signalling answers; ROBINS-I uses the Sterne&nbsp;2016 domain scaffold.</p>
+    <p><strong>How it works.</strong> A transparent phrase model scores each domain from Cochrane-Handbook signalling cues (e.g. <em>"computer-generated"</em> &rarr; low sequence-generation risk; <em>"date of birth"</em> &rarr; high; <em>"opaque sealed envelopes"</em> &rarr; low allocation-concealment risk). It returns a suggested low / some-concerns / high judgment with the sentence it matched. <strong>It never finalises a judgment</strong> &mdash; you confirm or override every domain, exactly as in the Screen app. RoB 2 verdicts come from simplified rules over the signalling answers, after the structure of Sterne&nbsp;2019 (<em>BMJ</em> 366:l4898) but not the full published algorithm (for example, domain 3 cannot return high, and domain 4 cannot return high from the automatic answers); ROBINS-I uses a simplified Sterne&nbsp;2016 domain scaffold. The benchmark below scored RoB&nbsp;1 phrase predictions, not these RoB&nbsp;2 / ROBINS-I assessments.</p>
     <p id="bench-footer"><strong>Honest benchmark.</strong> Engine measured against the <a href="https://aclanthology.org/2025.emnlp-main.160/">RoBBR</a> gold corpus (Cochrane review authors' judgments, CC-BY-NC). On the RoBBR RobotReviewer subset (n=99, binary low vs high/unclear, Macro-F1): <strong>allmeta 62.6</strong> vs <strong>RobotReviewer 56.7</strong> (allmeta 95% CI 51.0 to 71.7; RobotReviewer 48.3 to 65.1): each average lies inside the other&rsquo;s interval, so under the pre-registered comparison rule no superiority is claimed; higher on 3 of 4 domains, lower on allocation concealment (60 vs 75); still below frontier LLMs (GPT-4o 65.6, Claude Sonnet-3.5 67.5). Reproduce: <code>node benchmark/run_rob_benchmark.mjs</code>. All numbers [m] = measured.</p>
   </footer>
 
@@ -188,9 +188,20 @@
     var state = load() || { studies: [] };
 
     function load() { try { var p = JSON.parse(localStorage.getItem(KEY)); if (p && Array.isArray(p.studies)) return p; } catch (e) {} return null; }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    // save(): storage can be denied or full; the work stays on the page, but the user must be told it
+    // will not survive a reload (once per failure streak, not on every edit).
+    var _saveWarned = false;
+    function save() {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); _saveWarned = false; }
+      catch (e) { if (!_saveWarned) { _saveWarned = true; toast("Assessments not saved: this browser blocked or filled its storage. Export CSV / push to synthesis to keep them."); } }
+    }
     function uid() { return "s" + (state.studies.length + 1) + "_" + state.studies.reduce(function (a) { return a + 1; }, 0) + "_" + (state._n = (state._n || 0) + 1); }
-    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    // esc: also escapes the apostrophe -- several attributes are single-quoted (title='...'), where
+    // "O'Brien" used to end the attribute early.
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    // csvCell: formula-leading cells (= + @ tab CR) get a ' prefix (a leading minus is left alone so
+    // negative numbers stay numbers); quote when the cell holds a quote, comma, LF or bare CR.
+    function csvCell(c) { var s = String(c == null ? "" : c); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 
     var NAMES = { low: "Low", some: "Some concerns", high: "High", moderate: "Moderate", serious: "Serious", critical: "Critical", crit: "Critical", ni: "No info", unclear: "Unclear" };
     var ROB2_OPTS = [["low", "Low"], ["some", "Some concerns"], ["high", "High"]];
@@ -543,7 +554,7 @@
         });
         rows.push([st.label, st.framework, "overall", "Overall", overallVerdict(st), "", "", ""]);
       });
-      var csv = rows.map(function (r) { return r.map(function (c) { var s = String(c == null ? "" : c); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }).join("\n");
+      var csv = rows.map(function (r) { return r.map(csvCell).join(","); }).join("\n");
       downloadBlob(csv, "rob-assessment.csv", "text/csv");
     });
 
@@ -631,10 +642,11 @@
     }
 
     // BYO-key (optional). Minimal; deterministic core does not need this.
-    document.getElementById("ai-key").value = localStorage.getItem("rob-ai-key") || "";
+    // guarded: an unguarded read here threw when storage is denied and stopped the rest of the page script
+    try { document.getElementById("ai-key").value = localStorage.getItem("rob-ai-key") || ""; } catch (e) {}
     document.getElementById("btn-ai-run").addEventListener("click", function () {
       var key = document.getElementById("ai-key").value.trim();
-      if (key) localStorage.setItem("rob-ai-key", key);
+      if (key) { try { localStorage.setItem("rob-ai-key", key); } catch (e) { toast("Key not saved: browser storage is blocked."); return; } }
       toast("BYO-key live calls are a thin wrapper — for reliability, prefer the handoff export/import above. (Key saved locally.)");
     });
 

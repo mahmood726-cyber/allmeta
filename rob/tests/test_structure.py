@@ -100,3 +100,15 @@ def test_no_unsupported_superiority_claim():
     h = _h()
     assert not re.search(r"\bbeats?\b|\boutperform", h, re.I), "unsupported superiority claim in rob/index.html"
     assert "no superiority is claimed" in h
+
+
+def test_scope_of_benchmark_and_rules_stated():
+    """P39 L01: the benchmark scored RoB 1 phrase predictions (RoBBR), while the page shows RoB 2 and
+    ROBINS-I assessments from simplified rules (RoB 2 domain 3 cannot return high). The badge must say
+    what was benchmarked, and the footer must not present the judges as the published Sterne 2019 algorithm."""
+    import re
+    h = _h()
+    badge = re.search(r'id="bench-badge">(.*?)</span>', h, re.S).group(1)
+    assert "RoB 1" in badge or "RoB&nbsp;1" in badge, badge
+    assert "deterministic Sterne" not in h
+    assert "simplified" in re.search(r"<footer>(.*?)</footer>", h, re.S).group(1)

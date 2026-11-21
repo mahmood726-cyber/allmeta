@@ -41,9 +41,10 @@
 <main id="main">
   <section class="panel">
     <h2>Studies</h2>
-    <label>One row per trial: <code>label, RMST difference, SE</code> (same time units, same horizon τ*).
-      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    <label>One row per trial: <code>label, RMST difference, SE</code> &mdash; exactly three comma-separated fields, decimal points (same time units, same horizon τ*).
+      <textarea id="f-data" spellcheck="false" aria-label="Study data" aria-describedby="parse-notes"></textarea>
     </label>
+    <div id="parse-notes" class="note" role="status" aria-live="polite" hidden style="margin-top:.4rem;color:#9a3b1b"></div>
     <label style="margin-top:.6rem">Model
       <select id="f-method" aria-label="Model"><option value="REML" selected>Random-effects (REML)</option><option value="PM">Random-effects (PM)</option><option value="DL">Random-effects (DL)</option><option value="FE">Fixed-effect</option></select>
     </label>
@@ -60,7 +61,7 @@
   </section>
 </main>
 <footer>
-  Inverse-variance random/fixed-effect pooling of RMST differences via <code>shared/ma-core.js</code> (DL/PM/REML τ², t<sub>k−1</sub> prediction interval), identical to <code>metafor::rma(yi = rmst_diff, sei)</code> (verified — <code>rmst-ma-parity.spec.mjs</code>). RMST methodology: Royston &amp; Parmar 2013, <em>BMC Med Res Methodol</em> 13:152; pooling per Weir et al. 2018, <em>Stat Med</em> 37:2105. Pool differences (not ratios); always report the horizon τ*.
+  Inverse-variance random/fixed-effect pooling of RMST differences via <code>shared/ma-core.js</code> (DL/PM/REML τ², Wald 95% CI). The estimate, SE, CI, τ² and I² follow <code>metafor::rma(yi = rmst_diff, sei, method)</code> (z test); agreement is checked on the example to 4&ndash;5 decimals (<code>rmst-ma-parity.spec.mjs</code>) and per analysis at display precision by <em>Check in R</em> below. The 95% prediction interval uses t(k−1) (Cochrane Handbook v6.5), not the normal quantile of metafor&rsquo;s <code>predict()</code> default. RMST methodology: Royston &amp; Parmar 2013, <em>BMC Med Res Methodol</em> 13:152; pooling per Weir et al. 2018, <em>Stat Med</em> 37:2105. Pool differences (not ratios); always report the horizon τ*.
 </footer>
 <script>
   (function () {
@@ -74,14 +75,62 @@
     window.__almRmstRState = function () { return _rstate; };
     window._almLastRMST = function () { return _last; };
 
-    function parse(text) {
-      var rows = [];
-      String(text || "").split(/\r?\n/).forEach(function (line) {
+    // parse(text, rejected): rows used for pooling. Every non-blank, non-comment line that is NOT used is
+    // pushed onto `rejected` as {line, text, reason}, so the page can name it (no silent subset analysis).
+    function parse(text, rejected) {
+      var rows = []; rejected = rejected || [];
+      // strictNum: a field must be a complete decimal number; parseFloat reads a numeric prefix
+      // ("1.2abc" -> 1.2, "0.4e" -> 0.4, "0x1" -> 0), which silently analysed numbers nobody typed.
+      function strictNum(c) { return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c) ? Number(c) : NaN; }
+      // splitRow: comma split OUTSIDE double quotes; a quoted field is unquoted ("" -> "). null if a quote is unbalanced.
+      function splitRow(t) {
+        var f = [], q = [], cur = "", inQ = false, wasQ = false;
+        for (var k = 0; k < t.length; k++) {
+          var ch = t.charAt(k);
+          if (inQ) { if (ch === '"') { if (t.charAt(k + 1) === '"') { cur += '"'; k++; } else inQ = false; } else cur += ch; }
+          else if (ch === '"' && cur.trim() === "" && !wasQ) { inQ = true; wasQ = true; cur = ""; }
+          else if (ch === ",") { f.push(wasQ ? cur : cur.trim()); q.push(wasQ); cur = ""; wasQ = false; }
+          else if (!(wasQ && /\s/.test(ch))) cur += ch;
+        }
+        if (inQ) return null;
+        f.push(wasQ ? cur : cur.trim()); q.push(wasQ);
+        return { f: f, q: q };
+      }
+      var YEAR = /^(19|20)\d\d$/, seenData = false;
+      String(text || "").split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
-        var p = t.split(/\s*,\s*/); if (p.length < 3) return;
-        var se = parseFloat(p[p.length - 1]), diff = parseFloat(p[p.length - 2]);
-        var label = p.slice(0, p.length - 2).join(", ") || ("Trial " + (rows.length + 1));
-        if (isFinite(diff) && isFinite(se) && se > 0) rows.push({ label: label, diff: diff, se: se, v: se * se });
+        function refuse(reason) { rejected.push({ line: i + 1, text: t, reason: reason }); }
+        var sp = splitRow(t);
+        if (!sp) { refuse("has an unbalanced double quote"); return; }
+        var p = sp.f, first = !seenData; seenData = true;
+        // Header row: only the first data line, 3 fields, and no digit at all in the difference and SE fields
+        // ("label, RMST difference, SE", "study,rmst_diff,se"). It is ignored, not counted as a refused row.
+        if (first && p.length === 3 && !/\d/.test(p[1]) && !/\d/.test(p[2])) return;
+        // Field count. The last two fields are difference and SE; everything before them is the label.
+        // A double-quoted label is one field, so exactly 3 fields are then required. An UNQUOTED label may
+        // contain commas, but a horizon column ("A, 12, 1.2, 0.4") or decimal commas ("C, 1,2, 0,4") must not
+        // be re-read as other numbers. They are told apart by the label fields: if the first, or any later one,
+        // is a bare decimal number other than a 4-digit year 1900-2099, the row is refused. So
+        // "Smith et al., 2019, 1.2, 0.4" is accepted; "A, 12, 1.2, 0.4" and "C, 1,2, 0,4" (label "C, 1, 2") are not.
+        if (p.length < 3) { refuse("has " + p.length + " field" + (p.length === 1 ? "" : "s") + "; expected label, RMST difference, SE"); return; }
+        if (p.length > 3) {
+          if (sp.q[0]) { refuse("has " + p.length + " fields after a quoted label; expected exactly 3: label, RMST difference, SE (no extra columns)"); return; }
+          var lab = p.slice(0, p.length - 2);
+          var bare = lab.filter(function (x, j) { return (j > 0 || lab.length > 1) && isFinite(strictNum(x)) && !YEAR.test(x); });
+          if (bare.length) {
+            refuse("has " + p.length + " fields with a bare number (" + bare.join(", ") + ") before the difference: an extra column or decimal commas? Expected label, RMST difference, SE with decimal points; put a label containing commas in double quotes"); return;
+          }
+          p = [lab.join(", "), p[p.length - 2], p[p.length - 1]];
+        }
+        var se = strictNum(p[2]), diff = strictNum(p[1]);
+        var label = p[0] || ("Trial " + (rows.length + 1));
+        if (!isFinite(diff)) { refuse("RMST difference \"" + p[p.length - 2] + "\" is not a decimal number"); return; }
+        if (!(isFinite(se) && se > 0)) { refuse("SE \"" + p[p.length - 1] + "\" is not a positive decimal number"); return; }
+        // The variance SE^2 must itself be a positive finite number: 1e200 squares to Infinity and 1e-200 to 0,
+        // either of which made ma-core's weights throw (or go non-finite) for the whole analysis.
+        var v = se * se;
+        if (!(isFinite(v) && v > 0)) { refuse("SE " + p[2] + " squared is outside the numerical range; rescale the time units"); return; }
+        rows.push({ label: label, diff: diff, se: se, v: v });
       });
       return rows;
     }
@@ -90,11 +139,24 @@
       // Clear first: if this run fails (e.g. the pooling throws), neither the R check nor the export may
       // offer the previous analysis as if it were the current one.
       _last = null; _rstate = null;
-      var rows = parse(document.getElementById("f-data").value);
+      if (window.AlmRmstRCheck) window.AlmRmstRCheck.invalidate();   // a shown R verdict belongs to the previous analysis
+      var rejected = [];
+      var rows = parse(document.getElementById("f-data").value, rejected);
+      showRejected(rejected, rows.length);
       var method = document.getElementById("f-method").value;
       var head = document.getElementById("headline"), body = document.getElementById("res-body");
       if (rows.length < 2) { head.textContent = "Enter at least 2 trials."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; _rstate = null; return; }
-      var r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var r;
+      try { r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true }); }
+      catch (e) {
+        // A failed fit must not leave the PREVIOUS analysis on screen as if it were this one.
+        head.textContent = "Pooling failed for these inputs: " + (e && e.message || String(e)); body.innerHTML = ""; document.getElementById("forest-host").innerHTML = "";
+        return;
+      }
+      if (![r.mu, r.se, r.ciLo, r.ciHi, r.tau2].every(isFinite)) {
+        head.textContent = "Pooling failed for these inputs: the result is outside the numerical range (rescale the time units)."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = "";
+        return;
+      }
       var w = rows.map(function (s) { return 1 / (s.v + r.tau2); }), sw = w.reduce(function (a, b) { return a + b; }, 0);
       head.innerHTML = "k = " + rows.length + " · pooled RMST difference = <strong>" + fmt(r.mu) + "</strong> [" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]"
         + " · τ² = " + fmt(r.tau2, 4) + " · I² = " + fmt(r.I2, 1) + "%"
@@ -106,6 +168,14 @@
       _rstate = { method: method, rows: rows.map(function (s) { return { label: s.label, diff: s.diff, se: s.se }; }),
         page: { mu: r.mu, se: r.se, ciLo: r.ciLo, ciHi: r.ciHi, tau2: r.tau2, I2: r.I2, piLo: r.piLo, piHi: r.piHi, weights: w.map(function (x) { return 100 * x / sw; }) } };
       _last = { _schema: "rmst-ma-results-v1", k: rows.length, method: method, mu: r.mu, se: r.se, ciLo: r.ciLo, ciHi: r.ciHi, tau2: r.tau2, I2: r.I2, piLo: r.piLo, piHi: r.piHi, studies: rows.map(function (s) { return { label: s.label, diff: s.diff, se: s.se }; }) };
+    }
+
+    function showRejected(rej, nUsed) {
+      var el = document.getElementById("parse-notes");
+      if (!rej.length) { el.textContent = ""; el.hidden = true; return; }
+      el.hidden = false;
+      el.innerHTML = "<strong>" + rej.length + " of " + (rej.length + nUsed) + " rows not used:</strong><ul style='margin:.2rem 0 0 1.1rem;padding:0'>" +
+        rej.map(function (x) { return "<li>line " + x.line + ": " + esc(x.reason) + "</li>"; }).join("") + "</ul>";
     }
 
     function forest(rows, r) {
