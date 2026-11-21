@@ -34,8 +34,15 @@
   // (e.g. unitless line-height must scale with each label's font size).
   const cleanRoot=document.getElementById('plus-plot'),rootTemplate=cleanRoot.cloneNode(false),ancestors=[];
   for(let n=cleanRoot.parentElement;n;n=n.parentElement)ancestors.unshift(n.cloneNode(false));
-  const cleanSheets=[...document.styleSheets].map(sheet=>[...sheet.cssRules].map(r=>r.cssText).join('\n')).join('\n');
+  // A page opened from a local file (file://) may not read the rules of its linked
+  // stylesheets (SecurityError). Reading them unguarded threw here at load, so the panel
+  // never mounted and the user saw an empty box. Without the authored CSS the style
+  // contract cannot be checked, so it refuses with the reason instead (fail closed).
+  const unreadableSheets=[];
+  const cleanSheets=[...document.styleSheets].map(sheet=>{try{return [...sheet.cssRules].map(r=>r.cssText).join('\n');}catch(e){unreadableSheets.push(sheet.href||'inline stylesheet');return '';}}).join('\n');
+  const fileNote='The extras check compares the plot with the page\'s own stylesheet rules, which the browser does not expose to a page opened from a local file (file://). Open the hosted page, or serve this folder over http (for example python -m http.server) and open it from localhost.';
   function styleContract(svg,a) {
+    if(unreadableSheets.length)throw Error(fileNote+' Unreadable: '+unreadableSheets.map(h=>h.split('/').slice(-2).join('/')).join(', '));
     const host=document.createElement('div');
     host.style.cssText='position:fixed;left:-100000px;top:0;width:'+document.documentElement.clientWidth+'px';
     const shadow=host.attachShadow({mode:'closed'}),css=document.createElement('style');
@@ -278,4 +285,5 @@ cat('ALMJSON:{',paste(paste0('"',names(out),'":',vapply(names(out),emit,'')),col
   const adapter={app:'gosh-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Extras scope and reproduction',runUrl:'validate/plus/README.md'},live:{packages:['metafor'],paperVersions:{metafor:'5.2-1'},currentState,buildScript,appValues:s=>s.values,compare:{tolerance:{default:1e-9},kind:{}}},corpus:{files:manifest.files,mode:'quick',quickChecks:manifest.checks,run:replay}};
   Object.defineProperty(adapter,'axisLabels',{get:()=>axisLabels});adapter.compareDisplay=compare;window.AlmGoshPlusAdapter=adapter;window.AlmGoshPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
   for(const button of document.querySelectorAll('#alm-plus-validate button')){if(button.textContent==='Replay published corpus (stored references)')button.textContent='Re-run extras validation';if(button.textContent==='Validate this analysis in R')button.textContent='Validate the extras in R';}
+  if(unreadableSheets.length){const note=document.createElement('p');note.setAttribute('role','note');note.textContent=fileNote;document.getElementById('alm-plus-validate').prepend(note);}
 })();
