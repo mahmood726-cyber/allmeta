@@ -38201,6 +38201,14 @@ function runAnalysis() {
  }
 
  APP.config.effectMeasure = document.getElementById('effectMeasure').value;
+ // LIM-P60 L02: the two-stage pipeline estimates a log odds ratio (binary), a mean difference (continuous)
+ // and a Cox log hazard ratio (time-to-event). RR, RD and SMD used to be fitted as the log OR / MD and shown
+ // under the chosen label (e.g. exp(log OR) as "Pooled RR"); they are refused instead.
+ if (['RR', 'RD', 'SMD'].indexOf(APP.config.effectMeasure) !== -1) {
+ const fitted = APP.config.outcomeType === 'continuous' ? 'Mean Difference (MD)' : 'Odds Ratio (OR)';
+ showNotification('Run Analysis does not fit ' + APP.config.effectMeasure + ': for this outcome it estimates the ' + fitted + '. Choose ' + fitted + ' as the effect measure.', 'warning');
+ return;
+ }
 
  APP.config.reMethod = document.getElementById('reMethod').value;
 

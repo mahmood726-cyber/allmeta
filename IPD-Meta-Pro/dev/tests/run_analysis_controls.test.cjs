@@ -43,5 +43,12 @@ check('control: two-stage continuous MD is fitted', !!(analyse(cont, 'continuous
 { const o = analyse(bin, 'binary', 'OR', 'both');
   check('L01: "Both approaches" is refused with a message, not run as two-stage only', refused(o, /two-stage/i), JSON.stringify(o.notes) + ' results=' + !!o.results); }
 
+// L02
+for (const [data, outcome, measure] of [[bin, 'binary', 'RR'], [bin, 'binary', 'RD'], [cont, 'continuous', 'SMD']]) {
+  const o = analyse(data, outcome, measure, 'two-stage');
+  check('L02: ' + outcome + ' "' + measure + '" is refused with a message, not fitted as ' + (outcome === 'binary' ? 'a log odds ratio' : 'a mean difference') + ' under that label',
+    refused(o, new RegExp(measure)), JSON.stringify(o.notes) + ' results=' + !!o.results);
+}
+
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('all passed');
