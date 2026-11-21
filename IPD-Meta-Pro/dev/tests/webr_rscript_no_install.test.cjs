@@ -26,7 +26,9 @@ const installs = s.split('\n').filter(l => /install\.packages\s*\(/.test(l) && !
 check('the script contains no executable install.packages() call', installs.length === 0, installs.join(' | '));
 check('the script checks for metafor and survival before using them', /requireNamespace/.test(s.split('library(metafor)')[0] || '') && /"metafor"/.test(s) && /"survival"/.test(s));
 const R = process.env.RSCRIPT;
+let ranR = false;
 if (installs.length === 0 && R && fs.existsSync(R)) {
+  ranR = true;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipd-noinst-'));
   try {
     const f = path.join(dir, 'v.R'); fs.writeFileSync(f, s);
@@ -43,4 +45,7 @@ if (installs.length === 0 && R && fs.existsSync(R)) {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 } else console.log('SKIP R run (' + (installs.length ? 'script would install packages' : 'RSCRIPT not set') + ')');
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
+// A check that did not run is not a pass (review of PR #655): without R the stop-on-missing-package
+// and control runs did not happen, so the test reports SKIPPED and exits 2, never "all passed".
+if (!ranR) { console.log('SKIPPED: the R runs need RSCRIPT=<path to Rscript>; the static checks above passed'); process.exit(2); }
 console.log('all passed');
