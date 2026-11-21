@@ -62,6 +62,14 @@ test("F02: labels may contain commas; only an all-numeric surplus line is left o
   const r = await enter(p, SIX.concat(["0,2, 0,3"]).join("\n"));
   assert.strictEqual(r.snap.yi.length, 6, "decimal-comma line was fitted as yi=0, SE=2");
   assert.match(r.interp, /Left out.*line 7/, r.interp);
+  // decimal commas WITH a label (delta review of #651): 0|20|0|10|Smith must not fit as effect 0, SE 20
+  const dl = await enter(p, SIX.concat(["0,20, 0,10, Smith"]).join("\n"));
+  assert.strictEqual(dl.snap.yi.length, 6, "labelled decimal-comma line was fitted as yi=0, SE=20");
+  assert.match(dl.interp, /Left out.*line 7/, dl.interp);
+  // an unquoted all-number label is left out (and named); quoted it is kept
+  const nl = await enter(p, SIX.concat(["0.20, 0.10, 12, 3", '0.25, 0.10, "12, 3"']).join("\n"));
+  assert.strictEqual(nl.snap.yi.length, 7);
+  assert.match(nl.interp, /Left out.*line 7;/, nl.interp);
   const bad = await enter(p, SIX.concat(["0.4oops, 0.2"]).join("\n"));
   assert.match(bad.interp, /Left out.*line 7.*6 rows fitted/, bad.interp);
   const ok = await enter(p, SIX.concat(["0.5\t0.2\ttrial X"]).join("\n"));

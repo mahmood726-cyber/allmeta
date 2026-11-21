@@ -65,7 +65,7 @@
       <h2>Studies</h2>
       <label><span class="lbl">One study per line: <code>effect, SE</code> (analysis scale, e.g. logOR)</span>
         <textarea id="data" spellcheck="false" aria-label="Study effect and SE, one per line"></textarea>
-        <span class="hint">Optional 3rd field = label. Lines starting with # are ignored. k ≥ 2.</span>
+        <span class="hint">Optional 3rd field = label (may contain commas; a label made only of numbers and commas, e.g. 12, 3, must be "quoted" or the line is left out as decimal commas). Decimal point, not comma. Lines starting with # are ignored. k ≥ 2.</span>
       </label>
       <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap">
         <button type="button" id="btn-run" class="primary">Compare estimators</button>
@@ -109,12 +109,13 @@
       text.split(/\r?\n/).forEach(function (l, i) {
         var t = l.trim(); if (!t || t[0] === "#") return;
         // Fields: effect, SE, then an optional label = everything after the SE (it may contain commas, quoted
-        // or not: "Smith, 2010"). Tab-separated lines split on tabs. A line with surplus fields that are ALL
-        // numbers is not in that shape (decimal commas, "0,2, 0,3", once read as effect 0 and SE 2): left out.
-        var f = t.indexOf("\t") >= 0 ? t.split("\t") : csvFields(t);
+        // or not: "Smith, 2010"). Tab-separated lines split on tabs. A comma line with more than 3 fields whose
+        // 3rd AND 4th fields are numbers is not in that shape: decimal commas ("0,2, 0,3" or "0,20, 0,10, Smith",
+        // once read as effect 0 and SE 2 / 20). It is left out and named; a numeric label must be quoted ("12, 3").
+        var tabbed = t.indexOf("\t") >= 0, f = tabbed ? t.split("\t") : csvFields(t);
         var y = num(f[0]), se = num(f[1]);
-        var allNumeric = f.length > 3 && f.every(function (x) { return NUM.test(String(x).trim()); });
-        if (allNumeric || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        var decComma = !tabbed && f.length > 3 && NUM.test(String(f[2]).trim()) && NUM.test(String(f[3]).trim());
+        if (decComma || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
         yi.push(y); vi.push(se * se);
       });
       return { yi: yi, vi: vi, errs: errs };
