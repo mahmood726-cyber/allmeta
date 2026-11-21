@@ -235,3 +235,22 @@ def test_unsolved_futility_design_is_refused_not_silently_dropped():
         console.log(JSON.stringify(r.infoInflation));
     """)
     assert abs(ok - 1.0607421394929404) < 1e-12
+
+
+@pytest.mark.parametrize("t,fam,sided,R", [
+    ([0.446, 0.994], "OBF", 2, 1.0558722211324496), ([0.446, 0.994], "OBF", 1, 1.0615841289030505),
+    ([0.446, 0.994], "POCOCK", 2, 1.2735165523269103), ([0.446, 0.994], "POCOCK", 1, 1.29537730683951),
+    ([0.398, 0.789, 0.975], "OBF", 2, 1.1612556594560737), ([0.398, 0.789, 0.975], "POCOCK", 2, 1.4029013611204575),
+])
+def test_inflation_root_next_to_a_non_finite_grid_point_is_found(t, fam, sided, R):
+    # Delta review of PR #648: the inflation objective g(R) can be finite at one 0.02 grid point and non-finite at the
+    # next (here g(1.04) = +0.147, g(1.06) = NaN for t = (0.446, 0.994)) with the real root in between. c5415926
+    # skipped the non-finite point, lost the root and refused the design. Requirement: such a root is found (values:
+    # the pre-c5415926 engine, 7efcb7b3, which reached it by bisecting towards the NaN point).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary({json.dumps([{"t": x, "z": 1} for x in t])},
+                                    {{ alpha: 0.05, beta: 0.20, family: "{fam}", sided: {sided}, futility: true }});
+        console.log(JSON.stringify(r.infoInflation));
+    """)
+    assert out is not None and abs(out - R) < 1e-9, out

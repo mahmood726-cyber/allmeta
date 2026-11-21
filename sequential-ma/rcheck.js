@@ -40,7 +40,7 @@
     L.push("");
     L.push("## Inputs (as analysed by the page)");
     L.push("alpha <- " + num(state.alpha) + "        # two-sided");
-    L.push("family <- " + str(state.family) + "   # OBF | POCOCK | LINEAR (alpha spending; beta spending uses the same family)");
+    L.push("family <- " + str((state.result && state.result.family) || state.family) + "   # OBF | POCOCK | LINEAR (alpha spending; beta spending uses the same family)");
     L.push("futility <- " + (state.futility ? "TRUE" : "FALSE") + "   # non-binding beta-spending futility (RTSA convention), beta = 0.20");
     L.push("beta <- 0.20");
     if (tz) {
@@ -141,18 +141,28 @@
     "}",
     "# Inflation R: the first sign change of g at or above R = 0.9 on a 0.02 grid (the page's search), then a root.",
     "# When the design ends past full information (t > 1) the root can lie below 0.9, so if there is none above,",
-    "# the grid is searched downwards from 0.9 to 0.02 as well. Grid points where the design cannot be solved are",
-    "# skipped; NA means no inflation factor was found.",
+    "# the grid is searched downwards from 0.9 to 0.02 as well. g can be finite at one grid point and NA at the next",
+    "# with the root in between: at every finite/NA step the edge of the finite region is found by bisection and its",
+    "# sign tested. NA means no inflation factor was found.",
     "inflation <- function(tt, eff, theta, rm) {",
-    "  g <- function(R) eff[length(tt)] - beta_bounds(tt, eff, theta, R, rm)[length(tt)]",
+    "  g <- function(R) { v <- eff[length(tt)] - beta_bounds(tt, eff, theta, R, rm)[length(tt)]; if (is.finite(v)) v else NA_real_ }",
+    "  edge <- function(fin, non) { for (it in 1:200) { if (abs(non - fin) <= 1e-13) break; m <- (fin + non) / 2",
+    "    if (is.na(g(m))) non <- m else fin <- m }; fin }",
+    "  brk <- function(x, gx, y, gy) { if (gy == 0) return(y); if ((gx > 0) != (gy > 0)) return(uniroot(g, sort(c(x, y)), tol = 1e-12)$root); NA }",
     "  scan <- function(grid) {",
-    "    a <- NA; ga <- NA",
+    "    a <- NA; ga <- NA; prev <- NA",
     "    for (bb in grid) {",
-    "      gb <- g(bb)",
-    "      if (is.na(gb)) { a <- NA; ga <- NA; next }",
+    "      gb <- g(bb); r <- NA",
+    "      if (is.na(gb)) {",
+    "        if (!is.na(ga)) { e <- edge(a, bb); r <- brk(a, ga, e, g(e)) }",
+    "        a <- NA; ga <- NA; prev <- bb",
+    "        if (!is.na(r)) return(r)",
+    "        next",
+    "      }",
     "      if (gb == 0) return(bb)",
-    "      if (!is.na(ga) && (ga > 0) != (gb > 0)) return(uniroot(g, sort(c(a, bb)), tol = 1e-12)$root)",
-    "      a <- bb; ga <- gb",
+    "      if (!is.na(ga)) r <- brk(a, ga, bb, gb) else if (!is.na(prev)) { e <- edge(bb, prev); r <- brk(bb, gb, e, g(e)) }",
+    "      if (!is.na(r)) return(r)",
+    "      a <- bb; ga <- gb; prev <- bb",
     "    }",
     "    NA",
     "  }",

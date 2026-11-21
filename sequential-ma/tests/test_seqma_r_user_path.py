@@ -172,3 +172,24 @@ def test_downloaded_script_carries_current_inputs_and_matches_in_r(server, tmp_p
             assert got == [row[j] for row in rows], (nm, got)
     ok, total = _match(_rscript(f))
     assert ok == total == n
+
+
+@pytest.mark.parametrize("name,t,family,futility", [
+    ("root beside NaN grid point, 2 looks", [0.446, 0.994], "OBF", True),
+    ("root beside NaN grid point, 3 looks", [0.398, 0.789, 0.975], "OBF", True),
+    ("Pocock spelled as the engine accepts it", [0.3, 0.7, 1.0], "Pocock", False),
+    ("Pocock spelled as the engine accepts it, futility", [0.3, 0.7, 1.0], "Pocock", True),
+])
+def test_r_script_agrees_for_designs_from_the_pr648_delta_review(tmp_path, name, t, family, futility):
+    # Delta review of PR #648. (1) The futility inflation objective can be finite at one 0.02 grid point and NaN at
+    # the next with the root in between; the R check's inflation() returned NA there (futility NOT CHECKED) and the
+    # engine refused. Both now locate the edge of the finite region and test its sign. (2) The script wrote the
+    # family exactly as the caller spelled it ("Pocock"), which the engine accepts case-insensitively but R's
+    # switch() did not, so efficacy() stopped with "missing value where TRUE/FALSE needed". It now writes the
+    # engine's normalised family. Requirement: a fresh Rscript prints a plain MATCH n/n for each.
+    rows = [{"kind": "tz", "t": x, "z": z} for x, z in zip(t, [0.2, 0.9, 1.1])]
+    _node_script([{"rows": rows, "alpha": 0.05, "family": family, "futility": futility}], tmp_path)
+    out = _rscript(tmp_path / "case0.R")
+    last = out.strip().splitlines()[-1]
+    m = re.match(r"^MATCH (\d+)/(\d+)$", last)
+    assert m and m.group(1) == m.group(2), out

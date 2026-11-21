@@ -227,17 +227,38 @@
     var K = t.length, g = function (R) { return eff[K - 1] - _betaBounds(t, eff, beta, bfam, theta, R, rm)[K - 1]; };
     // First sign change of g on a 0.02 grid from 0.9 upward to 10, then a root. When the design ends past full
     // information (t > 1) the root lies below 0.9, so if there is none above, the grid is searched downward from
-    // 0.9 to 0.02 as well -- the same search as the R check (sequential-ma/rcheck.js inflation()). Grid points
-    // where g is not finite are skipped. NaN means no inflation factor exists on that range.
-    // (the grid is accumulated b += step exactly as before, so a root found above 0.9 is bit-identical to the old one)
+    // 0.9 to 0.02 as well -- the same search as the R check (sequential-ma/rcheck.js inflation()). g can be finite
+    // at one grid point and not finite at the next with the root in between, so at every finite/non-finite step the
+    // edge of the finite region is located by bisection and its sign tested; a sign change there brackets the root.
+    // NaN means no inflation factor exists on that range.
+    // (the grid is accumulated b += step exactly as before, so a root between two finite points is bit-identical)
+    function edge(fin, non) {                         // last point on the finite side between fin and non
+      for (var it = 0; it < 200 && Math.abs(non - fin) > 1e-13; it++) {
+        var mid = (fin + non) / 2;
+        if (isFinite(g(mid))) fin = mid; else non = mid;
+      }
+      return fin;
+    }
+    function bracket(x, gx, y, gy) {                  // x, y finite points with g values gx, gy
+      if (gy === 0) return y;
+      if ((gx > 0) !== (gy > 0)) return _solve(g, Math.min(x, y), Math.max(x, y));
+      return NaN;
+    }
     function scan(from, to, step) {
-      var a = NaN, ga = NaN;
+      var a = NaN, ga = NaN, prev = NaN, prevFinite = false;
       for (var b = from; step > 0 ? b <= to : b >= to; b += step) {
-        var gb = g(b);
-        if (!isFinite(gb)) { a = NaN; ga = NaN; continue; }
+        var gb = g(b), r = NaN;
+        if (!isFinite(gb)) {
+          if (prevFinite) { var e = edge(a, b); r = bracket(a, ga, e, g(e)); }   // finite -> non-finite
+          a = NaN; ga = NaN; prevFinite = false; prev = b;
+          if (isFinite(r)) return r;
+          continue;
+        }
         if (gb === 0) return b;
-        if (isFinite(ga) && (ga > 0) !== (gb > 0)) return _solve(g, Math.min(a, b), Math.max(a, b));
-        a = b; ga = gb;
+        if (prevFinite) r = bracket(a, ga, b, gb);
+        else if (isFinite(prev)) { var e2 = edge(b, prev); r = bracket(b, gb, e2, g(e2)); }   // non-finite -> finite
+        if (isFinite(r)) return r;
+        a = b; ga = gb; prevFinite = true; prev = b;
       }
       return NaN;
     }
