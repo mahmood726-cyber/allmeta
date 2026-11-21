@@ -70,3 +70,11 @@ integration-evidence/
 
 /integration-evidence/
 /limit-ma/inspect-plus.R
+
+# F4 cross-platform verification (scripts/xplat, .github/workflows/xplat-verify.yml) outputs
+/xplat-out/
+/xplat-plots/
+/xplat-logs/
+/xplat-status/
+/result-*.json
+/xplat-results.json

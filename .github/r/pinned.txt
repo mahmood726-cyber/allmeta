@@ -1,0 +1,12 @@
+metafor@5.2-1
+meta@8.5-0
+netmeta@3.7-0
+metadat@1.6-0
+mada@0.5.12
+any::dosresmeta
+mvmeta@1.0.3
+mixmeta@1.2.2
+metasens@1.5-3
+robumeta@2.1
+clubSandwich@0.7.0
+any::jsonlite
