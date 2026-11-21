@@ -116,9 +116,19 @@
       var ratio = document.getElementById("scale").value === "exp";
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
       var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
-      var fe = window.AlmMaCore.pool(p.yi, p.vi, { method: "FE" });
-      var re = window.AlmMaCore.pool(p.yi, p.vi, { method: "PM" });
-      var mult = window.AlmUWLS.uwls(p.yi, p.vi);
+      // The engines throw on inputs outside their numerical range (e.g. SEs whose squares underflow to 0):
+      // report it and clear the earlier table rather than leaving another analysis's results on screen.
+      var fe, re, mult;
+      try {
+        fe = window.AlmMaCore.pool(p.yi, p.vi, { method: "FE" });
+        re = window.AlmMaCore.pool(p.yi, p.vi, { method: "PM" });
+        mult = window.AlmUWLS.uwls(p.yi, p.vi);
+      } catch (e) {
+        out.innerHTML = "";
+        var tr = document.createElement("tr"), td = document.createElement("td"); td.colSpan = 4;
+        td.textContent = "These estimates cannot be computed for these data: " + e.message + "."; tr.appendChild(td); out.appendChild(tr);
+        document.getElementById("interp").textContent = ""; return;
+      }
       if (window.AlmRCheck) window.AlmRCheck.set({ yi: p.yi.slice(), sei: p.vi.map(Math.sqrt), exp: ratio,
         page: { fe: fe, pm: re, uwls: mult } });
       var row = function (name, est, lo, hi, se, het, primary) {
