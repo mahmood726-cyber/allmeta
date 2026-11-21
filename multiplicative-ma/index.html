@@ -93,14 +93,28 @@
     // Whole-field decimal numbers only: parseFloat prefix-parsed "0.4oops" as 0.4.
     var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
     function num(s) { s = (s == null ? "" : String(s)).trim(); return NUM.test(s) ? Number(s) : NaN; }
+    function csvFields(t) {   // comma split that keeps "double-quoted, fields" together
+      var out = [], cur = "", q = false;
+      for (var j = 0; j < t.length; j++) {
+        var c = t[j];
+        if (c === '"') q = !q;
+        else if (c === "," && !q) { out.push(cur); cur = ""; }
+        else cur += c;
+      }
+      out.push(cur);
+      return out;
+    }
     function parse(text) {
       var yi = [], vi = [], errs = [];
       text.split(/\r?\n/).forEach(function (l, i) {
         var t = l.trim(); if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/); var y = num(f[0]), se = num(f[1]);
-        // effect, SE and at most one label: a 4th field means the line is not in that shape (e.g. decimal
-        // commas, "0,2, 0,3", which used to be read as effect 0 and SE 2), so it is left out like any invalid line.
-        if (f.length > 3 || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        // Fields: effect, SE, then an optional label = everything after the SE (it may contain commas, quoted
+        // or not: "Smith, 2010"). Tab-separated lines split on tabs. A line with surplus fields that are ALL
+        // numbers is not in that shape (decimal commas, "0,2, 0,3", once read as effect 0 and SE 2): left out.
+        var f = t.indexOf("\t") >= 0 ? t.split("\t") : csvFields(t);
+        var y = num(f[0]), se = num(f[1]);
+        var allNumeric = f.length > 3 && f.every(function (x) { return NUM.test(String(x).trim()); });
+        if (allNumeric || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
         yi.push(y); vi.push(se * se);
       });
       return { yi: yi, vi: vi, errs: errs };
@@ -148,7 +162,9 @@
         : mult.phi === 1
         ? "φ = 1.00: exactly the variation a common-effect model expects; the UWLS SE equals the fixed-effect SE (its interval uses t with k−1 df)."
         : "φ = " + mult.phi.toFixed(2) + " < 1: less variation than a common-effect model expects; the UWLS SE is smaller than the fixed-effect SE, but its interval uses t with k−1 df, so it need not be narrower (some implementations floor φ at 1 — here it follows lm exactly, unfloored).";
-      document.getElementById("interp").innerHTML = "<strong>Multiplicative (UWLS) is highlighted as the primary estimate.</strong> " + disp;
+      document.getElementById("interp").innerHTML = "<strong>Multiplicative (UWLS) is highlighted as the primary estimate.</strong> " + disp +
+        // Every line left out is named, not only when too few remain (a dropped study changes every estimate).
+        (p.errs.length ? " Left out (not effect, SE[, label]): " + p.errs.join(", ") + "; " + p.yi.length + " rows fitted." : "");
     }
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; run(); });

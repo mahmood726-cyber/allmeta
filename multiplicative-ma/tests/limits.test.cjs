@@ -50,12 +50,20 @@ async function enter(p, data, scale) {
 }
 const SIX = ["0.42, 0.18", "0.10, 0.22", "0.61, 0.25", "-0.05, 0.15", "0.33, 0.12", "0.27, 0.30"];
 
-test("F02: a line with surplus fields (or a decimal-comma line) is not read as different data", { skip: SKIP }, async () => {
+// Rewritten after review of PR #651: the first version asserted that "0.5, 0.2, trial X, 2019" is left out,
+// which silently dropped real labelled studies ("Smith, 2010"). Requirement: the label is everything after
+// effect and SE (quoted or not); only an all-numeric line with surplus fields (decimal commas) is left out,
+// and every line left out is named on the page.
+test("F02: labels may contain commas; only an all-numeric surplus line is left out, and it is named", { skip: SKIP }, async () => {
   const p = await open();
+  const lab = await enter(p, SIX.concat(["0.5, 0.2, Smith, 2010", '0.7, 0.3, "Jones, 2012"']).join("\n"));
+  assert.strictEqual(lab.snap.yi.length, 8, "a labelled line with a comma in its label was dropped");
+  assert.doesNotMatch(lab.interp, /Left out/);
   const r = await enter(p, SIX.concat(["0,2, 0,3"]).join("\n"));
   assert.strictEqual(r.snap.yi.length, 6, "decimal-comma line was fitted as yi=0, SE=2");
-  const r2 = await enter(p, SIX.concat(["0.5, 0.2, trial X, 2019"]).join("\n"));
-  assert.strictEqual(r2.snap.yi.length, 6, "a 4-field line was fitted");
+  assert.match(r.interp, /Left out.*line 7/, r.interp);
+  const bad = await enter(p, SIX.concat(["0.4oops, 0.2"]).join("\n"));
+  assert.match(bad.interp, /Left out.*line 7.*6 rows fitted/, bad.interp);
   const ok = await enter(p, SIX.concat(["0.5\t0.2\ttrial X"]).join("\n"));
   assert.strictEqual(ok.snap.yi.length, 7, "tab-separated effect, SE, label must still be read");
   await p.close();
