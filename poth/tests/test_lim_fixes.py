@@ -180,3 +180,25 @@ def test_f15_capped_value_is_stated_and_r_agrees(page, tmp_path):
     r = subprocess.run([rs, "--vanilla", str(f)], capture_output=True, text=True, timeout=120)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
     assert lines and lines[-1].startswith("MATCH"), r.stdout[-800:] + r.stderr[-300:]
+
+
+# ---- F01 review (PR #654): numbered treatments are not decimal commas ----------------------
+
+def test_f01_numbered_treatments_with_whole_number_scores_are_accepted(page):
+    # P-scores 1, 0.5, 0 for treatments named 3, 1, 2 (reviewer's list)
+    _run(page, "1, 3\n0.5, 1\n0, 2")
+    assert _computed(page), page.inner_text("#out")
+    assert page.inner_text("#out .big") == "1.000"
+
+
+@pytest.mark.parametrize("text", ["92, 1\n74, 2\n15, 3", "92,1\n74,2\n15,3"])
+def test_f01_whole_percentages_with_numbered_treatments_are_accepted(page, text):
+    # origin/main accepted this list: POTH 0.713 (reviewer's list; second form without spaces)
+    _run(page, text)
+    assert _computed(page), page.inner_text("#out")
+    assert page.inner_text("#out .big") == "0.713"
+
+
+def test_f01_ambiguous_no_space_form_is_accepted_with_a_note(page):
+    _run(page, "92,1\n74,2\n15,3")
+    assert "decimal comma" in page.inner_text("#out").lower()
