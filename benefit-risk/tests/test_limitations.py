@@ -57,8 +57,20 @@ def test_L06_duplicate_and_unknown_cells_are_refused_and_constructor_is_a_name(p
     pg.fill("#f-criteria", CRIT)
     pg.fill("#f-perf", PERF + "\nA, wl, 1.0, 0.1")
     assert "duplicate" in pg.text_content("#summary").lower() and pg.evaluate("() => window.__lastBR") is None
+    # A row for an undeclared criterion is NOT a reason to refuse: the engine and the R script read only the
+    # declared criteria's cells (perf[criteria[i].id]), so main analysed it and the result is unchanged.
+    # Requirement (review of PR 649): analyse as before, and warn, naming the row. (This test first asserted a
+    # refusal, which defended a regression.)
+    pg.fill("#f-perf", PERF)
+    ref = pg.evaluate("() => JSON.stringify(window.__lastBR.smaa)")
     pg.fill("#f-perf", PERF + "\nA, xx, 1.0, 0.1")
-    assert "xx" in pg.text_content("#summary") and pg.evaluate("() => window.__lastBR") is None
+    assert pg.evaluate("() => JSON.stringify(window.__lastBR && window.__lastBR.smaa)") == ref
+    assert "xx" in pg.text_content("#summary") and "ignored" in pg.text_content("#summary").lower()
+    # the example with one criterion commented out but its rows kept still analyses, with a warning
+    pg.fill("#f-criteria", "wl, Weight loss, benefit, 0.6\n# na, Nausea, harm, 0.4")
+    pg.fill("#f-perf", PERF)
+    assert pg.evaluate("() => window.__lastBR && window.__lastBR.smaa.length") == 2
+    assert "\u201cna\u201d" in pg.text_content("#summary")
 
 
 def test_L11_equal_leaders_are_all_named(pg):
