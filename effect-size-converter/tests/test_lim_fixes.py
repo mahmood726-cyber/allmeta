@@ -254,3 +254,77 @@ def test_a11_e_value_widget_works_without_hub_modules(browser_ctx):
     assert pg.evaluate("!window.alm")
     assert "E-value (point) =" in pg.inner_text("#ev-out")
     ctx.close()
+
+
+# ---- A04: an extraction must not inherit the previous effect's context or identity ----------
+# MOCK: shared/localllm.js is replaced by a stub that hands the page's onResult callback to the
+# test (no Ollama is contacted); what is tested is the page's handling of the extracted object.
+
+@pytest.fixture
+def xpage(browser_ctx):
+    br, url = browser_ctx
+    ctx = br.new_context()
+    pg = ctx.new_page()
+    pg.route("**/shared/localllm.js", lambda route: route.fulfill(
+        status=200, content_type="application/javascript",
+        body="window.LocalLLM = { attachPanel: function (host, o) { window.__onResult = o.onResult; } };"))
+    pg.goto(url)
+    pg.wait_for_selector("#results-body tr")
+    pg.wait_for_function("typeof window.__onResult === 'function'")
+    yield pg
+    ctx.close()
+
+
+def test_a04_previous_context_is_cleared(xpage):
+    _set(xpage, **{"ctx-p0": "0.2", "ctx-sd": "10"})
+    xpage.evaluate("window.__onResult({type: 'OR', estimate: 0.6, se: 0.1})")
+    assert xpage.input_value("#ctx-p0") == "" and xpage.input_value("#ctx-sd") == ""
+    assert _rows(xpage) == ["OR", "ln(OR)", "SMD (logit method)"]
+
+
+def test_a04_partially_numeric_string_is_refused(xpage):
+    xpage.evaluate("window.__onResult({type: 'OR', estimate: '0.6 (adjusted)', se: '0.1'})")
+    assert xpage.input_value("#in-est") == "0.75"
+    assert "finite point estimate" in _warn(xpage).lower()
+
+
+def test_a04_smd_without_identity_is_refused(xpage):
+    _set(xpage, **{"in-type": "SMD", "in-smd-kind": "g"})
+    xpage.evaluate("window.__onResult({type: 'SMD', estimate: 0.4, se: 0.1})")
+    assert "cohen" in _warn(xpage).lower()
+
+
+def test_a04_smd_identity_is_taken_from_the_extraction(xpage):
+    _set(xpage, **{"in-type": "SMD", "in-smd-kind": "g"})
+    xpage.evaluate("window.__onResult({type: 'SMD', estimate: 0.4, se: 0.1, smd_kind: 'd'})")
+    assert xpage.input_value("#in-smd-kind") == "d"
+    assert _rows(xpage)[0] == "SMD (Cohen's d)"
+
+
+def test_a04_intro_does_not_claim_everything_runs_in_the_browser():
+    html = (ROOT / APP / "index.html").read_text(encoding="utf-8")
+    assert "Everything runs in your browser." not in html
+
+
+# ---- A08: plot description, result announcement, reachable skip link -----------------------
+
+def test_a08_plot_label_describes_the_values(page):
+    label = page.get_attribute("#forest-plot", "aria-label")
+    assert "SMD (logit method)" in label and "-0.159" in label, label
+
+
+def test_a08_results_are_announced(page):
+    _set(page, **{"in-est": "0.8"})
+    page.click("#btn-convert")
+    st = page.locator("#results-status")
+    assert st.get_attribute("aria-live") == "polite"
+    assert "converted values shown" in st.inner_text() or "converted values shown" in st.text_content()
+    _set(page, **{"in-se": ""})
+    page.click("#btn-convert")
+    assert "no conversions" in st.text_content().lower()
+
+
+def test_a08_focused_skip_link_is_above_the_hub_link(page):
+    page.focus(".skip-link")
+    z = page.evaluate("[getComputedStyle(document.querySelector('.skip-link')).zIndex, getComputedStyle(document.getElementById('hub-back')).zIndex].map(Number)")
+    assert z[0] > z[1], z
