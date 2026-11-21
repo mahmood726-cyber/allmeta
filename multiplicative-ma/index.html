@@ -115,7 +115,10 @@
       }
       var ratio = document.getElementById("scale").value === "exp";
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
-      var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
+      // exp() can overflow a finite analysis-scale value to Infinity: show a dash, never "Infinity".
+      var f = function (v) { return (v == null || !isFinite(v) || !isFinite(tx(v))) ? "—" : tx(v).toFixed(3); };
+      // Only estimates and limits are exponentiated; SEs (and tau^2, phi) stay on the analysis scale.
+      document.querySelector("thead th:nth-child(3)").textContent = ratio ? "SE (analysis scale)" : "SE";
       // The engines throw on inputs outside their numerical range (e.g. SEs whose squares underflow to 0):
       // report it and clear the earlier table rather than leaving another analysis's results on screen.
       var fe, re, mult;
