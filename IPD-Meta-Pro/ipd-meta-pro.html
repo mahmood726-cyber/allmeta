@@ -100001,9 +100001,12 @@ function escapeCSV(value, options = {}) {
 
 
 
- // Prevent CSV formula injection in spreadsheet tools.
+ // Prevent CSV formula injection in spreadsheet tools. A plain decimal number (e.g. a negative log OR)
+ // is not a formula: it used to be prefixed too, so every negative estimate was exported as text (LIM-P60 L24).
+ const plainNumber = (typeof value === 'number' && Number.isFinite(value)) ||
+  /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(cell);
 
- if (preventFormulaInjection && /^[\t ]*[=+\-@]/.test(cell)) {
+ if (preventFormulaInjection && !plainNumber && /^[\t ]*[=+\-@]/.test(cell)) {
 
   cell = "'" + cell;
 
