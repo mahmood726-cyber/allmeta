@@ -65,6 +65,7 @@
         <h2>Trials</h2>
         <label class="hint" style="display:block;margin:0 0 .3rem">One per line: <code>label, surrogate effect, final effect (e.g. log HR), SE(final)</code></label>
         <textarea id="f-data" aria-label="Trial surrogate/final pairs"></textarea>
+        <p id="input-issues" class="hint" role="status" style="margin:.4rem 0 0;color:var(--warn)"></p>
         <p class="hint" style="margin:.4rem 0 0">Use the same effect metric per column across trials. Final effect on the analysis scale (log for ratios).</p>
       </section>
     </aside>
@@ -94,18 +95,49 @@
     var $ = function (id) { return document.getElementById(id); };
     var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-    function num(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+    // A whole-field decimal/scientific number, else null ("1kg" and "-0.2 (log HR)" used to be read by parseFloat as 1 and -0.2).
+    function num(v) { var t = String(v == null ? "" : v).trim(); return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t) && isFinite(+t) ? +t : null; }
 
+    // One CSV line -> fields. A double-quoted field keeps its commas ("Smith, 2020"); "" inside quotes is
+    // a literal quote. Returns null for an unterminated quote. (Rows used to be split on every comma, so a
+    // quoted label shifted the numbers into the wrong columns.)
+    function csvFields(ln) {
+      var out = [], cur = "", q = false, i, ch;
+      for (i = 0; i < ln.length; i++) {
+        ch = ln[i];
+        if (q) { if (ch === '"') { if (ln[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+        else if (ch === '"' && cur.trim() === "") { q = true; cur = ""; }
+        else if (ch === ",") { out.push(cur.trim()); cur = ""; }
+        else cur += ch;
+      }
+      if (q) return null;
+      out.push(cur.trim());
+      return out;
+    }
+    var lastIssues = [];   // rows not analysed: "line n: reason"
     function parse(text) {
-      var pairs = [];
-      String(text || "").split(/\r?\n/).forEach(function (ln) {
+      var pairs = []; lastIssues = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln, i) {
         ln = ln.trim(); if (!ln || ln[0] === "#") return;
-        var c = ln.split(",").map(function (x) { return x.trim(); });
-        if (c.length < 4) return;
+        var c = csvFields(ln), bad = function (why) { lastIssues.push("line " + (i + 1) + ": " + why); };
+        if (!c) return bad("unterminated quote");
+        if (c.length === 5 && c[4] === "") c.pop();   // a trailing comma (empty 5th field) was accepted on main
+        if (c.length !== 4) return bad(c.length + " fields (need exactly 4: label, surrogate, final, SE)");
+        var nn = [c[1], c[2], c[3]].filter(function (x) { return x !== "" && num(x) == null; });
+        if (nn.length) return bad('"' + nn[0] + '" is not a number');
         var s = num(c[1]), f = num(c[2]), e = num(c[3]);
-        if (s != null && f != null && e != null && e > 0) pairs.push({ label: c[0], s: s, f: f, seF: e });
+        // Rows used to vanish here without a word while the analysis went on with the rest.
+        if (s == null || f == null || e == null) return bad("missing value");
+        if (!(e > 0)) return bad("SE not > 0");
+        pairs.push({ label: c[0], s: s, f: f, seF: e });
       });
       return pairs;
+    }
+    // The leave-one-out range is over the deletions that gave a defined R² only; say how many, and which did not.
+    function looCoverage(r) {
+      var undef = r.loo.filter(function (l) { return l.r2 == null; }).map(function (l) { return l.left_out; });
+      return "; " + (r.k - undef.length) + " of " + r.k + " deletions gave a defined R²"
+        + (undef.length ? " (undefined without " + esc(undef.join(", ")) + ")" : "");
     }
     function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
 
@@ -136,10 +168,21 @@
     function run() {
       window.__lastSurrogate = null; window.__lastSurrogatePairs = null;   // no stale input for r-verify.js
       var pairs = parse($("f-data").value);
+      $("input-issues").textContent = lastIssues.length ? "Not analysed — " + lastIssues.join("; ") + "." : "";
       var host = $("result");
       if (pairs.length < 3) { host.innerHTML = '<p class="hint">Need ≥3 trials with (surrogate, final, SE).</p>'; $("plot").innerHTML = ""; return; }
       var r = window.AlmSurrogate.analyze({ pairs: pairs });
-      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; $("plot").innerHTML = ""; return; }
+      // Finite input does not guarantee finite arithmetic (an SE of 1e-170 squares to 0, so its weight is
+      // Infinity): the engine then returned NaN with ok:true and the page showed NaN or a false "too little
+      // signal" refusal. Any non-finite number refuses the whole result, clears the plot and offers no R script.
+      var bad = ["slope", "intercept", "Q", "i2", "r2_naive", "pearson", "r2_adj", "ste", "loo_min", "loo_max"].filter(function (key) {
+        return r[key] != null && !isFinite(r[key]);
+      }).concat(r.loo.some(function (l) { return l.r2 != null && !isFinite(l.r2); }) ? ["leave-one-out R²"] : []);
+      if (bad.length) {
+        host.innerHTML = '<p class="hint">Not computed: numerical range exceeded (' + esc(bad.join(", ")) + " not finite). Check for extremely small or large SEs or effects, or rescale.</p>";
+        $("plot").innerHTML = ""; return;
+      }
       window.__lastSurrogate = r;
       window.__lastSurrogatePairs = pairs;   // read by r-verify.js (R script / WebR check)
       var cls = r.adj_degenerate ? "bad" : (r.r2_adj >= 0.7 ? "ok" : "warn");
@@ -153,6 +196,7 @@
         + stat("STE", r.ste != null ? r.ste.toFixed(2) : "—")
         + "</div>"
         + '<p class="hint">Leave-one-out naive R²: ' + (r.loo_min != null ? r.loo_min.toFixed(2) + "–" + r.loo_max.toFixed(2) : "—") + " (k=" + r.k + ")"
+        + looCoverage(r)
         + (r.adj_reason ? '<br><span style="color:var(--warn)">' + esc(r.adj_reason) + "</span>" : "") + "</p>";
       $("plot").innerHTML = drawScatter(pairs, r);
     }

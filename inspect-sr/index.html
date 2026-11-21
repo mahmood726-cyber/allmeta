@@ -51,10 +51,16 @@
       border-radius: 5px; cursor: pointer; background: var(--input-bg); user-select: none; }
     .opts input { position: absolute; opacity: 0; width: 0; height: 0; }
     .opts input:checked + span { font-weight: 700; }
+    /* The radios are visually hidden, so the focus cue goes on their visible label. */
+    .opts label:has(input:focus-visible), label:has(> #file-load:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    .clear-resp { margin-left: 0.3rem; font-size: 0.7rem; padding: 0.08rem 0.4rem; border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--muted); cursor: pointer; }
     .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
     .dj { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.8rem; }
     .dj select { padding: 0.2rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; }
     .suggest { color: var(--muted); font-size: 0.74rem; }
+    .reason { display: block; margin-top: 0.4rem; font-size: 0.74rem; color: var(--muted); }
+    .reason textarea { display: block; width: 100%; margin-top: 0.15rem; padding: 0.25rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.8rem; }
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 1rem; }
     th, td { padding: 0.35rem 0.45rem; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -93,6 +99,7 @@
         <button type="button" id="btn-add" class="ghost">+ Add</button>
         <button type="button" id="btn-del" class="ghost">Remove</button>
       </div>
+      <p id="save-status" role="alert" class="suggest" style="color:var(--warn);margin:0 0 0.5rem"></p>
       <div id="checks"></div>
       <fieldset>
         <legend>Effect size (optional — for the robustness re-pool)</legend>
@@ -128,17 +135,20 @@
         <thead><tr><th>Analysis set</th><th>k</th><th>Pooled (95% CI)</th><th>I²</th></tr></thead>
         <tbody id="pooled"></tbody>
       </table>
+      <p id="pool-excluded" class="suggest" style="margin:-0.6rem 0 0.6rem"></p>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.3rem">
         <button type="button" id="btn-json" class="primary">Download JSON</button>
+        <label class="ghost" style="display:inline-block;padding:0.35rem 0.7rem;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;color:var(--accent);cursor:pointer">Load JSON<input type="file" id="file-load" accept="application/json,.json" style="position:absolute;opacity:0;width:1px;height:1px"></label>
         <button type="button" id="btn-reset" class="ghost">Reset all</button>
       </div>
+      <p id="load-status" class="suggest" role="status" style="margin:0.3rem 0 0"></p>
       <div id="rcheck-mount"></div>
-      <div class="note"><strong>Not a prescriptive algorithm.</strong> INSPECT-SR guides reviewers to reach justified judgements; the suggested domain/overall ratings here are non-binding cues from the check responses — the reviewer decides. Handling per the tool: <em>serious concerns</em> → exclude; <em>some concerns</em> → sensitivity analysis; <em>no concerns</em> → standard analysis. Median assessment time ≈ 45 min/RCT.</div>
+      <div class="note"><strong>Not a prescriptive algorithm.</strong> INSPECT-SR guides reviewers to reach justified judgements; the suggested domain/overall ratings here are non-binding cues from the check responses — the reviewer decides. Handling per the tool: <em>serious concerns</em> → exclude; <em>some concerns</em> → sensitivity analysis; <em>no concerns</em> → standard analysis. Median assessment time ≈ 45 min/RCT in the developers' preprint user testing (not measured for this page).</div>
     </section>
   </main>
   <footer>
     21 checks across 4 domains (post-publication notices; conduct, governance and transparency; text and figures; results in the study), each answered Yes / No / Unclear / Not&nbsp;applicable, rolled up to domain and overall judgements of No / Some / Serious concerns.
-    Reference: Wilkinson J, et al. INSPECT-SR tool for assessing trustworthiness of randomised controlled trials. BMJ 2026;394:bmj-2026-100611. doi:10.1136/bmj-2026-100611 (preprint: medRxiv doi:10.1101/2025.09.03.25334905). Check wording follows guidance document v1.1.2 (https://inspect-sr.com). Developed in partnership with Cochrane. The robustness re-pool uses the audited <code>shared/ma-core.js</code> (Paule-Mandel random effects). Data stays in your browser (<code>localStorage</code>).
+    Reference: Wilkinson J, et al. INSPECT-SR tool for assessing trustworthiness of randomised controlled trials. BMJ 2026;394:e100611. doi:10.1136/bmj-2026-100611 (preprint: medRxiv doi:10.1101/2025.09.03.25334905). Check wording follows guidance document v1.1.2 (https://inspect-sr.com). Developed in partnership with Cochrane. The robustness re-pool uses <code>shared/ma-core.js</code> (Paule-Mandel random effects); the validation of this page's decision rules does not test the pooling — use "Check the re-pool in R" for that. Data stays in your browser (<code>localStorage</code>).
   </footer>
   <script>
     var DOMAINS = [
@@ -177,15 +187,42 @@
     var KEY = "inspect-sr-v1";
 
     function newTrial(name) {
-      return { id: "t" + Date.now() + Math.floor(Math.random() * 1e4), label: name || "", resp: {}, dj: {}, overall: "", est: "", se: "" };
+      return { id: "t" + Date.now() + Math.floor(Math.random() * 1e4), label: name || "", resp: {}, dj: {}, overall: "", why: {}, est: "", se: "" };
     }
     var state = load() || { trials: [newTrial("Trial 1")], cur: 0 };
 
     function load() {
-      try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.trials && s.trials.length) return s; } catch (e) {}
+      try { return sanitize(JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
       return null;
     }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    // Rebuild a workspace from untrusted saved data, keeping only well-formed fields (a record such as
+    // {trials:[{}], cur:5} used to be accepted as-is and throw while rendering, leaving no form).
+    function sanitize(s) {
+      if (!s || !Array.isArray(s.trials)) return null;
+      var obj = function (o) { return o && typeof o === "object" && !Array.isArray(o); };
+      var str = function (v) { return typeof v === "string" ? v : (typeof v === "number" && isFinite(v) ? String(v) : ""); };
+      var trials = s.trials.filter(obj).map(function (t, i) {
+        var n = newTrial(str(t.label) || ("Trial " + (i + 1)));
+        if (typeof t.id === "string" && t.id) n.id = t.id;
+        if (obj(t.resp)) CHECKS.forEach(function (c) { if (RESP.indexOf(t.resp[c.id]) >= 0) n.resp[c.id] = t.resp[c.id]; });
+        if (obj(t.dj)) DOMAINS.forEach(function (dm) { if (JUDGE.indexOf(t.dj[dm.d]) >= 0) n.dj[dm.d] = t.dj[dm.d]; });
+        if (JUDGE.indexOf(t.overall) >= 0) n.overall = t.overall;
+        if (obj(t.why)) Object.keys(t.why).forEach(function (k) { if (typeof t.why[k] === "string" && (k === "overall" || /^[1-4]$/.test(k))) n.why[k] = t.why[k]; });
+        n.est = str(t.est); n.se = str(t.se);
+        return n;
+      });
+      if (!trials.length) return null;
+      var c = Number.isInteger(s.cur) && s.cur >= 0 && s.cur < trials.length ? s.cur : 0;
+      return { trials: trials, cur: c, scale: s.scale === "exp" ? "exp" : "linear" };
+    }
+    // A failed write is reported on the page (it used to be swallowed, so work could be lost unseen).
+    function save() {
+      var msg = "";
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {
+        msg = "Not saved: browser storage is unavailable or full (" + (e && e.message || e) + "). Use Download JSON to keep this work.";
+      }
+      var el = document.getElementById("save-status"); if (el) el.textContent = msg;
+    }
     function cur() { return state.trials[state.cur]; }
 
     // Non-binding suggestion, made only once every check in the domain is answered:
@@ -217,6 +254,21 @@
       return anyUnset ? "unset" : worst;
     }
     function effectiveOverall(t) { return t.overall || suggestOverall(t); }
+    // Warn (never change the reviewer's choice) when an explicit overall judgement is less severe than a
+    // domain judgement, or is set while domains are incomplete -- it decides which analysis sets the trial
+    // enters. "Serious concerns" with incomplete domains is allowed by the guidance and is not warned.
+    function overrideWarning(t) {
+      if (!t.overall) return "";
+      var sev = { unset: -1, no: 0, some: 1, serious: 2 }, worse = [], open = [];
+      DOMAINS.forEach(function (dm) {
+        var j = effectiveDomain(t, dm.d);
+        if (j === "unset") open.push(dm.d); else if (sev[j] > sev[t.overall]) worse.push("domain " + dm.d + " (" + JUDGE_LBL[j] + ")");
+      });
+      var w = [];
+      if (worse.length) w.push("The overall judgement (" + JUDGE_LBL[t.overall] + ") is less severe than " + worse.join(", ") + ".");
+      if (open.length && t.overall !== "serious") w.push("Domain" + (open.length > 1 ? "s " : " ") + open.join(", ") + (open.length > 1 ? " are" : " is") + " not complete, yet the overall is set to " + JUDGE_LBL[t.overall] + ".");
+      return w.length ? w.join(" ") + " This override decides which analysis sets the trial enters." : "";
+    }
 
     function renderTrialSelect() {
       var sel = document.getElementById("trial-sel");
@@ -236,18 +288,22 @@
             var id = "r-" + c.id + "-" + r;
             return "<label><input type='radio' name='resp-" + c.id + "' value='" + r + "'" + (t.resp[c.id] === r ? " checked" : "") + "><span>" + RESP_LBL[r] + "</span></label>";
           }).join("");
-          return "<div class='check'><span class='q'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts'>" + opts + "</span></div>";
+          return "<div class='check'><span class='q' id='q-" + c.id + "'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts' role='radiogroup' aria-labelledby='q-" + c.id + "'>" + opts + "</span>"
+            + "<button type='button' class='clear-resp' data-clear='" + c.id + "' aria-label='Clear the answer to check " + c.id + "'>Clear</button></div>";
         }).join("");
         var sug = suggestDomain(t, dm.d);
         var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
         return "<fieldset><legend>Domain " + dm.d + " — " + esc(dm.title) + "</legend>" + rows
           + "<div class='dj'><label>Domain judgement <select data-dj='" + dm.d + "'><option value=''>(use suggested)</option>" + djOpts + "</select></label>"
-          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
+          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div>"
+          + reasonBox(t, String(dm.d), "Reasons for the domain " + dm.d + " judgement (evidence, location)") + "</fieldset>";
       }).join("");
       // overall
       var sugO = suggestOverall(t);
       var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
-      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
+      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div>"
+        + "<p id='overall-warn' class='suggest' role='status' style='color:var(--warn);margin:0.3rem 0 0'>" + esc(overrideWarning(t)) + "</p>"
+        + reasonBox(t, "overall", "Reasons for the overall judgement") + "</fieldset>";
       document.getElementById("checks").innerHTML = html;
 
       // wire radios
@@ -256,28 +312,61 @@
           el.addEventListener("change", function () { cur().resp[c.id] = el.value; commit(); });
         });
       });
+      // Return one check to unanswered (there was no way back short of Remove trial / Reset all).
+      document.querySelectorAll("button[data-clear]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          var id = el.getAttribute("data-clear");
+          delete cur().resp[id];
+          document.getElementsByName("resp-" + id).forEach(function (r) { r.checked = false; });
+          commit();
+        });
+      });
       document.querySelectorAll("select[data-dj]").forEach(function (el) {
         el.addEventListener("change", function () { cur().dj[el.getAttribute("data-dj")] = el.value; commit(); });
       });
       document.getElementById("overall-sel").addEventListener("change", function (e) { cur().overall = e.target.value; commit(); });
+      document.querySelectorAll("textarea[data-reason]").forEach(function (el) {
+        el.addEventListener("input", function () { var t = cur(); if (!t.why) t.why = {}; t.why[el.getAttribute("data-reason")] = el.value; save(); });
+      });
       document.getElementById("eff-est").value = t.est;
       document.getElementById("eff-se").value = t.se;
     }
 
+    // Free-text reasons per domain and for the overall judgement (INSPECT-SR asks reviewers to justify
+    // judgements; the page had nowhere to record them). Saved and exported with the trial.
+    function reasonBox(t, key, label) {
+      var v = (t.why && typeof t.why[key] === "string") ? t.why[key] : "";
+      return "<label class='reason'>" + esc(label) + "<textarea rows='2' data-reason='" + key + "'>" + esc(v) + "</textarea></label>";
+    }
     function tlClass(j) { return "tl tl-" + (j === "unset" ? "unset" : j); }
     function renderSummary() {
       document.getElementById("summary").innerHTML = state.trials.map(function (t, i) {
-        var cells = DOMAINS.map(function (dm) { var j = effectiveDomain(t, dm.d); return "<td><i class='" + tlClass(j) + "' title='" + JUDGE_LBL[j] + "'></i></td>"; }).join("");
+        var cells = DOMAINS.map(function (dm) { var j = effectiveDomain(t, dm.d); return "<td><i class='" + tlClass(j) + "' title='" + JUDGE_LBL[j] + "' aria-hidden='true'></i><span class='sr-only'>" + JUDGE_LBL[j] + "</span></td>"; }).join("");
         var o = effectiveOverall(t);
         return "<tr><td>" + esc(t.label || ("Trial " + (i + 1))) + "</td>" + cells + "<td><i class='" + tlClass(o) + "'></i> " + JUDGE_LBL[o] + "</td></tr>";
       }).join("");
     }
 
+    // A whole-field decimal/scientific number, else null: "0.3kg" or "1e" is not read as 0.3 or 1 (parseFloat
+    // read numeric prefixes, so a corrupted restored field silently entered the pool).
+    function numOf(x) {
+      if (typeof x === "number") return isFinite(x) ? x : null;
+      var str = String(x == null ? "" : x).trim();
+      return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(str) && isFinite(+str) ? +str : null;
+    }
+    // Why a trial cannot enter a pooled set ("" = it can).
+    function unusable(t) {
+      var e = numOf(t.est), s = numOf(t.se);
+      if (e === null && s === null) return "no effect or SE";
+      if (e === null) return "no usable effect";
+      if (s === null) return "no usable SE";
+      if (!(s > 0)) return "SE not > 0";
+      return "";
+    }
     function poolSet(trials) {
       var yi = [], vi = [];
       trials.forEach(function (t) {
-        var e = parseFloat(t.est), s = parseFloat(t.se);
-        if (isFinite(e) && isFinite(s) && s > 0) { yi.push(e); vi.push(s * s); }
+        if (!unusable(t)) { yi.push(numOf(t.est)); vi.push(numOf(t.se) * numOf(t.se)); }
       });
       if (yi.length < 1) return null;
       if (yi.length === 1) { var z = window.AlmMaCore._qnorm(0.975); return { k: 1, mu: yi[0], ciLo: yi[0] - z * Math.sqrt(vi[0]), ciHi: yi[0] + z * Math.sqrt(vi[0]), I2: 0 }; }
@@ -285,7 +374,7 @@
     }
     // Trials + the numbers of the re-pool table, for "Check the re-pool in R" (inspect-sr/r-check.js); null
     // while the table has no estimate. A new object per render, so an R answer for an earlier table is stale.
-    var rState = null;
+    var rState = null, lastSets = [];   // lastSets: the re-pool table on the analysis scale, for the JSON export
     window.__almInspectSrRState = function () { return rState; };
     function renderPooled() {
       rState = null;
@@ -303,16 +392,34 @@
         { name: "Exclude serious concerns (INSPECT-SR rule)", arr: noSerious },
         { name: "Sensitivity: no-concern trials only", arr: onlyNo },
       ];
-      var rRows = [];
+      var rRows = [], failed = false;
+      lastSets = [];
       document.getElementById("pooled").innerHTML = sets.map(function (s) {
-        var r = poolSet(s.arr);
+        // A set the engine cannot pool (e.g. an SE whose square underflows) gets its own row saying so; the
+        // exception used to escape here and leave the previous inputs' table on screen.
+        var r;
+        try { r = poolSet(s.arr); } catch (err) {
+          failed = true; rRows.push(null);
+          lastSets.push({ name: s.name, k: null, error: String(err && err.message || err) });
+          return "<tr><td>" + esc(s.name) + "</td><td>—</td><td colspan='2'>could not be computed: " + esc(err && err.message || err) + "</td></tr>";
+        }
         rRows.push(r ? { k: r.k, mu: tx(r.mu), lo: tx(r.ciLo), hi: tx(r.ciHi), I2: r.I2 } : { k: 0, mu: null, lo: null, hi: null, I2: null });
+        lastSets.push({ name: s.name, k: r ? r.k : 0, mu: r ? r.mu : null, ciLo: r ? r.ciLo : null, ciHi: r ? r.ciHi : null,
+          tau2: r && r.k > 1 ? r.tau2 : null, I2: r ? r.I2 : null,
+          trials: s.arr.filter(function (t) { return !unusable(t); }).map(function (t) { return t.label; }) });
         if (!r) return "<tr><td>" + esc(s.name) + "</td><td>0</td><td>—</td><td>—</td></tr>";
         return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
       }).join("");
-      if (rRows[0].k > 0) rState = { exp: ratio, page: rRows,
-        trials: all.map(function (t, i) { var e = parseFloat(t.est), s = parseFloat(t.se);
+      if (!failed && rRows[0].k > 0) rState = { exp: ratio, page: rRows,
+        trials: all.map(function (t, i) { var e = numOf(t.est), s = numOf(t.se);
           return { label: t.label || ("Trial " + (i + 1)), est: isFinite(e) ? e : null, se: isFinite(s) ? s : null, overall: effectiveOverall(t) }; }) };
+      // Name every trial that no pooled set can contain, with the reason (they used to vanish silently). Effects
+      // are optional, so the list is shown only once some trial has an effect or SE entered.
+      var anyEntered = all.some(function (t) { return String(t.est == null ? "" : t.est).trim() !== "" || String(t.se == null ? "" : t.se).trim() !== ""; });
+      var left = all.map(function (t, i) { var why = unusable(t); return why ? esc(t.label || ("Trial " + (i + 1))) + " (" + why + ")" : ""; }).filter(Boolean);
+      document.getElementById("pool-excluded").innerHTML = anyEntered && left.length
+        ? "Not pooled in any set — " + left.length + " of " + all.length + " trial" + (all.length === 1 ? "" : "s") + ": " + left.join("; ") + "."
+        : "";
     }
 
     function renderAll() { renderTrialSelect(); renderChecks(); renderSummary(); renderPooled(); }
@@ -322,6 +429,7 @@
       var t = cur(), el;
       DOMAINS.forEach(function (dm) { el = document.getElementById("sug-d" + dm.d); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestDomain(t, dm.d)]; });
       el = document.getElementById("sug-overall"); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestOverall(t)];
+      el = document.getElementById("overall-warn"); if (el) el.textContent = overrideWarning(t);
     }
     function commit() { save(); renderSuggestions(); renderSummary(); renderPooled(); }
 
@@ -329,27 +437,70 @@
     document.getElementById("trial-name").addEventListener("input", function (e) { cur().label = e.target.value; save(); renderTrialSelect(); renderSummary(); });
     document.getElementById("btn-add").addEventListener("click", function () { state.trials.push(newTrial("Trial " + (state.trials.length + 1))); state.cur = state.trials.length - 1; save(); renderAll(); });
     document.getElementById("btn-del").addEventListener("click", function () {
+      // Ask first, like Reset all: Remove used to delete the trial and its answers at once, with no undo.
+      if (!confirm("Remove " + (cur().label || "this trial") + " and its assessment? This cannot be undone.")) return;
       if (state.trials.length <= 1) { state.trials = [newTrial("Trial 1")]; } else { state.trials.splice(state.cur, 1); }
       state.cur = Math.max(0, Math.min(state.cur, state.trials.length - 1)); save(); renderAll();
     });
     document.getElementById("eff-est").addEventListener("input", function (e) { cur().est = e.target.value; commit(); });
     document.getElementById("eff-se").addEventListener("input", function (e) { cur().se = e.target.value; commit(); });
-    document.getElementById("scale").addEventListener("change", renderPooled);
+    // The display scale is part of the saved workspace and of the export (it used to reset on reload).
+    document.getElementById("scale").addEventListener("change", function (e) { state.scale = e.target.value === "exp" ? "exp" : "linear"; save(); renderPooled(); });
     document.getElementById("btn-reset").addEventListener("click", function () {
       if (!confirm("Clear all trials and assessments?")) return;
-      state = { trials: [newTrial("Trial 1")], cur: 0 }; save(); renderAll();
+      state = { trials: [newTrial("Trial 1")], cur: 0, scale: state.scale }; save(); renderAll();
     });
     document.getElementById("btn-json").addEventListener("click", function () {
-      var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(),
+      var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(), displayScale: state.scale === "exp" ? "exp" : "linear",
         trials: state.trials.map(function (t) {
-          return { label: t.label, responses: t.resp,
+          return { id: t.id, label: t.label, responses: t.resp,
             domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
-            overall: effectiveOverall(t), est: t.est, se: t.se };
-        }) };
+            // The reviewer's own entries, apart from the effective values above (a suggestion and an equal
+            // explicit judgement used to be indistinguishable in the export).
+            domainOverrides: DOMAINS.reduce(function (o, dm) { if (t.dj[dm.d]) o[dm.d] = t.dj[dm.d]; return o; }, {}),
+            overallOverride: t.overall || "",
+            overall: effectiveOverall(t), reasons: t.why || {}, est: t.est, se: t.se };
+        }),
+        analysis: { method: "Paule-Mandel random effects (shared/ma-core.js), normal 95% CI, I^2 from the PM tau^2; a set with one trial shows that trial's estimate +/- z(0.975) x SE",
+          scale: "analysis scale as entered (displayScale only changes the display)", sets: lastSets },
+        software: { app: "inspect-sr", build: window.AlmBuildInfo || null } };
       var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "inspect-sr-assessment.json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    document.getElementById("scale").value = state.scale === "exp" ? "exp" : "linear";
+    // Load a downloaded assessment back (the JSON could not be reloaded, so moving work meant re-entry).
+    // Accepts this page's export (responses / domainOverrides / overallOverride / reasons) and rebuilds it
+    // through sanitize(), so only well-formed fields are kept; effective (suggested) values are recomputed.
+    document.getElementById("file-load").addEventListener("change", function (e) {
+      var f = e.target.files && e.target.files[0], msg = document.getElementById("load-status");
+      if (!f) return;
+      f.text().then(function (txt) {
+        var j = JSON.parse(txt);
+        if (!j || j._schema !== "inspect-sr-v1" || !Array.isArray(j.trials)) throw new Error("not an inspect-sr JSON download");
+        var s = sanitize({ cur: 0, scale: j.displayScale, trials: j.trials.map(function (t) {
+          return t && typeof t === "object" ? { id: t.id, label: t.label, resp: t.responses, dj: t.domainOverrides, overall: t.overallOverride,
+            why: t.reasons, est: t.est, se: t.se } : null; }) });
+        if (!s) throw new Error("the file holds no trials");
+        // An export written before domainOverrides/overallOverride existed holds only the effective judgements.
+        // Restore each one that differs from what the loaded responses suggest as the reviewer's own, so every
+        // effective judgement is as exported (they used to be dropped silently).
+        var legacy = 0;
+        j.trials.filter(function (t) { return t && typeof t === "object"; }).forEach(function (t, i) {
+          if ("domainOverrides" in t || "overallOverride" in t) return;
+          var n = s.trials[i]; if (!n) return; legacy++;
+          var dj = t.domainJudgements && typeof t.domainJudgements === "object" ? t.domainJudgements : {};
+          DOMAINS.forEach(function (dm) { var v = dj[dm.d]; if (JUDGE.indexOf(v) >= 0 && v !== suggestDomain(n, dm.d)) n.dj[dm.d] = v; });
+          if (JUDGE.indexOf(t.overall) >= 0 && t.overall !== suggestOverall(n)) n.overall = t.overall;
+        });
+        if (!confirm("Replace the current workspace with the " + s.trials.length + " trial(s) in " + f.name + "?")) return;
+        state = s; document.getElementById("scale").value = state.scale; save(); renderAll();
+        msg.textContent = "Loaded " + s.trials.length + " trial(s) from " + f.name + "." + (legacy
+          ? " It is an older export that does not separate suggestions from explicit judgements: judgements that differ from the suggestion were restored as explicit ones; please check them." : "");
+      }).catch(function (err) { msg.textContent = "Could not load " + f.name + ": " + (err && err.message || err); })
+        .then(function () { e.target.value = ""; });
     });
 
     renderAll();

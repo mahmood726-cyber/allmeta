@@ -115,27 +115,37 @@
     var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
+    // Rows refused by the parsers (duplicate criterion ids, duplicate cells): the run is refused and they are
+    // named. Rows for an undeclared criterion are kept as before (the engine and the R script read only the
+    // declared criteria's cells) but named in a warning. Maps are prototype-free, so a treatment or criterion
+    // called "constructor" is plain data (a {} map crashed the parser on it).
+    var parseIssues = [], parseWarnings = [];
     function parseCriteria(text) {
-      var out = [];
+      var out = [], seen = Object.create(null);
       String(text || "").split(/\r?\n/).forEach(function (ln) {
         ln = ln.trim(); if (!ln || ln[0] === "#") return;
         var c = ln.split(",").map(function (s) { return s.trim(); });
         if (c.length < 4) return;
         var type = /harm/i.test(c[2]) ? "harm" : "benefit";
         var w = parseFloat(c[3]);
+        if (seen[c[0]]) { parseIssues.push("duplicate criterion id \u201c" + c[0] + "\u201d (its cells would count twice)"); return; }
+        seen[c[0]] = true;
         out.push({ id: c[0], name: c[1], type: type, weight: isFinite(w) ? w : 1 });
       });
       return out;
     }
     function parsePerf(text, criteria) {
-      var tmap = {}, order = [];
+      var tmap = Object.create(null), order = [], known = Object.create(null);
+      (criteria || []).forEach(function (c) { known[c.id] = true; });
       String(text || "").split(/\r?\n/).forEach(function (ln) {
         ln = ln.trim(); if (!ln || ln[0] === "#") return;
         var c = ln.split(",").map(function (s) { return s.trim(); });
         if (c.length < 3) return;
         var tname = c[0], cid = c[1], mean = parseFloat(c[2]), se = parseFloat(c[3]);
         if (!isFinite(mean)) return;
-        if (!tmap[tname]) { tmap[tname] = { id: tname, name: tname, perf: {} }; order.push(tname); }
+        if (!known[cid]) parseWarnings.push(tname + ", \u201c" + cid + "\u201d");
+        if (!tmap[tname]) { tmap[tname] = { id: tname, name: tname, perf: Object.create(null) }; order.push(tname); }
+        if (tmap[tname].perf[cid]) { parseIssues.push("duplicate row " + tname + ", " + cid + " (it would overwrite the first)"); return; }
         tmap[tname].perf[cid] = isFinite(se) && se > 0 ? { mean: mean, se: se } : { mean: mean };
       });
       return order.map(function (t) { return tmap[t]; });
@@ -148,28 +158,39 @@
 
     function run() {
       window.__lastBR = null; window.__lastBRInput = null;   // both cleared unless this run succeeds (R check reads them)
+      // A completed R verdict belongs to the previous analysis: every new run clears it (it used to stay on screen).
+      if ($("r-out")) { $("r-out").hidden = true; $("r-out").textContent = ""; }
+      if ($("r-status")) $("r-status").textContent = "";
+      parseIssues = []; parseWarnings = [];
       var criteria = parseCriteria($("f-criteria").value);
       var treatments = parsePerf($("f-perf").value, criteria);
       var iters = parseInt($("f-iters").value, 10) || 10000;
       var seed = parseInt($("f-seed").value, 10); if (!isFinite(seed)) seed = 12345;
+      if (parseIssues.length) {
+        $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">Not analysed: ' + esc(parseIssues.join("; ")) + ".</p>";
+        $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return;
+      }
       if (criteria.length < 1 || treatments.length < 2) {
         $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">Need ≥1 criterion and ≥2 treatments.</p>';
         $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return;
       }
       var r = window.AlmBenefitRisk.analyze({ criteria: criteria, treatments: treatments, iterations: iters, seed: seed });
-      if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; return; }
+      if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return; }
       window.__lastBR = r;
       window.__lastBRInput = { criteria: criteria, treatments: treatments, iterations: iters, seed: seed };
 
       var top = r.smaa[0];
-      var second = r.smaa[1];
+      // Every treatment sharing the top P(best) is named (only the first, i.e. input order, used to be).
+      var leaders = r.smaa.filter(function (x) { return x.pBest === top.pBest; });
+      var second = r.smaa[leaders.length] || null;
       var close = second && (top.pBest - second.pBest) < 0.15;
       $("summary").innerHTML =
-        '<div class="out"><div class="hint">Most likely best (SMAA)</div><div class="big">' + esc(top.name) + ' <span class="badge ok">P(best) ' + (top.pBest * 100).toFixed(0) + "%</span></div>"
+        '<div class="out"><div class="hint">Most likely best (SMAA)</div><div class="big">' + esc(leaders.map(function (x) { return x.name; }).join(" = ")) + ' <span class="badge ok">P(best) ' + (top.pBest * 100).toFixed(0) + "%</span></div>"
         + '<div class="hint">EVPI = <strong>' + r.evpi.toFixed(4) + "</strong> (value scale, 0–1) · " + r.iterations.toLocaleString() + " iterations · seed " + r.seed + "</div></div>"
         + "<p class=\"hint\">" + (r.evpi < 0.01
             ? "Low EVPI — the decision is fairly robust to the remaining uncertainty; more research is unlikely to change the choice."
-            : "Non-trivial EVPI — the decision is uncertain" + (close ? " (the top two are close)" : "") + "; resolving the effect uncertainty could change the ranking. Consider whether more evidence is worth its cost.") + "</p>";
+            : "Non-trivial EVPI — the decision is uncertain" + (close ? " (the top two are close)" : "") + "; resolving the effect uncertainty could change the ranking. Consider whether more evidence is worth its cost.") + "</p>"
+        + (parseWarnings.length ? '<p class="hint" style="color:var(--warn)">Ignored (criterion not declared): ' + esc(parseWarnings.join("; ")) + ".</p>" : "");
 
       $("smaa-bars").innerHTML = r.smaa.map(function (s) {
         return bar(s.name, s.pBest, (s.pBest * 100).toFixed(0) + "%", "ok");
