@@ -228,6 +228,35 @@ def test_L17_downloaded_json_can_be_loaded_back():
     assert s["trials"][0]["est"] == "-0.4" and s["trials"][0]["se"] == "0.15", s
 
 
+def test_L17_pre_change_export_keeps_its_explicit_judgements():
+    """Review of PR 649: an export written before domainOverrides/overallOverride existed (same _schema; only
+    the effective domainJudgements/overall) was loaded with every explicit judgement dropped, while the page
+    said "Loaded n trial(s)". Requirement: a judgement that differs from what the loaded responses suggest is
+    restored as the reviewer's own, so every effective judgement is as exported, and the status says the
+    file is an older export."""
+    old = {"_schema": "inspect-sr-v1", "trials": [
+        {"label": "Old1", "responses": {}, "domainJudgements": {"1": "serious", "2": "unset", "3": "unset", "4": "unset"},
+         "overall": "serious", "est": "-0.4", "se": "0.15"},
+        {"label": "Old2", "responses": {}, "domainJudgements": {"1": "unset", "2": "unset", "3": "unset", "4": "unset"},
+         "overall": "no", "est": "-0.2", "se": "0.2"}]}
+    res = drive(r"""
+      p.__acceptDialogs = true;
+      const fs = require('fs'), f = require('path').join(process.env.TEMP || '.', 'insp-old-' + Date.now() + '.json');
+      fs.writeFileSync(f, """ + repr(json.dumps(old)) + r""");
+      await p.setInputFiles('#file-load', f);
+      await p.waitForTimeout(300);
+      fs.unlinkSync(f);
+      return { s: await p.evaluate(() => JSON.parse(localStorage.getItem('inspect-sr-v1'))),
+               msg: await p.evaluate(() => document.getElementById('load-status').textContent),
+               summary: await p.innerText('#summary') };
+    """)
+    o = res["out"]
+    t1, t2 = o["s"]["trials"]
+    assert t1["dj"] == {"1": "serious"} and t1["overall"] == "", o   # serious overall follows from the domain
+    assert t2["dj"] == {} and t2["overall"] == "no", o
+    assert "older" in o["msg"].lower(), o
+
+
 def test_L19_radio_groups_named_focus_visible_and_domain_text():
     """L19: each check's radios had no group name tied to the question, the visually hidden radios had no
     visible focus cue, and the summary's domain cells were colour dots with a title only.

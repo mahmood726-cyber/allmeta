@@ -482,9 +482,21 @@
           return t && typeof t === "object" ? { id: t.id, label: t.label, resp: t.responses, dj: t.domainOverrides, overall: t.overallOverride,
             why: t.reasons, est: t.est, se: t.se } : null; }) });
         if (!s) throw new Error("the file holds no trials");
+        // An export written before domainOverrides/overallOverride existed holds only the effective judgements.
+        // Restore each one that differs from what the loaded responses suggest as the reviewer's own, so every
+        // effective judgement is as exported (they used to be dropped silently).
+        var legacy = 0;
+        j.trials.filter(function (t) { return t && typeof t === "object"; }).forEach(function (t, i) {
+          if ("domainOverrides" in t || "overallOverride" in t) return;
+          var n = s.trials[i]; if (!n) return; legacy++;
+          var dj = t.domainJudgements && typeof t.domainJudgements === "object" ? t.domainJudgements : {};
+          DOMAINS.forEach(function (dm) { var v = dj[dm.d]; if (JUDGE.indexOf(v) >= 0 && v !== suggestDomain(n, dm.d)) n.dj[dm.d] = v; });
+          if (JUDGE.indexOf(t.overall) >= 0 && t.overall !== suggestOverall(n)) n.overall = t.overall;
+        });
         if (!confirm("Replace the current workspace with the " + s.trials.length + " trial(s) in " + f.name + "?")) return;
         state = s; document.getElementById("scale").value = state.scale; save(); renderAll();
-        msg.textContent = "Loaded " + s.trials.length + " trial(s) from " + f.name + ".";
+        msg.textContent = "Loaded " + s.trials.length + " trial(s) from " + f.name + "." + (legacy
+          ? " It is an older export that does not separate suggestions from explicit judgements: judgements that differ from the suggestion were restored as explicit ones; please check them." : "");
       }).catch(function (err) { msg.textContent = "Could not load " + f.name + ": " + (err && err.message || err); })
         .then(function () { e.target.value = ""; });
     });
