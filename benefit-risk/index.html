@@ -157,6 +157,9 @@
 
     function run() {
       window.__lastBR = null; window.__lastBRInput = null;   // both cleared unless this run succeeds (R check reads them)
+      // A completed R verdict belongs to the previous analysis: every new run clears it (it used to stay on screen).
+      if ($("r-out")) { $("r-out").hidden = true; $("r-out").textContent = ""; }
+      if ($("r-status")) $("r-status").textContent = "";
       parseIssues = [];
       var criteria = parseCriteria($("f-criteria").value);
       var treatments = parsePerf($("f-perf").value, criteria);
@@ -171,7 +174,7 @@
         $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return;
       }
       var r = window.AlmBenefitRisk.analyze({ criteria: criteria, treatments: treatments, iterations: iters, seed: seed });
-      if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; return; }
+      if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return; }
       window.__lastBR = r;
       window.__lastBRInput = { criteria: criteria, treatments: treatments, iterations: iters, seed: seed };
 

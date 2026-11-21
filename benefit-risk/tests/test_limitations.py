@@ -68,3 +68,19 @@ def test_L11_equal_leaders_are_all_named(pg):
     pg.fill("#f-perf", "A, wl, 5\nB, wl, 5\nC, wl, 1")
     big = pg.text_content("#summary .big")
     assert "A" in big and "B" in big, big
+
+
+def test_L16_refused_run_clears_charts_and_r_verdict(pg):
+    """L16: a run refused by the engine (a missing cell) left the previous charts on screen, and a new run
+    left an earlier R verdict displayed. Requirement: every new run clears the R output, and a refusal
+    clears the charts."""
+    pg.fill("#f-criteria", CRIT)
+    pg.fill("#f-perf", PERF)
+    assert pg.inner_html("#smaa-bars") != ""
+    pg.evaluate("""() => { const o = document.getElementById("r-out"); o.textContent = "MATCH 20/20"; o.hidden = false;
+                           document.getElementById("r-status").textContent = "MATCH 20/20"; }""")
+    pg.fill("#f-perf", "A, wl, 17.8, 0.7\nA, na, 24, 2\nB, wl, 12.4, 0.6")
+    assert pg.evaluate("() => window.__lastBR") is None
+    assert pg.inner_html("#smaa-bars") == "" and pg.inner_html("#det-bars") == ""
+    assert pg.evaluate("() => document.getElementById('r-out').hidden")
+    assert "MATCH" not in pg.text_content("#r-status")
