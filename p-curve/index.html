@@ -558,9 +558,12 @@
     }
     function puniformP(z) {
       const k = z.length, tol = 1e-12;
-      const maxz = Math.max(...z);
+      // Loops, not Math.max(...z): spread arguments overflow the call stack for large k (RangeError).
+      // Same value as the spread form, including NaN propagation.
+      const arrMax = (xs) => xs.reduce((a, b) => Math.max(a, b), -Infinity);
+      const maxz = arrMax(z);
       const bo = [maxz - 38, maxz + 3];
-      const boExtLb = Math.max(...z.map(zi => (-(700 - 0.5 * (zi - PU_ZCV) ** 2) / (zi - PU_ZCV) + PU_ZCV)));
+      const boExtLb = arrMax(z.map(zi => (-(700 - 0.5 * (zi - PU_ZCV) ** 2) / (zi - PU_ZCV) + PU_ZCV)));
       const f = (target) => (d) => puSumQ(z, d) - target;
       let est = puBisect(f(k / 2), bo[0], bo[1], tol);
       if (Number.isNaN(est)) est = puBisect(f(k / 2), boExtLb, bo[1], tol);
@@ -635,6 +638,8 @@
     window._almLastPcurve = function () { return _lastResults; };
 
     function run() {
+      // A completed R verdict describes the analysis it was run on: every new analysis removes it (rcheck.js).
+      if (window.PCurveRCheck && typeof window.PCurveRCheck.invalidate === "function") window.PCurveRCheck.invalidate();
       const inp = readInput(document.getElementById("src").value);
       const raw = inp.used;
       const nSig = raw.length;
@@ -643,18 +648,27 @@
       if (inp.n_numeric_excluded) parts.push(`${inp.n_numeric_excluded} excluded (not 0 &lt; p &lt; .05)`);
       if (inp.invalid.length) parts.push(`${inp.invalid.length} not read as numbers: ` +
         inp.invalid.slice(0, 5).map(t => `<code>${t.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch])}</code>`).join(", ") +
-        (inp.invalid.length > 5 ? ", …" : ""));
+        (inp.invalid.length > 5 ? `, … (first 5 shown)` : ""));
       if (note) note.innerHTML = parts.join("; ") + ".";
-      if (nSig < 3) {
-        document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">Need at least 3 significant (p &lt; 0.05) p-values.</td></tr>`;
-        document.getElementById("pu-body").innerHTML = `<tr><td colspan="2">Not computed (fewer than 3 significant p-values).</td></tr>`;
+      const refuse = (why) => {
+        document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">${why}</td></tr>`;
+        document.getElementById("pu-body").innerHTML = `<tr><td colspan="2">Not computed (${why.replace(/\.$/, "")}).</td></tr>`;
         document.getElementById("plot").innerHTML = "";
         _lastResults = null;
-        return;
-      }
+      };
+      if (nSig < 3) return refuse("Need at least 3 significant (p &lt; 0.05) p-values.");
+      // p-uniform uses z = qnorm(p/2, upper tail): below ~1e-323 p/2 underflows to 0 and z is infinite.
+      const tiny = raw.filter(p => !(p / 2 > 0));
+      if (tiny.length) return refuse(`${tiny.length} p-value${tiny.length === 1 ? " is" : "s are"} too small to analyse in double precision (p/2 underflows to 0); the smallest usable p is about 1e-323.`);
       const testType = document.getElementById("test").value;
-      const dfVal = parseInt(document.getElementById("df").value, 10);
-      const useT = (testType === "t" && Number.isFinite(dfVal) && dfVal >= 1);
+      // The common df is used exactly as typed: Number(), not parseInt() (which made 30.9 -> 30 and 1e2 -> 1),
+      // and a t-test without a usable df is refused instead of silently becoming the z family.
+      const dfText = String(document.getElementById("df").value).trim();
+      const dfVal = dfText === "" ? NaN : Number(dfText);
+      if (testType === "t" && !(Number.isInteger(dfVal) && dfVal >= 1)) {
+        return refuse("For the t-test the common df must be a whole number of at least 1.");
+      }
+      const useT = testType === "t";
       const A = analyze(raw, useT ? "t" : "z", dfVal);
 
       _lastResults = Object.assign({

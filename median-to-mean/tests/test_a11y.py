@@ -34,3 +34,14 @@ def test_input_aria_labels_match_visible_labels():
     assert len(pairs) >= 6, f"expected >=6 labelled value inputs, found {len(pairs)}"
     mismatched = [(vis, aria) for vis, aria in pairs if vis.strip() != aria.strip()]
     assert not mismatched, f"aria-label != visible label for: {mismatched}"
+
+
+def test_plot_says_bars_are_sd_not_ci():
+    """P24 L13: the comparison plot draws mean - SD to mean + SD (drawPlot), which a reader of a
+    'forest-style' plot would take for a confidence interval. Its accessible name must say the bars
+    are SDs, not confidence intervals."""
+    html = INDEX.read_text(encoding="utf-8")
+    m = re.search(r'<svg id="plot"[^>]*aria-label="([^"]*)"', html)
+    assert m, "plot has no aria-label"
+    label = m.group(1).lower()
+    assert "forest" not in label and "not confidence interval" in label, m.group(1)

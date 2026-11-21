@@ -119,7 +119,7 @@
     return txt;
   }
 
-  var verifyGen = 0;
+  var verifyGen = 0, inFlight = 0;
   var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
   async function verify() {
     var out = document.getElementById("rcheck-out"), st = document.getElementById("rcheck-status");
@@ -132,7 +132,10 @@
     if (btn) btn.disabled = true;
     out.textContent = "";
     set("Starting WebR (first run downloads R, about a minute)... Note: package puniform is not in the pinned WebR repository, so the 5 p-uniform quantities are NOT CHECKED here; the downloaded script checks them in desktop R.");
-    var res = await global.AlmWebR.runR({ script: script, packages: [], onStatus: function (t) { set(t); } });
+    var res;
+    inFlight++;
+    try { res = await global.AlmWebR.runR({ script: script, packages: [], onStatus: function (t) { set(t); } }); }
+    finally { inFlight--; }
     if (btn) btn.disabled = false;
     // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
     if (my !== verifyGen || current() !== snap) { out.textContent = ""; set(STALE); return; }
@@ -142,7 +145,19 @@
     set("R finished (" + res.versions.R + ", webR " + res.versions.webR + "): " + last);
   }
 
-  global.PCurveRCheck = { buildScript: buildScript, download: download, verify: verify };
+  // Called by the page's run() on every new analysis (or refusal): output R already returned is for the
+  // previous analysis, so it is removed, never left beside the new result. A run still in progress is
+  // handled by the generation/snapshot check in verify() when its answer arrives.
+  var CHANGED = "The analysis changed since the last R check, so that R verdict was removed (it described the earlier analysis). Press Verify in R again.";
+  function invalidate() {
+    if (inFlight) return;
+    var out = document.getElementById("rcheck-out"), st = document.getElementById("rcheck-status");
+    if (!out || !out.textContent) return;
+    out.textContent = "";
+    if (st) st.textContent = CHANGED;
+  }
+
+  global.PCurveRCheck = { buildScript: buildScript, download: download, verify: verify, invalidate: invalidate };
   // Loaded at the end of <body>, so the controls already exist: bind directly.
   if (typeof document !== "undefined" && typeof document.getElementById === "function") {
     var d = document.getElementById("btn-rscript"), v = document.getElementById("btn-rverify");

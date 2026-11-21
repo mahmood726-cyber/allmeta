@@ -105,7 +105,7 @@
         <tbody id="results-body"></tbody>
       </table>
       <h2 style="margin-top:1rem">Estimate comparison</h2>
-      <svg id="plot" viewBox="0 0 600 220" role="img" aria-label="Forest-style plot comparing mean estimates from Wan/Luo/Shi"></svg>
+      <svg id="plot" viewBox="0 0 600 220" role="img" aria-label="Estimated mean (square) with a bar from mean minus SD to mean plus SD for each estimator; the bars show the estimated SD, not confidence intervals. The values are in the table above."></svg>
       <h2 style="margin-top:1rem">Check these numbers in R</h2>
       <p class="rcheck-hint">One R script, written from the inputs behind the table above, recomputes every mean and SD shown (published Wan/Luo/Shi formulas in base R; metaBLUE when installed) and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>
       <div class="rcheck-row">
@@ -222,6 +222,8 @@
       const b = parseFloat(document.getElementById("b").value);
       // The inputs behind the table now shown; r-check.js writes its R script from these.
       _lastM2MInputs = { scenario: scenario, n: n, a: a, q1: q1, m: m, q3: q3, b: b };
+      // A completed R verdict describes the analysis it was run on: every new analysis removes it (r-check.js).
+      if (typeof window.__almM2MRInvalidate === "function") window.__almM2MRInvalidate();
 
       // Validation
       const warnSlot = document.getElementById("warn-slot");
@@ -232,6 +234,15 @@
         render([]);
         _lastM2M = { _schema: "median-to-mean-results-v1", scenario: scenario, n: Number.isFinite(n) ? n : null,
           refused: true, estimates: [] };
+        return;
+      }
+      // Beyond 2^53 - 1 the typed n is not the integer that was entered, and from n ~ 5e15 the range quantile
+      // (n - 0.375)/(n + 0.25) rounds to 1 in double precision, so 2*qnorm(...) is infinite and every range-based
+      // SD would silently become 0. Such an n cannot be analysed here: refuse it rather than show those numbers.
+      if (!Number.isSafeInteger(n) || (scenario !== "C3" && !Number.isFinite(qnorm((n - 0.375) / (n + 0.25))))) {
+        warnSlot.innerHTML = `<div class="note"><strong>Input check:</strong> n is too large for these formulas in double precision (the range divisor 2&middot;&Phi;<sup>&minus;1</sup>((n &minus; 0.375)/(n + 0.25)) is not finite, or n is beyond 2<sup>53</sup> &minus; 1). No estimate is shown.</div>`;
+        render([]);
+        _lastM2M = { _schema: "median-to-mean-results-v1", scenario: scenario, n: n, refused: true, estimates: [] };
         return;
       }
       if (n < 5) {

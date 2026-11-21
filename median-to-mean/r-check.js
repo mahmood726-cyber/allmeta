@@ -102,7 +102,9 @@
     L.push("");
     L.push("## ---- recompute and compare ----");
     L.push("cat(sprintf(\"R %s; scenario %s, n = %s\\n\", getRversion(), inp$scenario, fmtv(inp$n)))");
-    L.push("valid_n <- is.finite(inp$n) && inp$n >= 2 && inp$n == round(inp$n)  # the page refuses any other n");
+    L.push("valid_n <- is.finite(inp$n) && inp$n >= 2 && inp$n == round(inp$n)  # the page refuses any other n,");
+    L.push("valid_n <- valid_n && inp$n <= 2^53 - 1 &&                            # and one beyond exact integers or whose");
+    L.push("  (inp$scenario == \"C3\" || is.finite(xi_range(inp$n)))                 # range divisor is not finite in double precision");
     L.push("check(\"refuses the sample size (1 = yes)\", as.numeric(!valid_n), as.numeric(page_refused), est = FALSE)");
     L.push("if (valid_n) with(inp, {");
     L.push("  w <- wan(scenario, n, a, q1, m, q3, b); lm <- luo_mean(scenario, n, a, q1, m, q3, b); ss <- shi_sd(scenario, n, a, q1, m, q3, b)");
@@ -214,6 +216,19 @@
       showVerdict(null);
     }).then(function () { busy = false; el("btn-verify-r").disabled = false; });
   }
+  // Called by runCalc() on every new analysis (or refusal): a verdict R already returned is for the
+  // previous analysis, so it is removed, never left beside the new table. A run still in progress is
+  // handled by the snapshot check in verify() when its answer arrives.
+  var CHANGED = "The analysis changed since the last R check, so that R verdict was removed (it described the earlier analysis). Press Verify in R again.";
+  window.__almM2MRInvalidate = function () {
+    if (busy) return;
+    var out = el("rcheck-out"), v = el("rcheck-verdict");
+    var shown = (out && !out.hidden && out.textContent) || (v && !v.hidden);
+    if (!shown) return;
+    if (out) { out.textContent = ""; out.hidden = true; }
+    showVerdict(null);
+    setStatus(CHANGED);
+  };
   function wire() {
     var v = el("btn-verify-r"), d = el("btn-download-r");
     if (v) v.addEventListener("click", verify);
