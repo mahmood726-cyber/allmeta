@@ -80,11 +80,11 @@
     </section>
     <section class="panel">
       <h2>Result</h2>
-      <div id="out"><p class="hint">Enter SUCRA values to compute POTH.</p></div>
+      <div id="out" role="status" aria-live="polite"><p class="hint">Enter SUCRA values to compute POTH.</p></div>
     </section>
   </main>
   <footer>
-    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in <code>shared/poth.js</code>, checked against the CRAN <code>poth</code> package 0.3-0 (within 10⁻⁹ on every <code>netmeta</code> example network). P-scores from the allmeta <a href="../nma/">NMA app</a> can be pasted here. Computed client-side.
+    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in <code>shared/poth.js</code>, checked against the CRAN <code>poth</code> package 0.3-0 (within 10⁻⁹ on every <code>netmeta</code> example network that netmeta can rank; for rounded input whose mean is off 0.5 the page's centred formula can differ slightly from poth's uncentred one). P-scores from the allmeta <a href="../nma/">NMA app</a> can be pasted here. Computed client-side.
   </footer>
   <script>
     var EXAMPLE = "0.92, Drug A\n0.74, Drug B\n0.55, Drug C\n0.41, Drug D\n0.23, Drug E\n0.15, Drug F";
@@ -95,26 +95,73 @@
     // A trailing "%" marks the value (and so the whole list) as percentages.
     var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*%?$/;
     function parse(text) {
-      var rows = [], errs = [], anyPct = false;
+      var rows = [], errs = [], anyPct = false, marked = 0, why = [], warn = [], dc = 0;
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
-        var v = NUM.test(f[0]) ? Number(f[0].replace(/\s*%$/, "")) : NaN;
+        // LIM-P23 F01: the value is the first field; the name is EVERYTHING after the first
+        // separator (a name may contain commas), never just the second field.
+        var sep = t.search(/[,\t]/);
+        var tok = (sep < 0 ? t : t.slice(0, sep)).trim(), name = sep < 0 ? "" : t.slice(sep + 1).trim();
+        // "0,92" (digits, comma, digits, no space) MAY be a decimal comma; decided for the whole list below.
+        if (/^\d+,\d+$/.test(t)) dc++;
+        var v = NUM.test(tok) ? Number(tok.replace(/\s*%$/, "")) : NaN;
         if (!isFinite(v) || v < 0) { errs.push("line " + (i + 1)); return; }
-        if (v > 1 || /%$/.test(f[0])) anyPct = true;
-        rows.push({ v: v, line: i + 1, tok: f[0], label: f[1] || ("T" + (rows.length + 1)) });
+        // LIM-P23 F03: a token with a nonzero digit must not become 0 (1e-400 underflows; -1e-400 is -0).
+        if (v === 0 && /[1-9]/.test(tok.replace(/[eE].*$/, ""))) {
+          errs.push("line " + (i + 1)); why.push("line " + (i + 1) + " is too small to represent (it would read as 0)"); return;
+        }
+        v = v + 0;  // -0 -> 0
+        if (/%$/.test(tok)) marked++;
+        if (v > 1 || /%$/.test(tok)) anyPct = true;
+        rows.push({ v: v, line: i + 1, tok: tok, label: name || ("T" + (rows.length + 1)) });
       });
+      // LIM-P23 F01 (review of e10c1f23): "1, 3" or "92,1" is a valid value plus a numbered
+      // treatment, so a comma line is refused as a decimal comma only when EVERY line has the
+      // no-space form, the list reading is impossible as SUCRAs/P-scores of one ranking (all values
+      // equal and not the centre 0.5 / 50%, e.g. 0,92 / 0,74 / 0,55 -> all 0), and the decimal
+      // reading is a valid list. If every line has that form but the list reading is possible,
+      // the list is accepted with a note.
+      if (rows.length >= 2 && dc === rows.length) {
+        var c = rows[0].v, allEq = rows.every(function (r) { return r.v === c; });
+        var dec = rows.map(function (r) { return Number(r.tok + "." + r.label); });
+        var decOk = dec.every(function (x) { return isFinite(x) && x >= 0 && x <= 100; }) &&
+          (dec.every(function (x) { return x <= 1; }) || dec.some(function (x) { return x > 1; }));
+        if (allEq && c !== 50 && decOk) {
+          rows.forEach(function (r) { errs.push("line " + r.line); });
+          why.push("every line reads as the same value " + c + " followed by a number, which no ranking gives; if these are decimal commas, write " + dec[0] + " rather than " + rows[0].tok + "," + rows[0].label);
+        } else {
+          warn.push("each line was read as a value, a comma and a numbered treatment name (e.g. " + rows[0].tok + " for treatment " + rows[0].label + "); if the comma is a decimal comma, write points instead");
+        }
+      }
+      // LIM-P23 F02: some values marked % and others not is ambiguous: an unmarked 0.74 beside
+      // 92% would otherwise be divided by 100 a second time. Mark all values or none.
+      if (marked > 0 && marked < rows.length) {
+        rows.forEach(function (r) { if (!/%$/.test(r.tok)) errs.push("line " + r.line); });
+        why.push("mark every value with % or none of them");
+      }
       // percent auto-detect: if any value > 1, treat all as 0–100.
-      if (anyPct) rows.forEach(function (r) { r.v = r.v / 100; });
+      if (anyPct) rows.forEach(function (r) {
+        var was = r.v; r.v = r.v / 100;
+        if (was !== 0 && r.v === 0) { errs.push("line " + r.line); why.push("line " + r.line + " is too small to represent (it would read as 0)"); }
+      });
       rows.forEach(function (r) { if (r.v > 1) errs.push("line " + r.line); });
-      return { rows: rows, errs: errs, pct: anyPct };
+      // LIM-P23 F04: one row per treatment; a repeated name (supplied or generated) is two rows for one treatment.
+      var seen = {};
+      rows.forEach(function (r) {
+        if (Object.prototype.hasOwnProperty.call(seen, r.label)) {
+          errs.push("line " + r.line); why.push("line " + r.line + " repeats the treatment name on line " + seen[r.label]);
+        } else seen[r.label] = r.line;
+      });
+      errs = errs.filter(function (e, k) { return errs.indexOf(e) === k; });
+      return { rows: rows, errs: errs, pct: anyPct, why: why, warn: warn };
     }
 
     function band(p) { return p >= 0.75 ? "hi" : (p >= 0.5 ? "mid" : "lo"); }
     function verdictText(p, n) {
-      if (p >= 0.75) return "High certainty — the hierarchy is well-separated; a top-ranked treatment is meaningfully ahead.";
+      // LIM-P23 F20: POTH measures how spread the scores are; it compares no effects, so it cannot show a leader is "ahead".
+      if (p >= 0.75) return "High certainty — the scores are well spread, so the ordering is fairly stable; check the relative effects before calling any treatment better.";
       if (p >= 0.5) return "Moderate certainty — interpret the ranking with care; neighbouring treatments may be interchangeable.";
-      return "Low certainty — the hierarchy is largely uninformative. Do not claim a treatment is “ranked best” on these SUCRAs alone; report relative effects with credible intervals.";
+      return "Low certainty — the hierarchy is largely uninformative. Do not claim a treatment is “ranked best” on these SUCRAs alone; report relative effects with their confidence or credible intervals.";
     }
 
     function run() {
@@ -122,7 +169,8 @@
       var out = document.getElementById("out");
       if (window.AlmRCheck) window.AlmRCheck.set(null);
       if (p.errs.length) {
-        out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name.</p>";
+        out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name, one row per treatment." +
+          (p.why.length ? " " + esc(p.why.join("; ")) + "." : "") + "</p>";
         return;
       }
       if (p.rows.length < 2) {
@@ -144,7 +192,12 @@
         + "<div class='gauge'><div class='med' style='left:67.1%' title='median 0.671 across 267 networks'></div><div class='mark' style='left:calc(" + (r.poth * 100).toFixed(1) + "% - 1px)'></div></div>"
         + "<div class='scale-row'><span>0 — no hierarchy</span><span>median 0.67</span><span>1 — certain</span></div>"
         + "<table><thead><tr><th>Treatment</th><th>SUCRA</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>"
-        + "<p class='hint' style='margin-top:0.5rem'>n = " + r.n + " treatments" + (p.pct ? " · values read as percentages (÷100)" : "") + " · mean SUCRA = " + r.meanSucra.toFixed(3) + (Math.abs(r.meanSucra - 0.5) > 0.02 ? " (SUCRAs should centre on 0.5 — check inputs)" : "") + "</p>";
+        + "<p class='hint' style='margin-top:0.5rem'>n = " + r.n + " treatments" + (p.pct ? " · values read as percentages (÷100)" : "") + " · mean SUCRA = " + r.meanSucra.toFixed(3) + (Math.abs(r.meanSucra - 0.5) > 0.02 ? " (SUCRAs should centre on 0.5 — check inputs)" : "")
+          + (p.warn.length ? " · Note: " + esc(p.warn.join("; ")) : "")
+          // LIM-P23 F15: say when the displayed value is capped (shared/poth.js clamps to [0, 1]).
+          + (r.s2 / r.s2max > 1 + 1e-12 ? " · uncapped POTH = " + (r.s2 / r.s2max).toFixed(3) + " > 1: these scores are more spread than any single ranking allows (rounded values?), so POTH is shown capped at 1" : "")
+          // LIM-P23 F19: the table and POTH are rounded for display; order and band are not.
+          + " · values shown to 3 decimals; the order and the band use the unrounded values, and exact ties keep the input order</p>";
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

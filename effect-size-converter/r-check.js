@@ -129,8 +129,9 @@
     "    push(\"IRR\", est, se); push(\"ln(IRR)\", log(est), se)",
     "  }",
     "  # 95% CI: ratio rows on the log scale, all others on their own scale",
-    "  ratio <- grepl(\"^(OR|RR|HR|IRR)(\\\\b|\\\\s|$)\", out$scale, perl = TRUE) & !is.na(out$point) & out$point > 0",
-    "  has <- !is.na(out$se) & out$se > 0 & !is.na(out$point)",
+    "  ratio_scale <- grepl(\"^(OR|RR|HR|IRR)(\\\\b|\\\\s|$)\", out$scale, perl = TRUE)",
+    "  ratio <- ratio_scale & !is.na(out$point) & out$point > 0",
+    "  has <- !is.na(out$se) & out$se > 0 & !is.na(out$point) & !(ratio_scale & !ratio)   # an under/overflowed ratio has no CI",
     "  out$lo <- ifelse(has, ifelse(ratio, exp(log(out$point) - z * out$se), out$point - z * out$se), NA)",
     "  out$hi <- ifelse(has, ifelse(ratio, exp(log(out$point) + z * out$se), out$point + z * out$se), NA)",
     "  out",
@@ -262,6 +263,8 @@
       L.push("}");
     } else {
       L.push("## The conversion table is empty for the current inputs (the page refused them); only the E-value widget is checked.");
+      // LIM-P20 A07: a refused panel is reported, so the verdict cannot read as a check of the whole page.
+      L.push("not_checked(\"conversion table\", \"the page refused the converter inputs, so it shows no conversions\")");
     }
     if (ev) {
       L.push("");
@@ -288,6 +291,7 @@
       L.push("  for (k in names(ev_page)) check(ev_lab[[k]], unname(R[[k]]), unname(ev_page[[k]]), 5e-4)   # the widget shows 3 decimals");
       L.push("})");
     }
+    if (!ev) L.push("not_checked(\"E-value widget\", \"the page refused the E-value inputs, so it shows no E-value\")");
     L.push("finish()");
     return L.join("\n") + "\n";
   }
@@ -302,7 +306,8 @@
   function showVerdict(v) {
     var e = el("rcheck-verdict"); if (!e) return;
     e.textContent = v || "";
-    e.className = "note rcheck-verdict" + (v && /^MATCH\b/.test(v) ? " ok" : "");
+    // LIM-P20 A07: only a complete MATCH (nothing NOT CHECKED) is coloured as success.
+    e.className = "note rcheck-verdict" + (v && /^MATCH\b/.test(v) && !/NOT CHECKED/.test(v) ? " ok" : "");
     e.hidden = !v;
   }
   function download() {
@@ -337,12 +342,23 @@
   }
   function sameSnapshot(a, b) { return a.length === b.length && a.every(function (x, i) { return x === b[i]; }); }
   var STALE = "R result discarded: the analysis on the page changed while R was running, so the verdict R returned (for the earlier analysis) is not shown. Press Verify in R again.";
+  // LIM-P20 A07: a completed verdict belongs to the analysis it checked. Any later
+  // conversion or E-value edit replaces the snapshot objects; the verdict is then cleared.
+  var verdictSnap = null;
+  function invalidateIfChanged() {
+    if (!verdictSnap || sameSnapshot(verdictSnap, snapshot())) return;
+    verdictSnap = null;
+    var out = el("rcheck-out"); if (out) { out.hidden = true; out.textContent = ""; }
+    showVerdict(null);
+    setStatus("The page's analysis changed after the last R check, so its verdict was cleared. Press Verify in R again.");
+  }
+  ["input", "change", "click"].forEach(function (ev) { document.addEventListener(ev, invalidateIfChanged); });
   var busy = false;
   function verify() {
     if (busy) return;
     var script, snap = snapshot();
     try { script = buildScript(); } catch (e) { setStatus(e.message); return; }
-    busy = true; el("btn-verify-r").disabled = true;
+    busy = true; el("btn-verify-r").disabled = true; verdictSnap = null;
     var out = el("rcheck-out"); out.hidden = true; out.textContent = ""; showVerdict(null);
     setStatus("Checking which R packages WebR can load...");
     webrPackages().then(function (have) {
@@ -362,6 +378,7 @@
         if (!sameSnapshot(snap, snapshot())) { out.textContent = ""; showVerdict(null); setStatus(STALE); return; }
         out.hidden = false; out.textContent = res.stdout;
         showVerdict(verdictOf(res.stdout) || "MISMATCH (R printed no verdict line)");
+        verdictSnap = snap;
         setStatus((res.versions && res.versions.R || "R") + " in WebR " + (res.versions && res.versions.webR || "") +
           (res.versions && res.versions.metafor ? ", metafor " + res.versions.metafor : "") + ", ran the same script as the download." +
           (missing.length ? " Not in this site's pinned WebR package repository: " + missing.join(", ") + " (the E-value lines show NOT CHECKED; run the downloaded script in R with " + missing.join(", ") + " installed to check them)." : ""));

@@ -71,7 +71,7 @@
                   font-size: 0.74rem; max-height: 24rem; overflow: auto; white-space: pre; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 100000; text-decoration: none; }
     .skip-link:focus { left: 8px; }
     .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
@@ -100,7 +100,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Effect-Size Converter</h1>
-    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. Everything runs in your browser.</p>
+    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. The conversions run in your browser; the optional extraction panel sends the pasted text to a local AI service (Ollama) on your own computer.</p>
   </header>
   <main id="main-content">
     <section class="panel" aria-label="Inputs">
@@ -217,6 +217,7 @@
     <section class="panel results" aria-label="Results">
       <h2>Conversions</h2>
       <div id="warn-slot" role="status" aria-live="polite"></div>
+      <p id="results-status" class="sr-only" role="status" aria-live="polite"></p>
       <table>
         <thead>
           <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th><th scope="col">Notes</th></tr>
@@ -348,7 +349,7 @@
           if (p1 > 0 && p1 < 1) {
             const rr = p1 / p0;
             const or = (p1 / (1 - p1)) / (p0 / (1 - p0));
-            push("RR (implied)", rr, NaN, "point only; SE on RR requires 2×2 table");
+            push("RR (implied)", rr, NaN, "point only; no SE is propagated (p₀ is treated as fixed and its uncertainty is unknown)");
             push("OR (implied)", or, NaN, "point only");
           }
         }
@@ -364,7 +365,7 @@
           push("SMD (Hedges' g)", est, se, "already bias-corrected (metafor::escalc SMD); no second J applied");
           if (Number.isFinite(J) && J > 0) {
             push("SMD (Cohen's d, recovered)", est / J, se / J,
-              "inverse of exact Hedges correction; requires independent group sizes");
+              (df > 100000 ? "inverse of the large-df Hedges approximation J = 1 − 3/(4df − 1)" : "inverse of exact Hedges correction") + "; requires independent group sizes");
             if (Number.isFinite(pooledSd) && pooledSd > 0)
               push("MD", est / J * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
                 "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (metafor::escalc MD, vtype HO)");
@@ -372,7 +373,7 @@
         } else {
           push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
           if (Number.isFinite(J) && J > 0)
-            push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
+            push("SMD (Hedges' g)", est * J, se * J, (df > 100000 ? "large-df approximation J = 1 − 3/(4df − 1)" : "exact small-sample correction") + " J(df=" + df + ")");
           if (Number.isFinite(pooledSd) && pooledSd > 0) {
             if (Number.isFinite(J) && J > 0)
               push("MD", est * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
@@ -407,7 +408,11 @@
         // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
         // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
         // log-space back-transform (otherwise Math.log yields NaN silently).
-        const isRatio = /^(OR|RR|HR|IRR)(\b|\s|$)/.test(row.scale) && row.point > 0;
+        const ratioScale = /^(OR|RR|HR|IRR)(\b|\s|$)/.test(row.scale);
+        const isRatio = ratioScale && row.point > 0;
+        // LIM-P20 A03: a ratio whose point under/overflowed (exp(-907) = 0) has no valid CI;
+        // a difference-scale interval around 0 would give a negative ratio limit.
+        if (ratioScale && !isRatio) return out;
         if (isRatio) {
           const lnPt = Math.log(row.point);
           out.lo = Math.exp(lnPt - Z95 * row.se);
@@ -474,6 +479,12 @@
       const tbody = document.getElementById("results-body");
       tbody.innerHTML = "";
       window.__almResultRows = rows.map(withCI);
+      // LIM-P20 A08: announce what the table now holds, and describe the plot's values.
+      const status = document.getElementById("results-status");
+      if (status) status.textContent = rows.length
+        ? rows.length + " converted value" + (rows.length === 1 ? "" : "s") + " shown: " +
+          window.__almResultRows.map(r => r.scale + " " + fmt(r.point)).join("; ") + "."
+        : "No conversions shown" + (warn ? ": " + warn : ".");
       for (const r of window.__almResultRows) {
         const ci = Number.isFinite(r.lo) && Number.isFinite(r.hi)
           ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
@@ -567,6 +578,10 @@
         ptsParts.push(`<rect x="${X(v.pt) - 5}" y="${y - 5}" width="10" height="10" fill="var(--accent)"/>`);
       });
 
+      svg.setAttribute("aria-label", views.length
+        ? "SMD-scale plot of " + views.length + " representation" + (views.length === 1 ? "" : "s") + " of one estimate: " +
+          views.map(v => v.scale + " " + fmt(v.pt) + (Number.isFinite(v.lo) && Number.isFinite(v.hi) ? " (95% CI " + fmt(v.lo) + " to " + fmt(v.hi) + ")" : "")).join("; ")
+        : "SMD-scale plot: no defensible SMD representation for this input");
       ax.innerHTML = axParts.join("");
       lbls.innerHTML = lblParts.join("");
       pts.innerHTML = ptsParts.join("");
@@ -635,14 +650,38 @@
       if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return false; }
       if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return false; }
       if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return false; }
+      // LIM-P20 A01: an entered value that cannot be used must refuse, never read as blank.
+      // A number input holding unparseable text reports value "" with validity.badInput.
+      const bad = id => { const e = document.getElementById(id); return !!(e && e.validity && e.validity.badInput); };
+      if (bad("ctx-p0")) { render([], "Baseline risk is not a number: correct it or clear the field."); return false; }
+      if (bad("ctx-sd")) { render([], "Pooled SD is not a number: correct it or clear the field."); return false; }
+      if (type === "SMD") {
+        const n1s = document.getElementById("der-n1").value.trim(), n2s = document.getElementById("der-n2").value.trim();
+        if (bad("der-n1") || bad("der-n2") || n1s !== "" || n2s !== "") {
+          const okN = s => /^\d+$/.test(s) && Number.isSafeInteger(Number(s)) && Number(s) >= 2;
+          if (!(okN(n1s) && okN(n2s))) {
+            render([], "Group sizes n1 and n2 must both be whole numbers of at least 2 (or both left blank); the Hedges correction and the MD SE need both.");
+            return false;
+          }
+        }
+      }
       const rows = convert(type, est, se, p0, sd);
-      const warn = type === "HR" || type === "IRR"
+      // LIM-P20 A03: say so when a converted value left floating-point range.
+      const outOfRange = rows.some(r => !Number.isFinite(r.point) && !/outside \(0,1\)/.test(r.note || "") ||
+        (/^(OR|RR|HR|IRR)(\b|\s|$)/.test(r.scale) && (r.point === 0 || r.point === Infinity)));
+      const rangeNote = outOfRange ? " Some converted values are outside floating-point range (shown as 0, a dash or without a CI): the input is too extreme for that conversion." : "";
+      const warn0 = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
         : type === "OR" || type === "RR" || type === "RD"
         ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; logit OR-to-SMD is a separate distributional approximation."
         : type === "SMD"
         ? "The logit OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
+      // LIM-P20 A09: explain conversions that are omitted rather than leaving them silently absent.
+      let omitNote = "";
+      if (type === "RD" && Number.isFinite(p0) && !(p0 + est > 0 && p0 + est < 1))
+        omitNote = " Implied p₁ = p₀ + RD = " + (p0 + est).toFixed(3) + " is outside (0,1), so the implied RR and OR are not shown.";
+      const warn = (warn0 + rangeNote + omitNote).trim();
       render(rows, warn);
       return true;
     }
@@ -668,18 +707,22 @@
   "ci_lower": 0.59,
   "ci_upper": 0.95,
   "ci_scale": "log or raw (log for ratios like OR/RR/HR)",
+  "smd_kind": "for SMD only: d (uncorrected Cohen's d) or g (Hedges' g)",
   "notes": "short caveat (e.g. rare events, subgroup-only)"
 }`,
       onResult: (r) => {
         if (!r) return;
         const el = id => document.getElementById(id);
         // A new extraction must never inherit precision from the previous effect.
-        ["in-se", "der-t", "der-f", "der-f-sign", "der-n1", "der-n2", "der-p", "der-lo", "der-hi"]
+        // LIM-P20 A04: nor its context (baseline risk, pooled SD) from the previous effect.
+        ["in-se", "der-t", "der-f", "der-f-sign", "der-n1", "der-n2", "der-p", "der-lo", "der-hi", "ctx-p0", "ctx-sd"]
           .forEach(id => { el(id).value = ""; });
         render([], null);
         // Clamp / sanitise LLM-supplied numerics to biomedical-plausible ranges.
+        // LIM-P20 A04: a model string must be a whole number ("0.75 (approx)" is not 0.75).
+        const NUMTOK = /^\s*[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*$/;
         const clampNum = (v, max = 1e6) => {
-          const n = typeof v === "number" ? v : parseFloat(v);
+          const n = typeof v === "number" ? v : (typeof v === "string" && NUMTOK.test(v) ? Number(v) : NaN);
           if (!Number.isFinite(n) || Math.abs(n) > max) return null;
           return n;
         };
@@ -694,6 +737,10 @@
             throw new RangeError("Ratio estimates (OR/RR/HR/IRR) must be greater than 0.");
           if (type === "RD" && !(est >= -1 && est <= 1))
             throw new RangeError("Risk difference must be between -1 and +1.");
+          // LIM-P20 A04: an SMD's identity decides whether J is applied; never inherit it.
+          const smdKind = typeof r.smd_kind === "string" ? r.smd_kind.trim().toLowerCase() : "";
+          if (type === "SMD" && !["d", "g"].includes(smdKind))
+            throw new RangeError("For an SMD, the extraction must say whether it is Cohen's d or Hedges' g; enter it by hand otherwise.");
           const scale = r.ci_scale ? (/log/i.test(String(r.ci_scale)) ? "log" : "raw")
             : (ratio ? "log" : "raw");
           let se = clampNum(r.se);
@@ -707,6 +754,7 @@
           }
           // Commit only an estimate paired with its own validated precision.
           el("in-type").value = type;
+          if (type === "SMD") el("in-smd-kind").value = smdKind;
           el("in-est").value = String(est);
           el("in-se").value = String(se);
           el("der-scale").value = scale;
@@ -728,6 +776,46 @@
       document.body.prepend(banner);
       console.error("[effect-size-converter init]", initErr);
     }
+  </script>
+  <script>
+  // LIM-P20 A11: the E-value widget needs only ../shared/evalue.js, so it must not sit
+  // inside the block below, which returns early when the optional hub modules are absent.
+    // E-value widget (VanderWeele-Ding) — independent of the conversion table.
+    (function () {
+      function evRender() {
+        var out = document.getElementById('ev-out'); if (!out || !window.AlmEValue) return;
+        var meas = document.getElementById('ev-measure').value;
+        var pt = parseFloat(document.getElementById('ev-point').value);
+        var loInput = document.getElementById('ev-lo');
+        var hiInput = document.getElementById('ev-hi');
+        var lo = loInput.value.trim() === '' ? null : parseFloat(loInput.value);
+        var hi = hiInput.value.trim() === '' ? null : parseFloat(hiInput.value);
+        var rare = document.getElementById('ev-rare').checked;
+        var ratio = meas !== 'SMD';
+        window.__almLastEValue = function () { return null; };
+        if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; return; }
+        var r;
+        try {
+          if ((loInput.validity && loInput.validity.badInput) || (hiInput.validity && hiInput.validity.badInput))
+            throw new RangeError('Invalid confidence interval: bounds must be finite numbers.');
+          r = window.AlmEValue.eValues(meas, pt, lo, hi, { rare: rare });
+        } catch (error) {
+          if (error.name !== 'RangeError') throw error;
+          out.textContent = 'Refused: ' + error.message;
+          return;
+        }
+        var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
+        var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
+        var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
+        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? noCIText : f(r.ci)) + '</strong>' +
+          (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
+        window.__almLastEValue = function () { return r; };
+      }
+      ['ev-measure', 'ev-point', 'ev-lo', 'ev-hi', 'ev-rare'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.addEventListener('input', evRender);
+      });
+      if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
+    })();
   </script>
   <script>
   // =======================================================================
@@ -778,50 +866,17 @@
     };
 
     // Return the current conversion table rows as a results object.
-    // E-value widget (VanderWeele-Ding) — independent of the conversion table.
-    (function () {
-      function evRender() {
-        var out = document.getElementById('ev-out'); if (!out || !window.AlmEValue) return;
-        var meas = document.getElementById('ev-measure').value;
-        var pt = parseFloat(document.getElementById('ev-point').value);
-        var loInput = document.getElementById('ev-lo');
-        var hiInput = document.getElementById('ev-hi');
-        var lo = loInput.value.trim() === '' ? null : parseFloat(loInput.value);
-        var hi = hiInput.value.trim() === '' ? null : parseFloat(hiInput.value);
-        var rare = document.getElementById('ev-rare').checked;
-        var ratio = meas !== 'SMD';
-        window.__almLastEValue = function () { return null; };
-        if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; return; }
-        var r;
-        try {
-          if ((loInput.validity && loInput.validity.badInput) || (hiInput.validity && hiInput.validity.badInput))
-            throw new RangeError('Invalid confidence interval: bounds must be finite numbers.');
-          r = window.AlmEValue.eValues(meas, pt, lo, hi, { rare: rare });
-        } catch (error) {
-          if (error.name !== 'RangeError') throw error;
-          out.textContent = 'Refused: ' + error.message;
-          return;
-        }
-        var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
-        var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
-        var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
-        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? noCIText : f(r.ci)) + '</strong>' +
-          (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
-        window.__almLastEValue = function () { return r; };
-      }
-      ['ev-measure', 'ev-point', 'ev-lo', 'ev-hi', 'ev-rare'].forEach(function (id) {
-        var el = document.getElementById(id); if (el) el.addEventListener('input', evRender);
-      });
-      if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
-    })();
 
+    // LIM-P20 A05: export exactly the analysis on screen. Re-running runConvert() here
+    // analysed unsubmitted edits and revived the previous table after a rejected CSV row.
     window.__almResults = function () {
-      if (typeof runConvert === 'function') runConvert();
-      var type = document.getElementById('in-type').value;
-      var est = parseFloat(document.getElementById('in-est').value);
-      var se = parseFloat(document.getElementById('in-se').value);
-      var n1 = parseFloat(document.getElementById('der-n1').value);
-      var n2 = parseFloat(document.getElementById('der-n2').value);
+      var a = typeof window.__escAnalysed === 'function' ? window.__escAnalysed() : null;
+      var shown = (window.__almResultRows || []).length > 0;
+      if (!a || !shown) a = { type: document.getElementById('in-type').value, est: NaN, se: NaN, p0: NaN, sd: NaN, kind: null, n1: NaN, n2: NaN };
+      var type = a.type;
+      var est = a.est, se = a.se, n1 = a.n1, n2 = a.n2;
+      var evr = typeof window.__almLastEValue === 'function' ? window.__almLastEValue() : null;
+      var evIn = function (id) { var e = document.getElementById(id); return e && e.value.trim() !== '' ? Number(e.value) : null; };
       var rows = (window.__almResultRows || []).map(function (r) {
         return {
           scale: r.scale,
@@ -836,15 +891,16 @@
         _schema: 'esc-results-v1',
         build: window.AlmBuildInfo ? Object.assign({}, window.AlmBuildInfo) : null,
         type: type,
-        smd_estimator: type === 'SMD' ? document.getElementById('in-smd-kind').value : null,
+        smd_estimator: type === 'SMD' && shown ? a.kind : null,
         input_estimate: Number.isFinite(est) ? est : null,
         input_se: Number.isFinite(se) ? se : null,
-        n1: Number.isFinite(n1) ? n1 : null,
-        n2: Number.isFinite(n2) ? n2 : null,
-        baseline_risk: document.getElementById('ctx-p0').value.trim() !== '' ?
-          Number(document.getElementById('ctx-p0').value) : null,
-        pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
-          Number(document.getElementById('ctx-sd').value) : null,
+        n1: Number.isFinite(n1) && n1 > 0 ? n1 : null,
+        n2: Number.isFinite(n2) && n2 > 0 ? n2 : null,
+        baseline_risk: Number.isFinite(a.p0) ? a.p0 : null,
+        pooled_sd: Number.isFinite(a.sd) ? a.sd : null,
+        e_value: evr ? { measure: document.getElementById('ev-measure').value, point: evIn('ev-point'),
+          ci_lower: evIn('ev-lo'), ci_upper: evIn('ev-hi'), rare: document.getElementById('ev-rare').checked,
+          approx_rr: evr.rr.point, e_point: evr.point, e_ci: evr.ci } : null,
         assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; logit (Hasselblad-Hedges) OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
         numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::escalc(measure="MD",vtype="HO") for the raw MD row; metafor::cmicalc(method="exact")',
         rows: rows
@@ -857,6 +913,13 @@
       if (!rows || !rows.length) return;
       try {
         var r = rows[0];
+        // LIM-P20 A01: Number('') and Number(null) are 0, so a blank cell must be refused
+        // before conversion, never read as a mean, SD or n of zero.
+        ['m1', 'sd1', 'n1', 'm2', 'sd2', 'n2'].forEach(function (k) {
+          var s = r[k];
+          if (s == null || String(s).trim() === '' || !isFinite(Number(s)))
+            throw new RangeError('column ' + k + ' is blank or not a number in the first row.');
+        });
         var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
           Number(r.m2), Number(r.sd2), Number(r.n2));
         if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();

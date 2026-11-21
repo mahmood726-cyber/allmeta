@@ -46,7 +46,7 @@
     sec.className = "panel"; sec.id = "rcheck-panel"; sec.style.gridColumn = "1 / -1";
     sec.setAttribute("aria-label", "Check this result in R");
     sec.innerHTML = '<h2>Check in R</h2>' +
-      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes every displayed number with ' + PKG_NOTE + ', prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
+      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. From the values the page parsed it recomputes, with ' + PKG_NOTE + ', the SUCRA values, their mean and POTH shown on the page (not the ranking order, names or band text, and not with the poth package); it prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
       '<button type="button" id="btn-rscript" class="ghost">Download R script</button>' +
       '<button type="button" id="btn-verify-r" class="ghost">Verify in R (WebR)</button></div>' +
@@ -139,7 +139,11 @@
       "# S2 = (1/n) sum (SUCRA_i - 0.5)^2, S2max = (n+1) / (12 (n-1)), POTH = S2 / S2max.",
       "# The pack validates against the CRAN poth package 0.3-0, which is not in this site's WebR repository,",
       "# so both R paths use this closed form in base R.",
-      "S2 <- mean((s - 0.5)^2); S2max <- (n + 1) / (12 * (n - 1)); poth <- S2 / S2max",
+      "S2 <- mean((s - 0.5)^2); S2max <- (n + 1) / (12 * (n - 1)); poth_raw <- S2 / S2max",
+      "# LIM-P23 F15: the page (shared/poth.js) reports POTH capped to [0, 1]; scores more spread than any",
+      "# single ranking allows (e.g. rounded values) give poth_raw > 1. Apply the same stated cap and print both.",
+      "poth <- min(1, max(0, poth_raw))",
+      "if (poth_raw > 1) cat(sprintf(\"Uncapped POTH = %.6f > 1: these scores are more spread than any single ranking allows; POTH is capped at 1, as on the page.\n\", poth_raw))",
       "cat(sprintf(\"POTH = %.6f (n = %d treatments, mean SUCRA = %.6f)\n\", poth, n, mean(s)))",
       "chk(\"n treatments\", " + rnum(p.n) + ", n, 0)",
       "chk(\"percent input (1 = yes)\", " + (p.pct ? 1 : 0) + ", as.numeric(pct), 0)"

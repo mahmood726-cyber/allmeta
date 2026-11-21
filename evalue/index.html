@@ -83,6 +83,7 @@
           <option value="OLS">Linear regression coefficient (continuous outcome)</option>
           <option value="RD">Risk difference (2&times;2 counts)</option>
         </select>
+        <span class="hint" id="measure-hint">Values already entered are kept when the measure changes (hidden fields are ignored, not cleared): check that each visible value is on the new measure's scale, and clear the CI before giving an SMD's standard error.</span>
       </label>
       <div class="row3" id="grp-point">
         <label><span class="lbl">Point</span><input id="point" type="number" step="any" value="2.0"></label>
@@ -92,7 +93,7 @@
       <div class="row3" id="grp-reg" hidden>
         <label id="grp-se"><span class="lbl">Standard error</span><input id="se" type="number" step="any" min="0" aria-describedby="se-hint"><span class="hint" id="se-hint">optional; instead of a CI (EValue's convention)</span></label>
         <label id="grp-sd"><span class="lbl">Outcome SD</span><input id="sd" type="number" step="any" min="0"></label>
-        <label id="grp-delta"><span class="lbl">Contrast &delta;</span><input id="delta" type="number" step="any" value="1"><span class="hint">exposure units compared</span></label>
+        <label id="grp-delta"><span class="lbl">Contrast &delta;</span><input id="delta" type="number" step="any" value="1"><span class="hint">exposure units compared; its sign is ignored (&#124;&delta;&#124;, as evalues.OLS)</span></label>
       </div>
       <div class="row4" id="grp-rd" hidden>
         <label><span class="lbl">Exposed, event</span><input id="n11" type="number" step="any" min="0"></label>
@@ -111,7 +112,8 @@
         <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
-      <p id="interp"></p>
+      <p id="interp" role="status" aria-live="polite"></p>
+      <p id="refusal-status" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0"></p>
       <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
       <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale"></svg>
       <h2 style="margin-top:1rem">Check these numbers in R</h2>
@@ -130,7 +132,7 @@
     confidence limit nearest the null (= 1 if that limit crosses the null). Non-RR measures are mapped
     to an approximate RR: OR → √OR (common) or OR (rare); HR via VanderWeele-Ding; d → exp(0.91·d) (Chinn 2000).
     With a standard error instead of a CI, d's limits are exp(0.91·d ∓ 1.78·SE), as in EValue's <code>evalues.MD</code>;
-    a regression coefficient b is first converted to d = b·δ/SD (<code>evalues.OLS</code>); a risk difference uses the
+    a regression coefficient b is first converted to d = b·|δ|/SD, the absolute contrast (<code>evalues.OLS</code> recodes δ to |δ|); a risk difference uses the
     bias-factor method of Ding &amp; VanderWeele (2016) with EValue's grid search (<code>evalues.RD</code>).
     Reference: VanderWeele TJ, Ding P. Sensitivity Analysis in Observational Research: Introducing the
     E-Value. Ann Intern Med. 2017;167(4):268-274. doi:10.7326/M16-2607. Computed client-side by the audited
@@ -147,7 +149,15 @@
       var raw = input.value.trim();
       return raw === "" ? null : Number(raw);
     }
-    function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }
+    // LIM-P22 F12: toFixed(4) shows a positive value below 5e-5 as "0", and above 1e21
+    // returns exponent text whose trailing zeros the strip then removed (1e30 -> "1e+3").
+    // Outside [1e-4, 1e6) show 4 significant digits in exponent form; inside, unchanged.
+    function fmt(x) {
+      if (x == null || !isFinite(x)) return "—";
+      var a = Math.abs(x);
+      if (x !== 0 && (a < 1e-4 || a >= 1e6)) return x.toExponential(3).replace(/\.?0+e/, "e");
+      return x.toFixed(4).replace(/\.?0+$/, "");
+    }
 
     function show(id, on) { document.getElementById(id).hidden = !on; }
     function layout(measure) {
@@ -167,6 +177,12 @@
         if (measure === "RD") {
           var c = ["n11", "n10", "n01", "n00"].map(num);
           if (c.some(function (v) { return v === null; })) throw new RangeError("all four cell counts are required.");
+          // LIM-P22 F08: counts are whole numbers of people; a fractional or unsafe-integer
+          // entry is a typo, not data. A risk difference lies strictly between -1 and 1.
+          if (c.some(function (v) { return !(Number.isSafeInteger(v) && v >= 0); }))
+            throw new RangeError("cell counts must be whole numbers of 0 or more.");
+          if (tv !== null && !(tv > -1 && tv < 1))
+            throw new RangeError("a risk-difference true value must lie between -1 and 1 (exclusive).");
           r = E.eValuesRD(c[0], c[1], c[2], c[3], { "true": tv });
           rows = "<tr><td>Risk difference (95% CI)</td><td><code>" + fmt(r.rd) + "</code> (CI <code>" + fmt(r.rdLo) + "</code>&ndash;<code>" + fmt(r.rdHi) + "</code>)</td></tr>"
             + "<tr><td>Bias factor to reach the true value</td><td><code>" + fmt(r.biasFactor) + "</code></td></tr>";
@@ -199,6 +215,16 @@
         refuse("derived risk ratio or E-value was non-finite.");
         return;
       }
+      // LIM-P22 F11: every DISPLAYED derived quantity must be usable, not only the E-values
+      // (an SMD SE of 1000 gives risk-ratio limits exp(0.91 d -/+ 1.78 SE) = 0 and Infinity).
+      var shown = measure === "RD" ? [r.rd, r.rdLo, r.rdHi, r.biasFactor]
+        : [r.rr.point].concat(r.rr.lo != null ? [r.rr.lo, r.rr.hi] : [], tv !== null ? [r.rr["true"]] : [],
+            measure === "OLS" ? [r.d].concat(r.seD != null ? [r.seD] : []) : []);
+      var ratioOk = measure === "RD" || (r.rr.point > 0 && (r.rr.lo == null || (r.rr.lo > 0 && r.rr.hi > 0)));
+      if (shown.some(function (v) { return !Number.isFinite(v); }) || !ratioOk) {
+        refuse("a derived quantity (risk ratio, its limits, d or the bias factor) is non-finite or out of numerical range.");
+        return;
+      }
       window.__almLastEValue = function () { return r; };
       tbody.innerHTML =
         "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
@@ -213,7 +239,7 @@
       document.getElementById("interp").innerHTML =
         "To " + tvTxt + ", an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
         + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
-      drawPlot(r);
+      drawPlot(r, measure);
     }
 
     function run() {
@@ -225,9 +251,13 @@
       var ratio = (measure !== "SMD");
       var hasLo = lo !== null, hasHi = hi !== null;
       window.__almLastEValue = function () { return null; };
+      document.getElementById("refusal-status").textContent = "";
       function refuse(reason) {
         tbody.textContent = "Analysis refused: " + reason;
+        // LIM-P22 F23: a refusal is announced in its own polite live region; the
+        // interpretation (#interp) is cleared, so no stale result text remains.
         document.getElementById("interp").textContent = "";
+        document.getElementById("refusal-status").textContent = "Analysis refused: " + reason;
         document.getElementById("plot").replaceChildren();
       }
       layout(measure);
@@ -267,12 +297,18 @@
         "To fully explain away the point estimate, an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
         + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
 
-      drawPlot(r);
+      drawPlot(r, measure);
     }
 
-    function drawPlot(r) {
-      // Log-scale axis from RR=1 to a bit past the point E-value.
-      var maxV = Math.max(r.point, r.rr.point, 3) * 1.15;
+    function drawPlot(r, measure) {
+      // Log-scale axis from RR=1 to a bit past the point E-value AND the plotted marker
+      // (LIM-P22 F14: with a non-null true value 1/RR can exceed the E-value).
+      var obs = r.rr.point > 0 ? (r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point) : 1;
+      var maxV = Math.max(r.point, obs, 3) * 1.15;
+      var rd = measure === "RD";  // for a risk difference the marker is EValue's bias factor, not a risk ratio
+      document.getElementById("plot").setAttribute("aria-label", rd
+        ? "Bias factor (risk-difference method) and E-value on a log scale"
+        : "Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale");
       var W = 600, H = 150, padL = 30, padR = 20, y = 70;
       var x = function (v) { return padL + (Math.log(v) / Math.log(maxV)) * (W - padL - padR); };
       var parts = [];
@@ -286,7 +322,7 @@
       // observed RR marker
       if (r.rr.point > 0) {
         parts.push("<circle cx='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' cy='" + y + "' r='5' fill='var(--accent)'/>");
-        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>" + (r.rr.point >= 1 ? "RR" : "1/RR = " + fmt(1 / r.rr.point)) + "</text>");
+        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>" + (rd ? "bias factor" : r.rr.point >= 1 ? "RR" : "1/RR = " + fmt(1 / r.rr.point)) + "</text>");
       }
       // E-value marker
       parts.push("<line x1='" + x(r.point) + "' y1='" + (y - 28) + "' x2='" + x(r.point) + "' y2='" + (y + 8) + "' stroke='var(--warn)' stroke-width='2'/>");

@@ -192,6 +192,12 @@ test('plant P20-R4: blank sizes and unavailable build identity export as explici
   assert.equal(out.n2, null);
   assert.equal(out.build, null);
   h.set('der-n1', 23);
+  // LIM-P20 A05: the export describes the ANALYSED table, not unsubmitted form edits, so the
+  // requirement (a given size is exported, a blank one is an explicit null) is stated after the
+  // conversion runs. Exporting a typed-but-unconverted value was the A05 defect, not a requirement.
+  assert.equal(JSON.parse((await h.download('json')).text).n1, null,
+    'an unsubmitted size is not exported (LIM-P20 A05)');
+  h.context.runConvert();
   const partial = JSON.parse((await h.download('json')).text);
   assert.equal(partial.n1, 23);
   assert.equal(partial.n2, null);
