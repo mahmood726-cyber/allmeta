@@ -98,7 +98,9 @@
       text.split(/\r?\n/).forEach(function (l, i) {
         var t = l.trim(); if (!t || t[0] === "#") return;
         var f = t.split(/[,\t]/); var y = num(f[0]), se = num(f[1]);
-        if (!isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        // effect, SE and at most one label: a 4th field means the line is not in that shape (e.g. decimal
+        // commas, "0,2, 0,3", which used to be read as effect 0 and SE 2), so it is left out like any invalid line.
+        if (f.length > 3 || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
         yi.push(y); vi.push(se * se);
       });
       return { yi: yi, vi: vi, errs: errs };
