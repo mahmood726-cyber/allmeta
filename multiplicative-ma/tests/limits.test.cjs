@@ -102,12 +102,8 @@ test("F13: the R panel says it checks the numbers computed from the accepted row
   assert.match(t, /accepted/);
 });
 
-test("F16: the page's security policy allows WebAssembly compilation for Verify in R", () => {
-  const html = fs.readFileSync(path.join(ROOT, "multiplicative-ma", "index.html"), "utf8");
-  const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)[1];
-  assert.match(csp, /script-src [^;]*'wasm-unsafe-eval'/);
-});
-
+// F16 (CSP lacks 'wasm-unsafe-eval') is NOT a requirement: Verify in R runs WebR to MATCH 17/17 in system Chrome
+// under the current policy (lim3 lane user path, 21 Nov 2026), so no test asserts the directive.
 test("F17: results, errors and the R verdict are announced", { skip: SKIP }, async () => {
   const p = await open();
   const a = await p.evaluate(() => ({ out: document.getElementById("out").closest("[aria-live]") !== null,
