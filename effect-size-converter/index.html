@@ -778,56 +778,8 @@
     }
   </script>
   <script>
-  // =======================================================================
-  // Cycle 2.2 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
-  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
-  //   skipped: chart-download (no pre-existing download; inline SVG is read-only display)
-  // Adapter shims map to the existing engine without changing math.
-  // Deferred: axis-controls renders but does not drive the forest plot X domain —
-  //   renderForest() auto-computes its domain; wiring lo/hi overrides deferred to a future cycle.
-  // CSV upload: SMD-from-means only (m1,sd1,n1,m2,sd2,n2). Multi-mode CSV would
-  //   require mode-detection; single-mode covers the most common academic use case.
-  // =======================================================================
-  (function () {
-    // LIM-P20 A11: the hub modules are optional; only their wiring is skipped without them.
-    // The adapters and the independent E-value widget below must still run.
-    var hasAlm = !!window.alm;
-
-    // ---- adapter shims --------------------------------------------------
-
-    // Snapshot: capture every relevant form field into a flat object.
-    window.__almSnapshot = function () {
-      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
-                 'der-lo','der-hi','der-scale'];
-      var snap = {};
-      ids.forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) snap[id] = el.value;
-      });
-      return snap;
-    };
-
-    // Restore: apply snapshot back to form controls and re-render.
-    window.__almRestore = function (snap) {
-      var isEmpty = !snap || Object.keys(snap).length === 0;
-      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
-                 'der-lo','der-hi','der-scale'];
-      ids.forEach(function (id) {
-        var el = document.getElementById(id);
-        if (!el) return;
-        if (isEmpty) {
-          // Clear all data; keep selectors on their initial valid option.
-          el.value = el.tagName === 'SELECT' ? el.options[0].value : '';
-        } else {
-          if (snap[id] != null) el.value = snap[id];
-        }
-      });
-      if (typeof runConvert === 'function') runConvert();
-    };
-
-    // Return the current conversion table rows as a results object.
+  // LIM-P20 A11: the E-value widget needs only ../shared/evalue.js, so it must not sit
+  // inside the block below, which returns early when the optional hub modules are absent.
     // E-value widget (VanderWeele-Ding) — independent of the conversion table.
     (function () {
       function evRender() {
@@ -864,6 +816,56 @@
       });
       if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
     })();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.2 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+  //   skipped: chart-download (no pre-existing download; inline SVG is read-only display)
+  // Adapter shims map to the existing engine without changing math.
+  // Deferred: axis-controls renders but does not drive the forest plot X domain —
+  //   renderForest() auto-computes its domain; wiring lo/hi overrides deferred to a future cycle.
+  // CSV upload: SMD-from-means only (m1,sd1,n1,m2,sd2,n2). Multi-mode CSV would
+  //   require mode-detection; single-mode covers the most common academic use case.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Snapshot: capture every relevant form field into a flat object.
+    window.__almSnapshot = function () {
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
+                 'der-lo','der-hi','der-scale'];
+      var snap = {};
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) snap[id] = el.value;
+      });
+      return snap;
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
+                 'der-lo','der-hi','der-scale'];
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (isEmpty) {
+          // Clear all data; keep selectors on their initial valid option.
+          el.value = el.tagName === 'SELECT' ? el.options[0].value : '';
+        } else {
+          if (snap[id] != null) el.value = snap[id];
+        }
+      });
+      if (typeof runConvert === 'function') runConvert();
+    };
+
+    // Return the current conversion table rows as a results object.
 
     // LIM-P20 A05: export exactly the analysis on screen. Re-running runConvert() here
     // analysed unsubmitted edits and revived the previous table after a rejected CSV row.
@@ -948,7 +950,7 @@
     };
 
     // ---- module init -----------------------------------------------------
-    if (hasAlm) {
+
     window.alm.csvUpload({
       target: '#alm-csv-mount',
       columns: [
@@ -1016,7 +1018,6 @@
         }
       });
     }
-    }  // hasAlm
   })();
   </script>
 <script src="r-check.js"></script>
