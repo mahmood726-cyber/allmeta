@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Fragility index for a binary-outcome meta-analysis (Atal 2019): the fewest single-patient event changes needed to flip the pooled result's statistical significance.">
+  <meta name="description" content="Fragility index for a binary-outcome meta-analysis (Atal 2019): the number of single-patient event changes, chosen greedily as in fragility::frag.ma, needed to flip the pooled result's statistical significance.">
   <meta name="color-scheme" content="light dark">
   <title>Fragility index — meta-analysis</title>
   <style>
@@ -62,7 +62,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Fragility index — meta-analysis</h1>
-    <p>How many single-patient event-status changes, added greedily across studies, would it take to flip the pooled result's statistical significance? A small fragility index means a "significant" meta-analysis hangs on very few events (Atal et al. 2019). Pooling matches <code>metafor</code> DL; the algorithm matches the <code>fragility</code> R package.</p>
+    <p>How many single-patient event-status changes, added greedily across studies, would it take to flip the pooled result's statistical significance? A small fragility index means a "significant" meta-analysis hangs on very few events (Atal et al. 2019). Pooling matches <code>metafor</code> DL; the greedy search follows <code>fragility::frag.ma</code> (its FI and FQ were reproduced on the validated inputs; the modification path can differ after floating-point near-ties). It gives a count of greedy changes, not a guaranteed minimum.</p>
   </header>
   <main>
     <section class="panel">
@@ -97,7 +97,7 @@
   <footer>
     Greedy procedure matching <code>fragility::frag.ma(method="DL")</code>: each step applies the single ±1
     event change (across any study, either arm) that pushes the watched DerSimonian-Laird 95% CI bound furthest
-    toward the null, stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
+    toward the null (or the earliest that reaches the null), stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
     Zero-cell handling follows <code>frag.ma</code>'s defaults for <code>metafor</code> (add ½ to studies with a zero cell;
     double-zero studies are kept, <code>drop00 = FALSE</code>); at least two studies are required; the DL pool
     delegates to the audited <code>shared/ma-core.js</code>. Reference: Atal I, Porcher R, Boutron I, Ravaud P.
@@ -116,21 +116,31 @@
     ].join("\n");
 
     function parse(text) {
-      var studies = [], labels = [], errs = [];
+      var studies = [], labels = [], errs = [], N = 0;
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim();
         if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        // four counts, then the label = everything after the 4th separator (a label may
+        // contain commas; one pair of enclosing double quotes is removed). Splitting the
+        // whole line kept only the text up to the label's first comma and dropped the rest.
+        var m = /^([^,\t]*)[,\t]([^,\t]*)[,\t]([^,\t]*)[,\t]([^,\t]*)(?:[,\t]([\s\S]*))?$/.exec(t);
+        var f = m ? m.slice(1, 5).map(function (s) { return s.trim(); }) : [];
+        var lab = m && m[5] != null ? m[5].trim() : "";
+        if (/^"[\s\S]*"$/.test(lab)) lab = lab.slice(1, -1).replace(/""/g, '"').trim();
         // counts must be complete non-negative integers ("" must not read as 0, 2.5 is not a count)
         if (!f.slice(0, 4).every(function (s) { return /^\d+$/.test(s); }) || f.length < 4) {
           errs.push("line " + (i + 1)); return;
         }
         var e1 = +f[0], n1 = +f[1], e0 = +f[2], n0 = +f[3];
-        if (![e1, n1, e0, n0].every(isFinite) || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
+        // exact integers only (2^53 + 1 would be read as 2^53, which can hide events > total),
+        // and the summed N used for FQ must stay exact too
+        if (![e1, n1, e0, n0].every(Number.isSafeInteger) || !Number.isSafeInteger(N + n1 + n0)
+            || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
           errs.push("line " + (i + 1)); return;
         }
+        N += n1 + n0;
         studies.push({ e1: e1, n1: n1, e0: e0, n0: n0 });
-        labels.push(f[4] || ("Study " + studies.length));
+        labels.push(lab || ("Study " + studies.length));
       });
       return { studies: studies, labels: labels, errs: errs };
     }
@@ -142,6 +152,8 @@
     window.__almFragilityRState = function () { return _rstate; };
     function run() {
       _rstate = null;
+      // any re-run makes a displayed R verdict describe an earlier analysis
+      if (window.AlmFragilityRCheck && AlmFragilityRCheck.invalidate) AlmFragilityRCheck.invalidate();
       var measure = document.getElementById("measure").value;
       var p = parse(document.getElementById("data").value);
       var tbody = document.getElementById("tbody");
@@ -151,7 +163,14 @@
         tbody.innerHTML = "<tr><td>Paste at least one valid 2×2 study" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
         return;
       }
-      var r = window.AlmFragility.fragility(p.studies, { measure: measure });
+      var r;
+      // a numerical failure in the engine must replace the result, never leave the
+      // previous analysis's table on screen beside the new input
+      try { r = window.AlmFragility.fragility(p.studies, { measure: measure }); }
+      catch (e) {
+        tbody.innerHTML = "<tr><td>Not computed: the calculation failed for these data (" + esc(e && e.message || e) + ").</td></tr>";
+        return;
+      }
       var ratio = (measure !== "RD");
       var tx = function (v) { return v == null ? null : ratio ? Math.exp(v) : v; };
       if (r.pooled && r.pooled.est != null && p.studies.length >= 2) _rstate = { measure: measure, studies: p.studies, labels: p.labels,

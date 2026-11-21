@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Rare-events meta-analysis via binomial-normal GLMM — avoids the +0.5 continuity correction bias.">
+  <meta name="description" content="Rare-events meta-analysis: experimental browser GLMM fits from 2×2 counts, shown beside inverse-variance pooling with a +0.5 continuity correction.">
   <meta name="color-scheme" content="light dark">
   <title>Rare-events GLMM</title>
   <style>
@@ -60,7 +60,7 @@
     <section class="panel">
       <h2>Studies</h2>
       <label style="display:block">
-        <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code>. 0-event cells are handled NATIVELY — no continuity correction needed.</span>
+        <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code>. Studies with a zero cell are fitted from the counts; the fixed-baseline approximation adds ½ to a control arm with 0 or all events when it fixes that arm’s baseline.</span>
         <textarea id="src" aria-label="Studies">Trial 1, 0, 250, 1, 248
 Trial 2, 2, 500, 5, 510
 Trial 3, 0, 180, 3, 182
@@ -69,13 +69,14 @@ Trial 5, 3, 600, 7, 605
 Trial 6, 0, 95, 2, 98
 Trial 7, 2, 450, 6, 445
 Trial 8, 1, 210, 3, 215</textarea>
-        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
-        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
-
       </label>
+      <!-- generated benchmark / citation controls sit outside the Studies label, so they
+           do not become part of the textarea's accessible name -->
+      <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+      <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
-        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
+        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="Model">
           <option value="UM.FS" selected>Experimental unconditional fit (not default metafor UM.FS)</option>
           <option value="CM.EL">CM.EL — conditional likelihood; numerical parity unverified</option>
           <option value="CM.AL">Fixed-baseline approximation (not metafor CM.AL)</option>
@@ -85,12 +86,12 @@ Trial 8, 1, 210, 3, 215</textarea>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
-        <strong>When to use:</strong> any meta-analysis where some studies have 0 events in one or both arms. Standard inverse-variance pooling with +0.5 correction biases OR toward 1; the GLMM doesn't because it models the binomial likelihood directly. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
+        <strong>When to consider:</strong> meta-analyses where some studies have 0 events in one or both arms. Inverse-variance pooling with a +0.5 correction can bias the odds ratio toward 1 when events are rare; a GLMM models the binomial counts instead, but likelihood fitting does not guarantee unbiased estimates, convergence or suitability for every dataset, and these browser fits are experimental. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
       </div>
     </section>
     <section class="panel">
       <h2>GLMM fit</h2>
-      <div id="summary" class="summary-grid"></div>
+      <div id="summary" class="summary-grid" role="status" aria-live="polite"></div>
       <h2 style="margin-top:1rem">Comparison: GLMM vs inverse-variance with +0.5</h2>
       <table id="compare" style="width:100%;border-collapse:collapse">
         <thead><tr><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">Method</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">OR</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">95% CI</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">τ²</th></tr></thead>
@@ -108,22 +109,30 @@ Trial 8, 1, 210, 3, 215</textarea>
   (function () {
     "use strict";
 
+    // Every non-comment row must be "label, events_T, n_T, events_C, n_C" with whole,
+    // exactly representable counts. A row that is not is never truncated (parseInt read
+    // "2.7" as 2, "1e1" as 1, "-0.5" as 0), padded or dropped: it is reported by line and
+    // blocks the fit. A first data line of column names (no digits in the count fields) is
+    // skipped as a header.
     function parse(text) {
-      var rows = [];
-      var lines = text.split(/\r?\n/);
+      var rows = [], errors = [], seenData = false;
+      var lines = text.split(/\r\n|\r|\n/);
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 5) continue;
-        var label = parts[0];
-        var eT = parseInt(parts[1], 10), nT = parseInt(parts[2], 10);
-        var eC = parseInt(parts[3], 10), nC = parseInt(parts[4], 10);
-        if (!isFinite(eT) || !isFinite(nT) || !isFinite(eC) || !isFinite(nC)) continue;
-        if (nT <= 0 || nC <= 0 || eT < 0 || eC < 0 || eT > nT || eC > nC) continue;
-        rows.push({ label: label, events_T: eT, n_T: nT, events_C: eC, n_C: nC });
+        var parts = line.split(/\s*,\s*/), where = "line " + (i + 1);
+        if (!seenData && parts.length === 5 && parts.slice(1).every(function (s) { return !/\d/.test(s); })) { seenData = true; continue; }
+        seenData = true;
+        if (parts.length !== 5) { errors.push(where + ": expected 5 comma-separated fields (label, events_T, n_T, events_C, n_C), found " + parts.length); continue; }
+        var c = parts.slice(1);
+        if (!c.every(function (s) { return /^\d+$/.test(s) && Number.isSafeInteger(Number(s)); })) {
+          errors.push(where + ": counts must be whole non-negative numbers written with digits only (got " + c.join(", ") + ")"); continue;
+        }
+        var eT = Number(c[0]), nT = Number(c[1]), eC = Number(c[2]), nC = Number(c[3]);
+        if (nT <= 0 || nC <= 0 || eT > nT || eC > nC) { errors.push(where + ": each arm needs a total above 0 and no more events than its total"); continue; }
+        rows.push({ label: parts[0], events_T: eT, n_T: nT, events_C: eC, n_C: nC });
       }
-      return rows;
+      return { rows: rows, errors: errors };
     }
 
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
@@ -164,11 +173,30 @@ Trial 8, 1, 210, 3, 215</textarea>
 
     var _rstate = null; // inputs + displayed numbers for the R check (r-check.js)
     window.__almRareRState = function () { return _rstate; };
+    function resetR() { if (window.AlmRareGlmmRCheck && AlmRareGlmmRCheck.invalidate) AlmRareGlmmRCheck.invalidate(); }
+    // Any change to the inputs (typing, a loaded benchmark, a restored draft) makes the
+    // displayed fit, the R snapshot and any R verdict describe a different analysis.
+    function invalidate() {
+      _rstate = null;
+      window.__almLastRareEventsGLMM = null;
+      resetR();
+      document.querySelector("#compare tbody").innerHTML = "";
+      document.getElementById("summary").innerHTML =
+        '<div class="card" style="grid-column:1/-1">Inputs changed: press <strong>Fit GLMM</strong> to analyse them.</div>';
+    }
     function run() {
       _rstate = null;
       window.__almLastRareEventsGLMM = null;
+      resetR();
       document.querySelector("#compare tbody").innerHTML = "";
-      var rows = parse(document.getElementById("src").value);
+      var parsed = parse(document.getElementById("src").value), rows = parsed.rows;
+      if (parsed.errors.length) {
+        var escE = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Not fitted: correct these rows first (nothing was skipped or rounded).<br>' +
+          parsed.errors.map(escE).join("<br>") + '</div>';
+        return;
+      }
       if (rows.length < 2) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
@@ -186,6 +214,9 @@ Trial 8, 1, 210, 3, 215</textarea>
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
           (glmm.error || "Non-finite fit; use R to diagnose this dataset.") + '</div>';
+        // The counts are valid: keep them so the R script can show what metafor does with
+        // them (no page values, so it compares nothing and says NOT A CHECK).
+        _rstate = { model: model, rows: rows, page: null, refused: String(glmm.error || "non-finite browser fit") };
         return;
       }
       var iv = ivPoolWithCC(rows);
@@ -236,7 +267,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       document.getElementById("summary").innerHTML =
         '<div class="card" style="grid-column:1/-1">' +
         '<span class="k">UM.RS — random study effects (R-only)</span>' +
-        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). That can\'t be reproduced in-browser to metafor tolerance, so allmeta gives you the exact script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (experimental browser fits) for an in-browser fit.</p>' +
+        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). This page does not implement that fit, so it gives you the exact metafor script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (experimental browser fits) for an in-browser fit.</p>' +
         '<textarea id="umrs-code" readonly rows="12" aria-label="UM.RS metafor R script" style="width:100%;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.5rem">' + esc(code) + '</textarea>' +
         '<div style="margin-top:.4rem;display:flex;gap:.5rem;flex-wrap:wrap">' +
         '<button type="button" id="umrs-copy" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Copy R script</button>' +
@@ -244,7 +275,17 @@ Trial 8, 1, 210, 3, 215</textarea>
       document.querySelector("#compare tbody").innerHTML =
         '<tr><td>UM.RS</td><td colspan="3" style="color:var(--muted)">Run the R script above (random study effects — glmer/Laplace).</td></tr>';
       var copyBtn = document.getElementById("umrs-copy");
-      copyBtn.addEventListener("click", function () { var ta = document.getElementById("umrs-code"); ta.select(); try { navigator.clipboard.writeText(ta.value); copyBtn.textContent = "Copied ✓"; } catch (e) { copyBtn.textContent = "Select + copy"; } });
+      // writeText() is asynchronous: report "Copied" only once it resolves, and the manual
+      // route (the script is selected; Download .R) when it is refused or unavailable.
+      copyBtn.addEventListener("click", function () {
+        var ta = document.getElementById("umrs-code"); ta.select();
+        var fail = function () { copyBtn.textContent = "Not copied: press Ctrl+C (selected) or Download .R"; };
+        try {
+          if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") return fail();
+          copyBtn.textContent = "Copying…";
+          Promise.resolve(navigator.clipboard.writeText(ta.value)).then(function () { copyBtn.textContent = "Copied ✓"; }, fail);
+        } catch (e) { fail(); }
+      });
       document.getElementById("umrs-dl").addEventListener("click", function () {
         var blob = new Blob([code], { type: "text/plain" }), url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "rare-events-UM-RS.R"; document.body.appendChild(a); a.click();
@@ -255,6 +296,7 @@ Trial 8, 1, 210, 3, 215</textarea>
 
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("f-model").addEventListener("change", run);
+    document.getElementById("src").addEventListener("input", invalidate);
     run();
   })();
   </script>
@@ -265,22 +307,8 @@ Trial 8, 1, 210, 3, 215</textarea>
   if (window.AlmRareGlmmRCheck) AlmRareGlmmRCheck.attach({ mount: "#rcheck-mount", filename: "rare-events-glmm-r-check.R", packages: ["metafor", "lme4"], getState: function () { return window.__almRareRState(); } });
 </script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page writes no studies to the shared bus (and its GLMM is
+     not an inverse-variance effect list), so the destinations would open on stale bus data. -->
 
 <script>
 (function () {
@@ -294,6 +322,8 @@ Trial 8, 1, 210, 3, 215</textarea>
         container: "#alm-hero-mount",
         textarea: "#src",
         adapter: "glmm",
+        // a loaded benchmark is fitted at once (its input event only invalidates)
+        onAfterLoad: function () { document.getElementById("btn-run").click(); },
       });
     }
   });

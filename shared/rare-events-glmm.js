@@ -1,19 +1,20 @@
 /* shared/rare-events-glmm.js — binomial-normal GLMM for rare-event MA.
  *
- * Avoids the +0.5 continuity correction hack that biases OR pooling toward
- * the null when events are rare. Fits the conditional logistic random-
- * effects model:
+ * Likelihood-based alternative to +0.5 continuity-corrected inverse-variance
+ * pooling, which can bias the OR toward the null when events are rare. The
+ * fixed-baseline fit (fit) uses the random-effects logistic model:
  *
  *   log(p_T_i / (1 - p_T_i)) = log(p_C_i / (1 - p_C_i)) + θ + u_i
  *   u_i ~ N(0, τ²)
  *
- * with Laplace approximation to the marginal likelihood + Newton-Raphson
- * on (θ, log τ). Equivalent to metafor::rma.glmm(measure="OR",
- * model="UM.FS", method="ML") for the unconditional (fixed-control) case
- * and to model="CM.AL" for the conditional approximation we use here.
+ * with each control baseline fixed at its observed log-odds (1/2 added to a
+ * control arm with 0 or all events) and Gauss-Hermite quadrature over u_i.
+ * It is NOT metafor::rma.glmm model="CM.AL"; fitUnconditional is not metafor's
+ * default UM.FS; fitConditionalExact targets model="CM.EL". None of these is
+ * established to agree numerically with metafor on every input.
  *
- * Input rows: { events_T, n_T, events_C, n_C }. 0-event cells are HANDLED
- * NATIVELY — no continuity correction needed.
+ * Input rows: { events_T, n_T, events_C, n_C }. Treatment-arm zero cells
+ * enter the binomial likelihood directly.
  *
  * Reference: Stijnen T, Hamza TH, Ozdemir P 2010. "Random effects meta-
  * analysis of event outcome in the framework of the generalized linear
@@ -131,6 +132,31 @@
    *   { theta, se_theta, tau2, OR, OR_lo, OR_hi, k, n_zero_cell_studies,
    *     warnings: [] }
    */
+  // Arm-level complete separation: every informative study (double-zero and
+  // double-all-events studies set aside) has no events in the same arm, or events in
+  // every participant of the same arm. The odds-ratio MLE is then infinite in every
+  // model here; metafor::rma.glmm refuses these data ("Cannot fit ML model"), whereas
+  // the optimisers below stop at a finite point and would report it. Returns the
+  // refusal message, or null. Not a proof that every separation pattern is detected.
+  function _armSeparation(rows) {
+    var inf = rows.filter(function (r) {
+      return !((r.events_T === 0 && r.events_C === 0) || (r.events_T === r.n_T && r.events_C === r.n_C));
+    });
+    if (!inf.length) return null;
+    var all = function (p) { return inf.every(p); };
+    var arm = all(function (r) { return r.events_T === 0; }) ? "every treatment arm has 0 events"
+      : all(function (r) { return r.events_C === 0; }) ? "every control arm has 0 events"
+        : all(function (r) { return r.events_T === r.n_T; }) ? "every treatment arm has events in all participants"
+          : all(function (r) { return r.events_C === r.n_C; }) ? "every control arm has events in all participants" : null;
+    return arm ? "Complete separation: " + arm + " (studies with no events or only events in both arms set aside), so the odds ratio has no finite maximum-likelihood estimate. Not fitted." : null;
+  }
+
+  function _zeroCellCount(rows) {
+    return rows.filter(function (r) {
+      return r.events_T === 0 || r.events_T === r.n_T || r.events_C === 0 || r.events_C === r.n_C;
+    }).length;
+  }
+
   function fit(rowsIn, opts) {
     opts = opts || {};
     var rows = rowsIn.filter(function (r) {
@@ -141,6 +167,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (!rows.length) return { ok: false, error: "no valid rows" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, error: sep, k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
 
     // Initial guess: per-study MH-style logOR (with +0.5 only on zeros),
     // then take the mean as θ_0.
@@ -304,6 +332,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (!rows.length) return { ok: false, error: "no valid rows" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, model: "UM.FS", error: sep, k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
 
     // Seed from the conditional fit so we start near the optimum.
     var seed = fit(rowsIn, opts);
@@ -390,10 +420,10 @@
   // MLE; θ-curvature only when τ̂²=0).
   //
   // Verified vs metafor::rma.glmm(measure="OR", model="CM.EL") to ~1e-7 on θ/τ²
-  // and ~1e-3 on SE; see rare-events-cmel-parity.spec.mjs. More robust than
-  // metafor's CM.EL optimiser, which fails to converge on very sparse designs
-  // (e.g. several all-zero treatment arms) where this fit still returns a sensible
-  // estimate — so do not claim metafor parity on inputs metafor cannot fit.
+  // and ~1e-3 on SE on the inputs in rare-events-cmel-parity.spec.mjs. On very
+  // sparse designs metafor's CM.EL optimiser can fail to converge where this
+  // fit still returns a number; such a number is unverified (not "more robust"),
+  // so do not claim metafor parity on inputs metafor cannot fit.
 
   function _cmelPrep(r) {
     var a = r.events_T, n1 = r.n_T, c = r.events_C, n2 = r.n_C, m1 = a + c;
@@ -450,6 +480,8 @@
           && r.events_T <= r.n_T && r.events_C <= r.n_C;
     });
     if (rows.length < 2) return { ok: false, error: "need ≥ 2 valid studies", model: "CM.EL" };
+    var sep = _armSeparation(rows);
+    if (sep) return { ok: false, error: sep, model: "CM.EL", k: rows.length, n_zero_cell_studies: _zeroCellCount(rows) };
     var sts = rows.map(_cmelPrep);
     // Studies whose margin allows no variation (m1=0, or support size 1) carry no
     // information about ψ; drop them from the likelihood (they are constants).
