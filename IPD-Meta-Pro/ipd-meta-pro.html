@@ -74357,9 +74357,15 @@ function formatClusteredIPDResults(result, iccResult) {
 
 
 
-    const effect = result.pooled_effect || result.treatment_effect;
+    // LIM-P60 L21: ?? keeps an exact 0 (|| dropped it and toFixed() then threw); the label states the level
+    // getConfZ() used (APP.config.confLevel), and a fit that did not converge says so.
+    const effect = result.pooled_effect ?? result.treatment_effect;
 
-    const se = result.SE || result.SE_robust;
+    const se = result.SE ?? result.SE_robust;
+
+    const ciPct = Math.round(100 * ((typeof APP !== 'undefined' && APP.config && APP.config.confLevel) ? APP.config.confLevel : 0.95));
+
+    const notConverged = result.converged === false || !!(result.convergence && result.convergence.converged === false);
 
     const ci = result.CI_lower !== undefined ?
 
@@ -74387,7 +74393,7 @@ function formatClusteredIPDResults(result, iccResult) {
 
             <div style="color:var(--text-secondary);">
 
-                95% CI: [${ci[0].toFixed(4)}, ${ci[1].toFixed(4)}]
+                ${ciPct}% CI: [${ci[0].toFixed(4)}, ${ci[1].toFixed(4)}]
 
             </div>
 
@@ -74396,6 +74402,7 @@ function formatClusteredIPDResults(result, iccResult) {
                 SE: ${se.toFixed(4)} | p = ${(result.p_value ?? (result.p_robust ?? 0)).toFixed(4)}
 
             </div>
+${notConverged ? '            <div style="color:var(--accent-danger);font-weight:600;margin-top:6px;">Warning: the fit did not converge; do not interpret these estimates.</div>' : ''}
 
         </div>
 
