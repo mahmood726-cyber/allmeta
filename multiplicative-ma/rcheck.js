@@ -46,12 +46,12 @@
     sec.className = "panel"; sec.id = "rcheck-panel"; sec.style.gridColumn = "1 / -1";
     sec.setAttribute("aria-label", "Check this result in R");
     sec.innerHTML = '<h2>Check in R</h2>' +
-      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes every displayed number with ' + PKG_NOTE + ', prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
+      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. From the rows the page accepted, it recomputes the estimates, SEs, confidence limits and heterogeneity values shown with ' + PKG_NOTE + ' (it does not check which lines were left out, labels or the rounded text), prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
       '<button type="button" id="btn-rscript" class="ghost">Download R script</button>' +
       '<button type="button" id="btn-verify-r" class="ghost">Verify in R (WebR)</button></div>' +
       '<p id="rcheck-status" class="hint" role="status" aria-live="polite" style="margin:0.5rem 0 0"></p>' +
-      '<p id="rcheck-verdict" style="margin:0.4rem 0 0;font-weight:600"></p>' +
+      '<p id="rcheck-verdict" aria-live="polite" style="margin:0.4rem 0 0;font-weight:600"></p>' +
       '<pre id="rcheck-out" style="display:none;max-height:28rem;overflow:auto;font-size:0.78rem;white-space:pre;background:var(--accent-soft,#eef3f8);padding:0.6rem;border-radius:4px"></pre>';
     host.parentNode.insertBefore(sec, host.nextSibling);
     el("btn-rscript").addEventListener("click", download);

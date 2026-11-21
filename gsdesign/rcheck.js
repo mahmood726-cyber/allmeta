@@ -71,7 +71,12 @@
     L.push("  sf <- function(nm) getExportedValue(\"gsDesign\", nm)");
     L.push("  args <- list(k = k, test.type = test.type, alpha = alpha, beta = beta, timing = timing, sfu = sf(sfu), sfupar = sfupar)");
     L.push("  if (test.type %in% c(3, 4)) args <- c(args, list(sfl = sf(sfl), sflpar = sflpar))");
-    L.push("  x <- do.call(gsDesign::gsDesign, args)");
+    // Versions first, so a failed refit still reports them; a refit error is NOT CHECKED, never an abort.
+    L.push("  cat(R.version.string, \"; gsDesign \", as.character(packageVersion(\"gsDesign\")), \"\\n\", sep = \"\")");
+    L.push("  x <- tryCatch(do.call(gsDesign::gsDesign, args), error = function(e) e)");
+    L.push("  if (inherits(x, \"error\")) {");
+    L.push("    cat(sprintf(\"NOT CHECKED 0/%d (gsDesign could not refit this design: %s)\\n\", length(page), conditionMessage(x)))");
+    L.push("  } else {");
     L.push("  two <- test.type == 2");
     L.push("  r <- c(inflation = max(x$n.I), en_H0_pct = 100 * x$en[1], en_H1_pct = 100 * x$en[2],   # n.fix = 1: relative to a fixed design");
     L.push("         power = sum(x$upper$prob[, 2]))");
@@ -88,13 +93,14 @@
     L.push("  cat(sprintf(\"%-14s %20s %20s %10s  %s\\n\", \"quantity\", \"page\", \"R\", \"|diff|\", \"\"))");
     L.push("  for (q in names(page)) {");
     L.push("    a <- page[[q]]; b <- if (q %in% names(r)) r[[q]] else NA");
-    L.push("    good <- if (is.na(a) || is.na(b)) (is.na(a) && is.na(b)) else abs(a - b) <= tol[[q]]");
+    // Only two finite, available values can agree: a value missing on either side is a difference.
+    L.push("    good <- is.finite(a) && is.finite(b) && abs(a - b) <= tol[[q]]");
     L.push("    ok[q] <- good");
     L.push("    cat(sprintf(\"%-14s %20.12g %20.12g %10.3g  %s\\n\", q, a, b, if (is.na(a) || is.na(b)) NA else abs(a - b), if (good) \"ok\" else \"DIFFERS\"))");
     L.push("  }");
-    L.push("  cat(R.version.string, \"; gsDesign \", as.character(packageVersion(\"gsDesign\")), \"\\n\", sep = \"\")");
     L.push("  n <- length(ok); m <- sum(ok)");
     L.push("  cat(if (m == n && n > 0) sprintf(\"MATCH %d/%d\", m, n) else sprintf(\"MISMATCH %d/%d\", m, n), \"\\n\", sep = \"\")");
+    L.push("  }");
     L.push("}");
     return L.join("\n") + "\n";
   }
@@ -128,7 +134,8 @@
     if (btn) btn.disabled = false;
     // R answered for the analysis it was given; if the page has moved on, never show that answer beside the new one.
     if (my !== verifyGen || current() !== snap) { out.textContent = ""; set(STALE); return; }
-    if (!res.ok) { set("WebR failed: " + res.error); return; }
+    // Whatever WebR did, nothing was checked in the browser: say so, not just the runtime error.
+    if (!res.ok) { set("NOT CHECKED: WebR failed (" + res.error + "). gsDesign is not in this site's pinned WebR package repository, so nothing was run; use Download R script and run it in R with gsDesign installed."); return; }
     out.textContent = res.stdout;
     var last = (res.stdout.match(/^(MATCH|MISMATCH|NOT CHECKED \d).*$/m) || ["(no MATCH line in R output)"])[0];
     set("R finished (" + res.versions.R + ", webR " + res.versions.webR + "): " + last);

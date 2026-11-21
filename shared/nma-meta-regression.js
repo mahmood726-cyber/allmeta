@@ -191,6 +191,17 @@
         throw new Error("Study '" + g.rows[0].studyId + "' has a wrong number of comparisons: " + mArms +
           " treatments need " + (mArms * (mArms - 1) / 2) + " contrasts, " + g.rows.length + " supplied");
       }
+      // The right COUNT is not enough: a duplicated pair can stand in for a missing one (A-B, A-B, A-C for a
+      // three-arm study). (No covariate-equality rule: netmetareg fits contrasts with differing covariate
+      // values, e.g. a dropped non-baseline contrast carrying another value - hub/shared/tests engine test.)
+      var seenPair = Object.create(null);
+      for (j = 0; j < g.rows.length; j++) {
+        r = g.rows[j];
+        var pk = r.trtA < r.trtB ? r.trtA + "\u0000" + r.trtB : r.trtB + "\u0000" + r.trtA;
+        if (seenPair[pk]) throw new Error("Study '" + r.studyId + "' must supply each pair once: " + r.trtA + " vs " + r.trtB +
+          " is given twice, so another of its " + (mArms * (mArms - 1) / 2) + " contrasts is missing");
+        seenPair[pk] = true;
+      }
     }
     var kept = [], blocks = [], xMean = 0;
     for (i = 0; i < groups.length; i++) {

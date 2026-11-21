@@ -117,8 +117,8 @@
 
     <section class="panel" aria-label="Boundaries">
       <h2>Boundaries</h2>
-      <p class="summary" id="summary"></p>
-      <table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th><th>P(efficacy | H1)</th></tr></thead><tbody id="tb"></tbody></table>
+      <p class="summary" id="summary" aria-live="polite"></p>
+      <div class="tblwrap" style="overflow-x:auto"><table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th><th>P(efficacy | H1)</th></tr></thead><tbody id="tb"></tbody></table></div>
       <svg id="plot" viewBox="0 0 640 300" role="img" aria-label="Boundary plot"></svg>
       <p class="foot" id="note"></p>
     </section>
@@ -136,7 +136,7 @@
       <h2>Adaptive simulation — two-group comparison of means</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0 0.8rem">
         <label><span class="lbl">Standard deviation σ</span><input id="sd" type="number" step="any" value="5" aria-label="Standard deviation σ"></label>
-        <label><span class="lbl">Maximum total N (planned)</span><input id="nmax" type="number" step="any" value="60" aria-label="Maximum total N (planned)"></label>
+        <label><span class="lbl">Planned total N</span><input id="nmax" type="number" step="any" value="60" aria-label="Planned total N"></label>
         <label><span class="lbl">Mean differences</span><input id="alts" type="text" value="0, 1, 2, 3, 4" aria-label="Mean differences"></label>
         <label><span class="lbl">Test statistic</span><select id="comb" aria-label="Test statistic"><option value="inverseNormal" selected>Inverse normal combination</option><option value="groupSequential">Group sequential (pooled data)</option></select></label>
         <label><span class="lbl">Sample-size re-estimation</span><select id="ssr" aria-label="Sample-size re-estimation"><option value="0" selected>Off (planned sizes)</option><option value="1">On: conditional power</option></select></label>
@@ -144,12 +144,12 @@
         <label><span class="lbl">Min stage size (stages ≥ 2)</span><input id="smin" type="number" step="any" value="20" aria-label="Min stage size (stages ≥ 2)"></label>
         <label><span class="lbl">Max stage size (stages ≥ 2)</span><input id="smax" type="number" step="any" value="80" aria-label="Max stage size (stages ≥ 2)"></label>
         <label><span class="lbl">Assumed effect for SSR</span><input id="th1" type="text" placeholder="observed" aria-label="Assumed effect for SSR"></label>
-        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" value="10000" aria-label="Simulated trials per difference"></label>
-        <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" value="20261021" aria-label="Seed"></label>
+        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" min="100" max="1000000" value="10000" aria-label="Simulated trials per difference"></label>
+        <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" min="0" max="4294967295" value="20261021" aria-label="Seed"></label>
       </div>
       <button class="primary" id="simrun" type="button">Simulate</button>
-      <p class="foot" id="simnote" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
-      <table id="simtbl"><thead id="simth"></thead><tbody id="simtb"></tbody></table>
+      <p class="foot" id="simnote" aria-live="polite" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
+      <div class="tblwrap" style="overflow-x:auto"><table id="simtbl"><thead id="simth"></thead><tbody id="simtb"></tbody></table></div>
     </section>
   </main>
   <footer>
@@ -170,51 +170,91 @@
         $("paramLbl").textContent = $("spend").value === "landemets" ? "ρ (power)" : "γ (HSD)";
         var two = $("sided").value === "2";
         $("alphaLbl").textContent = two ? "Two-sided α (total)" : "One-sided α";
+        // accessible names follow the visible labels, whose meaning changes with these selections
+        $("alpha").setAttribute("aria-label", $("alphaLbl").textContent);
+        $("param").setAttribute("aria-label", $("paramLbl").textContent);
         $("futWrap").hidden = two;
         var fut = !two && $("fut").value !== "none";
         $("fparamWrap").hidden = !(fut && needsParam($("fut").value));
         $("fparamLbl").textContent = $("fut").value === "landemets" ? "Futility ρ (power)" : "Futility γ (HSD)";
+        $("fparam").setAttribute("aria-label", $("fparamLbl").textContent);
         $("bindWrap").hidden = !fut;
       }
       function readHash() {
         var h = location.hash.replace(/^#/, ""); if (!h) return false;
+        // Decode every pair before applying any, so a malformed link (bad % encoding) changes nothing
+        // and is reported, instead of throwing out of initialisation half-applied.
+        var pairs;
+        try {
+          pairs = h.split("&").map(function (kv) { var p = kv.split("="); return [decodeURIComponent(p[0]), decodeURIComponent(p[1] || "")]; });
+        } catch (e) { return { sim: false, bad: true }; }
         var sim = false;
-        h.split("&").forEach(function (kv) {
-          var p = kv.split("="), k = decodeURIComponent(p[0]), v = decodeURIComponent(p[1] || "");
-          if (k === "sim") sim = v === "1";
-          else if (FIELDS.indexOf(k) >= 0 && $(k)) $(k).value = v;
+        pairs.forEach(function (p) {
+          if (p[0] === "sim") sim = p[1] === "1";
+          else if (FIELDS.indexOf(p[0]) >= 0 && $(p[0])) $(p[0]).value = p[1];
         });
         return { sim: sim };
       }
       function writeHash(sim) {
         var parts = FIELDS.map(function (k) { return k + "=" + encodeURIComponent($(k).value); });
         if (sim) parts.push("sim=1");
-        history.replaceState(null, "", "#" + parts.join("&"));
+        try { history.replaceState(null, "", "#" + parts.join("&")); return true; }
+        catch (e) { return false; }   // e.g. a browser that refuses history updates for local files
       }
       function numList(s) {
         return s.split(/[,;\s]+/).filter(function (x) { return x !== ""; }).map(Number);
       }
       function fmtP(p) { return p < 1e-4 ? p.toExponential(2) : p.toFixed(4); }
+      function showDesignError(msg) {
+        current = null; window._almLastGSD = null; $("tb").textContent = "";
+        $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
+        s.textContent = msg; $("summary").appendChild(s);
+        $("note").textContent = ""; draw([], false);
+      }
+      function readK() {
+        // K is a whole number 1-10 as stated beside the field: refuse, never truncate/clamp/default.
+        var t = $("K").value.trim(), K = Number(t);
+        if (t === "" || !Number.isInteger(K) || K < 1 || K > 10) throw new Error("Looks (K) must be a whole number from 1 to 10.");
+        return K;
+      }
+      function readFracs(K) {
+        // Explicit fractions must number exactly K (they cannot bypass K or its limit) and be finite.
+        var raw = $("timing").value.trim();
+        if (!raw) { var eq = []; for (var i = 1; i <= K; i++) eq.push(i / K); return eq; }
+        var f = numList(raw);
+        if (!f.length || f.some(function (x) { return !Number.isFinite(x); }))
+          throw new Error("Information fractions must be numbers separated by commas, or left blank for equal spacing.");
+        if (f.length !== K) throw new Error("Information fractions: " + f.length + " value" + (f.length === 1 ? "" : "s") + " entered but Looks (K) = " + K + "; enter one fraction per look.");
+        return f;
+      }
+      function readRange(id, name) {
+        // The field's own min/max are the page's stated domain: values outside it are refused.
+        var el = $(id), t = el.value.trim(), v = Number(t), lo = Number(el.min), hi = Number(el.max);
+        if (t === "" || !Number.isFinite(v) || v < lo || v > hi) throw new Error(name + " must be a number from " + el.min + " to " + el.max + ".");
+        return v;
+      }
       function run() {
-        var K = Math.max(1, Math.min(10, parseInt($("K").value, 10) || 1));
-        var frac = $("timing").value.trim() ? numList($("timing").value) : null;
-        if (!frac) { frac = []; for (var i = 1; i <= K; i++) frac.push(i / K); }
+        clearSim(); clearR();   // earlier simulation/R output belong to the earlier design
+        var K, frac, alpha, power;
+        try {
+          K = readK(); frac = readFracs(K);
+          alpha = readRange("alpha", $("sided").value === "2" ? "Two-sided α" : "One-sided α");
+          power = readRange("power", "Power");
+        } catch (e) { showDesignError("Cannot compute this design: " + e.message); return; }
         var two = $("sided").value === "2", fut = !two && $("fut").value !== "none";
         var opts = {
-          alpha: parseFloat($("alpha").value), infoFracs: frac, spend: $("spend").value,
-          param: parseFloat($("param").value), twoSided: two,
-          futility: fut ? "betaspend" : "none", futSpend: $("fut").value, futParam: parseFloat($("fparam").value),
-          binding: $("bind").value === "1", beta: 1 - parseFloat($("power").value)
+          alpha: alpha, infoFracs: frac, spend: $("spend").value,
+          // O'Brien-Fleming and Pocock take no parameter on this page (their box is hidden):
+          // a value left in the hidden box (from another family or a link) must not reach the design.
+          param: needsParam($("spend").value) ? parseFloat($("param").value) : 1, twoSided: two,
+          futility: fut ? "betaspend" : "none", futSpend: $("fut").value,
+          futParam: fut && needsParam($("fut").value) ? parseFloat($("fparam").value) : 1,
+          binding: $("bind").value === "1", beta: 1 - power
         };
         var tb = $("tb"); tb.textContent = "";
         try {
           var b = G.boundaries(opts);
-        } catch (e) {
-          current = null; window._almLastGSD = null;
-          $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
-          s.textContent = "Cannot compute this design: " + e.message; $("summary").appendChild(s);
-          $("note").textContent = ""; draw([], false); return;
-        }
+        } catch (e) { showDesignError("Cannot compute this design: " + e.message); return; }
         current = b.design;
         // Inputs and boundaries now on screen, for the R check (rcheck.js).
         window._almLastGSD = { opts: opts, rows: b };
@@ -234,7 +274,7 @@
         draw(b, two);
         $("note").textContent = "Final-look Z = " + last.z_eff.toFixed(4) + "; total α spent = " + last.cumAlpha.toFixed(5) +
           (two ? " (two-sided)" : "") + "; design as gsDesign test.type " + d.testType + ".";
-        writeHash(false);
+        if (!writeHash(false)) $("note").textContent += " The browser refused to update the address, so these settings are not saved in the link.";
       }
       function draw(b, twoSided) {
         var svg = $("plot"); while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -267,6 +307,11 @@
         });
         txt((m.l + W - m.r) / 2, H - 4, "information fraction");
       }
+      function intIn(id) {
+        // A whole number inside the field's own min/max, or null: never truncated, clamped or defaulted.
+        var el = $(id), t = el.value.trim(), v = Number(t);
+        return t !== "" && Number.isInteger(v) && v >= Number(el.min) && v <= Number(el.max) ? v : null;
+      }
       function simulate() {
         var tb = $("simtb"), th = $("simth"); tb.textContent = ""; th.textContent = "";
         function fail(msg) { var tr = document.createElement("tr"), c = document.createElement("td"); c.className = "err"; c.textContent = msg; tr.appendChild(c); tb.appendChild(tr); }
@@ -281,18 +326,30 @@
         var th1 = $("th1").value.trim();
         var opts = {
           alternative: numList($("alts").value), stDev: parseFloat($("sd").value), plannedSubjects: planned,
-          conditionalPower: ssr ? parseFloat($("cp").value) : NaN,
+          conditionalPower: ssr ? Number($("cp").value.trim() || NaN) : NaN,
           minNumberOfSubjectsPerStage: mins, maxNumberOfSubjectsPerStage: maxs,
-          thetaH1: th1 === "" ? NaN : parseFloat(th1),
-          maxNumberOfIterations: Math.max(100, Math.min(1000000, parseInt($("iter").value, 10) || 10000)),
-          seed: parseInt($("seed").value, 10) || 0
+          thetaH1: th1 === "" ? NaN : Number(th1),
+          maxNumberOfIterations: intIn("iter"), seed: intIn("seed")
         };
-        if (!(opts.stDev > 0) || !(N > 0) || !opts.alternative.length || opts.alternative.some(isNaN)) { fail("Check σ, N and the mean differences."); return; }
-        if (ssr && K < 2) { fail("Re-estimation needs at least two looks."); return; }
-        var res = G.simulateMeans(dsg, opts);
+        if (!(opts.stDev > 0 && isFinite(opts.stDev)) || !(N > 0 && isFinite(N)) || !opts.alternative.length ||
+            !opts.alternative.every(isFinite)) { fail("Check σ, N and the mean differences (finite numbers; σ and N above zero)."); return; }
+        if (opts.maxNumberOfIterations === null) { fail("Check the number of simulated trials: a whole number from " + $("iter").min + " to " + $("iter").max + "."); return; }
+        if (opts.seed === null) { fail("Check the seed: a whole number from " + $("seed").min + " to " + $("seed").max + "."); return; }
+        if (ssr) {
+          // Re-estimation needs a target strictly inside (0, 1), positive ordered stage limits and a finite
+          // assumed effect (or blank = observed effect); anything else used to run and print NaN or ignore the limits.
+          if (K < 2) { fail("Re-estimation needs at least two looks."); return; }
+          if (!(opts.conditionalPower > 0 && opts.conditionalPower < 1)) { fail("Check the target conditional power: it must be strictly between 0 and 1."); return; }
+          var lo = mins[1], hi = maxs[1];
+          if (!(lo > 0 && isFinite(lo) && hi >= lo && isFinite(hi))) { fail("Check the stage sizes: the minimum must be above zero and the maximum at least the minimum."); return; }
+          if (th1 !== "" && !isFinite(opts.thetaH1)) { fail("Check the assumed effect for SSR: a finite number, or blank to use the observed effect."); return; }
+        }
+        var res;
+        try { res = G.simulateMeans(dsg, opts); } catch (e) { fail("Cannot simulate this design: " + e.message); return; }
         var head = ["Mean difference", "Rejection probability", "Early stop", "Futility stop", "Expected N"];
         for (k = 0; k < K; k++) head.push("Reject at look " + (k + 1));
-        if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1));
+        // Stage means condition on reaching the stage; with re-estimation the planned N is not a cap.
+        if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1) + " (if reached)");
         var tr0 = document.createElement("tr");
         head.forEach(function (h) { var c = document.createElement("th"); c.textContent = h; tr0.appendChild(c); });
         th.appendChild(tr0);
@@ -302,19 +359,43 @@
           td("" + r.alternative); td(r.overallReject.toFixed(4)); td(r.earlyStop.toFixed(4)); td(r.futilityStop.toFixed(4));
           td(r.expectedNumberOfSubjects.toFixed(1));
           r.rejectPerStage.forEach(function (p) { td(p.toFixed(4)); });
-          if (ssr) for (var j = 1; j < K; j++) td(r.sampleSizes[j].toFixed(1));
+          if (ssr) for (var j = 1; j < K; j++) td(r.iterations[j] > 0 ? r.sampleSizes[j].toFixed(1) : "—");   // no trial reached it
           tb.appendChild(tr);
         });
         $("simnote").textContent = "Simulated " + opts.maxNumberOfIterations + " trials per mean difference (seed " + opts.seed +
-          "). Monte Carlo standard error of a probability p is about √(p(1−p)/" + opts.maxNumberOfIterations + ").";
-        writeHash(true);
+          "). Monte Carlo standard error of a probability p is about √(p(1−p)/" + opts.maxNumberOfIterations + ")." +
+          // The design's bounds control type I error for planned sizes, or for re-estimated sizes only with the
+          // inverse-normal combination test; the pooled statistic after data-driven re-estimation is not calibrated.
+          (ssr && dsg.method === "groupSequential" ? " Warning: with sample-size re-estimation the pooled-data statistic is not calibrated to these bounds, so type I error is not controlled at α; read the rejection rate at mean difference 0 as the actual type I error, or use the inverse normal combination test." : "");
+        if (!writeHash(true)) $("simnote").textContent += " The browser refused to update the address, so these settings are not saved in the link.";
       }
       ["spend", "fut", "sided"].forEach(function (id) { $(id).addEventListener("change", sync); });
+      // Results depend on the inputs that produced them: editing a design input withdraws the boundaries,
+      // the simulation and any R output (so neither Simulate nor the R check can use a design the inputs
+      // no longer describe, and no link is written for one); editing a simulation input withdraws the simulation.
+      var DESIGN_FIELDS = FIELDS.slice(0, FIELDS.indexOf("power") + 1), SIM_NOTE = $("simnote").textContent;
+      function clearSim() { $("simtb").textContent = ""; $("simth").textContent = ""; $("simnote").textContent = SIM_NOTE; }
+      function clearR() { $("rcheck-out").textContent = ""; $("rcheck-status").textContent = ""; }
+      function designEdited() {
+        if (current || $("tb").childNodes.length) {
+          current = null; window._almLastGSD = null; $("tb").textContent = ""; $("note").textContent = ""; draw([], false);
+          $("summary").textContent = "Inputs changed: press Compute boundaries.";
+        }
+        clearSim(); clearR();
+      }
+      FIELDS.forEach(function (id) {
+        var f = DESIGN_FIELDS.indexOf(id) >= 0 ? designEdited : clearSim;
+        $(id).addEventListener("input", f); $(id).addEventListener("change", f);
+      });
       $("run").addEventListener("click", run);
       $("simrun").addEventListener("click", simulate);
       var h = readHash();
       sync(); run();
-      if (h && h.sim) simulate();
+      if (h && h.bad) {
+        var bad = document.createElement("span"); bad.className = "err";
+        bad.textContent = " The link's settings could not be read (malformed % encoding in the address), so the defaults are shown.";
+        $("summary").appendChild(bad);
+      } else if (h && h.sim) simulate();
     })();
   </script>
   <script src="../shared/webr-runner.js"></script>

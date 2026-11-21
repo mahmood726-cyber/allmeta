@@ -115,29 +115,51 @@ S10, A, B, -0.32, 0.10, 70</textarea>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
-    Engine: <code>shared/nma-meta-regression.js</code>. REML (default), ML, or FE as in <code>netmeta::netmetareg(consistency=TRUE, assumption="independent")</code>. Random effects have rho = 0.5 within multi-arm studies. A multi-arm study must supply all m(m−1)/2 pairwise contrasts, as netmeta requires (a study given only its baseline contrasts is refused with "wrong number of comparisons"); the fit then uses only the contrasts against the study baseline, as netmetareg, oriented relative to that baseline. Within-study sampling covariance is not modelled because input is contrast level. Single numeric study-level covariate per fit. A row <code>trtA, trtB, yi</code> means yi is the effect of trtB relative to trtA: in netmeta use <code>treat1 = trtB, treat2 = trtA, TE = yi</code>. Coefficients at covariate 0 and slopes then equal netmetareg's; the beta table here is at the mean covariate xbar of retained rows. Validated against netmeta 3.7-0 netmetareg (see the paper-28 validation archive).
+    Engine: <code>shared/nma-meta-regression.js</code>. REML (default), ML, or FE as in <code>netmeta::netmetareg(consistency=TRUE, assumption="independent")</code>. Random effects have rho = 0.5 within multi-arm studies. A multi-arm study must supply all m(m−1)/2 pairwise contrasts, as netmeta requires (a study given only its baseline contrasts is refused with "wrong number of comparisons"); the fit then uses only the contrasts against the study baseline, as netmetareg, oriented relative to that baseline. Within-study sampling covariance is not modelled because input is contrast level. Single numeric study-level covariate per fit. A row <code>trtA, trtB, yi</code> means yi is the effect of trtB relative to trtA: in netmeta use <code>treat1 = trtB, treat2 = trtA, TE = yi</code>. Coefficients at covariate 0 and slopes then agree with netmetareg's within the tolerances of the paper-28 validation archive (netmeta 3.7-0, on its corpus); the beta table here is at the mean covariate xbar of retained rows. The Check in R panel below reruns netmetareg on the inputs of the last fit.
   </footer>
   <script>
   (function () {
     "use strict";
 
+    // Plain comma-separated contrast rows. A row that is not exactly 6 fields, has an empty label, or has a
+    // numeric field that is not a plain number is REFUSED with its line number (it used to vanish, lose
+    // its surplus fields, or be read by parseFloat's numeric prefix: "-0.30oops" fitted as -0.30; a header
+    // line became treatment nodes). Blank, NA or NaN numeric fields are missing values: such a row is
+    // excluded from the fit, as R excludes it, and the count is shown.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/, MISSING = /^(|NA|NaN)$/i;
+    function num(tok) { return MISSING.test(tok) ? NaN : (NUM.test(tok) ? Number(tok) : undefined); }
     function parse(text) {
-      var rows = [];
+      var rows = [], bad = [];
       var lines = text.split(/\r?\n/);
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 6) continue;
+        var parts = line.split(/\s*,\s*/), why = "", vals = null;
+        if (parts.length !== 6) why = "expected 6 comma-separated fields, found " + parts.length;
+        else if (!parts[0] || !parts[1] || !parts[2]) why = "empty study or treatment label";
+        else {
+          vals = [num(parts[3]), num(parts[4]), num(parts[5])];
+          var k = vals.indexOf(undefined);
+          if (k >= 0) why = ["yi", "sei", "covariate"][k] + " '" + parts[3 + k] + "' is not a number";
+        }
+        if (why) { bad.push("line " + (i + 1) + ": " + why); continue; }
         rows.push({
           studyId: parts[0], trtA: parts[1], trtB: parts[2],
-          yi: parseFloat(parts[3]), sei: parseFloat(parts[4]),
-          covariate: parseFloat(parts[5]),
+          yi: vals[0], sei: vals[1], covariate: vals[2],
         });
       }
+      if (bad.length) throw new Error("input refused (" + bad.length + " malformed row" + (bad.length > 1 ? "s" : "") + "): " +
+        bad.slice(0, 3).join("; ") + (bad.length > 3 ? "; ..." : "") + ". Enter studyId, trtA, trtB, yi, sei, covariate per row, without a header.");
       return rows;
     }
+    function showFail(msg) {   // msg is escaped: it can quote user labels
+      document.getElementById("summary").innerHTML =
+        '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + esc(msg) + '</div>';
+    }
 
+    // User-derived strings (treatment labels, messages) go into HTML/SVG markup only escaped, so a label like
+    // "<b>B</b>" is shown as typed and pasted markup cannot become live elements.
+    function esc(v) { return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
 
     function drawPredictionPlot(predictions, treatments, refTrt) {
@@ -185,7 +207,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
           '<text x="' + (padL - 6) + '" y="' + (Y(yv) + 3) + '" text-anchor="end" font-size="11" fill="currentColor">' + yv.toFixed(2) + '</text>');
       }
       svg.insertAdjacentHTML("beforeend",
-        '<text x="20" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 20 ' + ((padT + H - padB) / 2) + ')">Effect (β̂ vs ' + refTrt + ')</text>');
+        '<text x="20" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 20 ' + ((padT + H - padB) / 2) + ')">Effect (β̂ vs ' + esc(refTrt) + ')</text>');
       // each non-reference treatment: a line + CI ribbon
       for (var k = 1; k < treatments.length; k++) {
         var col = colors[(k - 1) % colors.length];
@@ -201,7 +223,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         var ly = padT + 14 + (k - 1) * 16;
         svg.insertAdjacentHTML("beforeend",
           '<rect x="' + (W - padR - 90) + '" y="' + (ly - 8) + '" width="10" height="10" fill="' + col + '"/>' +
-          '<text x="' + (W - padR - 75) + '" y="' + ly + '" font-size="11" fill="currentColor">' + treatments[k] + ' vs ' + refTrt + '</text>');
+          '<text x="' + (W - padR - 75) + '" y="' + ly + '" font-size="11" fill="currentColor">' + esc(treatments[k]) + ' vs ' + esc(refTrt) + '</text>');
       }
     }
 
@@ -212,41 +234,72 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         document.querySelector(selector).innerHTML = "";
       });
       document.getElementById("plot-host").innerHTML = "";
-      var rows = parse(document.getElementById("src").value);
+      var rows;
+      try { rows = parse(document.getElementById("src").value); }
+      catch (e) { showFail(e.message); return; }
       var refTrt = (document.getElementById("f-ref").value || "").trim();
-      var predicts = (document.getElementById("f-predict").value || "")
-        .split(/\s*,\s*/).map(function (s) { return parseFloat(s); }).filter(isFinite);
+      // Every prediction token must be a plain number (an invalid token used to vanish, and an all-invalid
+      // field became a prediction at the mean); values are sorted so the plotted ribbon cannot fold back.
+      var predRaw = (document.getElementById("f-predict").value || "").trim(), predicts = [];
+      if (predRaw) {
+        var toks = predRaw.split(/\s*,\s*/), badTok = toks.filter(function (t) { return !NUM.test(t); });
+        if (badTok.length) { showFail("prediction covariate values must be numbers separated by commas ('" + badTok[0] + "' is not)."); return; }
+        predicts = toks.map(Number).sort(function (u, v) { return u - v; });
+      }
 
       var treatments = Array.from(new Set(rows.reduce(function (acc, r) {
         acc.push(r.trtA); acc.push(r.trtB); return acc;
       }, []))).sort();
-      if (refTrt && treatments.includes(refTrt)) {
+      // An entered reference must be an exact treatment label: an unknown one used to be ignored silently
+      // (the first sorted label was fitted instead). A blank field still selects the first sorted label.
+      if (refTrt && !treatments.includes(refTrt)) {
+        showFail("reference treatment '" + refTrt + "' is not a treatment in the data (" + treatments.join(", ") + ").");
+        return;
+      }
+      if (refTrt) {
         treatments = [refTrt].concat(treatments.filter(function (t) { return t !== refTrt; }));
       }
       var fit;
       try {
         fit = AlmNmaMetaReg.fit(rows, treatments, { method: document.getElementById("f-method").value, predictAt: predicts.length ? predicts : undefined });
-      } catch (e) {
-        document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + e.message + '</div>';
-        return;
-      }
+      } catch (e) { showFail(e.message); return; }
+      // The engine returns ok:true with converged:false when its tau^2 optimiser stops early, and extreme
+      // prediction values can overflow to infinite intervals: neither is a result to display.
+      if (fit.converged === false) { showFail("the " + fit.method + " estimate of tau² did not converge (" + fit.iterations + " iterations); no result is shown."); return; }
+      var allNums = [fit.tau2, fit.QE, fit.xMean];
+      treatments.slice(1).forEach(function (t) {
+        [fit.beta_at_mean[t], fit.gamma[t]].concat(fit.predictions.map(function (q) { return q.perTreatment[t]; }))
+          .forEach(function (e) { allNums.push(e.estimate, e.se, e.ci_lo, e.ci_hi); });
+      });
+      if (!allNums.every(isFinite)) { showFail("the fit produced non-finite values (for example at an extreme prediction covariate); no result is shown."); return; }
       document.getElementById("summary").innerHTML =
-        '<div class="card"><span class="k">Method</span><span class="v">' + fit.method + '</span></div>' +
+        '<div class="card"><span class="k">Method</span><span class="v">' + esc(fit.method) + '</span></div>' +
         '<div class="card"><span class="k">QE (df)</span><span class="v">' + fmt(fit.QE, 3) + ' (' + fit.QEdf + ')</span></div>' +
         '<div class="card"><span class="k">Dropped multi-arm contrasts</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason === "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">x̄ (covariate mean)</span><span class="v">' + fmt(fit.xMean, 2) + '</span></div>' +
+        // Rows the engine excludes before fitting (missing value, sei <= 0, trtA = trtB) are counted too:
+        // the R script checks the same count, and the page used to show only the multi-arm drops.
+        '<div class="card"><span class="k">Invalid rows excluded</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason !== "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(fit.tau2, 4) + '</span></div>' +
         '<div class="card"><span class="k">n rows</span><span class="v">' + fit.n + '</span></div>' +
         '<div class="card"><span class="k">p (params)</span><span class="v">' + fit.p + '</span></div>' +
-        '<div class="card"><span class="k">Reference</span><span class="v">' + treatments[0] + '</span></div>' +
+        '<div class="card"><span class="k">Reference</span><span class="v">' + esc(treatments[0]) + '</span></div>' +
         '<div class="card"><span class="k">Treatments</span><span class="v">' + treatments.length + '</span></div>';
+      // Predictions beyond the covariate values of the analysed rows are extrapolations: say so.
+      var obsX = rows.filter(function (r) { return isFinite(r.yi) && isFinite(r.sei) && r.sei > 0 && isFinite(r.covariate) && r.trtA !== r.trtB; })
+        .map(function (r) { return r.covariate; });
+      var xLo = Math.min.apply(null, obsX), xHi = Math.max.apply(null, obsX);
+      var outside = fit.predictions.filter(function (q) { return q.x < xLo || q.x > xHi; }).map(function (q) { return q.x; });
+      if (outside.length) {
+        document.getElementById("summary").innerHTML += '<div class="card" style="grid-column:1/-1">' +
+          esc("Predictions at " + outside.join(", ") + " are outside the observed covariate range (" + xLo + " to " + xHi + "): extrapolations.") + '</div>';
+      }
 
       // β table
       var bHtml = "";
       for (var k = 1; k < treatments.length; k++) {
         var b = fit.beta_at_mean[treatments[k]];
-        bHtml += "<tr><td>" + treatments[k] + " vs " + treatments[0] + "</td><td>" + fmt(b.estimate, 4) + "</td><td>" + fmt(b.se, 4) + "</td><td>" + fmt(b.ci_lo, 3) + ", " + fmt(b.ci_hi, 3) + "</td></tr>";
+        bHtml += "<tr><td>" + esc(treatments[k]) + " vs " + esc(treatments[0]) + "</td><td>" + fmt(b.estimate, 4) + "</td><td>" + fmt(b.se, 4) + "</td><td>" + fmt(b.ci_lo, 3) + ", " + fmt(b.ci_hi, 3) + "</td></tr>";
       }
       document.querySelector("#beta tbody").innerHTML = bHtml;
 
@@ -254,13 +307,13 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var gHtml = "";
       for (var k2 = 1; k2 < treatments.length; k2++) {
         var g = fit.gamma[treatments[k2]];
-        gHtml += "<tr><td>" + treatments[k2] + " vs " + treatments[0] + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + fmt(g.se, 4) + "</td><td>" + fmt(g.ci_lo, 3) + ", " + fmt(g.ci_hi, 3) + "</td></tr>";
+        gHtml += "<tr><td>" + esc(treatments[k2]) + " vs " + esc(treatments[0]) + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + fmt(g.se, 4) + "</td><td>" + fmt(g.ci_lo, 3) + ", " + fmt(g.ci_hi, 3) + "</td></tr>";
       }
       document.querySelector("#gamma tbody").innerHTML = gHtml;
 
       // predictions
       var phead = "<tr><th>Covariate</th>";
-      for (var k3 = 1; k3 < treatments.length; k3++) phead += "<th>" + treatments[k3] + " vs " + treatments[0] + "</th>";
+      for (var k3 = 1; k3 < treatments.length; k3++) phead += "<th>" + esc(treatments[k3]) + " vs " + esc(treatments[0]) + "</th>";
       phead += "</tr>";
       // Replace contents of #pred-head-host so the stable ID survives re-renders.
       document.getElementById("pred-head-host").innerHTML = phead;
@@ -282,6 +335,21 @@ S10, A, B, -0.32, 0.10, 70</textarea>
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
+    // A displayed fit belongs to the inputs that produced it: editing any input (or a restored draft firing
+    // input/change) withdraws the fit, its export and the R snapshot until the user fits again.
+    function inputsEdited() {
+      if (!window.__almLastNmaMetaReg()) return;
+      window.__almLastNmaMetaReg = function () { return null; };
+      if (window.AlmRCheck) window.AlmRCheck.set(null);
+      ["#beta tbody", "#gamma tbody", "#pred tbody"].forEach(function (sel) { document.querySelector(sel).innerHTML = ""; });
+      document.getElementById("pred-head-host").innerHTML = "<tr><th>Covariate</th></tr>";
+      document.getElementById("plot-host").innerHTML = "";
+      document.getElementById("summary").innerHTML = '<div class="card" style="grid-column:1/-1">Inputs changed: press Fit network meta-regression.</div>';
+    }
+    ["src", "f-ref", "f-method", "f-predict"].forEach(function (id) {
+      var e = document.getElementById(id);
+      e.addEventListener("input", inputsEdited); e.addEventListener("change", inputsEdited);
+    });
     run();
   })();
   </script>

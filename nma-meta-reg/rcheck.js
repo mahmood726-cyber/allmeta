@@ -46,7 +46,7 @@
     sec.className = "panel"; sec.id = "rcheck-panel"; sec.style.gridColumn = "1 / -1";
     sec.setAttribute("aria-label", "Check this result in R");
     sec.innerHTML = '<h2>Check in R</h2>' +
-      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes every displayed number with ' + PKG_NOTE + ', prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
+      '<p class="hint" style="margin:0 0 0.5rem">Both buttons use the same R script, generated from the inputs this page last analysed. It recomputes the counts, Q<sub>E</sub>, x&#772;, &tau;&sup2;, effects, slopes and predictions shown for that analysis with ' + PKG_NOTE + ' (consistency model, independent slopes), prints each next to the page\'s value and the absolute difference, and ends with <code>MATCH n/n</code> or <code>MISMATCH</code>.</p>' +
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
       '<button type="button" id="btn-rscript" class="ghost">Download R script</button>' +
       '<button type="button" id="btn-verify-r" class="ghost">Verify in R (WebR)</button></div>' +
@@ -155,13 +155,14 @@
       "# make.names() can alter labels in its design columns; A5: the covariate is shifted by round(mean(x)), a pure",
       "# reparametrisation, and results are reported on the data scale.",
       "lab <- unique(c(d$trtA, d$trtB)); ord <- lab[order(gsub(\" \", \"_\", lab, fixed = TRUE), method = \"radix\")]",
-      "code <- setNames(sprintf(\"T%02d\", seq_along(ord)), ord)",
+      "# zero-padded to the width of the largest code (at least 2), so codes keep lexical order beyond 99 treatments",
+      "code <- setNames(paste0(\"T\", formatC(seq_along(ord), width = max(2, nchar(length(ord))), flag = \"0\")), ord)",
       "shift <- round(mean(d$x))",
       "dd <- data.frame(studlab = d$studlab, treat1 = unname(code[d$trtB]), treat2 = unname(code[d$trtA]),",
       "  TE = d$yi, seTE = d$sei, covariate = d$x - shift, stringsAsFactors = FALSE)",
       "net <- netmeta(TE, seTE, treat1, treat2, studlab, data = dd, sm = \"MD\", reference.group = code[[ref]],",
       "  common = (method == \"FE\"), random = (method != \"FE\"))",
-      "res <- netmetareg(net, covar = covariate, method.tau = method, reference.group = code[[ref]])",
+      "res <- netmetareg(net, covar = covariate, method.tau = method, reference.group = code[[ref]], consistency = TRUE, assumption = \"independent\")",
       "print(res)",
       "b <- coef(res); V <- vcov(res); z <- qnorm(0.975)",
       "xbar <- mean(res$data$covariate) + shift   # mean covariate of the rows netmetareg used",

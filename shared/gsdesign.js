@@ -129,7 +129,18 @@
   function spendVector(sf, total, timing) {
     var fam = FAMILY_ALIAS[sf.family];
     if (!fam) throw new Error("unknown spending family: " + sf.family);
-    return timing.map(function (t) { return SF[fam](total, t, sf.param); });
+    // gsDesign's sfPower requires rho > 0; HSD needs a finite gamma.
+    if (fam === "Power" && !(Number.isFinite(sf.param) && sf.param > 0))
+      throw new Error("spending parameter rho must be a finite number > 0");
+    if (fam === "HSD" && !Number.isFinite(sf.param))
+      throw new Error("spending parameter gamma must be a finite number");
+    var v = timing.map(function (t) { return SF[fam](total, t, sf.param); });
+    // A non-finite or decreasing cumulative spend (e.g. HSD's 0/0 for a vanishing gamma) is
+    // refused here, never handed to the boundary solver to come back as NaN bounds.
+    for (var i = 0; i < v.length; i++)
+      if (!(Number.isFinite(v[i]) && v[i] >= 0 && v[i] <= total * (1 + 1e-9) && (i === 0 || v[i] >= v[i - 1])))
+        throw new Error("spending function gives a non-finite or decreasing cumulative spend at t = " + timing[i]);
+    return v;
   }
   function diffs(cum) { return cum.map(function (v, i) { return i === 0 ? v : v - cum[i - 1]; }); }
 
