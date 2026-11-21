@@ -64,10 +64,14 @@ test('invalid CSV group size is rejected rather than silently truncated', async 
   await page.evaluate(() =>
     window.__almLoadCSV([{ m1:52.5, sd1:8.2, n1:30.5, m2:47.1, sd2:7.9, n2:30 }]));
   await expect(page.locator('#warn-slot')).toContainText('CSV rejected');
-  expect(await page.evaluate(() => window.__almResults().rows.length)).toBeGreaterThan(0);
-  // Calling export refits from current valid controls; rejection banner is not a proof
-  // that the old inputs were overwritten. Invalid import must NOT change them.
+  // Requirement: the rejected row is neither imported nor exported, and the earlier inputs
+  // are not overwritten. (This used to assert that the export still had rows: the old export
+  // re-ran the conversion on the form, reviving a result the page had just cleared. The export
+  // now describes the table on screen (LIM-P20 A05), which the rejection empties.)
+  const shown = await page.evaluate(() => (window.__almResultRows || []).length);
+  expect(await page.evaluate(() => window.__almResults().rows.length)).toBe(shown);
   await expect(page.locator('#in-type')).toHaveValue('OR');
+  await expect(page.locator('#in-est')).toHaveValue('0.75');
 });
 
 test('two-sample t derives both signed estimate and its variance; non-SMD rejects', async ({ page }) => {
@@ -187,14 +191,19 @@ test('P0-47: the MD follows the visible inputs (pooled SD edit, a same-g scaled 
     const a = md();
     const sd = document.getElementById('ctx-sd');
     sd.value = String(2 * Number(sd.value));
+    // The table (and so the export, LIM-P20 A05) follows an edited field once it is converted,
+    // as the Convert button does; before that the export must still match the table shown.
+    const beforeConvert = md();
+    runConvert();
     const doubled = md();
     window.__almLoadCSV([B]);
     const b = md();
     window.__almRestore(snapA);
     const restored = md();
-    return { a, doubled, b, restored, snapA };
+    return { a, beforeConvert, doubled, b, restored, snapA };
   }, { A: EDINBURGH, B: SCALED });
   expect(got.a.point).toBeCloseTo(-20, 10);
+  expect(got.beforeConvert.point).toBeCloseTo(-20, 10);
   expect(got.doubled.point).toBeCloseTo(-40, 8);
   expect(got.doubled.se).toBeCloseTo(2 * mdSeHO(EDINBURGH), 8);
   expect(got.b.point).toBeCloseTo(-40, 10);
