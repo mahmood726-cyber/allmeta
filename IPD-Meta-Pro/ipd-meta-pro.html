@@ -74138,11 +74138,20 @@ function showClusteredIPDAnalysis() {
 
 
 
+    // LIM-P60 L32: a keyboard-usable dialog (role, name, focus in, Tab contained, Escape, named close, focus back)
+    const stale = document.getElementById('clusteredIPDModal');
+    if (stale) stale.remove();
+    const opener = document.activeElement;
+
     const modal = document.createElement('div');
 
     modal.className = 'modal';
 
     modal.id = 'clusteredIPDModal';
+
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'clusteredIPDTitle');
 
     modal.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;overflow:auto;';
 
@@ -74154,9 +74163,9 @@ function showClusteredIPDAnalysis() {
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
 
-                <h2 style="margin:0;color:var(--text-primary);">Clustered IPD Analysis</h2>
+                <h2 id="clusteredIPDTitle" style="margin:0;color:var(--text-primary);">Clustered IPD Analysis</h2>
 
-                <button onclick="this.closest('.modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-secondary);">&times;</button>
+                <button type="button" id="clusteredIPDClose" aria-label="Close Clustered IPD Analysis" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-secondary);">&times;</button>
 
             </div>
 
@@ -74267,6 +74276,29 @@ function showClusteredIPDAnalysis() {
 
 
     document.body.appendChild(modal);
+
+    const focusables = () => Array.from(modal.querySelectorAll('button, select, input, textarea, a[href], [tabindex]:not([tabindex="-1"])'))
+        .filter(el => !el.disabled && el.offsetParent !== null);
+    const onKey = (e) => {
+        if (!document.body.contains(modal)) { document.removeEventListener('keydown', onKey, true); return; }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeDialog(); return; }
+        if (e.key !== 'Tab') return;
+        const f = focusables();
+        if (!f.length) { e.preventDefault(); return; }
+        const first = f[0], last = f[f.length - 1];
+        if (!modal.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    function closeDialog() {
+        document.removeEventListener('keydown', onKey, true);
+        modal.remove();
+        if (opener && typeof opener.focus === 'function' && document.body.contains(opener)) opener.focus();
+    }
+    document.addEventListener('keydown', onKey, true);
+    modal.querySelector('#clusteredIPDClose').addEventListener('click', closeDialog);
+    const firstControl = modal.querySelector('#ipdOutcomeVar') || focusables()[0];
+    if (firstControl) firstControl.focus();
 
 }
 
