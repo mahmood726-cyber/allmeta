@@ -122,7 +122,8 @@
     api.invalidate = function () {
       verifyGen++;
       if (out.textContent || out.style.display !== "none") { out.textContent = ""; out.style.display = "none"; status.textContent = "Analysis changed: the earlier R verdict was removed. Press Verify in R again."; }
-      host.querySelector("#rcheck-webr").disabled = false;
+      // the Verify button is NOT re-enabled here: it is disabled only while a WebR run is in flight, and
+      // the run re-enables it when it settles (its stale answer is then discarded by verifyGen).
     };
     return true;
   }

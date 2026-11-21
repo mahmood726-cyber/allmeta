@@ -52,10 +52,49 @@ def test_default_example_rows_unchanged():
         ("Trial D", 0.5, 0.45), ("Trial E", 1.5, 0.55), ("Trial F", 1.0, 0.3)]
 
 
-# L03: exactly three fields; a fourth column or decimal commas must not be re-read as other numbers
-@pytest.mark.parametrize("line", ["T1, 12, 1.2, 0.4", "T1, 1,2, 0,4", "Smith, 2010, 1.2, 0.4", "T1, 1.2"])
+# L03: a fourth column or decimal commas must not be re-read as other numbers. ("Smith, 2010, 1.2, 0.4" was
+# listed here at first; review of PR #647: that is a legitimate comma label and is now in test_comma_labels_accepted.)
+@pytest.mark.parametrize("line", ["T1, 12, 1.2, 0.4", "T1, 1,2, 0,4", "T1, 1.2"])
 def test_not_three_fields_refused(line):
     out = _parse(line + "\nT2, 0.5, 0.3")
     assert out["rows"] == [{"label": "T2", "diff": 0.5, "se": 0.3, "v": 0.09}]
     assert [r["line"] for r in out["rejected"]] == [1]
-    assert "expected exactly 3" in out["rejected"][0]["reason"]
+    assert "label, RMST difference, SE" in out["rejected"][0]["reason"]
+
+
+# Review of PR #647: labels with commas must still work, without re-admitting horizon columns or
+# decimal commas. Rule: a double-quoted label is taken as one field (CSV, "" = quote) and then exactly
+# 3 fields are required. An unquoted row with more than 3 fields is accepted only if the last two fields
+# are decimal numbers AND no label field after the first is a bare number other than a 4-digit year
+# 1900-2099 (a bare non-year number before the difference is what a horizon column or a decimal comma
+# produces: "A, 12, 1.2, 0.4" -> "12"; "C, 1,2, 0,4" -> "1", "2").
+@pytest.mark.parametrize("line,label", [
+    ('"Smith, 2019", 1.2, 0.4', "Smith, 2019"),
+    ('"Smith ""Jr"", 2019", 1.2, 0.4', 'Smith "Jr", 2019'),
+    ("Smith et al., 2019, 1.2, 0.4", "Smith et al., 2019"),
+    ("Smith, 2019, 1.2, 0.4", "Smith, 2019"),
+    ("Smith, Jones, 1.2, 0.4", "Smith, Jones"),
+])
+def test_comma_labels_accepted(line, label):
+    out = _parse(line)
+    assert out["rejected"] == []
+    assert out["rows"] == [{"label": label, "diff": 1.2, "se": 0.4, "v": 0.16000000000000003}]
+
+
+@pytest.mark.parametrize("line", ["A, 12, 1.2, 0.4", "C, 1,2, 0,4", "Smith 2019, 1,2, 0,4", "Smith, 2019, 12, 1.2, 0.4",
+                                  "1,2, 0,4", '"Smith, 2019", 12, 1.2, 0.4'])
+def test_horizon_column_and_decimal_commas_still_refused(line):
+    out = _parse(line + "\nT2, 0.5, 0.3")
+    assert [r["label"] for r in out["rows"]] == ["T2"]
+    assert [r["line"] for r in out["rejected"]] == [1]
+
+
+@pytest.mark.parametrize("header", ["label, RMST difference, SE", "study,rmst_diff,se", '"Trial", "Diff (months)", "SE"'])
+def test_header_row_ignored_not_counted(header):
+    out = _parse(header + "\nT1, 0.4, 0.2\nT2, 0.5, 0.3")
+    assert out["rejected"] == [] and [r["label"] for r in out["rows"]] == ["T1", "T2"]
+
+
+def test_header_only_recognised_on_first_data_line():
+    out = _parse("T1, 0.4, 0.2\nlabel, diff, se\nT2, 0.5, 0.3")
+    assert [r["line"] for r in out["rejected"]] == [2]

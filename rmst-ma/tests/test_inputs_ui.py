@@ -51,7 +51,8 @@ const srv = http.createServer((q, r) => {
         notes: (document.getElementById('parse-notes') || { textContent: null }).textContent,
         last: window._almLastRMST(), rstate: window.__almRmstRState(),
         rout: (document.getElementById('rcheck-out') || {}).textContent || '',
-        rstatus: (document.getElementById('rcheck-status') || {}).textContent || '' }));
+        rstatus: (document.getElementById('rcheck-status') || {}).textContent || '',
+        webrDisabled: !!(document.getElementById('rcheck-webr') || {}).disabled }));
       await p.close();
     }
   } finally { await b.close(); srv.close(); }
@@ -74,6 +75,9 @@ CASES = [
     # L14: a completed R verdict (stubbed WebR runner) must not survive an edit of the analysis
     {"id": "L14-control", "js": STUB, "click": "#rcheck-webr", "text": None},
     {"id": "L14-edit", "js": STUB, "click": "#rcheck-webr", "text": GOOD},
+    # review of PR #647: an edit while WebR is still running must not re-enable Verify (run never settles here)
+    {"id": "L14-inflight", "js": "window.AlmWebR = { runR: function () { return new Promise(function () {}); } };",
+     "click": "#rcheck-webr", "text": GOOD},
     {"id": "L04-overflow", "text": "A, 1e308, 1\nB, 1.7e308, 1\nC, 1.7e308, 1"},
 ]
 
@@ -142,3 +146,7 @@ def test_L14_stub_verdict_shown_without_edit(driven):
 def test_L14_completed_verdict_cleared_by_edit(driven):
     d = driven["L14-edit"]
     assert "MATCH" not in d["rout"] and "MATCH" not in d["rstatus"], (d["rout"], d["rstatus"])
+
+
+def test_L14_verify_stays_disabled_while_run_in_flight(driven):
+    assert driven["L14-inflight"]["webrDisabled"] is True
