@@ -224,3 +224,20 @@ def test_interval_order_is_independent_of_input_order():
     want = ["2.5", "10.5", "1a"]
     for order in (["10.5", "1a", "2.5"], ["2.5", "10.5", "1a"], ["1a", "2.5", "10.5"]):
         assert _run(f"S.fit({json.dumps(rows(order))}, {{model:'fe'}}).intervalIds") == want, order
+
+
+@pytest.mark.parametrize("patch,opts", [
+    ({"events": -3}, {}), ({"events": float("nan")}, {}), ({"ptime": 0}, {}), ({"ptime": "Infinity"}, {}),
+    ({"treatment": ""}, {}), ({"study": " "}, {}), ({}, {"cc": -0.5}), ({}, {"cc": "NaN"}),
+])
+def test_engine_refuses_invalid_rows_and_correction(patch, opts):
+    # Requirement (LIM-P49 L02/L03, review of PR #648): the page validates its own input, but fit() is a public
+    # engine entry point and must not fit negative or non-finite events, non-positive or non-finite person-time,
+    # empty labels, or a negative / non-finite continuity correction (main fitted events -3 and cc -0.5).
+    rows = [dict(r) for r in IV1_ROWS]
+    rows[0].update({k: v for k, v in patch.items()})
+    js_rows = json.dumps(rows).replace('"Infinity"', "Infinity").replace("NaN", "NaN")
+    o = dict({"model": "fe"}, **opts)
+    js_opts = json.dumps(o).replace('"NaN"', "NaN")
+    out = _run(f"(() => {{ try {{ S.fit({js_rows}, {js_opts}); return null; }} catch (e) {{ return e.message; }} }})()")
+    assert out and "nma-survival-nph" in out, out
