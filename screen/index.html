@@ -172,6 +172,17 @@
     #save-status { font-size:.8rem; margin-left:auto; }
     .full-text-evidence { padding:1rem; margin:1rem 0; border:1px solid var(--border-strong); border-radius:.6rem; }
     .full-text-evidence input,.full-text-evidence textarea { width:100%; }
+    #duplicate-warning { border:2px solid var(--maybe); margin-bottom:1rem; }
+    #duplicate-review { margin-bottom:1rem; }
+    .duplicate-pair { border-top:1px solid var(--border); padding:1rem 0; }
+    .duplicate-records { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+    .duplicate-records article { min-width:0; overflow-wrap:anywhere; }
+    .duplicate-records h4 { margin:.25rem 0; }
+    .duplicate-records dl { margin:.5rem 0; font-size:.85rem; }
+    .duplicate-records dt { font-weight:600; }
+    .duplicate-records dd { margin:0 0 .3rem; }
+    .duplicate-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+    @media(max-width:650px) { .duplicate-records { grid-template-columns:1fr; } }
     #history-panel { margin-top:1rem; } #audit-list { max-height:18rem; overflow:auto; padding-left:1.5rem; font-size:.85rem; }
     :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
     .conflict-row { flex-wrap:wrap; }
@@ -201,7 +212,7 @@
           <li>When done, send the included records on to <a href="../extract/">Extraction</a>.</li>
         </ol>
         <div class="alm-task-grid">
-          <div class="alm-card alm-tool"><h4>The tool does</h4>Flags likely duplicates, an offline RCT-likelihood score and your search-term matches — these are <em>hints</em>.</div>
+          <div class="alm-card alm-tool"><h4>The tool does</h4>Flags possible duplicates, an offline RCT model score and your search-term matches — these are <em>hints</em>.</div>
           <div class="alm-card alm-you"><h4>You must check</h4>Every <strong>include / exclude</strong> decision, and that the final included set is correct, before moving on.</div>
         </div>
       </div>
@@ -317,7 +328,7 @@
               <option value="order">Import order</option>
               <option value="ml">ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
               <option value="relevance">Term score ↓</option>
-              <option value="rct">RCT likelihood ↓</option>
+              <option value="rct">RCT model score ↓</option>
               <option value="year">Year ↓</option>
             </select></label>
         </div>
@@ -327,7 +338,7 @@
 
       <section class="panel">
         <h2>Cold-start RCT classifier</h2>
-        <p class="hint" style="margin-top:0">Every card shows a <strong>RCT&nbsp;%</strong> badge — a study-design likelihood from an offline, transparent bag-of-words logistic model trained on real PubMed abstracts (labelled by Publication Type). It needs <em>no</em> labels from you, so it helps from record&nbsp;one; sort by <em>RCT likelihood</em> to triage trials first. <span id="rct-meta"></span></p>
+        <p class="hint" style="margin-top:0">The <strong>RCT model score</strong> is a ranking signal, not a calibrated probability or a decision about study design. The PubMed sample was approximately balanced between RCT and non-RCT publication types. Negatives were reviews, observational studies, case reports and comparative studies. Non-randomised interventional designs were absent as an explicit negative class; their coverage and performance are not established. Protocols, single-arm and quasi-randomised studies can score highly. This is an English-oriented model; non-English performance is not validated. Check random allocation and eligibility yourself. <span id="rct-meta"></span></p>
       </section>
 
       <section class="panel">
@@ -395,7 +406,18 @@
         <span><kbd>1</kbd>–<kbd>9</kbd> reason</span><span><kbd>n</kbd> next undecided</span><span><kbd>j</kbd>/<kbd>k</kbd> move</span>
         <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
       </div>
-      <div id="card-host" aria-live="polite"></div>
+      <div id="duplicate-warning" class="panel" role="status" aria-live="polite" hidden></div>
+      <details id="duplicate-review" class="panel">
+        <summary id="duplicate-review-heading">Review duplicates</summary>
+        <p>Compare both records and the reason before choosing Keep both or Remove. Remove targets the second record; Swap changes the target. Screening can continue while pairs are unresolved.</p>
+        <button type="button" id="duplicate-remove-exact">Remove all exact matches (0)</button>
+        <p class="hint">The bulk count is the number of records that can safely be removed now. Linked pairs stay unresolved until reviewed; undo a linked removal to make another choice.</p>
+        <div id="duplicate-pairs"></div>
+        <h3>Duplicate decisions</h3>
+        <p class="hint">Undo restores a removed record with its own screening decisions and history.</p>
+        <ol id="duplicate-decisions"></ol>
+      </details>
+      <div id="card-host" tabindex="-1" aria-label="Screening records"></div>
       <details class="panel" id="history-panel"><summary>Decision history</summary><p class="hint">Dated local history; editable backup files are not signed or authenticated. Older imported decisions have no reconstructed history.</p><ol id="audit-list"></ol></details>
 
       <section class="panel" id="conflict-panel" style="display:none;margin-top:1rem;">
@@ -407,7 +429,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: nothing is removed automatically. Review suspected pairs with their reasons, keep both or explicitly remove one record. Exact DOI, PubMed ID and normalised-title matches can be removed together after confirmation. Different nonempty DOIs never pair. Title similarity (trigram Jaccard at least 0.85, or at least 0.72 with matching first author and year) only proposes review. Blocking and sorted-neighbourhood matching reduce fuzzy comparisons; measured 100k-record throughput is not claimed. Agreement: unweighted Cohen's &kappa; over include/exclude pairs only; maybe and missing ratings are omitted. SE and 95% CI use the Fleiss-Cohen-Everitt asymptotic method. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -455,7 +477,7 @@
     ];
 
     var toast = function (m) {
-      try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {}
+      try { if (window.Toast && window.Toast.show) return window.Toast.show(m); } catch (e) {}
       try { console.log(m); } catch (e) {}
     };
 
@@ -467,7 +489,7 @@
         reasons: DEFAULT_REASONS.slice(), labels: [],
         mode: "single", active: "r1", blind: false,
         filter: "all", sort: "order", kw: "",
-        cursor: 0, records: [], stage: "ta", workflowVersion: 2, audit: [], autoRank: false, modelRun: null
+        cursor: 0, records: [], stage: "ta", workflowVersion: 2, audit: [], duplicatePairs: [], duplicateDecisions: [], autoRank: false, modelRun: null
       };
     }
 
@@ -485,16 +507,18 @@
       if (!s) return [];
       return String(s).split(/;| and |&/).map(function (a) { return a.trim(); }).filter(Boolean);
     }
+    function termRegex(pattern) {
+      return new RegExp("(?<![\\p{L}\\p{N}\\p{M}_])(?:" + pattern + ")(?![\\p{L}\\p{N}\\p{M}_])", "giu");
+    }
     function countOcc(hay, needle) {
-      if (!needle) return 0; var n = 0, i = 0;
-      while ((i = hay.indexOf(needle, i)) >= 0) { n++; i += needle.length; }
-      return n;
+      if (!needle) return 0;
+      return (hay.match(termRegex(escapeRe(needle))) || []).length;
     }
 
     // ---- dedup math (from citation-dedup) ----
     var STOP = new Set("a an the of and or to in for on with without via using study trial randomized randomised controlled".split(" "));
     function normTitle(t) {
-      return String(t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
+      return String(t || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}\p{M} ]+/gu, " ").split(/\s+/)
         .filter(function (w) { return w && !STOP.has(w); }).join(" ").trim();
     }
     function trigrams(s) {
@@ -519,59 +543,61 @@
       return best.length >= 3 ? best : "";
     }
 
-    // Blocked + multi-field dedup. DOI-exact is O(n). The fuzzy title pass used
-    // to be O(n^2) on the main thread (frozen tab beyond ~50k records, PERF-1).
-    // It now generates candidate pairs by BLOCKING — buckets keyed by the first,
-    // last and longest title token plus an (author,year) key — and a
-    // sorted-neighbourhood window over normalised titles. Each candidate pair is
-    // visited once, in (survivor-index, other-index) order, so the survivor is
-    // the earliest-imported record exactly as the brute-force loop chose it.
-    // Multi-field assist (M-4): a slightly relaxed title threshold is accepted
-    // when first-author surname AND year both match, catching reformatted titles
-    // and same-work-different-DOI duplicates that the title-only 0.85 rule misses.
+    // Detection proposes pairs only. Exact buckets are exhaustive; fuzzy buckets
+    // and a sorted neighbourhood bound comparisons for larger imports.
+    function exactTitle(t) {
+      return String(t || "").normalize("NFKC").normalize("NFD").replace(/\p{M}/gu,"")
+        .toLowerCase().replace(/[^\p{L}\p{N} ]+/gu," ").replace(/\s+/g," ").trim();
+    }
+    function pairId(a,b) { return JSON.stringify([a.id,b.id].sort()); }
     var DEDUP_T_STRICT = 0.85, DEDUP_T_ASSIST = 0.72, SN_WINDOW = 8;
     function dedupCore(recs, opts) {
       opts = opts || {};
-      var bruteOnly = !!opts.brute;       // reference O(n^2), strict-threshold only
-      var i, j, info = { comparisons: 0, merges: 0 };
-      for (i = 0; i < recs.length; i++) {
-        if (recs[i].dupManual) { recs[i].dup = true; if (!recs[i].dupOf) recs[i].dupOf = "(manual)"; }
-        else { recs[i].dup = false; recs[i].dupOf = null; }
-      }
-      // DOI exact
-      var seenDoi = {};
-      for (i = 0; i < recs.length; i++) {
-        if (recs[i].dup) continue;
-        var d = (recs[i].doi || "").toLowerCase();
-        if (!d) continue;
-        if (seenDoi[d]) { recs[i].dup = true; recs[i].dupOf = seenDoi[d]; }
-        else seenDoi[d] = recs[i].id;
-      }
-      // live entries keep their ORIGINAL record index (oi) for survivor choice
-      var live = [];
-      for (i = 0; i < recs.length; i++) if (!recs[i].dup) {
-        var nt = normTitle(recs[i].title);
-        live.push({ r: recs[i], oi: i, nt: nt, t: trigrams(nt), toks: nt ? nt.split(" ") : [] });
-      }
+      var bruteOnly = !!opts.brute;
+      var i, j, info = { comparisons: 0, merges: 0, pairs: [] }, visited=new Set();
+      var live = recs.map(function(r,i) {
+        var nt=normTitle(r.title);
+        return {r:r,oi:i,nt:nt,t:trigrams(nt),toks:nt ? nt.split(" ") : []};
+      });
       function tryMerge(a, b) {
-        info.comparisons++;
-        if (a.r.dup || b.r.dup) return;
-        if (!a.t.size || !b.t.size) return;
-        var jac = jaccard(a.t, b.t), merge = false;
-        if (jac >= DEDUP_T_STRICT) merge = true;
-        else if (!bruteOnly && jac >= DEDUP_T_ASSIST) {
-          var ka = firstAuthorKey(a.r), kb = firstAuthorKey(b.r);
-          if (ka && ka === kb && a.r.year && a.r.year === b.r.year) merge = true;
+        var key=pairId(a.r,b.r);
+        if(visited.has(key))return; visited.add(key); info.comparisons++;
+        if (differentDois(a.r, b.r)) return;
+        var reason="", text="", jac=jaccard(a.t,b.t), title=exactTitle(a.r.title);
+        if(doiKey(a.r) && doiKey(a.r)===doiKey(b.r)) {
+          reason="exact-doi"; text="Same DOI "+doiKey(a.r);
+        } else if(a.r.pmid && String(a.r.pmid).trim()===String(b.r.pmid || "").trim()) {
+          reason="exact-pmid"; text="Same PubMed ID "+String(a.r.pmid).trim();
+        } else if(title && title===exactTitle(b.r.title)) {
+          reason="exact-title"; text="Identical title after normalising case, accents and punctuation";
+        } else if(a.nt && b.nt && jac>=DEDUP_T_STRICT) {
+          reason="similar-title"; text="Titles "+Math.round(jac*100)+"% similar (trigram Jaccard "+jac.toFixed(2)+")";
+        } else if(a.nt && b.nt && jac>=DEDUP_T_ASSIST) {
+          var ka=firstAuthorKey(a.r), kb=firstAuthorKey(b.r);
+          if(ka && ka===kb && a.r.year && String(a.r.year)===String(b.r.year)) {
+            reason="similar-title+author-year";
+            var author=(a.r.authors[0].match(/[a-z]{2,}/gi) || []).find(function(t){return t.toLowerCase()===ka;}) || ka;
+            text="Titles "+Math.round(jac*100)+"% similar, same first author ("+author+") and year ("+a.r.year+")";
+          }
         }
-        if (!merge) return;
-        var keep = a.oi <= b.oi ? a : b, drop = a.oi <= b.oi ? b : a;
-        drop.r.dup = true; drop.r.dupOf = keep.r.id; info.merges++;
+        if(!reason)return;
+        var keep=a.oi<=b.oi ? a:b, drop=a.oi<=b.oi ? b:a;
+        info.pairs.push({id:key,firstId:keep.r.id,secondId:drop.r.id,reason:reason,
+          reasonText:text,exact:reason.indexOf("exact-")===0});
       }
+      // Exact identifiers/titles must be considered even outside fuzzy blocks.
+      var exactBuckets=new Map();
+      live.forEach(function(a) {
+        [doiKey(a.r) ? "doi:"+doiKey(a.r):"", a.r.pmid ? "pmid:"+String(a.r.pmid).trim():"",
+          exactTitle(a.r.title) ? "title:"+exactTitle(a.r.title):""].filter(Boolean).forEach(function(key) {
+          var bucket=exactBuckets.get(key) || [];
+          bucket.forEach(function(b){tryMerge(b,a);}); bucket.push(a); exactBuckets.set(key,bucket);
+        });
+      });
       if (bruteOnly || live.length <= 60) {
         // Exact pass for small sets (keeps unit-test parity) or when explicitly
         // requested as the reference.
         for (i = 0; i < live.length; i++) {
-          if (live[i].r.dup) continue;
           for (j = i + 1; j < live.length; j++) tryMerge(live[i], live[j]);
         }
         return info;
@@ -610,7 +636,7 @@
       order.sort(function (a, b) { return live[a].nt < live[b].nt ? -1 : live[a].nt > live[b].nt ? 1 : a - b; });
       for (i = 0; i < order.length; i++)
         for (j = i + 1; j < Math.min(order.length, i + SN_WINDOW); j++) addPair(order[i], order[j]);
-      // Process in (survivor-oi, other-oi) order so chains resolve deterministically.
+      // Process fuzzy candidate pairs in original import order for stable presentation.
       pairs.sort(function (p, q) {
         var pa = Math.min(live[p[0]].oi, live[p[1]].oi), qa = Math.min(live[q[0]].oi, live[q[1]].oi);
         if (pa !== qa) return pa - qa;
@@ -619,7 +645,98 @@
       for (i = 0; i < pairs.length; i++) tryMerge(live[pairs[i][0]], live[pairs[i][1]]);
       return info;
     }
-    function runDedup() { return dedupCore(S.records, {}); }
+    function doiKey(r) { return String(r.doi || "").trim().replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/i, "").toLowerCase(); }
+    function differentDois(a,b) { return !!(doiKey(a) && doiKey(b) && doiKey(a) !== doiKey(b)); }
+    function activeDuplicateDecision(pair, project) {
+      var decisions=(project || S).duplicateDecisions || [];
+      return decisions.slice().reverse().find(function(d){return d.pairId===pair.id && !d.undoneAt;});
+    }
+    function unresolvedPairs(project) {
+      project=project || S;
+      return (project.duplicatePairs || []).filter(function(p){return !activeDuplicateDecision(p,project);});
+    }
+    function syncDuplicatePairs(project) {
+      var result=dedupCore(project.records,{});
+      project.duplicatePairs=result.pairs;
+      project.records.forEach(function(r){r.possibleDupOf=[];});
+      var byId=new Map(project.records.map(function(r){return [r.id,r];}));
+      unresolvedPairs(project).forEach(function(p){byId.get(p.secondId).possibleDupOf.push(p.firstId);});
+      return result;
+    }
+    function runDedup() { return syncDuplicatePairs(S); }
+    function duplicateRecord(id) { return S.records.find(function(r){return r.id===id;}); }
+    function removalAllowed(drop,keep,removed) {
+      return drop && keep && drop!==keep && !drop.dup && !keep.dup && !differentDois(drop,keep) &&
+        !(removed && (removed.has(drop.id) || removed.has(keep.id))) &&
+        !S.records.some(function(r){return r.dup && r.dupOf===drop.id;});
+    }
+    // User handlers are the only writers of a true duplicate flag.
+    function applyDuplicateDecision(pair,choice,removeId,bulk) {
+      if(activeDuplicateDecision(pair))throw Error("This pair already has a decision. Undo it first.");
+      var first=duplicateRecord(pair.firstId), second=duplicateRecord(pair.secondId);
+      if(!first || !second || differentDois(first,second))throw Error("This pair is no longer available.");
+      if(choice==="keep" && (first.dup || second.dup))throw Error("Undo the linked removal before choosing Keep both.");
+      var drop=removeId===first.id ? first:second, keep=drop===first ? second:first;
+      if(choice==="remove" && !removalAllowed(drop,keep))throw Error("Review linked removals first, or swap the records. Undo the earlier removal to review this pair.");
+      var d={id:"duplicate-"+((S.duplicateDecisions || []).length+1),pairId:pair.id,
+        firstId:first.id,secondId:second.id,reason:pair.reason,reasonText:pair.reasonText,
+        action:choice,removedId:choice==="remove" ? drop.id:null,keptId:choice==="remove" ? keep.id:null,
+        actor:reviewerSlotName(),at:new Date().toISOString(),bulk:!!bulk,
+        before:choice==="remove" ? {dup:drop.dup,dupManual:drop.dupManual,dupOf:drop.dupOf}:null};
+      if(choice==="remove") { drop.dup=true; drop.dupManual=true; drop.dupOf=keep.id; }
+      S.duplicateDecisions.push(d);
+      [first,second].forEach(function(r){(r.duplicateHistory || (r.duplicateHistory=[])).push(d.id);});
+      W.audit(S,"duplicate-"+(choice==="remove" ? "confirmed":"kept"),choice==="remove" ? drop:null,S.stage,d.before,d,d.actor);
+      return d;
+    }
+    function decideDuplicate(pairKey,choice,removeId) {
+      if(!["keep","remove"].includes(choice))return false;
+      var pair=S.duplicatePairs.find(function(p){return p.id===pairKey;});
+      if(!pair)return false;
+      return action(function(){applyDuplicateDecision(pair,choice,removeId,false);runDedup();});
+    }
+    function confirmDuplicate(id, keepId) {
+      return decideDuplicate(pairId({id:id},{id:keepId}),"remove",id);
+    }
+    function undoDuplicateDecision(id) {
+      var d=S.duplicateDecisions.find(function(d){return d.id===id;});
+      if(!d || d.undoneAt)return false;
+      return action(function(){
+        if(d.action==="remove"){
+          var r=duplicateRecord(d.removedId);
+          if(!r)throw Error("The removed record is missing.");
+          r.dup=false; r.dupManual=false; r.dupOf=null;
+        }
+        var before=JSON.parse(JSON.stringify(d));
+        d.undoneAt=new Date().toISOString(); d.undoneBy=reviewerSlotName();
+        W.audit(S,"duplicate-undo",d.removedId ? duplicateRecord(d.removedId):null,S.stage,before,
+          {decisionId:d.id,pairId:d.pairId,reason:d.reason,reasonText:d.reasonText,action:"undo",restoredId:d.removedId});
+        runDedup();
+        if(d.action==="remove" && S.stage==="ft" && W.flow(S).pendingScreen){S.stage="ta";pushStateToSetup();}
+      });
+    }
+    function exactRemovalPlan() {
+      var removed=new Set(), anchors=new Set(), plan=[];
+      unresolvedPairs().filter(function(p){return p.exact;}).forEach(function(p){
+        var drop=duplicateRecord(duplicateSwap[p.id] ? p.firstId:p.secondId);
+        var keep=duplicateRecord(duplicateSwap[p.id] ? p.secondId:p.firstId);
+        if(!anchors.has(drop.id) && removalAllowed(drop,keep,removed)){
+          plan.push({pair:p,removeId:drop.id});removed.add(drop.id);anchors.add(keep.id);
+        }
+      });
+      return plan;
+    }
+    function removeAllExactMatches() {
+      var plan=exactRemovalPlan();
+      if(!plan.length)return false;
+      var reasons=plan.map(function(x){return x.pair.reasonText+"; remove "+duplicateRecord(x.removeId).title;});
+      if(!confirm("Remove "+plan.length+" exact matches ("+plan.length+" records)?\n"+reasons.join("\n")+"\nSimilar matches will remain for review. Each removal can be undone."))return false;
+      return action(function(){plan.forEach(function(x){applyDuplicateDecision(x.pair,"remove",x.removeId,true);});runDedup();});
+    }
+    function duplicateExportNote(r) {
+      var decisions=S.duplicateDecisions.filter(function(d){return d.firstId===r.id || d.secondId===r.id;});
+      return JSON.stringify({decisions:decisions,unresolvedPairs:unresolvedPairs().filter(function(p){return p.firstId===r.id || p.secondId===r.id;})});
+    }
 
     // ---- relevance score (transparent TF over user terms) ----
     function scoreRecord(r) {
@@ -652,13 +769,14 @@
       terms.sort(function (a, b) { return b.t.length - a.t.length; });
       var pat = terms.map(function (o) { return escapeRe(o.t); }).join("|");
       var re;
-      try { re = new RegExp("(" + pat + ")", "gi"); } catch (e) { return esc; }
-      return esc.replace(re, function (m) {
-        var ml = m.toLowerCase(), hit = null, i;
-        for (i = 0; i < terms.length; i++) { if (terms[i].t.toLowerCase() === ml) { hit = terms[i]; break; } }
-        if (!hit) for (i = 0; i < terms.length; i++) { if (ml.indexOf(terms[i].t.toLowerCase()) >= 0) { hit = terms[i]; break; } }
-        return '<mark class="hl-' + (hit ? hit.c : "inc") + '">' + m + "</mark>";
+      try { re = termRegex(pat); } catch (e) { return esc; }
+      var raw=String(text || ""), out="", last=0;
+      raw.replace(re, function(m,offset){
+        var hit=terms.find(function(o){return o.t.toLowerCase()===m.toLowerCase();});
+        out+=escapeHtml(raw.slice(last,offset))+'<mark class="hl-'+(hit ? hit.c : "inc")+'">'+escapeHtml(m)+'</mark>';
+        last=offset+m.length;return m;
       });
+      return out+escapeHtml(raw.slice(last));
     }
 
     // ---- import parsers ----
@@ -687,7 +805,8 @@
         r2: r.r2 && typeof r.r2 === "object" ? { d: dec(r.r2.d), reason: r.r2.reason || "" } : { d: "", reason: "" },
         resolved: dec(r.resolved),
         labels: Array.isArray(r.labels) ? r.labels.slice() : [],
-        dup: !!r.dup, dupManual: !!r.dupManual, dupOf: r.dupOf || null, score: null,
+        dup: !!(r.dup && r.dupManual), dupManual: !!(r.dup && r.dupManual), dupOf: r.dup && r.dupManual ? (r.dupOf || "(manual)") : null, score: null,
+        duplicateHistory: Array.isArray(r.duplicateHistory) ? r.duplicateHistory.slice() : [], sourceFile: clean(r.sourceFile, 500),
         mlScore: null,
         aiSuggestion: ["include", "exclude", "maybe"].indexOf(r.aiSuggestion) >= 0 ? r.aiSuggestion : "",
         aiRationale: clean(r.aiRationale, 400),
@@ -710,23 +829,20 @@
       if (!lines.length) return [];
       var header = lines[0].map(function (h) { return h.trim().toLowerCase(); });
       function idx(names) { for (var n = 0; n < names.length; n++) { var i = header.indexOf(names[n]); if (i >= 0) return i; } return -1; }
-      var iT = idx(["title", "ti"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
-        iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication"]),
-        iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
-      var recs = [], start = iT >= 0 ? 1 : 0, r, c;
+      var iT = idx(["title", "ti", "article title"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
+        iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication", "so", "source title"]),
+        iD = idx(["doi", "di"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
+      if (iT < 0) throw new Error("Missing title column. Expected title, ti or Article Title; found: " + header.join(", "));
+      var recs = [], start = 1, r, c;
       for (r = start; r < lines.length; r++) {
         c = lines[r]; if (!c.length) continue;
         function get(i) { return i >= 0 && i < c.length ? c[i].trim() : ""; }
         var rec;
-        if (iT >= 0) {
-          rec = {
-            id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
-            year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
-            keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
-          };
-        } else {
-          rec = { id: c[0] || "", title: c[1] || "", abstract: c[2] || "" };
-        }
+        rec = {
+          id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
+          year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
+          keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
+        };
         if (rec.title || rec.abstract) recs.push(rec);
       }
       return recs.map(normalizeImported);
@@ -820,8 +936,7 @@
       W.audit(S,"import",null,S.stage,null,{ids:newRecs.map(function(r){return r.id;})});
       invalidateRanking();
       runDedup(); rescoreAll();
-      var dups = S.records.filter(function (r) { return r.dup; }).length;
-      toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
+      toast("Imported " + newRecs.length + " record(s). Nothing has been removed. Review suspected duplicates.");
       S.cursor = 0; save(); render();
     }
 
@@ -847,10 +962,11 @@
         else undecided++;
       }
       var screened = included + excluded;
-      return { identified: identified, duplicates: duplicates, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
+      return { identified: identified, duplicates: duplicates, possibleDuplicates: unresolvedPairs().length, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
     }
+    var KAPPA_POLICY = "Unweighted include/exclude only, using original reviewer decisions; pairs containing maybe or a missing decision are omitted. Maybe is not a final decision.";
     function cohensKappa(records) {
-      var pairs = records.filter(function (r) { return !r.dup; }).map(function(r){return W.stageData(r,S.stage);}).filter(function(r){return r.r1.d && r.r2.d;});
+      var pairs = records.filter(function (r) { return !r.dup; }).map(function(r){return W.stageData(r,S.stage);}).filter(function(r){return ["include","exclude"].includes(r.r1.d) && ["include","exclude"].includes(r.r2.d);});
       var n = pairs.length;
       if (n < 2) return null;
       var cats = {}; pairs.forEach(function (r) { cats[r.r1.d] = 1; cats[r.r2.d] = 1; });
@@ -867,7 +983,30 @@
       // is misleading, so flag the degenerate case for the UI instead of forcing 0.
       var degenerate = (1 - pe) < 1e-12;
       var kappa = degenerate ? null : (po - pe) / (1 - pe);
-      return { n: n, agree: agree, po: po, pe: pe, kappa: kappa, degenerate: degenerate };
+      // Multinomial delta method, equivalent to Fleiss-Cohen-Everitt's
+      // non-null asymptotic variance. The gradient includes both marginals.
+      var se=null, ci=null;
+      if(!degenerate){
+        var row={}, col={}, table={};
+        keys.forEach(function(c){row[c]=0;col[c]=0;});
+        pairs.forEach(function(r){
+          row[r.r1.d]+=1/n;col[r.r2.d]+=1/n;
+          var key=r.r1.d+"|"+r.r2.d;table[key]=(table[key] || 0)+1/n;
+        });
+        var cells=[], mean=0;
+        keys.forEach(function(a){keys.forEach(function(b){
+          var p=table[a+"|"+b] || 0;
+          var g=((a===b ? 1 : 0)-(1-kappa)*(col[a]+row[b]))/(1-pe);
+          cells.push({p:p,g:g});mean+=p*g;
+        });});
+        var variance=cells.reduce(function(v,c){return v+c.p*Math.pow(c.g-mean,2);},0)/n;
+        se=Math.sqrt(Math.max(0,variance));
+        ci=[Math.max(-1,kappa-1.959963984540054*se),Math.min(1,kappa+1.959963984540054*se)];
+      }
+      return { n:n, agree:agree, po:po, pe:pe, kappa:kappa, degenerate:degenerate,
+        se:se, ci95:ci, method:"Fleiss-Cohen-Everitt asymptotic SE; Wald 95% CI clipped to [-1, 1]",
+        categories:["include","exclude"], maybePolicy:KAPPA_POLICY, smallSample:n<30 };
+
     }
 
     // ---- filtering / sorting ----
@@ -933,6 +1072,77 @@
       return out.length ? '<div class="reclinks">' + out.join("") + "</div>" : "";
     }
 
+    var duplicateSwap=Object.create(null);
+    function openDuplicateReview(event) {
+      if(event)event.preventDefault();
+      $("duplicate-review").open=true;
+      $("duplicate-review-heading").focus();
+    }
+    function duplicateRecordHtml(r,position) {
+      function field(label,value){return "<dt>"+label+"</dt><dd>"+escapeHtml(value || "Not supplied")+"</dd>";}
+      return '<article aria-label="'+escapeHtml(position+" record: "+r.title+" ["+r.id+"]")+'"><h4>'+escapeHtml(r.title)+'</h4><dl>'+
+        field("Record ID",r.id)+field("First author",(r.authors || [])[0])+field("Year",r.year)+field("Journal",r.journal)+
+        field("DOI",r.doi)+field("PubMed ID",r.pmid)+field("Source file",r.sourceFile || r.source)+'</dl></article>';
+    }
+    function renderDuplicateReview() {
+      var pending=unresolvedPairs(), exact=pending.filter(function(p){return p.exact;}).length;
+      var warning=$("duplicate-warning"), removed=S.records.filter(function(r){return r.dup;}).length;
+      warning.hidden=!pending.length;
+      warning.innerHTML=pending.length ? escapeHtml(pending.length+" suspected duplicate pairs found ("+exact+" exact). "+
+        (removed ? "Only your confirmed removals have been applied.":"Nothing has been removed."))+
+        ' <a href="#duplicate-review" data-review-duplicates>Review duplicates</a>' : "";
+      Array.prototype.forEach.call(warning.querySelectorAll("[data-review-duplicates]"),function(link){link.addEventListener("click",openDuplicateReview);});
+      var bulk=$("duplicate-remove-exact"), plan=exactRemovalPlan();
+      bulk.textContent="Remove all exact matches ("+plan.length+")";bulk.disabled=!plan.length;
+      bulk.onclick=function(){if(removeAllExactMatches())openDuplicateReview();};
+      $("duplicate-pairs").innerHTML=S.duplicatePairs.map(function(p){
+        var a=duplicateRecord(p.firstId), b=duplicateRecord(p.secondId), d=activeDuplicateDecision(p);
+        if(!a || !b)return "";
+        if(duplicateSwap[p.id]){var tmp=a;a=b;b=tmp;}
+        var pair=escapeHtml(p.id), target=escapeHtml(b.title+" ["+b.id+"]"), both=escapeHtml(a.title+" and "+b.title);
+        var canRemove=removalAllowed(b,a);
+        return '<section class="duplicate-pair" data-pair-id="'+pair+'" data-reason="'+escapeHtml(p.reason)+'" aria-label="Suspected duplicate pair: '+both+'">'+
+          '<p class="duplicate-reason"><strong>'+escapeHtml(p.reasonText)+'</strong></p>'+
+          '<div class="duplicate-records">'+duplicateRecordHtml(a,"First")+duplicateRecordHtml(b,"Second")+'</div>'+
+          (d ? '<p>Decision: '+(d.action==="keep" ? "Keep both":"Removed "+escapeHtml(duplicateRecord(d.removedId).title))+
+            '. Undo is available in Duplicate decisions below.</p>' :
+            '<div class="duplicate-actions"><button type="button" data-duplicate-keep="'+pair+'" aria-label="Keep both: '+both+'"'+(a.dup || b.dup ? " disabled":"")+'>Keep both</button>'+
+            '<button type="button" data-duplicate-remove="'+pair+'" data-remove-id="'+escapeHtml(b.id)+'" aria-label="Remove '+target+'"'+(canRemove ? "":" disabled")+'>Remove</button>'+
+            '<button type="button" data-duplicate-swap="'+pair+'" aria-label="Swap records; remove '+escapeHtml(a.title+" ["+a.id+"]")+' instead">Swap</button></div>'+
+            (!canRemove ? '<p class="hint">This pair is unresolved. A linked record has already been removed. Undo the linked removal before choosing Keep both or Remove.</p>':""))+'</section>';
+      }).join("") || "<p>No suspected duplicate pairs.</p>";
+      var host=$("duplicate-pairs");
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-keep]"),function(b){
+        b.addEventListener("click",function(){decideDuplicate(b.getAttribute("data-duplicate-keep"),"keep");openDuplicateReview();});
+      });
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-remove]"),function(b){
+        b.addEventListener("click",function(){decideDuplicate(b.getAttribute("data-duplicate-remove"),"remove",b.getAttribute("data-remove-id"));openDuplicateReview();});
+      });
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-swap]"),function(b){
+        b.addEventListener("click",function(){
+          var key=b.getAttribute("data-duplicate-swap");duplicateSwap[key]=!duplicateSwap[key];renderDuplicateReview();
+          var buttons=$("duplicate-pairs").querySelectorAll("[data-duplicate-swap]");
+          Array.prototype.forEach.call(buttons,function(next){if(next.getAttribute("data-duplicate-swap")===key)next.focus();});
+        });
+      });
+      $("duplicate-decisions").innerHTML=S.duplicateDecisions.slice().reverse().map(function(d){
+        var title=d.removedId ? duplicateRecord(d.removedId).title :
+          duplicateRecord(d.firstId).title+" and "+duplicateRecord(d.secondId).title;
+        return '<li data-duplicate-decision="'+escapeHtml(d.id)+'">'+escapeHtml(d.at+" | "+d.actor+" | "+
+          (d.action==="keep" ? "Keep both":"Remove")+" | "+title+" | "+d.reasonText)+(d.bulk ? " (bulk exact action)":"")+
+          (d.undoneAt ? " | Undone "+escapeHtml(d.undoneAt):
+            ' <button type="button" data-duplicate-undo="'+escapeHtml(d.id)+'" aria-label="Undo '+escapeHtml(d.action+" decision for "+title)+'">Undo</button>')+'</li>';
+      }).join("") || "<li>No duplicate decisions yet.</li>";
+      Array.prototype.forEach.call($("duplicate-decisions").querySelectorAll("[data-duplicate-undo]"),function(b){
+        b.addEventListener("click",function(){undoDuplicateDecision(b.getAttribute("data-duplicate-undo"));openDuplicateReview();});
+      });
+    }
+
+    function duplicateCandidatesHtml(r) {
+      if(r.dup || !(r.possibleDupOf || []).length)return "";
+      return '<div class="possible-duplicates"><strong>Possible duplicate: nothing removed.</strong> '+
+        '<a href="#duplicate-review" data-review-duplicates>Review duplicates side by side</a></div>';
+    }
     function renderCard() {
       var r = currentRecord();
       if (!r) {
@@ -954,7 +1164,7 @@
       var badges = '<span class="badge b-src">' + escapeHtml(r.source) + "</span>";
       if (r.mlScore != null && S.modelRun) badges += '<span class="badge b-ml">Rank score ' + Math.round(r.mlScore * 100) + "/100" + (S.modelRun.stale ? " (needs retraining)" : "") + "</span>";
       var rct = rctScore(r);
-      if (rct != null) badges += '<span class="badge b-rct" title="Cold-start RCT likelihood from the offline classifier — a study-design signal before any screening decisions">RCT ' + Math.round(rct * 100) + "%</span>";
+      if (rct != null) badges += '<span class="badge b-rct" title="Uncalibrated English-oriented model score; non-English and non-randomised interventional performance not validated. Check study design.">RCT model score ' + Math.round(rct * 100) + "/100</span>";
       if (r.score != null) badges += '<span class="badge b-score">term ' + r.score + "</span>";
       if (r.dup) badges += '<span class="badge b-dup">duplicate of ' + escapeHtml(r.dupOf || "?") + "</span>";
       if (r.score != null && r.score < 0 && !t && !r.dup) badges += '<span class="badge b-sugg">auto-exclude suggested</span>';
@@ -981,11 +1191,12 @@
         ? "No abstract available — this is a ClinicalTrials.gov registry record. Open the ClinicalTrials.gov link above to read the trial details."
         : "No abstract available.";
       var html = '<div class="card' + (r.dup ? " is-dup" : "") + '">' +
-        '<h2 class="ctitle">' + highlight(r.title || "(no title)") + "</h2>" +
+        '<h2 class="ctitle" tabindex="-1">' + highlight(r.title || "(no title)") + "</h2>" +
         (meta.length ? '<p class="cmeta">' + meta.join("") + "</p>" : "") +
         (line2.length ? '<p class="cmeta">' + line2.join(" · ") + "</p>" : "") +
         recordLinksHtml(r) +
         '<div class="badges">' + badges + "</div>" +
+        duplicateCandidatesHtml(r) +
         absNote +
         '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? abEmptyMsg : highlight(r.abstract)) + "</div>" +
         (S.stage !== "ft" && r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
@@ -1028,6 +1239,9 @@
       cardHost.innerHTML = html;
       if ($("ft-save")) $("ft-save").onclick = function(){ action(function(){ W.evidence(S,r,{retrieval:$("ft-retrieval").value,url:$("ft-url").value,note:$("ft-note").value}); }); };
 
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-review-duplicates]"), function(b){
+        b.addEventListener("click",openDuplicateReview);
+      });
       // wire card buttons
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
         b.addEventListener("click", function () { decide(b.getAttribute("data-dec")); });
@@ -1056,9 +1270,10 @@
     function renderStatsAndConflicts() {
       var c = computeCounts(stageRecords());
       var cells = [
-        ["Records", c.identified], ["Duplicates", c.duplicates], ["Screened", c.screened],
+        ["Records", c.identified], ["Duplicates removed", c.duplicates], ["Screened", c.screened],
         ["Included", c.included], ["Excluded", c.excluded], ["Maybe", c.maybe]
       ];
+      cells.push(["Unresolved duplicate pairs", c.possibleDuplicates]);
       if (S.mode === "dual" && !S.blind) cells.push(["Conflicts", c.conflict]);
       cells.push(["Undecided", c.undecided]);
       statsEl.innerHTML = cells.map(function (kv) {
@@ -1068,10 +1283,14 @@
       if (S.mode === "dual" && !S.blind) {
         var k = cohensKappa(stageRecords());
         kappaEl.innerHTML = !k
-          ? "Cohen's κ needs ≥2 records decided by both reviewers."
+          ? "Cohen's κ needs ≥2 records with final include/exclude decisions by both reviewers."
           : (k.degenerate
             ? "Cohen's κ undefined — both reviewers used a single category (" + (k.po * 100).toFixed(0) + "% raw agreement over " + k.n + ")."
             : "Cohen's κ = <strong>" + k.kappa.toFixed(3) + "</strong> over " + k.n + " dual-decided (" + (k.po * 100).toFixed(0) + "% raw agreement).");
+        if(k && !k.degenerate)kappaEl.innerHTML+=" SE "+k.se.toFixed(3)+"; 95% CI ["+k.ci95[0].toFixed(3)+", "+k.ci95[1].toFixed(3)+"]. "+k.method+".";
+        kappaEl.innerHTML+=" "+KAPPA_POLICY;
+        if(k && k.smallSample)kappaEl.innerHTML+=" Small sample (n<30): kappa and its asymptotic interval may be unreliable.";
+        if(k && !k.degenerate && k.se===0)kappaEl.innerHTML+=" Zero estimated SE at a boundary does not establish certainty.";
       } else kappaEl.innerHTML = "";
 
       // conflicts panel
@@ -1095,7 +1314,12 @@
       } else conflictPanel.style.display = "none";
     }
 
+    function focusCardHeading() {
+      var heading=cardHost.querySelector(".ctitle");
+      (heading || cardHost).focus();
+    }
     function render() {
+      var restoreHeading=document.activeElement && document.activeElement.classList.contains("ctitle");
       VIEW = filteredRecords();
       if (S.cursor >= VIEW.length) S.cursor = Math.max(0, VIEW.length - 1);
       posEl.textContent = (VIEW.length ? (S.cursor + 1) : 0) + " of " + VIEW.length + (S.records.length !== VIEW.length ? " (filtered from " + S.records.length + ")" : "");
@@ -1103,17 +1327,23 @@
       renderCard();
       renderStatsAndConflicts();
       renderWorkflow();
+      renderDuplicateReview();
+      if(restoreHeading)focusCardHeading();
     }
 
     // ---- actions ----
     function decide(val) {
       var r = currentRecord(); if (!r) return;
       if(val === "duplicate") {
+        var prior=S.duplicateDecisions.slice().reverse().find(function(d){return d.removedId===r.id && !d.undoneAt;});
+        if(prior){undoDuplicateDecision(prior.id);focusCardHeading();return;}
+        if(!r.dup && S.duplicatePairs.some(function(p){return p.firstId===r.id || p.secondId===r.id;})){openDuplicateReview();return;}
+        if(!r.dup && !confirm('Remove "'+r.title+'" as a manually identified duplicate? Its screening history will be kept. Use Duplicate again to undo.'))return;
         action(function(){
           var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
           r.dup=!r.dup; r.dupManual=r.dup; r.dupOf=r.dup ? "(manual)" : null;
           W.audit(S,"duplicate",r,S.stage,before,{dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf});
-        }); return;
+        }); focusCardHeading(); return;
       }
       var cursor=S.cursor;
       if(action(function(){ W.decide(S,r,val,activeSlot(r).reason); })) advanceAfterDecision(cursor,r.id);
@@ -1127,6 +1357,7 @@
       // A decided card may vanish from the undecided filter; stay on its successor.
       if(!VIEW.some(function(r){return r.id===id;})){ S.cursor=Math.min(cursor,Math.max(0,VIEW.length-1)); render(); }
       else autoAdvance();
+      focusCardHeading();
       scheduleRank();
     }
 
@@ -1137,7 +1368,7 @@
       save(); render();
     }
     function clearDecision() {
-      var r=currentRecord();if(r)action(function(){W.decide(S,r,"","");});
+      var r=currentRecord();if(r && action(function(){W.decide(S,r,"","");}))focusCardHeading();
     }
     function resolveConflict(id,val) {
       var r=S.records.find(function(r){return r.id===id;});if(!r)return;
@@ -1171,6 +1402,7 @@
     function save() {
       if(unreadableSavedData!==null){$("save-status").textContent="Saving blocked: download unreadable saved data, then restore a valid backup or explicitly reset.";return false;}
       S._savedAt = new Date().toISOString();
+      S.provenance = exportProvenance();
       try { localStorage.setItem(LS_KEY, JSON.stringify(S)); $("save-status").textContent="Saved in this browser"; return true; } catch (e) { $("save-status").textContent="NOT SAVED — export a JSON backup now. " + e.message; return false; }
     }
     function load() {
@@ -1251,21 +1483,43 @@
       if (/^-/.test(v) && !/^-\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)) v="'"+v;
       return '"' + v.replace(/"/g, '""') + '"';
     }
+    function exportProvenance() {
+      var b=window.AlmBuildInfo || {};
+      return {app:"Screen",version:b.version || "unknown",buildCommit:b.sha || "unknown",builtAt:b.builtAt || null};
+    }
+    function exportStamp() {
+      var p=exportProvenance();return p.app+" "+p.version+"; build commit "+p.buildCommit;
+    }
+    function projectExport() {
+      var records=stageRecords(), k=S.mode==="dual" ? cohensKappa(records) : null;
+      return Object.assign({},S,{provenance:exportProvenance(),
+        counts:Object.assign({stage:S.stage,scope:"project"},computeCounts(records)),
+        agreement:Object.assign({stage:S.stage,scope:"project",available:!!k,maybePolicy:KAPPA_POLICY},k || {})});
+    }
+    function allowProjectExport() {
+      if(S.mode==="dual" && S.blind){
+        workflowMessage("Turn off blind mode before exporting combined project counts and agreement, or export your own reviewer file.");
+        return false;
+      }
+      return true;
+    }
     function exportJSON() {
-      var out = Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) });
+      if(!allowProjectExport())return;
+      var out = projectExport();
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: "application/json" }), "screen-project.json");
     }
     function exportCSV() {
+      if(!S.records.length){toast("No records to export.");return;}
       if (S.mode === "dual" && S.blind) { workflowMessage("Turn off blind mode before exporting combined decisions, or export your own reviewer file."); return; }
-      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note"];
-      var rows = S.records.map(function (r) {
+      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note", "app_version", "build_commit", "duplicate_review"];
+      var rows = S.records.filter(function(r){return !r.dup;}).map(function (r) {
         var rct = rctScore(r);
         return [r.id, r.title, r.abstract, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
           effDecision(r), r.r1.d, r.r2.d, r.resolved, (r.r1.reason || r.r2.reason || ""),
           (r.labels || []).join("; "), (r.score == null ? "" : r.score),
           (r.mlScore == null ? "" : r.mlScore.toFixed(4)), (rct == null ? "" : rct.toFixed(4)), r.aiSuggestion || "",
           (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
-          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note].map(csvCell).join(",");
+          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note, exportProvenance().version, exportProvenance().buildCommit, duplicateExportNote(r)].map(csvCell).join(",");
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
     }
@@ -1274,7 +1528,7 @@
       var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; });
       if (!inc.length) { toast("No included records to export."); return; }
       var ris = inc.map(function (r) {
-        var lines = ["TY  - JOUR"];
+        var lines = ["TY  - JOUR", "N1  - Exported by " + exportStamp(), "N1  - Duplicate review: " + duplicateExportNote(r)];
         if (r.title) lines.push("TI  - " + r.title);
         (r.authors || []).forEach(function (a) { lines.push("AU  - " + a); });
         if (r.year) lines.push("PY  - " + r.year);
@@ -1290,7 +1544,7 @@
       var c=W.flow(S);
       if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before exporting team counts.");return;}
       if(!c.identified || c.pendingScreen || c.pendingFull){workflowMessage("Finish title/abstract and full-text screening before publishing PRISMA counts. Pending work is never counted as excluded.");return;}
-      var payload={db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"Duplicates flagged in Screen",
+      var payload={provenance:exportProvenance(),db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"User-confirmed duplicate removals",unresolvedDuplicatePairs:unresolvedPairs().length,
         screened:c.screened,excludedScreen:c.excludedScreen,sought:c.sought,notRetrieved:c.notRetrieved,assessed:c.assessed,
         excludedEligible:c.excludedFull,excludedBreakdown:Object.keys(c.reasons).map(function(k){return k+" (n="+c.reasons[k]+")";}).join("; "),
         studies:c.included,reports:c.included,title:S.title || "Screen"};
@@ -1306,7 +1560,7 @@
         var d=W.stageData(r,S.stage)[who];
         return {id:r.id,doi:r.doi,pmid:r.pmid,title:r.title,d:d.d,reason:d.reason,at:d.at};
       }).filter(function(d){return d.d;});
-      return {_schema:"sr-reviewer-v1",workflowVersion:2,stage:S.stage || "ta",reviewer:who,project:S.title || "",count:decisions.length,decisions:decisions};
+      return {_schema:"sr-reviewer-v1",provenance:exportProvenance(),workflowVersion:2,stage:S.stage || "ta",reviewer:who,project:S.title || "",count:decisions.length,decisions:decisions};
     }
     function exportReviewerState() {
       var env=reviewerEnvelope();
@@ -1390,11 +1644,12 @@
       rd.readAsText(file);
     }
     function exportBundle() {
+      if(!allowProjectExport())return;
       var proj = null; try { proj = JSON.parse(localStorage.getItem(SR_PROJECT_KEY) || "null"); } catch (e) {}
       var bundle = {
-        _schema: "sr-bundle-v1", _savedAt: new Date().toISOString(),
+        _schema: "sr-bundle-v1", provenance: exportProvenance(), _savedAt: new Date().toISOString(),
         protocol: proj,
-        screen: Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) })
+        screen: projectExport()
       };
       downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }), "screen-bundle.json");
       toast("Exported shareable bundle (protocol + records + both reviewers + counts + κ).");
@@ -1468,7 +1723,10 @@
 
     // ---- keyboard ----
     function onKey(e) {
-      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey)return;
+      if(e.target && (e.target.isContentEditable || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable=true]"))))return;
+      // S17: a focused control keeps its own activation keys; all other shortcuts still apply
+      if((e.key === "Enter" || e.key === " ") && e.target && e.target.closest && e.target.closest("button, a, summary, [role=button]"))return;
       if ($("help-modal").classList.contains("on")) { if (e.key === "Escape") closeHelp(); return; }
       var k = e.key;
       if (k >= "1" && k <= "9") { applyReason(parseInt(k, 10) - 1); e.preventDefault(); return; }
@@ -1533,8 +1791,42 @@
       ['incTerms','excTerms','reasons','labels'].forEach(function(k){if(p[k]!==undefined && (!Array.isArray(p[k]) || p[k].some(function(v){return typeof v!=="string";})))throw Error("Invalid project settings: "+k);});
       if(p.mode && !['single','dual'].includes(p.mode))throw Error("Invalid reviewer mode.");
       if(p.stage && !['ta','ft'].includes(p.stage))throw Error("Invalid screening stage.");
+      if(p.duplicateDecisions!==undefined && !Array.isArray(p.duplicateDecisions))throw Error("Invalid duplicate decisions.");
+      var decisionIds=new Set(), activePairs=new Set(), removedIds=new Set();
+      (p.duplicateDecisions || []).forEach(function(d){
+        if(!d || typeof d.id!=="string" || decisionIds.has(d.id) || !ids.has(d.firstId) || !ids.has(d.secondId) ||
+            d.firstId===d.secondId || d.pairId!==pairId({id:d.firstId},{id:d.secondId}) ||
+            !["keep","remove"].includes(d.action) ||
+            !["exact-doi","exact-pmid","exact-title","similar-title","similar-title+author-year"].includes(d.reason) ||
+            typeof d.reasonText!=="string" || typeof d.actor!=="string" || !Number.isFinite(Date.parse(d.at)) ||
+            (d.undoneAt && !Number.isFinite(Date.parse(d.undoneAt))))throw Error("Invalid duplicate decision.");
+        decisionIds.add(d.id);
+        if(d.action==="remove" && (![d.firstId,d.secondId].includes(d.removedId) ||
+            ![d.firstId,d.secondId].includes(d.keptId) || d.keptId===d.removedId))throw Error("Invalid duplicate removal.");
+        if(!d.undoneAt){
+          if(activePairs.has(d.pairId))throw Error("Repeated active duplicate decision.");
+          activePairs.add(d.pairId);
+          if(d.action==="remove"){
+            var record=p.records.find(function(r){return r.id===d.removedId;});
+            if(removedIds.has(d.removedId) || !record.dup || !record.dupManual || record.dupOf!==d.keptId)throw Error("Inconsistent duplicate removal.");
+            removedIds.add(d.removedId);
+          }
+        }
+      });
       var next=Object.assign(blankState(),p);next.records=p.records.map(normalizeImported);
       next.stage=next.stage==="ft" ? "ft":"ta";next.mode=next.mode==="dual" ? "dual":"single";next.active=next.active==="r2" ? "r2":"r1";
+      var previous=p.records.map(function(r){return {dup:r.dup,dupOf:r.dupOf};}), released=false;
+      syncDuplicatePairs(next);
+      next.records.forEach(function(r,i){
+        if(previous[i].dup && !r.dup){
+          released=true;
+          W.audit(next,"dedup-recheck",r,"ta",previous[i],{dup:false,dupOf:null},"system");
+        }
+      });
+      if(released){
+        if(next.modelRun)next.modelRun.stale=true;
+        if(next.stage==="ft" && W.flow(next).pendingScreen)next.stage="ta";
+      }
       return next;
     }
     function restoreProject(p) {
@@ -1549,14 +1841,15 @@
         if(project && project._schema===LS_KEY){
           if(S.records.length && !confirm("Replace this browser's project with the backup? Export the current project first if you need to keep it."))return;
           restoreProject(project);workflowMessage("Project restored in memory, including stage decisions and history. Check the save status; retrain ranking when needed.");
-        }else addRecords(detectAndParse(text,file.name));
+        }else addRecords(detectAndParse(text,file.name).map(function(r){r.sourceFile=file.name;return r;}));
       }catch(e){workflowMessage("Import failed: "+e.message);}};rd.readAsText(file);
     }
 
     // ---- wire up ----
     function attach() {
       $("btn-import").addEventListener("click", function () { $("file-import").click(); });
-      $("btn-recover").onclick=function(){downloadBlob(new Blob([unreadableSavedData || ""],{type:"text/plain"}),"screen-unreadable-backup.txt");};
+      $("btn-recover").onclick=function(){downloadBlob(new Blob([unreadableSavedData || ""],{type:"text/plain"}),"screen-unreadable-backup.txt");
+        downloadBlob(new Blob([JSON.stringify({provenance:exportProvenance(),file:"screen-unreadable-backup.txt"},null,2)],{type:"application/json"}),"screen-unreadable-backup.provenance.json");};
       $("file-import").addEventListener("change", function (e) {
         var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = "";
       });
@@ -1622,7 +1915,7 @@
     // train a transparent logistic-regression model over TF-IDF features (unigrams
     // + bigrams + MeSH keywords) and re-rank the rest. No backend, no key,
     // deterministic given the same labels. In dual-reviewer mode BOTH reviewers'
-    // labels are used (was R1-only before). 5-fold cross-validated AUC and a
+    // labels are used (was R1-only before). Up to 5-fold cross-validated AUC and a
     // data-driven stopping signal are surfaced so quality is measurable, not asserted.
     var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false, cv: null };
     var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
@@ -1820,17 +2113,17 @@
       var V = mlBuildVocab(recs);
       if (!V.terms.length) return null;
       function fold(arr) { var f = [], t; for (t = 0; t < arr.length; t++) { (f[t % k] || (f[t % k] = [])).push(arr[t]); } return f; }
-      var pf = fold(pos), nf = fold(neg), scores = [], labels = [], fi, i;
+      var pf = fold(pos), nf = fold(neg), scores = [], labels = [], fi, i, foldsRun = 0;
       for (fi = 0; fi < k; fi++) {
         var tr = [], te = [];
         for (i = 0; i < k; i++) { var src = (pf[i] || []).concat(nf[i] || []); if (i === fi) te = te.concat(src); else tr = tr.concat(src); }
         if (!tr.length || !te.length) continue;
         if (!tr.some(function (p) { return p[1] === 1; }) || !tr.some(function (p) { return p[1] === 0; })) continue;
-        var m = mlFit(tr, V);
+        var m = mlFit(tr, V); foldsRun++;
         for (i = 0; i < te.length; i++) { scores.push(mlPredict(te[i][0], m, V)); labels.push(te[i][1]); }
       }
       if (!scores.length) return null;
-      return { auc: aucScore(scores, labels), n: labelled.length, folds: k, pos: pos.length, neg: neg.length };
+      return { auc: aucScore(scores, labels), n: scores.length, folds: foldsRun, pos: pos.length, neg: neg.length };
     }
     // ---- principled target-recall stopping rule (Callaghan & Müller-Hansen 2020,
     // "Statistical stopping criteria for automated screening in systematic reviews",
@@ -1920,7 +2213,7 @@
         ok: true, inc: res.pos, exc: res.neg, ranked: ranked, cv: ML.cv,
         msg: "Trained on " + res.pos + " includes / " + res.neg + " excludes (" +
           (S.mode === "dual" ? (S.blind ? S.active.toUpperCase()+" only" : "both reviewers") : "R1") + "); ranked " + ranked + " records" +
-          (ML.cv ? "; 5-fold CV AUC " + ML.cv.auc.toFixed(2) : "") + "."
+          (ML.cv ? "; " + cvDescription(ML.cv) : "") + "."
       };
     }
     function onTrain() {
@@ -1936,10 +2229,14 @@
         renderMlPerf();
       } else { $("ml-terms").innerHTML = ""; $("ml-perf").innerHTML = ""; }
     }
+    function cvDescription(cv) {
+      return cv.folds+"-fold CV AUC "+cv.auc.toFixed(2)+" (n="+cv.n+")"+
+        (cv.n<100 || Math.min(cv.pos,cv.neg)<20 ? ". Small sample: AUC is unstable; no confidence interval is estimated" : "");
+    }
     function renderMlPerf() {
       var el=$("ml-perf");if(!el)return;
       if(!ML.trained || !S.modelRun || S.modelRun.stale){el.textContent="";return;}
-      el.textContent=(ML.cv ? "Cross-validation AUC on reviewer-labelled records: "+ML.cv.auc.toFixed(2)+". This is not a recall estimate for the unscreened pool. " : "")+
+      el.textContent=(ML.cv ? cvDescription(ML.cv)+". This is not a recall estimate for the unscreened pool. " : "")+
         "Ranking scores are uncalibrated priorities. No statistical stopping recommendation is issued; finish screening or use a separately validated stopping protocol.";
     }
 
@@ -2071,9 +2368,9 @@
     function aiExportTask() {
       var batch = aiUndecidedBatch(200);
       if (!batch.length) { toast("No undecided records to send to AI."); return; }
-      downloadBlob(new Blob([aiPromptText(batch)], { type: "text/markdown;charset=utf-8" }), "screen-ai-task.md");
+      downloadBlob(new Blob(["Exported by " + exportStamp() + "\n\n" + aiPromptText(batch)], { type: "text/markdown;charset=utf-8" }), "screen-ai-task.md");
       downloadBlob(new Blob([JSON.stringify({
-        task: "screen", title: S.title, include_terms: S.incTerms, exclude_terms: S.excTerms,
+        provenance: exportProvenance(), task: "screen", title: S.title, include_terms: S.incTerms, exclude_terms: S.excTerms,
         exclusion_reasons: S.reasons, output_schema: { id: "string", suggestion: "include|exclude|maybe", confidence: "0..1", rationale: "string" },
         records: batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year, journal: r.journal }; })
       }, null, 2)], { type: "application/json" }), "screen-ai-batch.json");
@@ -2203,7 +2500,7 @@
     function renderWorkflow() {
       var blind=S.mode==="dual" && S.blind;
       var c=computeCounts(stageRecords());
-      $("workflow-summary").textContent=(S.stage==="ft" ? "Full text":"Title / abstract")+" · "+c.screened+" decided · "+(blind ? S.active.toUpperCase()+" only":"team results");
+      $("workflow-summary").textContent=(S.stage==="ft" ? "Full text":"Title / abstract")+" · "+c.screened+" decided · "+unresolvedPairs().length+" unresolved duplicate pairs · "+(blind ? S.active.toUpperCase()+" only":"team results");
       var history=(S.audit||[]).filter(function(e){return e.stage===S.stage && (!blind || (e.actor===reviewerSlotName() && e.action!=="adjudication"));}).slice(-20).reverse();
       $("audit-list").innerHTML=history.map(function(e){return '<li>'+escapeHtml(e.at+" · "+e.actor+" · "+e.action+" · "+(e.recordId||"project"))+'</li>';}).join("") || '<li>No recorded actions in this stage.</li>';
       var conflictOption=$("f-filter").querySelector('option[value="conflict"]');if(conflictOption)conflictOption.disabled=blind;
@@ -2216,12 +2513,17 @@
       state: function(){return JSON.parse(JSON.stringify(S));},
       restoreProject: restoreProject,
       flow: function(){return W.flow(S);},
-      counts: function () { return computeCounts(S.records); },
-      kappa: function () { return cohensKappa(S.records); },
+      counts: function () { return computeCounts(stageRecords()); },
+      kappa: function () { return cohensKappa(stageRecords()); },
       effDecision: effDecision,
       score: function (r) { var rec = normalizeImported(r); scoreRecord(rec); return rec.score; },
       jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
       parse: function (text, name) { return detectAndParse(text, name); },
+      suspectedPairs: function(){return JSON.parse(JSON.stringify(S.duplicatePairs));},
+      decideDuplicate: decideDuplicate,
+      undoDuplicateDecision: undoDuplicateDecision,
+      removeAllExactMatches: removeAllExactMatches,
+      exactRemovalPlan: exactRemovalPlan,
       dedupCount: function () { runDedup(); return S.records.filter(function (r) { return r.dup; }).length; },
       mlTrain: function () { return mlTrain(); },
       mlScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i].mlScore; return null; },
@@ -2253,7 +2555,7 @@
     try {
       var rm = window.SrRctClassifier && SrRctClassifier.meta && SrRctClassifier.meta();
       var rmEl = $("rct-meta");
-      if (rm && rmEl) rmEl.textContent = "Held-out AUC " + rm.auc + " · sensitivity " + rm.sensitivity + " · specificity " + rm.specificity + " (n=" + (rm.n_train + rm.n_test) + ", " + rm.n_terms + " terms). Offline, transparent weights.";
+      if (rm && rmEl) rmEl.textContent = "Held-out AUC " + rm.auc + " · sensitivity " + rm.sensitivity + " · specificity " + rm.specificity + " (held-out n=" + rm.n_test + ", " + rm.n_terms + " terms). Offline, transparent weights.";
     } catch (e) {}
     try { if (/[?&]import=sr-records-v1/.test(location.search)) importFromSearch(); } catch (e) {}
   })();
