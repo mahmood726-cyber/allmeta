@@ -16,12 +16,18 @@
 
   // ----- Pairwise effect-size datasets (forest / BMA / RVE / GLMM) -------
 
-  // Stijnen-Hamza-Ozdemir 2010 Table 1: 7 trials of eltrombopag vs placebo
-  // for thrombocytopenia. Used as the rare-events GLMM benchmark.
+  // Rare-events 2x2 example, 7 rows. SOURCE UNVERIFIED: previously labelled
+  // "Stijnen-Hamza-Ozdemir 2010 Table 1: 7 trials of eltrombopag vs placebo",
+  // an attribution that could not be confirmed (the paper, doi
+  // 10.1002/sim.4040, does not mention eltrombopag in its abstract, and EXTEND
+  // is a single-arm extension study published in 2013). Counts and row labels
+  // are kept unchanged so tests and archived probes still run; treat the data
+  // as illustrative only, not as trial results. Used as the rare-events GLMM
+  // regression example.
   var STIJNEN_ELTROMBOPAG = {
-    name: "Eltrombopag (Stijnen 2010)",
-    description: "7 trials, thrombocytopenia bleeding events, rare-event OR",
-    citation: "Stijnen, Hamza, Ozdemir 2010 (Stat Med 29:3046-3067) Table 1",
+    name: "Rare-events example (illustrative; source unverified)",
+    description: "7 rows of rare-event 2x2 counts (OR); source unverified, not to be cited as trial data",
+    citation: "Source unverified (previously attributed to Stijnen, Hamza, Ozdemir 2010, Stat Med 29:3046-3067, Table 1; not confirmed)",
     measure: "OR",
     binary_2x2: [
       { label: "TRA-100773A", events_T: 0, n_T: 38,  events_C: 4, n_C: 35 },
