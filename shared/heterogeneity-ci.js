@@ -29,13 +29,18 @@
   }
   function _lowerIncGamma(a, x) {
     if (x <= 0) return 0;
+    // Iteration cap. Near x = a both the series and the continued fraction need O(sqrt(a)) terms, so a fixed
+    // cap of 300 stopped them early once df is in the thousands: qchisq(0.025, 1e5) was 99129.10 (R 99125.37) and
+    // qchisq(0.025, 1e6) 997520.07 (R 997230.09). Every evaluation that converged within 300 terms stops at the
+    // same term as before (the break is unchanged), so its value is bit-identical; only capped evaluations change.
+    var maxIt = Math.max(300, Math.ceil(40 * Math.sqrt(a)));
     if (x < a + 1) {
       var sum = 1 / a, term = sum;
-      for (var n = 1; n < 300; n++) { term *= x / (a + n); sum += term; if (Math.abs(term) < Math.abs(sum) * 1e-14) break; }
+      for (var n = 1; n < maxIt; n++) { term *= x / (a + n); sum += term; if (Math.abs(term) < Math.abs(sum) * 1e-14) break; }
       return sum * Math.exp(-x + a * Math.log(x) - _lnGamma(a));
     }
     var b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
-    for (var i = 1; i < 300; i++) {
+    for (var i = 1; i < maxIt; i++) {
       var an = -i * (i - a);
       b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
       c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
