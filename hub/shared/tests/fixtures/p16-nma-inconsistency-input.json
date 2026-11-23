@@ -1,0 +1,514 @@
+{
+  "networks": [
+    {
+      "id": "heterogeneous",
+      "rows": [
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0.1,
+          "se": 0.08,
+          "study": "heterogeneous_1"
+        },
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.65,
+          "se": 0.13,
+          "study": "heterogeneous_2"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0.9,
+          "se": 0.1,
+          "study": "heterogeneous_3"
+        },
+        {
+          "A": "C",
+          "B": "A",
+          "te": -0.25,
+          "se": 0.18,
+          "study": "heterogeneous_4"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0.05,
+          "se": 0.09,
+          "study": "heterogeneous_5"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.55,
+          "se": 0.16,
+          "study": "heterogeneous_6"
+        },
+        {
+          "A": "B",
+          "B": "D",
+          "te": 0.8,
+          "se": 0.11,
+          "study": "heterogeneous_7"
+        },
+        {
+          "A": "D",
+          "B": "B",
+          "te": 0.3,
+          "se": 0.19,
+          "study": "heterogeneous_8"
+        },
+        {
+          "A": "C",
+          "B": "D",
+          "te": -0.2,
+          "se": 0.12,
+          "study": "heterogeneous_9"
+        },
+        {
+          "A": "D",
+          "B": "C",
+          "te": -0.7,
+          "se": 0.2,
+          "study": "heterogeneous_10"
+        }
+      ]
+    },
+    {
+      "id": "reversed",
+      "rows": [
+        {
+          "A": "C",
+          "B": "D",
+          "te": 0.7,
+          "se": 0.2,
+          "study": "reversed_1"
+        },
+        {
+          "A": "D",
+          "B": "C",
+          "te": 0.2,
+          "se": 0.12,
+          "study": "reversed_2"
+        },
+        {
+          "A": "B",
+          "B": "D",
+          "te": -0.3,
+          "se": 0.19,
+          "study": "reversed_3"
+        },
+        {
+          "A": "D",
+          "B": "B",
+          "te": -0.8,
+          "se": 0.11,
+          "study": "reversed_4"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0.55,
+          "se": 0.16,
+          "study": "reversed_5"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.05,
+          "se": 0.09,
+          "study": "reversed_6"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0.25,
+          "se": 0.18,
+          "study": "reversed_7"
+        },
+        {
+          "A": "C",
+          "B": "A",
+          "te": -0.9,
+          "se": 0.1,
+          "study": "reversed_8"
+        },
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0.65,
+          "se": 0.13,
+          "study": "reversed_9"
+        },
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.1,
+          "se": 0.08,
+          "study": "reversed_10"
+        }
+      ]
+    },
+    {
+      "id": "tau_zero",
+      "rows": [
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0.2,
+          "se": 0.5,
+          "study": "tau_zero_1"
+        },
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.22,
+          "se": 0.7,
+          "study": "tau_zero_2"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0.5,
+          "se": 0.6,
+          "study": "tau_zero_3"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0.3,
+          "se": 0.5,
+          "study": "tau_zero_4"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.28,
+          "se": 0.8,
+          "study": "tau_zero_5"
+        }
+      ]
+    },
+    {
+      "id": "zero_effect",
+      "rows": [
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0,
+          "se": 0.2,
+          "study": "zero_effect_1"
+        },
+        {
+          "A": "B",
+          "B": "A",
+          "te": 0,
+          "se": 0.3,
+          "study": "zero_effect_2"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0,
+          "se": 0.4,
+          "study": "zero_effect_3"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0,
+          "se": 0.5,
+          "study": "zero_effect_4"
+        }
+      ]
+    },
+    {
+      "id": "triangle_k3",
+      "rows": [
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.2,
+          "se": 0.1,
+          "study": "triangle_k3_1"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0.7,
+          "se": 0.3,
+          "study": "triangle_k3_2"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.3,
+          "se": 0.2,
+          "study": "triangle_k3_3"
+        }
+      ]
+    },
+    {
+      "id": "triangle_k5",
+      "rows": [
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.2,
+          "se": 0.1,
+          "study": "triangle_k5_1"
+        },
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0.4,
+          "se": 0.2,
+          "study": "triangle_k5_2"
+        },
+        {
+          "A": "A",
+          "B": "C",
+          "te": 0.7,
+          "se": 0.3,
+          "study": "triangle_k5_3"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.3,
+          "se": 0.2,
+          "study": "triangle_k5_4"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0.5,
+          "se": 0.15,
+          "study": "triangle_k5_5"
+        }
+      ]
+    },
+    {
+      "id": "tree_k3",
+      "rows": [
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.2,
+          "se": 0.1,
+          "study": "tree_k3_1"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": -0.3,
+          "se": 0.2,
+          "study": "tree_k3_2"
+        },
+        {
+          "A": "C",
+          "B": "D",
+          "te": 0.4,
+          "se": 0.3,
+          "study": "tree_k3_3"
+        }
+      ]
+    },
+    {
+      "id": "tree_replicated",
+      "rows": [
+        {
+          "A": "A",
+          "B": "B",
+          "te": 0.1,
+          "se": 0.1,
+          "study": "tree_replicated_1"
+        },
+        {
+          "A": "B",
+          "B": "A",
+          "te": -0.8,
+          "se": 0.2,
+          "study": "tree_replicated_2"
+        },
+        {
+          "A": "B",
+          "B": "C",
+          "te": 0.3,
+          "se": 0.15,
+          "study": "tree_replicated_3"
+        },
+        {
+          "A": "C",
+          "B": "B",
+          "te": 0.4,
+          "se": 0.25,
+          "study": "tree_replicated_4"
+        }
+      ]
+    }
+  ],
+  "binary": [
+    {
+      "id": "binary_zero",
+      "studies": [
+        {
+          "id": "binary_zero_1",
+          "arms": [
+            {
+              "treatment": "A",
+              "events": 0,
+              "n": 20
+            },
+            {
+              "treatment": "B",
+              "events": 6,
+              "n": 25
+            }
+          ]
+        },
+        {
+          "id": "binary_zero_2",
+          "arms": [
+            {
+              "treatment": "C",
+              "events": 18,
+              "n": 18
+            },
+            {
+              "treatment": "A",
+              "events": 8,
+              "n": 24
+            }
+          ]
+        },
+        {
+          "id": "binary_zero_3",
+          "arms": [
+            {
+              "treatment": "B",
+              "events": 0,
+              "n": 30
+            },
+            {
+              "treatment": "C",
+              "events": 0,
+              "n": 22
+            }
+          ]
+        },
+        {
+          "id": "binary_zero_4",
+          "arms": [
+            {
+              "treatment": "B",
+              "events": 5,
+              "n": 20
+            },
+            {
+              "treatment": "A",
+              "events": 10,
+              "n": 28
+            }
+          ]
+        },
+        {
+          "id": "binary_zero_5",
+          "arms": [
+            {
+              "treatment": "A",
+              "events": 16,
+              "n": 16
+            },
+            {
+              "treatment": "C",
+              "events": 21,
+              "n": 21
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "binary_control",
+      "studies": [
+        {
+          "id": "binary_control_1",
+          "arms": [
+            {
+              "treatment": "A",
+              "events": 2,
+              "n": 20
+            },
+            {
+              "treatment": "B",
+              "events": 6,
+              "n": 25
+            }
+          ]
+        },
+        {
+          "id": "binary_control_2",
+          "arms": [
+            {
+              "treatment": "C",
+              "events": 15,
+              "n": 18
+            },
+            {
+              "treatment": "A",
+              "events": 8,
+              "n": 24
+            }
+          ]
+        },
+        {
+          "id": "binary_control_3",
+          "arms": [
+            {
+              "treatment": "B",
+              "events": 4,
+              "n": 30
+            },
+            {
+              "treatment": "C",
+              "events": 3,
+              "n": 22
+            }
+          ]
+        },
+        {
+          "id": "binary_control_4",
+          "arms": [
+            {
+              "treatment": "B",
+              "events": 5,
+              "n": 20
+            },
+            {
+              "treatment": "A",
+              "events": 10,
+              "n": 28
+            }
+          ]
+        },
+        {
+          "id": "binary_control_5",
+          "arms": [
+            {
+              "treatment": "A",
+              "events": 12,
+              "n": 16
+            },
+            {
+              "treatment": "C",
+              "events": 17,
+              "n": 21
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

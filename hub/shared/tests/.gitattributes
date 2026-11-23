@@ -1,0 +1,4 @@
+# P16 provenance hashes the exact bytes used by the recorded R run.
+# Set only previously unspecified eol attributes; inherit the root text rules.
+fixtures/p16-nma-inconsistency-input.json eol=crlf
+r/p16-nma-inconsistency-reference.R eol=lf
