@@ -1,0 +1,72 @@
+{
+  "means": [
+    {"id":"balanced-control","m1":52.5,"sd1":8.2,"n1":30,"m2":47.1,"sd2":7.9,"n2":30},
+    {"id":"minimum-df","m1":2,"sd1":1,"n1":2,"m2":1,"sd2":1,"n2":2},
+    {"id":"unequal-negative","m1":-2,"sd1":1.2,"n1":3,"m2":0.5,"sd2":2.7,"n2":17},
+    {"id":"null-control","m1":4,"sd1":1,"n1":2,"m2":4,"sd2":3,"n2":9},
+    {"id":"large-df-below-branch","m1":1,"sd1":2,"n1":50001,"m2":0,"sd2":2,"n2":50001},
+    {"id":"large-df-above-branch","m1":1,"sd1":2,"n1":50002,"m2":0,"sd2":2,"n2":50002}
+  ],
+  "t": [
+    {"id":"balanced-control","t":2.597,"n1":30,"n2":30},
+    {"id":"unequal-negative","t":-3.2,"n1":3,"n2":17},
+    {"id":"minimum-df","t":1.5,"n1":2,"n2":2},
+    {"id":"null-control","t":0,"n1":8,"n2":13}
+  ],
+  "f": [
+    {"id":"positive-control","f":4.41,"sign":1,"n1":20,"n2":20},
+    {"id":"unequal-negative","f":10.24,"sign":-1,"n1":3,"n2":17},
+    {"id":"minimum-df","f":2.25,"sign":1,"n1":2,"n2":2},
+    {"id":"null-control","f":0,"sign":-1,"n1":8,"n2":13}
+  ],
+  "wald": [
+    {"id":"or-p-control","type":"OR","est":2,"p":0.05},
+    {"id":"rr-p-protective","type":"RR","est":0.6,"p":0.0012},
+    {"id":"hr-p-extreme","type":"HR","est":0.72,"p":1e-12},
+    {"id":"irr-p-control","type":"IRR","est":1.5,"p":0.2},
+    {"id":"rd-p-negative","type":"RD","est":-0.08,"p":0.031},
+    {"id":"md-p-negative","type":"MD","est":-2.5,"p":0.5},
+    {"id":"smd-p-control","type":"SMD","est":0.7,"p":0.9},
+    {"id":"or-ci-control","type":"OR","est":2,"se":0.2},
+    {"id":"rr-ci-protective","type":"RR","est":0.6,"se":0.15},
+    {"id":"hr-ci-control","type":"HR","est":0.72,"se":0.1},
+    {"id":"irr-ci-control","type":"IRR","est":1.5,"se":0.2},
+    {"id":"rd-ci-negative","type":"RD","est":-0.08,"se":0.03},
+    {"id":"md-ci-negative","type":"MD","est":-2.5,"se":0.7},
+    {"id":"smd-ci-null","type":"SMD","est":0,"se":0.2}
+  ],
+  "convert": [
+    {"id":"or-protective","type":"OR","est":0.75,"se":0.12,"p0":0.2},
+    {"id":"or-harmful","type":"OR","est":3,"se":0.3,"p0":0.4},
+    {"id":"or-null-control","type":"OR","est":1,"se":0.1,"p0":0.2},
+    {"id":"rr-protective","type":"RR","est":0.6,"se":0.2,"p0":0.3},
+    {"id":"rr-harmful","type":"RR","est":2,"se":0.1,"p0":0.25},
+    {"id":"rr-null-control","type":"RR","est":1,"se":0.1,"p0":0.2},
+    {"id":"rd-negative","type":"RD","est":-0.08,"se":0.03,"p0":0.2},
+    {"id":"rd-positive","type":"RD","est":0.2,"se":0.04,"p0":0.3},
+    {"id":"rd-null-control","type":"RD","est":0,"se":0.03,"p0":0.2},
+    {"id":"smd-d-small","type":"SMD","kind":"d","est":0.7,"se":0.4,"n1":2,"n2":3,"sd":2.5},
+    {"id":"smd-g-negative","type":"SMD","kind":"g","est":-0.3,"se":0.2,"n1":3,"n2":5,"sd":1.7},
+    {"id":"smd-g-null-control","type":"SMD","kind":"g","est":0,"se":0.2,"n1":20,"n2":30,"sd":2},
+    {"id":"md-negative","type":"MD","est":-2.5,"se":0.7,"sd":3},
+    {"id":"md-null-control","type":"MD","est":0,"se":0.7,"sd":3},
+    {"id":"hr-protective","type":"HR","est":0.72,"se":0.2},
+    {"id":"irr-harmful","type":"IRR","est":1.5,"se":0.2}
+  ],
+  "evalue": [
+    {"id":"rr-harmful-control","type":"RR","est":2,"lo":1.5,"hi":2.7,"rare":false},
+    {"id":"rr-protective","type":"RR","est":0.6,"lo":0.4,"hi":0.9,"rare":false},
+    {"id":"rr-null-control","type":"RR","est":1,"lo":1,"hi":1,"rare":false},
+    {"id":"rr-crossing","type":"RR","est":2,"lo":0.9,"hi":3,"rare":false},
+    {"id":"rr-missing-ci","type":"RR","est":2,"lo":null,"hi":null,"rare":false},
+    {"id":"or-common","type":"OR","est":2,"lo":1.5,"hi":2.7,"rare":false},
+    {"id":"or-rare","type":"OR","est":2,"lo":1.5,"hi":2.7,"rare":true},
+    {"id":"or-protective","type":"OR","est":0.6,"lo":0.4,"hi":0.9,"rare":false},
+    {"id":"hr-common","type":"HR","est":1.6,"lo":1.2,"hi":2.1,"rare":false},
+    {"id":"hr-rare","type":"HR","est":1.6,"lo":1.2,"hi":2.1,"rare":true},
+    {"id":"hr-protective","type":"HR","est":0.6,"lo":0.4,"hi":0.9,"rare":false},
+    {"id":"smd-positive","type":"SMD","est":0.5,"lo":0.2,"hi":0.8,"rare":false},
+    {"id":"smd-negative","type":"SMD","est":-0.5,"lo":-0.8,"hi":-0.2,"rare":false},
+    {"id":"smd-crossing","type":"SMD","est":0.1,"lo":-0.2,"hi":0.4,"rare":false}
+  ]
+}
