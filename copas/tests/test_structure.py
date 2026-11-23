@@ -9,6 +9,7 @@ field into `expect(Math.abs(undefined - x))` — NaN, which `toBeLessThan`
 reports as a pass-shaped failure only when the browser suite actually runs.
 These checks are cheap, hermetic and run in the Python gate.
 """
+import html
 import re
 from pathlib import Path
 
@@ -199,9 +200,16 @@ def test_the_page_reports_what_a_fit_cost():
     assert 'id="fit-status"' in html, "no status element for the fit"
     # And the footer must carry a measured figure, since that is the artefact
     # the paper describes.
-    flat = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
-    assert re.search(r"3\.7.{0,3}s", flat) and re.search(r"7\.9.{0,3}s", flat), \
-        "the footer does not state a measured runtime"
+    # The figures are measurements of a machine and an engine version, so they
+    # are not pinned (3.7 s / 7.9 s before the engine cached Math into locals;
+    # 0.3 s / 0.5 s on 12 Nov 2026). Required: the footer says it measured them
+    # and gives one for the page's own data and one for dat.hackshaw1998.
+    import html as html_mod
+    flat = html_mod.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html)))
+    assert re.search(r"\bmeasured\b", flat, re.I), "the footer does not say the runtime was measured"
+    secs = r"about (\d+(?:\.\d+)?)\s*s for "
+    assert re.search(secs + r"the ten studies", flat), "no measured runtime for the page's own data"
+    assert re.search(secs + r"dat\.hackshaw1998", flat), "no measured runtime for dat.hackshaw1998"
 
 
 def test_no_private_notes_file_is_cited_in_shipped_text():
@@ -214,22 +222,59 @@ def test_no_private_notes_file_is_cited_in_shipped_text():
     assert not bad, f"shipped page cites private notes file(s): {bad}"
 
 
+# The P21 validation archive's Tier-O result for this page, from its
+# results/check-fixed.json "optimality" block (DEVIATIONS.md D14; allmeta
+# 36f99ee6 and later): points, worse, configurations_with_worse, and the
+# number of configurations (meta/n_configs in results/reference.json). The
+# archive is a separate deposit, not part of this repository, so the values
+# are stated here once; change them only together with a re-validation.
+ARCHIVE_TIER_O = {"points": 42498, "worse": 0,
+                  "configurations": 138, "configurations_with_worse": 0}
+
+
+def _count(text):
+    return int(text.replace(",", ""))
+
+
 def test_page_does_not_claim_the_likelihood_is_never_worse_than_metasens():
-    """The validation archive reports the attained objective IS worse than
-    metasens's at 84 of 42,498 comparable points (16 of 138 configurations),
-    recorded as a pre-registered requirement NOT met. A blanket "never worse"
-    in the footer would contradict the project's own report, in the artefact
-    the paper describes."""
-    html = INDEX.read_text(encoding="utf-8")
-    flat = re.sub(r"<[^>]+>", " ", html)
+    """The footer must report the archive's Tier-O result for this page, and the
+    requirement it reports must be the pre-registered one: worse at none of the
+    comparable points, i.e. no-worse = total. Numbers are parsed with word
+    boundaries (so "10 of 42,498" is read as 10, not as a match for "0 of"),
+    and compared with ARCHIVE_TIER_O; wording is not pinned. A blanket,
+    corpus-free "never worse" claim would overstate what was measured, and the
+    superseded figures (84 of 42,498 in 16 of 138 for the projected-gradient
+    routine; 12 of 42,498 in 4 of 138 for L-BFGS-B from a start 1-70 ulps from
+    metagen()'s) no longer describe the page."""
+    raw = INDEX.read_text(encoding="utf-8")
+    flat = html.unescape(re.sub(r"<[^>]+>", " ", raw))
     flat = re.sub(r"\s+", " ", flat).lower()
     for claim in ("never worse than metasens",
                   "is never worse", "never worse at any"):
         assert claim not in flat, f"page claims {claim!r}"
-    # ...and it must still disclose the shortfall with both denominators.
-    assert "84 of 42,498" in flat, "the disclosed shortfall is missing"
-    assert "16 of 138" in flat, "the per-configuration denominator is missing"
-    assert "deviations.md" in flat, "the file recording the shortfall is not named"
+
+    num = r"(\d[\d,]*)"
+    worse = re.findall(r"\bworse at " + num + r" of " + num + r"\b", flat)
+    assert len(worse) == 1, f"expected one 'worse at N of M' statement, found {worse}"
+    n_worse, n_points = (_count(x) for x in worse[0])
+    assert n_points == ARCHIVE_TIER_O["points"], f"point total {n_points}"
+    assert n_worse == ARCHIVE_TIER_O["worse"], f"page says worse at {n_worse}"
+
+    cfg = re.findall(r"\bin " + num + r" of " + num + r" configurations\b", flat)
+    assert len(cfg) == 1, f"expected one 'in N of M configurations' statement, found {cfg}"
+    c_worse, c_total = (_count(x) for x in cfg[0])
+    assert c_total == ARCHIVE_TIER_O["configurations"], f"configuration total {c_total}"
+    assert c_worse == ARCHIVE_TIER_O["configurations_with_worse"], f"{c_worse} configurations worse"
+
+    # The requirement itself (PREREG Tier O): worse = 0, so no-worse = total.
+    assert n_worse == 0 and c_worse == 0, "the footer must not claim the requirement on a shortfall"
+    # If the footer also states a no-worse count, it must be the total.
+    for nw in re.findall(r"\bno worse than metasens\S* at (?:all )?" + num + r"\b", flat):
+        assert _count(nw) == n_points, f"no-worse count {nw} is not the total {n_points}"
+
+    for stale in ("projected-gradient routine", "neither optimiser dominates"):
+        assert stale not in flat, f"superseded text: {stale!r}"
+    assert "deviations.md" in flat, "the file recording the re-pin is not named"
 
 
 def test_profile_mle_hook_keeps_the_documented_back_compat_contract():

@@ -170,7 +170,7 @@
 </section>
   </main>
   <footer>
-    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Stage 5 (the four-parameter residual-bias fit behind <code>pval.rsb</code>) differs the same way, and in a direction worth knowing: where this port converges further than metasens, <code>pval.rsb</code> comes out <em>smaller</em>, which can move the selected point down the orthogonal line or make the adjusted estimate be withheld where metasens reports one. <strong>What is checked, and where it falls short:</strong> the committed suite checks every deterministic stage against R to 1e-9 on one reference dataset (<code>metadat::dat.hackshaw1998</code>, k&nbsp;=&nbsp;37) in three configurations, and the profile MLE against a separate <code>metasens</code> oracle on a second dataset (<code>copas/tests/fixtures/copas-oracle.json</code>, driven in a browser by <code>hub/shared/tests/copas-parity.spec.mjs</code> and in Node by <code>copas/tests/copas-oracle.test.mjs</code>). The validation archive extends this to 46 inputs &#8212; and reports that the objective attained here is <em>worse</em> than metasens&#8217;s at 84 of 42,498 comparable grid points, in 16 of 138 configurations. That was a pre-registered requirement and the archive records it as <strong>not met</strong>; see its <code>DEVIATIONS.md</code>. Neither optimiser dominates the other. <strong>What it costs:</strong> a fit is <code>ngrid</code>&#215;<code>ngrid</code> profile maximum-likelihood maximisations on the main thread of this tab &#8212; 400 at the default. Measured under Node 24: about 3.7&nbsp;s for the ten studies this page loads with, and about 7.9&nbsp;s for <code>dat.hackshaw1998</code> (k&nbsp;=&nbsp;37); a browser is the same order. The elapsed time of each fit is reported above the results. Changing the y-axis range only redraws the chart; changing <code>ngrid</code>, the &#964;&sup2; method, <code>sign.rsb</code> or the CI level refits, and those controls are debounced. <strong>Small k:</strong> this app warns below k&nbsp;=&nbsp;15 and treats 3&nbsp;&#8804;&nbsp;k&nbsp;&lt;&nbsp;15 output as illustrative rather than refusing it; k&nbsp;&#8805;&nbsp;15 is this project&#8217;s own operating threshold, not a published one.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>The optimiser:</strong> the box-constrained maximisation is a transliteration of R&#8217;s own <code>optim(method = &quot;L-BFGS-B&quot;)</code> with its default control, including <code>optim</code>&#8217;s finite-difference gradient for the four-parameter fit, evaluated with R&#8217;s <code>pnorm</code> and <code>dnorm</code> in R&#8217;s operation order, with correctly rounded <code>exp</code>, <code>log</code> and <code>pow</code> on the likelihood path, and started from <code>metagen()</code>&#8217;s own start values (metafor&#8217;s DL &#964;&sup2;, and its REML &#964;&sup2; for up to 250 studies, reproduced to the last bit; above 250 studies the REML value is computed in closed form and agrees to about 10<sup>-15</sup> relative), so it stops where metasens stops. Not every reported value is bit-identical to metasens&#8217;s; the agreement is counted below. <strong>What is checked, and where it falls short:</strong> the committed suite checks every deterministic stage against R to 1e-9 on one reference dataset (<code>metadat::dat.hackshaw1998</code>, k&nbsp;=&nbsp;37) in three configurations, and the profile MLE against a separate <code>metasens</code> oracle on a second dataset (<code>copas/tests/fixtures/copas-oracle.json</code>, driven in a browser by <code>hub/shared/tests/copas-parity.spec.mjs</code> and in Node by <code>copas/tests/copas-oracle.test.mjs</code>). The validation archive extends this to 46 inputs (138 configurations). Its run on this page reports that the objective attained here is no worse than metasens&#8217;s at all 42,498 comparable points: at every one of them the two agree within the pre-registered slack of 10<sup>-12</sup> relative (largest difference 3.4&#215;10<sup>-14</sup>), so it is worse at 0 of 42,498, in 0 of 138 configurations, and lower at none. The pre-registered requirement (&#8220;never worse&#8221;) is therefore met on the pre-registered corpus of 46 inputs (a measured result, not a guarantee for other inputs); the earlier page versions that did not meet it, and the re-pinning of the archive&#8217;s counts, are recorded in its <code>DEVIATIONS.md</code>. <strong>What it costs:</strong> a fit is <code>ngrid</code>&#215;<code>ngrid</code> profile maximum-likelihood maximisations on the main thread of this tab &#8212; 400 at the default. Measured on 12 November 2026 on a 4-core Windows PC, under Node 24 and in headless Chrome alike: about 0.3&nbsp;s for the ten studies this page loads with, and about 0.5&nbsp;s for <code>dat.hackshaw1998</code> (k&nbsp;=&nbsp;37). The elapsed time of each fit is reported above the results. Changing the y-axis range only redraws the chart; changing <code>ngrid</code>, the &#964;&sup2; method, <code>sign.rsb</code> or the CI level refits, and those controls are debounced. <strong>Small k:</strong> this app warns below k&nbsp;=&nbsp;15 and treats 3&nbsp;&#8804;&nbsp;k&nbsp;&lt;&nbsp;15 output as illustrative rather than refusing it; k&nbsp;&#8805;&nbsp;15 is this project&#8217;s own operating threshold, not a published one.
   </footer>
   <script>
   (function () {
@@ -241,13 +241,10 @@
     function startValues(te, se, methodTau) {
       var eg = CC.eggerEstimate(te, se);
       var rho0 = Math.sign(eg) === 1 ? 0.9999 / 2 : -0.9999 / 2;
-      if (methodTau === 'DL') {
-        var vi = se.map(function (s) { return s * s; });
-        var fit = MaCore.pool(te, vi, { method: 'DL' });
-        return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
-                 tau2: fit.tau2, egger: eg, rho0: rho0, converged: true };
-      }
-      var r = CC.metaforREML(te, se);
+      // Both are metafor's own arithmetic (CC.metaforDL / CC.metaforREML), so
+      // the start is metagen()'s to the last bit and R's L-BFGS-B starts where
+      // metasens starts (copas/tests/copas-core-start.test.mjs).
+      var r = methodTau === 'DL' ? CC.metaforDL(te, se) : CC.metaforREML(te, se);
       return { TE_random: r.TE_random, seTE_random: r.seTE_random, tau: r.tau,
                tau2: r.tau2, egger: eg, rho0: rho0, converged: r.converged };
     }
@@ -348,7 +345,8 @@
       // metafor stops with an error when Fisher scoring does not converge in
       // 100 iterations, so metagen() -- and therefore copas() -- returns
       // nothing in R. Refused here for the same reason.
-      if (!sv.converged) return { refused: 'reml-not-converged', k: te.length };
+      if (!sv.converged) return { refused: o.method_tau === 'DL' ? 'dl-start-unstable' : 'reml-not-converged',
+                                  k: te.length };
       return CC.copas({
         TE: te, seTE: se,
         TE_random: sv.TE_random, seTE_random: sv.seTE_random, tau: sv.tau,
@@ -512,6 +510,12 @@
             why = 'the REML estimate of τ² did not converge in 100 Fisher-scoring ' +
                   'iterations (metafor stops with an error here too, so metasens ' +
                   'returns no fit). Try the DerSimonian-Laird start';
+            break;
+          case 'dl-start-unstable':
+            why = 'the standard errors span so many orders of magnitude that the ' +
+                  'DerSimonian-Laird τ² cannot be computed reliably in double ' +
+                  'precision (R warns its result is not stable there, or stops ' +
+                  'with an error), so no start value matching metasens exists';
             break;
           case 'optim-error':
             why = 'the first likelihood maximisation of the ' + (fit.stage || 'fit') +
