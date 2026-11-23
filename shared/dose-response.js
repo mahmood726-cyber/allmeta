@@ -610,10 +610,19 @@
         if (covariance !== "indep") {
           for (var row = 0; row < L.length; row++) {
             var l = L[row], reason = null;
-            if (!isFinite(l.cases) || !isFinite(l.n) || !(l.cases > 0) || !(l.n > 0)) reason = "cases and n must be finite and greater than 0 for covariance reconstruction";
+            if (!isFinite(l.cases) || !isFinite(l.n) || l.cases < 0 || !(l.n > 0)) reason = "cases must be finite and non-negative; n must be finite and greater than 0 for covariance reconstruction";
             else if ((type === "cc" || type === "ci") && l.cases > l.n) reason = "cases must not exceed n for " + type + " covariance reconstruction";
             if (reason) { out.excluded.push({ id: st.id, reason: "row " + (row + 1) + ": " + reason }); return; }
           }
+        }
+        // dosresmeta does not add a continuity correction to supplied counts.
+        // Hamling can reconstruct a zero non-reference category; GL cannot.
+        if (covariance !== "indep" && L.some(function (l) { return l.cases === 0; })) {
+          if (covariance === "gl" || L.some(function (l) { return l.v === 0 && l.cases === 0; })) {
+            throw new DRError("study " + st.id + ": zero cases prevent " + (covariance === "gl" ? "Greenland-Longnecker" : "Hamling reference-cell") +
+              " covariance reconstruction in dosresmeta; no continuity correction is applied. The analysis was not fitted and the study was not dropped.");
+          }
+          out.warnings.push("Study " + st.id + ": zero-case category retained using Hamling reconstruction, as in dosresmeta; no continuity correction applied.");
         }
         S.push({ id: st.id, type: type, L: L, mod: st.mod });
       });

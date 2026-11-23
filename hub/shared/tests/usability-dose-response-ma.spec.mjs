@@ -72,7 +72,9 @@ for (const [field, column] of [['dose', 1], ['cases', 2], ['n', 3], ['logRR', 4]
 for (const [field, column, token] of [['SE', 5, '-0.2'], ['SE', 5, '0'], ['cases', 2, '0'], ['n', 3, '-1'], ['type', 6, 'oops'], ['type', 6, 'ci']]) {
   test('U1 refuses invalid ' + field + ' value ' + token + ' with row and study', async ({ page }) => {
     await page.locator('#f-data').fill(changeCell(await page.locator('#f-data').inputValue(), 3, column, token));
-    await expectRefusal(page, 'Row 3 (study 1), ' + field + ':');
+    await expectRefusal(page, field === 'cases' && token === '0'
+      ? 'study 1: zero cases prevent Greenland-Longnecker covariance reconstruction in dosresmeta'
+      : 'Row 3 (study 1), ' + field + ':');
   });
 }
 
