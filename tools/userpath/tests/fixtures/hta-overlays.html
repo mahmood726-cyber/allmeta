@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- Minimal copy of the two HTA onboarding overlays (HTA/index.html QuickStartTutorial,
+     HTA/src/ui/beginnerMode.js welcome modal): same ids, classes, stacking and close logic. -->
+<html><head><style>
+#tutorial-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+.tutorial-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+.tutorial-content { position: relative; background: #fff; padding: 20px; }
+.welcome-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center;
+  z-index: 10000; opacity: 0; visibility: hidden; transition: all .3s ease; }
+.welcome-modal-overlay.active { opacity: 1; visibility: visible; }
+.welcome-modal { background: #fff; padding: 20px; }
+</style></head><body>
+<header><button id="target" onclick="window.__targetClicked = true">Load Demo</button></header>
+<main style="height:1500px">content</main>
+<div class="welcome-modal-overlay active" id="welcome-modal"><div class="welcome-modal"><h2>Welcome</h2>
+  <button id="welcome-skip">Skip Tutorial</button><button id="welcome-next">Next</button></div></div>
+<div id="tutorial-modal"><div class="tutorial-overlay" role="presentation"></div><div class="tutorial-content">
+  <div class="tutorial-header"><h3>Welcome to HTA</h3><button class="tutorial-close">&times;</button></div>
+  <div class="tutorial-footer"><button id="tutorial-prev" style="display:none">Previous</button><button id="tutorial-next">Next</button></div></div></div>
+<script>
+window.__closedBy = []; window.__targetClicked = false;
+document.querySelector(".tutorial-close").addEventListener("click", () => { window.__closedBy.push("tutorial-close"); document.getElementById("tutorial-modal").remove(); });
+document.getElementById("welcome-skip").addEventListener("click", () => { window.__closedBy.push("welcome-skip"); document.getElementById("welcome-modal").classList.remove("active"); });
+</script></body></html>
