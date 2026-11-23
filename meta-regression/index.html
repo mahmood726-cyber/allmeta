@@ -1027,7 +1027,10 @@
     } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "meta-regression", textarea: "#f-data", format: "label-est-se" });
+      // Sign the studies this page analysed (the set "Verify in R" re-fits: [] when the page refused
+      // the input), not a re-read of the input with the shared reader (lane rcpt2).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "meta-regression",
+        getStudies: function () { try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; } } });
     }
   });
 })();
