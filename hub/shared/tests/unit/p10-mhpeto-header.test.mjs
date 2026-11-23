@@ -27,8 +27,9 @@ function app() {
     window: { alm: { analysisLifecycle: fn => fn } },
     drawForest() {}, drawLabbe() {},
   });
-  vm.runInContext(code, ctx, { filename: 'mh-peto/index.html' });
+  // The real select already has its default value when the app reads axis state.
   element('measure').value = 'OR';
+  vm.runInContext(code, ctx, { filename: 'mh-peto/index.html' });
   return { ctx, element, run(text) { element('src').value = text; ctx.run(); } };
 }
 
