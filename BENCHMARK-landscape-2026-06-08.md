@@ -110,10 +110,11 @@ incomplete-data 47.9, selective-reporting 49.7. The last two are genuinely hard 
 
 **Honest reading:**
 
-- allmeta **beats RobotReviewer overall (62.6 vs 56.7)** and on **3 of the 4 domains** RR
+- allmeta's average is **62.6 vs RobotReviewer 56.7** (n=99); each lies inside the other's
+  95% interval, so **no superiority is claimed**. It is nominally higher on 3 of the 4 domains RR
   assesses. The RoBBR authors note these domains hinge on "superficial keywords" (e.g.
   "opaque envelope", "random number generator") — exactly what a transparent phrase model
-  exploits, so the win is expected rather than surprising.
+  exploits, so a nominally higher score is expected rather than surprising.
 - allmeta **loses allocation concealment (60 vs 75)** — RR's deep training on tens of
   thousands of CDSR examples still wins where concealment language is subtle.
 - allmeta is **below frontier LLMs** (GPT-4o 65.6, Sonnet-3.5 67.5). A free, offline,
@@ -122,8 +123,8 @@ incomplete-data 47.9, selective-reporting 49.7. The last two are genuinely hard 
 - Rules are derived from the Cochrane Handbook, **not fitted to the test labels** (calibrated
   on the RoBBR train split only); train→test numbers track closely, so no overfitting.
 
-> **Verdict:** on the automated-RoB head-to-head, allmeta **beats RobotReviewer and ties the
-> traditional-ML field, while trailing frontier LLMs**. Reproduce: `node benchmark/run_rob_benchmark.mjs`.
+> **Verdict:** on the automated-RoB head-to-head, allmeta scores **62.6 vs RobotReviewer 56.7, each inside
+> the other's 95% interval, so no superiority is claimed; it nominally trails frontier LLMs**. Reproduce: `node benchmark/run_rob_benchmark.mjs`.
 
 ---
 
@@ -166,7 +167,7 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 
 | Tool | RoB | Extraction | Meta-analysis breadth | Reproducibility | Cost | Privacy/local | Open-source |
 |---|---|---|---|---|---|---|---|
-| **allmeta** | **automated /rob/ — 62.6 Macro-F1, beats RobotReviewer 56.7 on RoBBR** [m] + manual RoB2/ROBINS-I/-E/QUADAS-2 apps [o] | free deterministic + BYO-agent [m] | **NMA, DTA, Bayesian, dose-resp, RVE, IPD, TSA…** R-verified [m] | **R-parity tests, downloadable .R** [m] | **Free** | **Local** | **Yes** |
+| **allmeta** | **automated /rob/ — 62.6 vs RobotReviewer 56.7 Macro-F1 on RoBBR, each inside the other's 95% interval (no superiority claimed)** [m] + manual RoB2/ROBINS-I/-E/QUADAS-2 apps [o] | free deterministic + BYO-agent [m] | **NMA, DTA, Bayesian, dose-resp, RVE, IPD, TSA…** R-verified [m] | **R-parity tests, downloadable .R** [m] | **Free** | **Local** | **Yes** |
 | **RobotReviewer** | **automated ML RoB from PDF** [d] | PICO extraction [d] | N | open model [d] | **Free** [d] | self-host option [d] | **Yes** [d] |
 | **Trialstreamer** | **auto RoB cue from abstracts** [d] | **auto PICO + N + design** [d] | N | open [d] | **Free** [d] | cloud/open [d] | **Yes** [d] |
 | Laser AI | ~ [d] | **AI extraction + living** [d] | ~ [d] | [?] | Paid [d] | Cloud [d] | No [d] |
@@ -221,8 +222,8 @@ vendor/regulatory support (DistillerSR for 21 CFR / pharma); **Elicit or Consens
 you need neural semantic recall over 100M+ papers and best-effort LLM extraction;
 **RobotReviewer/Trialstreamer** when you want auto PICO extraction at population scale, or
 the best available automated *allocation-concealment* call (RR still wins that one domain
-75 vs 60) — though for RoB overall allmeta's `/rob/` now beats RobotReviewer on the RoBBR
-head-to-head (62.6 vs 56.7 Macro-F1); and **RevMan** when institutional/Cochrane
+75 vs 60) — though for RoB overall allmeta's `/rob/` scores 62.6 vs RobotReviewer 56.7 Macro-F1 on
+the RoBBR head-to-head, each inside the other's 95% interval (no superiority claimed); and **RevMan** when institutional/Cochrane
 familiarity and the established GRADE/SoF forest-plot standard matter more than method
 breadth. In short: **allmeta wins on cost, privacy, reproducibility, breadth, integration
 and now automated-RoB overall; ties ASReview on active-learning screening (measured, on the

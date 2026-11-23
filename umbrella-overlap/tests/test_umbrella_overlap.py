@@ -1,6 +1,6 @@
 """Tests for shared/umbrella-overlap-v1.js — Corrected Covered Area (Pieper 2014).
 
-Runs in Node. Pins the CCA formula (N−r)/(r·c−r), Pieper's groove thresholds,
+Runs in Node. Pins the CCA formula (N−r)/(r·c−r), the page's overlap-band thresholds,
 the shared-study tally, and the ≥2-reviews guard.
 """
 import json
