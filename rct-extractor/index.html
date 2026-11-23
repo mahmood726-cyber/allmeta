@@ -187,8 +187,18 @@
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
 
-    import * as pdfjsLib from "./vendor/pdf.min.mjs";
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.mjs";
+    // pdf.js is loaded on first use, not by a static import: a page opened from a local
+    // copy (file://) cannot load module scripts, and the static import failed the whole
+    // module there (the page stuck at "checking…", the offline text extractor dead).
+    let pdfjsLib = null;
+    async function loadPdfJs() {
+      if (location.protocol === "file:") throw new Error("Reading a PDF needs this page served over http(s): browsers block the PDF reader's module scripts for a page opened from a local file (file://). Paste the text instead, or serve this folder (for example python -m http.server) and open it from localhost.");
+      if (!pdfjsLib) {
+        pdfjsLib = await import("./vendor/pdf.min.mjs");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.mjs";
+      }
+      return pdfjsLib;
+    }
 
     const apiUrlEl = document.getElementById("api-url");
     const textEl = document.getElementById("text");
@@ -358,7 +368,7 @@
     const MAX_PDF_PAGES = 40;
     async function extractFromPDF(file) {
       const buf = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      const pdf = await (await loadPdfJs()).getDocument({ data: buf }).promise;
       const limit = Math.min(pdf.numPages, MAX_PDF_PAGES);
       let out = "";
       for (let i = 1; i <= limit; i++) {
