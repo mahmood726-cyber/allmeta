@@ -64,14 +64,22 @@
     return { b1: b1, Q: Q, Q2: Q2, w: w, S0: S0, S1: S1, S2: S2, D: D,
       trP: S0 - (S2 * T0 - 2 * S1 * T1 + S0 * T2) / D };
   }
+  // tr(P P) for P = W - W X A X'W, X = [1, x], A = (X'WX)^-1, in O(k):
+  //   tr(PP) = sum w^2 - 2 tr(A X'W^3 X) + tr(A B A B),  B = X'W^2 X.
+  // The previous double loop was O(k^2) per REML step (k = 4000: 1.4 s; k = 40000: minutes, page frozen).
   function _trPP(f, x) {
-    var k = x.length, s = 0;
-    for (var i = 0; i < k; i++) for (var j = 0; j < k; j++) {
-      var h = (f.S2 - f.S1 * (x[i] + x[j]) + f.S0 * x[i] * x[j]) / f.D;
-      var p = (i === j ? f.w[i] : 0) - f.w[i] * f.w[j] * h;
-      s += p * p;
+    var k = x.length, U0 = 0, U1 = 0, U2 = 0, V0 = 0, V1 = 0, V2 = 0, i;
+    for (i = 0; i < k; i++) {
+      var w = f.w[i], w2 = w * w, w3 = w2 * w;
+      V0 += w2; V1 += w2 * x[i]; V2 += w2 * x[i] * x[i];
+      U0 += w3; U1 += w3 * x[i]; U2 += w3 * x[i] * x[i];
     }
-    return s;
+    // A = [[S2, -S1], [-S1, S0]] / D
+    var a00 = f.S2 / f.D, a01 = -f.S1 / f.D, a11 = f.S0 / f.D;
+    var trAU = a00 * U0 + 2 * a01 * U1 + a11 * U2;
+    // C = A B; tr(C C) = c00^2 + 2 c01 c10 + c11^2
+    var c00 = a00 * V0 + a01 * V1, c01 = a00 * V1 + a01 * V2, c10 = a01 * V0 + a11 * V1, c11 = a01 * V1 + a11 * V2;
+    return V0 - 2 * trAU + (c00 * c00 + 2 * c01 * c10 + c11 * c11);
   }
   function _regSlope(yi, vi, method) {
     if (method !== "DL" && method !== "PM" && method !== "REML") return _eggerSlope(yi, vi);  // FE etc.: unchanged rule
