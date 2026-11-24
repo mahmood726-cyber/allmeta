@@ -12,6 +12,18 @@ the section is renamed to that version and dated, and a fresh
 ## [Unreleased]
 
 ### Added
+- _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.10.0] — 2026-11-24
+
+### Release contents
+- The release tree is main at the PR #621 merge (43e31c66) plus this metadata commit; later main commits are
+  not included. It contains the merged validation corrections, including PR #499, #500, #501, #506, #508, #510,
+  #514 and #540. This section also lists items first released in v1.9.0.
+
+### Added
 - RVE: `shared/numerics/LICENSES-rve-eigen.md` reproduces the licences of the
   webR BLAS/LAPACK binaries embedded in `shared/rve-eigen.js` (R's
   `doc/COPYRIGHTS` LAPACK/BLAS entries, the LAPACK modified-BSD licence, the

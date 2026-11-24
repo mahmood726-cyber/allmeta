@@ -23,7 +23,7 @@
   'use strict';
   var info = {
     app: "allmeta",
-    version: "v1.8.0",
+    version: "v1.10.0",
     sha: "0000000000000000000000000000000000000000",
     shortSha: "0000000",
     builtAt: "1970-01-01T00:00:00Z",
