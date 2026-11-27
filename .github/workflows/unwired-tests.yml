@@ -89,7 +89,8 @@ jobs:
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
                    IPD-Meta-Pro/dev/tests/*.test.cjs meta-regression/validate/*.test.mjs \
-                   copas/tests/copas-core-lbfgsb.test.mjs shared/tests/*.test.mjs shared/tests/*.spec.mjs; do
+                   copas/tests/copas-core-lbfgsb.test.mjs shared/tests/*.test.mjs shared/tests/*.spec.mjs \
+                   multivariate-ma/tests/*.cjs multivariate-ma/validate/run-plus-node.cjs; do
             case "$skip" in *" $f "*) echo "SKIP $f";; *) files+=("$f");; esac
           done
           for s in $skip; do [ -f "$s" ] || { echo "stale skip entry: $s"; exit 1; }; done
