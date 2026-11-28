@@ -43,6 +43,8 @@
     footer{padding:1rem clamp(1rem,3vw,3rem) 2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);max-width:92ch}
   </style>
   <script src="../shared/multivariate-ma.js"></script>
+  <script src="../shared/stats-qt.js"></script>
+  <script src="inference.js"></script>
   <script src="plus.js"></script>
   <script src="../shared/build-info.js"></script>
 </head>
@@ -92,6 +94,23 @@
     <h2 style="margin-top:1rem">Joint outcome plot</h2>
     <div id="plot-host"></div>
     <div class="toolbar"><button type="button" id="btn-plot-svg">Download plot (SVG)</button><button type="button" id="btn-plot-png">Download plot (PNG)</button></div>
+  </section>
+  <section id="alm-inf" class="panel" aria-labelledby="inf-title">
+    <h2 id="inf-title">Heterogeneity, fit statistics and further inference</h2>
+    <p class="note" id="inf-note">Computed from the same studies and the same bivariate REML fit as above (the 95% intervals above do not change). Cochran Q is evaluated at the common-effect (fixed) means, as in mvmeta's <code>qtest</code>; I&sup2; = max(0, (Q &minus; df)/Q). Fit statistics follow metafor's <code>fitstats</code> for the REML fit (5 parameters: 2 means and 3 between-study covariance parameters). Prediction intervals use t with k &minus; 1 degrees of freedom; all other tests and intervals are normal (z).</p>
+    <div class="modes"><label for="inf-level">Confidence level (%)</label><input type="number" id="inf-level" value="95" min="1" max="99.9" step="any" aria-describedby="inf-note"></div>
+    <p id="inf-status" class="note" role="status" aria-live="polite"></p>
+    <h3>Heterogeneity (Cochran Q and I&sup2;)</h3>
+    <table><caption class="note">Q, degrees of freedom, p (chi-square) and I&sup2;, overall and per outcome</caption><thead><tr><th scope="col">Test</th><th scope="col">Q</th><th scope="col">df</th><th scope="col">p</th><th scope="col">I&sup2;</th></tr></thead><tbody id="inf-het-body"></tbody></table>
+    <h3>Common-effect (fixed) fit</h3>
+    <table><caption class="note">Between-study covariance set to zero; <span class="inf-lv">95</span>% normal confidence intervals</caption><thead><tr><th scope="col">Outcome</th><th scope="col">Mean [<span class="inf-lv">95</span>% CI]</th><th scope="col">SE</th><th scope="col">z</th><th scope="col">p</th></tr></thead><tbody id="inf-fe-body"></tbody></table>
+    <h3>Random-effects means at the chosen level and prediction intervals</h3>
+    <table><caption class="note">Bivariate REML means; prediction interval for the true effect in a new study (t, k &minus; 1 df)</caption><thead><tr><th scope="col">Outcome</th><th scope="col">Mean [<span class="inf-lv">95</span>% CI]</th><th scope="col"><span class="inf-lv">95</span>% prediction interval</th></tr></thead><tbody id="inf-re-body"></tbody></table>
+    <h3>Joint tests and contrast</h3>
+    <table><caption class="note">Wald tests from the random-effects fit</caption><thead><tr><th scope="col">Quantity</th><th scope="col">Result</th></tr></thead><tbody id="inf-joint-body"></tbody></table>
+    <h3>Fit statistics (REML)</h3>
+    <table><caption class="note">REML log-likelihood on metafor's scale; BIC and AICc use N &minus; p = 2k &minus; 2</caption><thead><tr><th scope="col">logLik</th><th scope="col">Deviance</th><th scope="col">AIC</th><th scope="col">BIC</th><th scope="col">AICc</th><th scope="col">Parameters</th><th scope="col">Residual df</th></tr></thead><tbody id="inf-fit-body"></tbody></table>
+    <div class="toolbar"><button type="button" id="inf-dl-r">Download R script (this panel)</button><button type="button" id="inf-dl-json">Download these results (JSON)</button></div>
   </section>
   <section id="alm-plus" class="panel" aria-labelledby="plus-title">
     <h2 id="plus-title">Comparison, tests and within-study correlation sensitivity</h2>
@@ -224,7 +243,7 @@
       var parsed = currentParsed(), o1 = parsed.outcomes[0], o2 = parsed.outcomes[1];
       var head = el("headline"), stats = el("stats");
       _parsed = parsed; clearOutputs(); renderDerived(parsed); renderOmitted(parsed);
-      var done = function (res) { if (window.AlmMvPlusUI) window.AlmMvPlusUI.update(parsed, res); };
+      var done = function (res) { if (window.AlmMvPlusUI) window.AlmMvPlusUI.update(parsed, res); if (window.AlmMvInferenceUI) window.AlmMvInferenceUI.update(parsed, _fit); };
       if (parsed.invalid) { head.textContent = "Refused: " + parsed.invalid; done({ status: "refused", reason: parsed.invalid, k: parsed.rows.length }); return; }
       if (parsed.rows.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; done({ status: "refused", reason: "At least two complete studies are required.", k: parsed.rows.length }); return; }
       var res = window.AlmMvPlus ? window.AlmMvPlus.compute(parsed) : null, f;
@@ -233,7 +252,7 @@
         head.textContent = "Refused: " + res.reason + (bad.length ? " (|r| ≥ 1 on line" + (bad.length > 1 ? "s " : " ") + bad.join(", ") + ")" : "");
         done(res); return;
       }
-      if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
+      if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; done({ status: "refused", reason: error.message, k: parsed.rows.length }); return; } }
       _fit = f;
       var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
       diagnosticNote.textContent = verdict === "boundary maximum" ?
@@ -324,6 +343,7 @@
   })();
 </script>
 <script src="plus-ui.js"></script>
+<script src="inference-ui.js"></script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/plus-pins.js"></script>
 <script src="validate/plus-contract.js"></script>
