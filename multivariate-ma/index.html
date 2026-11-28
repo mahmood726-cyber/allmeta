@@ -98,7 +98,7 @@
   <section id="alm-inf" class="panel" aria-labelledby="inf-title">
     <h2 id="inf-title">Heterogeneity, fit statistics and further inference</h2>
     <p class="note" id="inf-note">Computed from the same studies and the same bivariate REML fit as above (the 95% intervals above do not change). Cochran Q is evaluated at the common-effect (fixed) means, as in mvmeta's <code>qtest</code>; I&sup2; = max(0, (Q &minus; df)/Q). Fit statistics follow metafor's <code>fitstats</code> for the REML fit (5 parameters: 2 means and 3 between-study covariance parameters). Prediction intervals use t with k &minus; 1 degrees of freedom; all other tests and intervals are normal (z).</p>
-    <div class="modes"><label for="inf-level">Confidence level (%)</label><input type="number" id="inf-level" value="95" min="1" max="99.9" step="1" aria-describedby="inf-note"></div>
+    <div class="modes"><label for="inf-level">Confidence level (%)</label><input type="number" id="inf-level" value="95" min="1" max="99.9" step="any" aria-describedby="inf-note"></div>
     <p id="inf-status" class="note" role="status" aria-live="polite"></p>
     <h3>Heterogeneity (Cochran Q and I&sup2;)</h3>
     <table><caption class="note">Q, degrees of freedom, p (chi-square) and I&sup2;, overall and per outcome</caption><thead><tr><th scope="col">Test</th><th scope="col">Q</th><th scope="col">df</th><th scope="col">p</th><th scope="col">I&sup2;</th></tr></thead><tbody id="inf-het-body"></tbody></table>
@@ -252,7 +252,7 @@
         head.textContent = "Refused: " + res.reason + (bad.length ? " (|r| ≥ 1 on line" + (bad.length > 1 ? "s " : " ") + bad.join(", ") + ")" : "");
         done(res); return;
       }
-      if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
+      if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; done({ status: "refused", reason: error.message, k: parsed.rows.length }); return; } }
       _fit = f;
       var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
       diagnosticNote.textContent = verdict === "boundary maximum" ?

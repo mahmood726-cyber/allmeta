@@ -20,9 +20,10 @@
   function render() {
     var status = el("inf-status"); clear(); state.result = null;
     var parsed = state.parsed, f = state.fit;
-    if (!parsed || !f) { status.textContent = "No fitted model (enter at least two complete studies)."; return; }
-    var L = el("inf-level").value, r = window.AlmMvInference.compute(parsed.rows, f, L);
-    if (r.status !== "ok") { status.textContent = "Refused: " + r.reason; return; }
+    if (!parsed || !f) { status.textContent = "No fitted model (enter at least two complete studies)."; el("inf-level").removeAttribute("aria-invalid"); return; }
+    var inp = el("inf-level"), L = inp.value, r = window.AlmMvInference.compute(parsed.rows, f, L);
+    if (r.status !== "ok") { status.textContent = "Refused: " + r.reason; if (/^Confidence level/.test(r.reason)) inp.setAttribute("aria-invalid", "true"); else inp.removeAttribute("aria-invalid"); return; }
+    inp.removeAttribute("aria-invalid");
     state.result = r;
     var o = parsed.outcomes, lv = String(r.level);
     status.textContent = "k = " + r.k + " studies; confidence level " + lv + "%.";
@@ -45,7 +46,7 @@
   el("inf-level").addEventListener("input", render);
   el("inf-dl-r").addEventListener("click", function () {
     if (!state.result || !state.parsed || !window.AlmMvPage) return;
-    window.AlmMvPage.download("multivariate-ma-inference.R", new Blob([window.AlmMvInference.rScript(state.parsed.rows, state.result.level)], { type: "text/plain" }));
+    window.AlmMvPage.download("multivariate-ma-inference.R", new Blob([window.AlmMvInference.rScript(state.parsed.rows, state.result.level, state.fit)], { type: "text/plain" }));
   });
   el("inf-dl-json").addEventListener("click", function () {
     if (!state.result || !window.AlmMvPage) return;
